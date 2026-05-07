@@ -8,6 +8,23 @@ let _apostador = null;
 let _palpitesLocais = {};
 let _modoVer = false;
 
+// Sobrescrever a função do ui-jogos para a tela de apostas
+window._onInputPlacar = function(id) {
+  const hg = parseInt(document.getElementById("sim-hg-" + id)?.value);
+  const ag = parseInt(document.getElementById("sim-ag-" + id)?.value);
+  
+  if (!isNaN(hg) && !isNaN(ag)) {
+    _palpitesLocais[id] = { homeGoals: hg, awayGoals: ag };
+    
+    // Atualizar apenas as tabelas de grupos sem dar re-render na página toda (evita perder o foco)
+    atualizarMiniTabelasAposta();
+    
+    // Auto-save suave
+    clearTimeout(window._saveTimerAposta);
+    window._saveTimerAposta = setTimeout(() => salvarTodosPalpites(true), 2000);
+  }
+};
+
 document.addEventListener("DOMContentLoaded", iniciarAposta);
 
 async function iniciarAposta() {
@@ -170,33 +187,25 @@ function gravarEspecialAposta(sel) {
   gravarApostador(_apostador);
 }
 
+function atualizarMiniTabelasAposta() {
+  const tg = calcularProjecao();
+  const resOficiais = getResultados();
+  
+  // Atualizar o grid de grupos no topo se existir
+  const gridContainer = document.querySelector(".grupos-grid")?.parentElement;
+  if (gridContainer && _modoGrupos === "topo") {
+    gridContainer.innerHTML = renderGruposGrid(tg, resOficiais);
+  }
+  
+  // Atualizar contagem no header
+  const totalJogos = (window.SCHEDULE || []).filter(j => j.fase === "grupos").length;
+  const preenchidos = Object.values(_palpitesLocais).filter(p => p?.homeGoals !== undefined).length;
+  const contador = document.querySelector("strong[style*='verde-light']");
+  if (contador) contador.textContent = preenchidos + "/" + totalJogos;
+}
+
 function _registrarInputsAposta() {
-  // Para cada input de palpite, salva on-demand e re-renderiza grupos
-  document.querySelectorAll("[id^='sim-hg-'],[id^='sim-ag-']").forEach(inp => {
-    inp.addEventListener("input", function() {
-      const id = this.id.replace(/sim-[ha]g-/,"");
-      const hg = parseInt(document.getElementById("sim-hg-"+id)?.value);
-      const ag = parseInt(document.getElementById("sim-ag-"+id)?.value);
-      if (!isNaN(hg) && !isNaN(ag)) {
-        _palpitesLocais[id] = { homeGoals:hg, awayGoals:ag };
-        // Auto-save throttled
-        clearTimeout(_apostador._saveTimer);
-        _apostador._saveTimer = setTimeout(()=>salvarTodosPalpites(true), 1500);
-      }
-    });
-    // Auto-focus: mandante -> visitante
-    if (this.id.startsWith("sim-hg-")) {
-      inp.addEventListener("input", function() {
-        if (this.value.length > 0) {
-          const id = this.id.replace("sim-hg-","");
-          const next = document.getElementById("sim-ag-"+id);
-          if (next && this.value.length >= 1 && parseInt(this.value) <= 9) {
-            setTimeout(()=>next.focus(), 100);
-          }
-        }
-      });
-    }
-  });
+    // A lógica agora é tratada pelo window._onInputPlacar sobrescrito
 }
 
 async function salvarTodosPalpites(silencioso = false) {
