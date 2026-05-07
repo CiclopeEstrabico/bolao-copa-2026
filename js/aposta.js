@@ -1,4 +1,4 @@
-﻿/**
+/**
  * aposta.js - Palpites do apostador
  * Layout idêntico ao de resultados, usando ui-jogos.js
  * Palpites calculados on-demand, standings projetados dos próprios palpites
@@ -119,7 +119,6 @@ function renderAposta() {
   if (!_modoVer) h += renderEspeciaisAposta(resOficiais);
 
   // Mesmo layout do resultados: grupos + toggle + jogos
-  h += renderGruposGrid(tg, resOficiais);
   h += renderJogosComToggle(resOficiais, tg, false, _palpitesLocais);
 
   el.innerHTML = h;
