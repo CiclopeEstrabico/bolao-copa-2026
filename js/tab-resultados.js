@@ -1,0 +1,10 @@
+﻿/** tab-resultados.js - usa ui-jogos.js (renderJogosComToggle controla os grupos) */
+window.renderResultados = function() {
+  const el = document.getElementById("aba-resultados");
+  if (!el) return;
+  const res = getResultados();
+  const tg = window.BRACKET.calcularTodosOsGrupos(res);
+  const isAdm = adminAutenticado();
+  // renderJogosComToggle ja cuida de mostrar grupos no topo ou com jogos
+  el.innerHTML = renderJogosComToggle(res, tg, isAdm, null);
+};

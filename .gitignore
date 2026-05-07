@@ -1,0 +1,7 @@
+modelo/old
+*.xlsm
+tokens-200.txt
+deploy.md
+seed-test-data.js
+CLAUDE.md
+*.pkl

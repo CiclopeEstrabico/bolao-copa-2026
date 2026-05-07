@@ -1,0 +1,62 @@
+===========================================================================
+  COPA 2026 — 10,000 simulações  (modelo K-att/K-def v2)
+===========================================================================
+
+#   Time                                ELO   K_att   K_def   %Camp     +-   %Final
+---------------------------------------------------------------------------
+1   Spain                                  2234  0.9520  1.1819  24.95%  0.85%   38.23%
+2   Argentina                              2190  0.9444  0.9511  18.80%  0.77%   28.63%
+3   France                                 2149  0.9499  1.1123   8.18%  0.54%   14.79%
+4   Mexico [H]                             1969  0.9611  0.9051   6.86%  0.50%   14.01%
+5   Colombia                               2060  1.0569  0.9597   5.97%  0.46%   11.85%
+6   England                                2096  0.9608  1.0206   5.70%  0.45%   11.30%
+7   Brazil                                 2062  0.9840  0.9641   5.40%  0.44%   11.85%
+8   Ecuador                                2036  0.8815  0.8670   4.02%  0.38%    9.48%
+9   Canada [H]                             1902  0.9497  0.9107   2.71%  0.32%    6.66%
+10  Portugal                               2040  0.9717  1.0453   2.32%  0.30%    5.81%
+11  Netherlands                            2027  0.9796  1.1203   2.10%  0.28%    5.78%
+12  Uruguay                                1981  0.9150  0.9040   1.79%  0.26%    5.36%
+13  Japan                                  2003  0.9543  1.0222   1.79%  0.26%    5.10%
+14  Germany                                2000  0.9809  1.1149   1.39%  0.23%    4.52%
+15  Switzerland                            1962  1.0390  1.0257   1.09%  0.20%    3.32%
+16  Croatia                                1997  0.9628  1.0915   1.00%  0.20%    2.97%
+17  Morocco                                1998  0.8818  1.0261   0.95%  0.19%    2.71%
+18  United States [H]                      1831  1.1541  1.0824   0.92%  0.19%    2.51%
+19  Norway                                 1984  1.0321  1.1480   0.76%  0.17%    2.47%
+20  Paraguay                               1936  0.9472  0.9541   0.63%  0.16%    1.71%
+21  Turkey                                 1974  0.9498  1.0934   0.59%  0.15%    1.70%
+22  Belgium                                1936  1.0341  1.0469   0.54%  0.14%    2.06%
+23  Senegal                                1933  0.9570  1.0487   0.33%  0.11%    1.25%
+24  Iran                                   1894  0.9687  0.9830   0.30%  0.11%    1.00%
+
+-- SANITY CHECKS --
+  Soma campeão: 100.00% (esperado ~100%)
+  OK Argentina: 18.80%  K_att=0.9444  K_def=0.9511
+  OK Brazil: 5.40%  K_att=0.9840  K_def=0.9641
+  OK France: 8.18%  K_att=0.9499  K_def=1.1123
+  OK Spain: 24.95%  K_att=0.9520  K_def=1.1819
+  OK England: 5.70%  K_att=0.9608  K_def=1.0206
+
+-- TOP 10 POR K_att (ataque acima do esperado) --
+  New Zealand                    K_att=1.1914  K_def=1.0069  ELO=1770
+  United States                  K_att=1.1541  K_def=1.0824  ELO=1831
+  Sweden                         K_att=1.1222  K_def=1.1230  ELO=1780
+  Jordan                         K_att=1.1067  K_def=1.0254  ELO=1811
+  Haiti                          K_att=1.0690  K_def=1.0304  ELO=1700
+  Colombia                       K_att=1.0569  K_def=0.9597  ELO=2060
+  Ghana                          K_att=1.0417  K_def=0.9987  ELO=1632
+  Switzerland                    K_att=1.0390  K_def=1.0257  ELO=1962
+  Belgium                        K_att=1.0341  K_def=1.0469  ELO=1936
+  Qatar                          K_att=1.0330  K_def=1.1097  ELO=1558
+
+-- TOP 10 POR K_def (defesa abaixo do esperado = melhor) --
+  Ecuador                        K_def=0.8670  K_att=0.8815  ELO=2036
+  Uruguay                        K_def=0.9040  K_att=0.9150  ELO=1981
+  Mexico                         K_def=0.9051  K_att=0.9611  ELO=1969
+  Canada                         K_def=0.9107  K_att=0.9497  ELO=1902
+  Uzbekistan                     K_def=0.9349  K_att=0.9064  ELO=1845
+  Ivory Coast                    K_def=0.9419  K_att=0.9397  ELO=1802
+  Argentina                      K_def=0.9511  K_att=0.9444  ELO=2190
+  Paraguay                       K_def=0.9541  K_att=0.9472  ELO=1936
+  Scotland                       K_def=0.9570  K_att=1.0121  ELO=1839
+  Colombia                       K_def=0.9597  K_att=1.0569  ELO=2060

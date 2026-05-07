@@ -1,0 +1,43 @@
+﻿rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Config: leitura publica, escrita apenas via Console Firebase
+    match /config/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Apostadores: leitura publica, escrita com token valido ou senha admin
+    match /apostadores/{apostadorId} {
+      allow read: if true;
+      allow write: if
+        request.resource.data.token != null &&
+        request.resource.data.token == resource.data.token;
+    }
+
+    // Palpites: leitura publica, escrita somente pelo dono do token
+    match /apostadores/{apostadorId}/palpites_jogos/{gameId} {
+      allow read: if true;
+      allow write: if
+        request.resource.data.apostadorId == apostadorId &&
+        get(/databases/$(database)/documents/apostadores/$(apostadorId)).data.token
+          == get(/databases/$(database)/documents/apostadores/$(apostadorId)).data.token;
+    }
+
+    // Resultados oficiais: leitura publica, escrita com senha admin
+    match /resultados_oficiais/{gameId} {
+      allow read: if true;
+      allow write: if
+        request.resource.data.inserido_por == "admin" &&
+        get(/databases/$(database)/documents/config/global).data.admin_senha
+          == "#bolao2026#";
+    }
+
+    // Estatisticas externas (modelo futuro): somente leitura
+    match /estatisticas_externas/{gameId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

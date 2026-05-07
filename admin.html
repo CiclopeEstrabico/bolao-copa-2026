@@ -1,0 +1,34 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+  <title>Admin - Resultados Oficiais - Bolao Copa 2026</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="header">
+  <img src="assets/mascote.svg" alt="Copa 2026" class="header-logo" onerror="this.style.display=none">
+  <div class="header-titulo">Admin — Resultados Oficiais<small>Bolao Copa 2026</small></div>
+  <a href="index.html" style="margin-left:auto;font-size:.75rem;color:var(--texto2);text-decoration:none;padding:4px 10px;border:1px solid var(--borda);border-radius:6px">Ver Ranking</a>
+</header>
+<main class="main" id="admin-main">
+  <div class="loading"><div class="spinner"></div>Carregando...</div>
+</main>
+<script src="data/config.js"></script>
+<script src="data/teams.js"></script>
+<script src="data/schedule.js"></script>
+<script src="data/tokens.js"></script>
+<script src="data/venues.js"></script>
+<script src="data/elo.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="js/scoring.js"></script>
+<script src="js/bracket.js"></script>
+<script src="js/app.js"></script>
+<script src="js/ui-jogos.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
