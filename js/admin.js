@@ -37,6 +37,11 @@ window._onInputPlacar = function(id, isElim) {
     if (pwrap) pwrap.classList.remove("visivel");
   }
 };
+window._onBlurPlacar = function() {};
+window._onInputPen = function() {};
+window._onBlurPen = function() {};
+window.simularResultado = function() {};
+window.ativarSimulacao = function() {};
 
 document.addEventListener("DOMContentLoaded", () => {
   const main = document.getElementById("admin-main");
