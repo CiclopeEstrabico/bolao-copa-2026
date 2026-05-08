@@ -2,6 +2,10 @@ modelo/old
 *.xlsm
 tokens-200.txt
 deploy.md
+# Testes e dados locais
 seed-test-data.js
+
+# Variáveis de ambiente
+.env
 CLAUDE.md
 *.pkl

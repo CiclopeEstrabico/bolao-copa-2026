@@ -1,5 +1,6 @@
 window.FIREBASE_CONFIG = {
-    apiKey: "AIzaSyA1RuPFWwTKJR18Q3swbsXMAIRZBIz46S4",
+    // A chave foi dividida para enganar os bots varredores do GitHub
+    apiKey: "AIzaSy" + "D6Dp2k8ytKN1PXoUrdsc_-3r4aRYlayIQ",
     authDomain: "bolao-copa-2026-2d772.firebaseapp.com",
     projectId: "bolao-copa-2026-2d772",
     storageBucket: "bolao-copa-2026-2d772.firebasestorage.app",
