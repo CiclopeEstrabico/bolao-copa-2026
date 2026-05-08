@@ -2,36 +2,44 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Função utilitária para saber se é o admin limpando dados
+    function isAdmin() {
+      return get(/databases/$(database)/documents/config/global).data.admin_senha == "#bolao2026#";
+    }
+
     // Config: leitura publica, escrita apenas via Console Firebase
     match /config/{doc} {
       allow read: if true;
       allow write: if false;
     }
 
-    // Apostadores: leitura publica, escrita com token valido ou admin
+    // Apostadores: leitura publica, criação/escrita com token valido ou admin
     match /apostadores/{apostadorId} {
       allow read: if true;
-      allow write: if
-        (request.resource != null && request.resource.data.token != null &&
-         request.resource.data.token == resource.data.token) ||
-        get(/databases/$(database)/documents/config/global).data.admin_senha == "#bolao2026#";
+      allow write: if isAdmin() || 
+        (request.resource != null && request.resource.data.token != null && 
+        (resource == null || request.resource.data.token == resource.data.token));
     }
 
     // Palpites: leitura publica, escrita somente pelo dono do token ou admin
     match /apostadores/{apostadorId}/palpites_jogos/{gameId} {
       allow read: if true;
-      allow write: if
+      allow write: if isAdmin() ||
         (request.resource != null && request.resource.data.apostadorId == apostadorId &&
          get(/databases/$(database)/documents/apostadores/$(apostadorId)).data.token
-           == get(/databases/$(database)/documents/apostadores/$(apostadorId)).data.token) ||
-        get(/databases/$(database)/documents/config/global).data.admin_senha == "#bolao2026#";
+           == get(/databases/$(database)/documents/apostadores/$(apostadorId)).data.token);
+    }
+    
+    // Regra para permitir leitura e DELEÇÃO em lote de collectionGroups
+    match /{path=**}/palpites_jogos/{gameId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // Resultados oficiais: leitura publica, escrita com senha admin
     match /resultados_oficiais/{gameId} {
       allow read: if true;
-      allow write: if
-        get(/databases/$(database)/documents/config/global).data.admin_senha == "#bolao2026#";
+      allow write: if isAdmin();
     }
 
     // Estatisticas externas (modelo futuro): somente leitura
