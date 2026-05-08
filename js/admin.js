@@ -37,7 +37,6 @@ function renderAdmin() {
   h += '<div style="font-size:.9rem;font-weight:800">🔧 Inserir Resultados Oficiais</div>';
   h += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
   h += '<button class="btn btn-perigo btn-sm" onclick="limparTudoAdmin()">🗑 Limpar Resultados</button>';
-  h += '<button class="btn btn-perigo btn-sm" onclick="limparApostadoresAdmin()">🗑 Limpar Todos Apostadores</button>';
   h += '<div style="display:flex;gap:4px;align-items:center">';
   h += '<select id="admin-apaga-apostador" class="form-input" style="padding:4px;height:28px;font-size:.7rem">';
   h += '<option value="">Deletar um apostador...</option>';
@@ -67,7 +66,8 @@ function limparLog() {
 
 function limparTudoAdmin() {
   if (!confirm("⚠️ LIMPAR TODOS OS RESULTADOS OFICIAIS?\nIsso não pode ser desfeito.")) return;
-  APP.resultados = {}; _persistirLocal();
+  APP.resultados = {}; APP.resultadosSim = {}; _persistirLocal();
+  document.querySelectorAll('input[type="number"]').forEach(el => el.value = '');
   if (APP.db && !APP.modoOffline) APP.db.collection("resultados_oficiais").get().then(s=>s.forEach(d=>d.ref.delete()));
   atualizarBracket(); renderAdmin();
 }
@@ -146,12 +146,4 @@ function gravarTudoAdmin() {
   }
 }
 
-function limparApostadoresAdmin() {
-  if (!confirm("⚠️ LIMPAR TODOS OS APOSTADORES E PALPITES?\nIsso não pode ser desfeito.")) return;
-  APP.apostadores = []; APP.palpites = {}; _persistirLocal();
-  if (APP.db && !APP.modoOffline) {
-    APP.db.collection("apostadores").get().then(s=>s.forEach(d=>d.ref.delete()));
-    APP.db.collectionGroup("palpites_jogos").get().then(s=>s.forEach(d=>d.ref.delete()));
-  }
-  renderAdmin();
-}
+

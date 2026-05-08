@@ -28,7 +28,9 @@ function _onInputPen(id){
 function limparSimulacao(id){ delete APP.resultadosSim[id]; atualizarBracket(); renderAbaAtiva(); }
 function limparResultadoAdmin(id){
   if(!confirm("Limpar resultado de "+id+"?")) return;
-  delete APP.resultados[id]; _persistirLocal();
+  delete APP.resultados[id]; delete APP.resultadosSim[id]; _persistirLocal();
+  const hg=document.getElementById("sim-hg-"+id), ag=document.getElementById("sim-ag-"+id);
+  if(hg) hg.value=""; if(ag) ag.value="";
   if(APP.db&&!APP.modoOffline) APP.db.collection("resultados_oficiais").doc(id).delete();
   atualizarBracket(); renderAbaAtiva();
 }
