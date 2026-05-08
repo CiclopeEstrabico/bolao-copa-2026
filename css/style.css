@@ -176,7 +176,7 @@ select{appearance:none;cursor:pointer}
 
 /* COMPILACAO */
 .compilacao-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--radius)}
-.compilacao-table{width:100%;border-collapse:collapse;font-size:.7rem}
+.compilacao-table{width:max-content;min-width:100%;border-collapse:collapse;font-size:.7rem}
 .compilacao-table th,.compilacao-table td{padding:5px 6px;border:1px solid var(--borda);white-space:nowrap;text-align:center}
 .compilacao-table th{background:var(--fundo2);color:var(--texto2);font-size:.64rem;font-weight:700;position:sticky;top:0}
 .col-jogo{text-align:left !important;min-width:120px;white-space:normal !important}
@@ -276,7 +276,6 @@ select{appearance:none;cursor:pointer}
   .tabela-mini td{padding:8px 4px; font-size:.78rem}
   .tabela-mini th{padding:8px 4px; font-size:.7rem}
   .jogos-lista, .jogos-toggle { max-width:860px; margin-left:auto; margin-right:auto; }
-  .compilacao-table { min-width: 100%; width: max-content; margin: 0 auto; }
 }
 /* ===== BRACKET VISUAL ===== */
 .bracket-scroll{display:flex;gap:0;overflow-x:auto;padding:8px 0 16px;-webkit-overflow-scrolling:touch;min-height:300px}

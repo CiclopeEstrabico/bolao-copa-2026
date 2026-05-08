@@ -58,7 +58,7 @@ window.renderGrafico = function() {
     h += '<div style="width:28px; background:linear-gradient(to top, var(--verde-dark), var(--verde-light)); border-radius:4px 4px 0 0; height:' + Math.max(2, perc) + '%; transition:height 0.4s ease;"></div>';
     
     // Nome do apostador (na vertical abaixo do eixo)
-    h += '<div style="position:absolute; bottom:-10px; transform-origin: left top; transform: rotate(-60deg) translateX(-10px); font-size:.65rem; color:var(--texto2); font-weight:600; white-space:nowrap;">' + a.nome + '</div>';
+    h += '<div style="position:absolute; top:calc(100% + 8px); left:50%; transform: translateX(-50%); writing-mode: vertical-rl; transform: rotate(180deg); font-size:.68rem; color:var(--texto2); font-weight:600; white-space:nowrap;">' + a.nome + '</div>';
     
     h += '</div>'; // fim da coluna
   }
