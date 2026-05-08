@@ -1,6 +1,11 @@
 /** admin.js - Resultados oficiais (mesmo layout que resultados) */
 const ADMIN_SENHA = "#bolao2026#";
 
+// Sobrescreve o renderAbaAtiva do app.js para re-renderizar o admin quando os dados carregarem
+window.renderAbaAtiva = function() {
+  if (adminAutenticado()) renderAdmin();
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   const main = document.getElementById("admin-main");
   if (!main) return;
