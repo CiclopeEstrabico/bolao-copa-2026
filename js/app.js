@@ -1,4 +1,4 @@
-﻿/**
+/**
  * app.js - Init Firebase + estado global + roteador de abas
  * Modo offline: usa localStorage quando Firebase nao configurado.
  */
@@ -154,9 +154,25 @@ function mudarAba(aba) {
 function renderAbaAtiva() {
   const fn = { resultados: window.renderResultados, classificacao: window.renderClassificacao,
     tabela: window.renderTabela, compilacao: window.renderCompilacao,
-    estatisticas: window.renderEstatisticas, aproveitamento: window.renderAproveitamento,
-    regras: window.renderRegras };
+    estatisticas: window.renderEstatisticas, regras: window.renderRegras };
+  
+  // Salva scroll e foco
+  const activeId = document.activeElement?.id;
+  const sy = window.scrollY;
+  const sStart = document.activeElement?.selectionStart;
+  const sEnd = document.activeElement?.selectionEnd;
+
   fn[_abaAtiva]?.();
+
+  // Restaura scroll e foco
+  if (activeId) {
+    const el = document.getElementById(activeId);
+    if (el) {
+      el.focus();
+      try { el.setSelectionRange(sStart !== null ? sStart : el.value.length, sEnd !== null ? sEnd : el.value.length); } catch(e){}
+    }
+  }
+  window.scrollTo(0, sy);
 }
 
 // ---- Utilitarios ------------------------------------------------------------

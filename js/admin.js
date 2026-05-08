@@ -3,7 +3,23 @@ const ADMIN_SENHA = "#bolao2026#";
 
 // Sobrescreve o renderAbaAtiva do app.js para re-renderizar o admin quando os dados carregarem
 window.renderAbaAtiva = function() {
-  if (adminAutenticado()) renderAdmin();
+  if (adminAutenticado()) {
+    const activeId = document.activeElement?.id;
+    const sy = window.scrollY;
+    const sStart = document.activeElement?.selectionStart;
+    const sEnd = document.activeElement?.selectionEnd;
+    
+    renderAdmin();
+    
+    if (activeId) {
+      const el = document.getElementById(activeId);
+      if (el) {
+        el.focus();
+        try { el.setSelectionRange(sStart !== null ? sStart : el.value.length, sEnd !== null ? sEnd : el.value.length); } catch(e){}
+      }
+    }
+    window.scrollTo(0, sy);
+  }
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -100,7 +116,7 @@ function gravarTudoAdmin() {
   const log = JSON.parse(localStorage.getItem("bolao_admin_log")||"[]");
   let gravou = 0;
 
-  window.SCHEDULE.forEach(j => {
+  for (const j of window.SCHEDULE) {
     const hg = parseInt(document.getElementById("sim-hg-"+j.id)?.value);
     const ag = parseInt(document.getElementById("sim-ag-"+j.id)?.value);
     
@@ -110,7 +126,13 @@ function gravarTudoAdmin() {
       if (j.fase !== "grupos" && hg === ag) {
         penH = parseInt(document.getElementById("pen-hg-"+j.id)?.value);
         penA = parseInt(document.getElementById("pen-ag-"+j.id)?.value);
-        if (!isNaN(penH) && !isNaN(penA) && penH !== penA) foiPen = true;
+        if (!isNaN(penH) && !isNaN(penA)) {
+          if (penH === penA) {
+            alert("Pênaltis não podem empatar! Jogo: " + j.id);
+            return; // Bloqueia a gravação de tudo até corrigir
+          }
+          foiPen = true;
+        }
       }
       const pv = foiPen ? (penH > penA ? "home" : "away") : null;
       
@@ -133,7 +155,7 @@ function gravarTudoAdmin() {
         gravou++;
       }
     }
-  });
+  }
 
   if (gravou > 0) {
     _persistirLocal();
