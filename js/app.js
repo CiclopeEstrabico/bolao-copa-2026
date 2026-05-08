@@ -161,6 +161,9 @@ function renderAbaAtiva() {
   const sy = window.scrollY;
   const sStart = document.activeElement?.selectionStart;
   const sEnd = document.activeElement?.selectionEnd;
+  
+  const oldHeight = document.body.style.minHeight;
+  document.body.style.minHeight = document.body.scrollHeight + 'px';
 
   fn[_abaAtiva]?.();
 
@@ -173,6 +176,7 @@ function renderAbaAtiva() {
     }
   }
   window.scrollTo(0, sy);
+  requestAnimationFrame(() => document.body.style.minHeight = oldHeight);
 }
 
 // ---- Utilitarios ------------------------------------------------------------

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * prognose.js - Motor Poisson + Modal com 3 abas: Previsão | Palpites | Estádio
  */
 
@@ -22,9 +22,9 @@ window.PROGNOSE = {
     const eloA = window.ELO_RATINGS[awayCode] || 1500;
     const lH = this.lambda(eloH - eloA);
     const lA = this.lambda(eloA - eloH);
-    const N = (window.ELO_CONFIG?.MAX_GOLS || 5) + 1;
-    const pH = Array.from({length:N}, (_,k) => this.poisson(lH, k));
-    const pA = Array.from({length:N}, (_,k) => this.poisson(lA, k));
+    const N = 7; // 0 até 6+
+    const pH = Array.from({length:N}, (_,k) => k===6 ? 1 - Array.from({length:6},(_,x)=>this.poisson(lH,x)).reduce((a,b)=>a+b,0) : this.poisson(lH, k));
+    const pA = Array.from({length:N}, (_,k) => k===6 ? 1 - Array.from({length:6},(_,x)=>this.poisson(lA,x)).reduce((a,b)=>a+b,0) : this.poisson(lA, k));
     let home=0, draw=0, away=0;
     const matrix = [];
     for (let i=0;i<N;i++) {
@@ -97,14 +97,8 @@ window.PROGNOSE = {
     const aName = window.TEAMS_BY_CODE?.[aC]?.name||aC||"?";
     const stats = this.statsPalpites(gameId);
 
-    let h = '<div style="margin-bottom:12px">';
-    h += '<div style="font-size:.72rem;color:var(--texto2);text-align:center;margin-bottom:6px">'+formatarDataBRT(jogo?.utc,true)+'</div>';
-    h += '<div style="display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;font-size:.95rem">';
-    h += htmlBandeira(hC,24)+' '+hName+' <span style="color:var(--texto2)">×</span> '+hName;
-    h = h.slice(0,-hName.length-'</span> '.length) + aName;
-    h += htmlBandeira(aC,24)+'</div></div>';
-
-    h += '<div class="modal-tabs">';
+    let h = '';
+    h += '<div class="modal-tabs" style="display:flex;justify-content:center;gap:6px">';
     h += '<button class="modal-tab ativo" id="mtab-prev" onclick="PROGNOSE._switchTab(\'prev\')">📊 Previsão</button>';
     h += '<button class="modal-tab" id="mtab-pal" onclick="PROGNOSE._switchTab(\'pal\')">🗳 Palpites ('+stats.total+')</button>';
     h += '<button class="modal-tab" id="mtab-est" onclick="PROGNOSE._switchTab(\'est\')">🏟 Estádio</button>';
@@ -140,12 +134,12 @@ window.PROGNOSE = {
     // Matriz
     h += '<div style="font-size:.7rem;font-weight:700;color:var(--texto2);margin-bottom:5px">Matriz de resultados (Poisson)</div>';
     h += '<div style="overflow-x:auto"><table class="matriz-poisson"><thead><tr><th></th>';
-    for (let j=0;j<c.N;j++) h += '<th>'+aName.substring(0,3)+' '+j+'</th>';
+    for (let j=0;j<c.N;j++) h += '<th>'+aName.substring(0,3)+' '+(j===6?"6+":j)+'</th>';
     h += '</tr></thead><tbody>';
     const all = c.matrix.flat().sort((a,b)=>b-a);
     const top1=all[0], top5=all[4]||0;
     for (let i=0;i<c.N;i++) {
-      h += '<tr><th>'+hName.substring(0,3)+' '+i+'</th>';
+      h += '<tr><th>'+hName.substring(0,3)+' '+(i===6?"6+":i)+'</th>';
       for (let j=0;j<c.N;j++) {
         const v=c.matrix[i][j];
         const cls=v>=top1*0.8?"cell-hot":v>=top5?"cell-warm":v>=top1*0.2?"cell-mid":"cell-cold";
@@ -187,11 +181,11 @@ window.PROGNOSE = {
     const v = window.VENUES?.[jogo.cidade];
     const data = new Intl.DateTimeFormat("pt-BR",{weekday:"long",day:"2-digit",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit",timeZone:"America/Sao_Paulo"}).format(new Date(jogo.utc));
     let h = '<div style="display:flex;flex-direction:column;gap:10px">';
-    // Imagem placeholder via unsplash (busca por cidade)
-    const query = encodeURIComponent((v?.estadio||jogo.cidade)+" stadium");
-    h += '<div style="border-radius:var(--radius-sm);overflow:hidden;height:140px;background:var(--fundo2);display:flex;align-items:center;justify-content:center">';
-    h += '<img src="https://source.unsplash.com/400x140/?'+query+',football+stadium" style="width:100%;height:140px;object-fit:cover;border-radius:var(--radius-sm)" onerror="this.style.display=\'none\'" loading="lazy">';
-    h += '</div>';
+    if (v && v.img) {
+      h += '<div style="border-radius:var(--radius-sm);overflow:hidden;height:140px;background:var(--fundo2);display:flex;align-items:center;justify-content:center">';
+      h += '<img src="'+v.img+'" style="width:100%;height:140px;object-fit:cover;border-radius:var(--radius-sm)">';
+      h += '</div>';
+    }
     h += '<div style="display:grid;gap:8px">';
     if (v) {
       h += _infoRow("🏟", "Estádio", '<a href="'+v.link+'" target="_blank" rel="noopener" style="color:var(--verde-light);text-decoration:none">'+v.estadio+'</a>');

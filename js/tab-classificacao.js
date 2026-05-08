@@ -1,4 +1,4 @@
-﻿/** tab-classificacao.js - Ranking com sparklines e movimento */
+/** tab-classificacao.js - Ranking com sparklines e movimento */
 let _rankingAnterior = {};
 
 window.renderClassificacao = function() {
@@ -25,11 +25,29 @@ window.renderClassificacao = function() {
   h += _statCard("Líder", lider ? (lider.participante.apelido||lider.participante.nome||"?") : "—", "🏆");
   h += '</div>';
 
+  // Calcular total de pontos possíveis
+  let maxPtsGeral = 0;
+  for (const jogo of (window.SCHEDULE||[])) {
+    const r = res[jogo.id];
+    if (r && r.homeGoals !== undefined) {
+      let maxBruto = window.CONFIG?.pontuacao?.resultado_base || 3;
+      if (!r.foi_penaltis) {
+         const tGols = Number(r.homeGoals) + Number(r.awayGoals);
+         const cfg = window.CONFIG?.pontuacao || {};
+         const limiar = cfg.limiar_placar_alto || 4;
+         const bonus = tGols >= limiar ? (cfg.bonus_placar_exato_alto||5) : (cfg.bonus_placar_exato_baixo||3);
+         maxBruto += bonus;
+      }
+      const fator = window.CONFIG?.pontuacao?.fatores_fase?.[jogo.fase] || 1.0;
+      maxPtsGeral += Math.round(maxBruto * fator * 10) / 10;
+    }
+  }
+
   // Tabela ranking
-  h += '<div class="card" style="padding:0;overflow:hidden"><table class="tabela-detalhe">';
+  h += '<div class="card" style="padding:0;overflow:x:auto"><table class="tabela-detalhe" style="width:100%">';
   h += '<thead><tr><th style="width:36px">Pos</th><th style="text-align:left">Apostador</th>';
-  h += '<th title="Total de pontos">Pts</th><th title="Placares exatos">🎯</th>';
-  h += '<th title="Acertos resultado">✓</th><th title="Aproveitamento">%</th>';
+  h += '<th title="Total de pontos e % dos pontos disputados">🏆 Pts</th><th title="Placares exatos e % de acerto">🎯 Placar</th>';
+  h += '<th title="Acertos resultado e % de acerto">✓ Res.</th><th title="Aproveitamento Total Geral">🔥 Geral</th>';
   h += '<th title="Últimos 5 jogos" style="min-width:70px">Últimos 5</th>';
   h += '</tr></thead><tbody>';
 
@@ -52,6 +70,10 @@ window.renderClassificacao = function() {
       else spark += '<span style="color:#f87171" title="Errou">✗</span>';
     }
 
+    const jReal = st.jogos_realizados || 0;
+    const pctPts = maxPtsGeral > 0 ? ((st.total / maxPtsGeral) * 100).toFixed(1) : "0.0";
+    const pctPlacar = jReal > 0 ? ((st.acertos_placar_exato / jReal) * 100).toFixed(1) : "0.0";
+    const pctRes = jReal > 0 ? ((st.acertos_resultado / jReal) * 100).toFixed(1) : "0.0";
     const aprov = st.aproveitamento_pct;
     const aprovCor = aprov>=70?'var(--verde-ok)':aprov>=45?'var(--dourado)':'#f87171';
 
@@ -59,11 +81,11 @@ window.renderClassificacao = function() {
     h += '<td style="text-align:center;font-weight:900;font-size:.95rem">';
     h += (medalhao||pos)+'<span style="font-size:.65rem;color:'+movCor+'"> '+mov+'</span></td>';
     h += '<td style="text-align:left;font-weight:600">'+(p.apelido||p.nome||p.token?.substring(0,8)||"?")+'</td>';
-    h += '<td style="font-weight:900;font-size:.95rem;color:var(--verde-light)">'+st.total.toFixed(1)+'</td>';
-    h += '<td style="color:#86efac;font-weight:700">'+st.acertos_placar_exato+'</td>';
-    h += '<td style="color:var(--verde-ok)">'+st.acertos_resultado+'</td>';
-    h += '<td style="color:'+aprovCor+';font-weight:700">'+aprov+'%</td>';
-    h += '<td style="letter-spacing:1px">'+spark+'</td></tr>';
+    h += '<td style="font-weight:900;font-size:.95rem;color:var(--verde-light)">'+st.total.toFixed(1)+'<div style="font-size:.6rem;color:var(--texto2);font-weight:600">'+pctPts+'%</div></td>';
+    h += '<td style="color:#86efac;font-weight:700">'+st.acertos_placar_exato+'<div style="font-size:.6rem;color:var(--texto2);font-weight:500">'+pctPlacar+'%</div></td>';
+    h += '<td style="color:var(--verde-ok);font-weight:700">'+st.acertos_resultado+'<div style="font-size:.6rem;color:var(--texto2);font-weight:500">'+pctRes+'%</div></td>';
+    h += '<td style="color:'+aprovCor+';font-weight:700;font-size:.9rem">'+aprov+'%</td>';
+    h += '<td style="letter-spacing:1px;vertical-align:middle">'+spark+'</td></tr>';
 
     // Linha de detalhe expansível
     h += '<tr id="rd-'+i+'" style="display:none"><td colspan="7" style="padding:0">';

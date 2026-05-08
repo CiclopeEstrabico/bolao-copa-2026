@@ -9,6 +9,9 @@ window.renderAbaAtiva = function() {
     const sStart = document.activeElement?.selectionStart;
     const sEnd = document.activeElement?.selectionEnd;
     
+    const oldHeight = document.body.style.minHeight;
+    document.body.style.minHeight = document.body.scrollHeight + 'px';
+    
     renderAdmin();
     
     if (activeId) {
@@ -19,6 +22,19 @@ window.renderAbaAtiva = function() {
       }
     }
     window.scrollTo(0, sy);
+    requestAnimationFrame(() => document.body.style.minHeight = oldHeight);
+  }
+};
+
+// Admin não deve simular palpites enquanto digita, apenas controla interface de penaltis
+window._onInputPlacar = function(id, isElim) {
+  const hg = parseInt(document.getElementById("sim-hg-"+id)?.value);
+  const ag = parseInt(document.getElementById("sim-ag-"+id)?.value);
+  const pwrap = document.getElementById("pen-wrap-"+id);
+  if (isElim && !isNaN(hg) && !isNaN(ag) && hg === ag) {
+    if (pwrap) pwrap.classList.add("visivel");
+  } else {
+    if (pwrap) pwrap.classList.remove("visivel");
   }
 };
 
