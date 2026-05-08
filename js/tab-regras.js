@@ -44,9 +44,7 @@ window.renderRegras = function() {
     h += '<div style="font-size:1.1rem;font-weight:900;color:'+it.cor+';min-width:40px;text-align:right">'+it.pts_real+' pts</div></div>';
   }
 
-  // Nota explicativa
-  h += '<div style="padding:8px 12px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);border-radius:var(--radius-sm);font-size:.72rem;color:var(--texto2)">';
-  h += '💡 <strong style="color:var(--dourado)">Como funciona:</strong> Se você acertar a diferença de gols E os gols de um dos times, você acertou o placar exato — valendo '+(base+bBaixo)+' ou '+(base+bAlto)+' pts conforme o total de gols.</div>';
+
   h += '</div>';
 
   // Multiplicadores
