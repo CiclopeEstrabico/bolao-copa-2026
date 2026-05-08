@@ -170,7 +170,7 @@ function renderEspeciaisAposta(res) {
       h += '<option value="">-- Selecionar --</option>';
       for (const c of times.sort()) {
         const t = window.TEAMS_BY_CODE?.[c];
-        h += '<option value="'+c+'"'+(val===c?" selected":"")+'>'+((t?.flag||"")+" "+(t?.name||c))+'</option>';
+        h += '<option value="'+c+'"'+(val===c?" selected":"")+'>'+(t?.name||c)+'</option>';
       }
       h += '</select>';
     }
@@ -185,6 +185,13 @@ function gravarEspecialAposta(sel) {
   if (!_apostador.especiais) _apostador.especiais = {};
   _apostador.especiais[key] = sel.value;
   gravarApostador(_apostador);
+  
+  // Atualiza a bandeira e nome imediatamente acima do select
+  const divHeader = sel.previousElementSibling;
+  const info = window.TEAMS_BY_CODE?.[sel.value];
+  if (divHeader) {
+    divHeader.innerHTML = htmlBandeira(sel.value, 24) + '<span style="font-size:.82rem;font-weight:600">' + (info?.name || "Selecionar") + '</span>';
+  }
 }
 
 function atualizarMiniTabelasAposta() {

@@ -174,10 +174,6 @@ function renderJogoRow(jogo,res,ehElim,isAdm,palApo){
   const pal=palApo?palApo[jogo.id]:null;
 
   let chome="",caway="";
-  if(temRes){
-    if(r.homeGoals>r.awayGoals||r.penaltis_vencedor==="home") chome="var(--verde-ok)";
-    else if(r.awayGoals>r.homeGoals||r.penaltis_vencedor==="away") caway="var(--verde-ok)";
-  }
 
   const rowCls="jogo-row"+(temRes?(isSim?" simulado":" realizado"):" futuro");
 
