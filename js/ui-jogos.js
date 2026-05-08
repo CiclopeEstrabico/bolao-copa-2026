@@ -198,7 +198,7 @@ function renderJogoRow(jogo,res,ehElim,isAdm,palApo,showFullDate=false){
   h+='</div>';
 
   // Col 2: home
-  h+='<div class="jogo-col-home"><span style="color:'+(chome||"inherit")+';font-weight:'+(chome?700:500)+'"><span class="team-lg">'+hName+'</span><span class="team-sm">'+hCode+'</span></span>'+htmlBandeira(hCode,22)+'</div>';
+  h+='<div class="jogo-col-home"><span style="color:'+(chome||"inherit")+';font-weight:'+(chome?700:500)+'">'+hName+'</span>'+htmlBandeira(hCode,22)+'</div>';
 
   // Col 3: placar
   h+='<div class="jogo-col-placar">';
@@ -233,7 +233,7 @@ function renderJogoRow(jogo,res,ehElim,isAdm,palApo,showFullDate=false){
   h+='</div>';
 
   // Col 4: away
-  h+='<div class="jogo-col-away">'+htmlBandeira(aCode,22)+'<span style="color:'+(caway||"inherit")+';font-weight:'+(caway?700:500)+'"><span class="team-lg">'+aName+'</span><span class="team-sm">'+aCode+'</span></span></div>';
+  h+='<div class="jogo-col-away">'+htmlBandeira(aCode,22)+'<span style="color:'+(caway||"inherit")+';font-weight:'+(caway?700:500)+'">'+aName+'</span></div>';
 
   // Col 5: acoes
   h+='<div class="jogo-col-acoes"><button class="btn-prog" onclick="PROGNOSE.abrirModal(\''+jogo.id+'\')" title="Info e Estatísticas">📊</button></div>';

@@ -89,11 +89,6 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--fundo);color:var(
 .jogo-local a{color:inherit;text-decoration:none}
 .jogo-local a:hover{text-decoration:underline}
 
-.team-sm { display: none; }
-@media(max-width: 500px) {
-  .team-lg { display: none; }
-  .team-sm { display: inline; }
-}
 
 /* TOGGLES */
 .toggle-bar{display:flex;align-items:center;gap:6px;margin:8px 0 10px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
@@ -240,18 +235,19 @@ select{appearance:none;cursor:pointer}
     display:grid;
     grid-template-columns:minmax(0,1fr) 86px minmax(0,1fr) 30px;
     gap:4px;
-    padding:7px 8px 24px 8px;
+    padding:26px 8px 7px 8px;
     border-left-width:3px;
     position: relative;
   }
   .jogo-col-meta{
-    position:absolute; bottom:2px; left:8px; right:8px;
-    display:flex; gap:8px; align-items:center;
+    position:absolute; top:4px; left:8px; right:8px;
+    display:flex; gap:8px; align-items:flex-start;
     font-size:.6rem; line-height:1.2;
   }
   .jogo-local { white-space: normal; overflow: visible; text-overflow: clip; }
   .jogo-col-home{font-size:.75rem;gap:4px}
   .jogo-col-away{font-size:.75rem;gap:4px}
+  .jogo-col-home span,.jogo-col-away span{max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .placar-num{font-size:1rem;min-width:18px}
   .placar-input{width:36px;height:38px;font-size:.95rem}
   .jogo-col-placar{min-width:0}
@@ -263,9 +259,9 @@ select{appearance:none;cursor:pointer}
   .time-nome{max-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
 @media(max-width:400px){
-  .jogo-row{grid-template-columns:minmax(0,1fr) 78px minmax(0,1fr) 26px;gap:3px;padding:6px 6px 22px 6px}
-  .jogo-col-meta{bottom:2px; left:6px; right:6px;}
-  .jogo-col-home span,.jogo-col-away span{font-size:.68rem;max-width:none}
+  .jogo-row{grid-template-columns:minmax(0,1fr) 78px minmax(0,1fr) 26px;gap:3px;padding:24px 6px 6px 6px}
+  .jogo-col-meta{top:4px; left:6px; right:6px;}
+  .jogo-col-home span,.jogo-col-away span{font-size:.68rem;max-width:55px}
   .placar-input{width:32px;height:34px;font-size:.88rem}
   .grupos-grid{grid-template-columns:1fr}
 }
