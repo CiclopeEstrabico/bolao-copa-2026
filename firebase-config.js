@@ -1,6 +1,6 @@
 window.FIREBASE_CONFIG = {
-    // A chave foi dividida para enganar os bots varredores do GitHub
-    apiKey: "AIzaSy" + "D6Dp2k8ytKN1PXoUrdsc_-3r4aRYlayIQ",
+    // Usando padrão de variável de ambiente do React
+    apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
     authDomain: "bolao-copa-2026-2d772.firebaseapp.com",
     projectId: "bolao-copa-2026-2d772",
     storageBucket: "bolao-copa-2026-2d772.firebasestorage.app",
