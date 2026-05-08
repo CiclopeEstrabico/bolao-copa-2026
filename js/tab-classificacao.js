@@ -47,7 +47,7 @@ window.renderClassificacao = function() {
   h += '<div class="card" style="padding:0;overflow:x:auto"><table class="tabela-detalhe" style="width:100%">';
   h += '<thead><tr><th style="width:36px">Pos</th><th style="text-align:left">Apostador</th>';
   h += '<th title="Total de pontos e % dos pontos disputados">🏆 Pts</th><th title="Placares exatos e % de acerto">🎯 Placar</th>';
-  h += '<th title="Acertos resultado e % de acerto">✓ Res.</th><th title="Aproveitamento Total Geral">🔥 Geral</th>';
+  h += '<th title="Acertos resultado e % de acerto">✓ Res.</th>';
   h += '<th title="Últimos 5 jogos" style="min-width:70px">Últimos 5</th>';
   h += '</tr></thead><tbody>';
 
@@ -81,14 +81,13 @@ window.renderClassificacao = function() {
     h += '<td style="text-align:center;font-weight:900;font-size:.95rem">';
     h += (medalhao||pos)+'<span style="font-size:.65rem;color:'+movCor+'"> '+mov+'</span></td>';
     h += '<td style="text-align:left;font-weight:600">'+(p.apelido||p.nome||p.token?.substring(0,8)||"?")+'</td>';
-    h += '<td style="font-weight:900;font-size:.95rem;color:var(--verde-light)">'+st.total.toFixed(1)+'<div style="font-size:.6rem;color:var(--texto2);font-weight:600">'+pctPts+'%</div></td>';
-    h += '<td style="color:#86efac;font-weight:700">'+st.acertos_placar_exato+'<div style="font-size:.6rem;color:var(--texto2);font-weight:500">'+pctPlacar+'%</div></td>';
-    h += '<td style="color:var(--verde-ok);font-weight:700">'+st.acertos_resultado+'<div style="font-size:.6rem;color:var(--texto2);font-weight:500">'+pctRes+'%</div></td>';
-    h += '<td style="color:'+aprovCor+';font-weight:700;font-size:.9rem">'+aprov+'%</td>';
+    h += '<td><div style="display:flex;align-items:baseline;justify-content:center;gap:3px"><span style="font-weight:900;font-size:.95rem;color:var(--verde-light)">'+st.total.toFixed(1)+'</span><span style="font-size:.6rem;color:var(--texto2);font-weight:600">'+pctPts+'%</span></div></td>';
+    h += '<td><div style="display:flex;align-items:baseline;justify-content:center;gap:3px"><span style="color:#86efac;font-weight:700">'+st.acertos_placar_exato+'</span><span style="font-size:.6rem;color:var(--texto2);font-weight:500">'+pctPlacar+'%</span></div></td>';
+    h += '<td><div style="display:flex;align-items:baseline;justify-content:center;gap:3px"><span style="color:var(--verde-ok);font-weight:700">'+st.acertos_resultado+'</span><span style="font-size:.6rem;color:var(--texto2);font-weight:500">'+pctRes+'%</span></div></td>';
     h += '<td style="letter-spacing:1px;vertical-align:middle">'+spark+'</td></tr>';
 
     // Linha de detalhe expansível
-    h += '<tr id="rd-'+i+'" style="display:none"><td colspan="7" style="padding:0">';
+    h += '<tr id="rd-'+i+'" style="display:none"><td colspan="6" style="padding:0">';
     h += '<div style="background:var(--fundo2);padding:10px 14px;font-size:.76rem">';
     h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">';
     h += '<div><div style="color:var(--texto2)">Grupos</div><div style="font-weight:700">'+st.total_grupos.toFixed(1)+' pts</div></div>';
