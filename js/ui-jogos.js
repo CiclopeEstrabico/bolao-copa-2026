@@ -107,7 +107,7 @@ function renderJogosComToggle(res,tg,isAdm,palApo){
     const jogos=(window.SCHEDULE||[]).filter(j=>fe.ids.includes(j.fase)).sort((a,b)=>new Date(a.utc)-new Date(b.utc));
     if(!jogos.length) continue;
     h+='<div class="fase-header">'+fe.l+'</div><div class="fase-grupo-bloco">';
-    for(const j of jogos) h+=renderJogoRow(j,res,true,isAdm,palApo);
+    for(const j of jogos) h+=renderJogoRow(j,res,true,isAdm,palApo,true);
     h+='</div>';
   }
   return h;
@@ -125,7 +125,7 @@ function renderPorGrupo(jogos,res,tg,isAdm,palApo){
     if(_modoGrupos==="jogos"&&st&&ok===6) h+='<span style="margin-left:auto;font-size:.65rem;color:#86efac">✓ '+(window.TEAMS_BY_CODE[st[0]?.code]?.name||"")+" · "+(window.TEAMS_BY_CODE[st[1]?.code]?.name||"")+'</span>';
     h+='</div>';
     if(_modoGrupos==="jogos"){ const miniTg={grupos:tg.grupos,melhoresTerceiros:tg.melhoresTerceiros}; h+=renderGrupoMini(L,miniTg,res); }
-    for(const j of jg) h+=renderJogoRow(j,res,false,isAdm,palApo);
+    for(const j of jg) h+=renderJogoRow(j,res,false,isAdm,palApo,true);
     h+='</div>';
   }
   return h;
@@ -154,14 +154,14 @@ function renderPorDia(jogos,res,isAdm,palApo){
   let h="";
   for(const [d,jgs] of Object.entries(porDia)){
     h+='<div class="dia-header">'+d+'</div><div class="fase-grupo-bloco">';
-    for(const j of jgs) h+=renderJogoRow(j,res,false,isAdm,palApo);
+    for(const j of jgs) h+=renderJogoRow(j,res,false,isAdm,palApo,false);
     h+='</div>';
   }
   return h;
 }
 
 /* ---- JOGO ROW (grid 5 colunas) ---- */
-function renderJogoRow(jogo,res,ehElim,isAdm,palApo){
+function renderJogoRow(jogo,res,ehElim,isAdm,palApo,showFullDate=false){
   const r=res[jogo.id]; const b=(APP.bracket&&APP.bracket[jogo.id])||{};
   const hCode=b.home||jogo.home; const aCode=b.away||jogo.away;
   const hName=window.TEAMS_BY_CODE[hCode]?.name||window.BRACKET.descricaoPosicao(b.homePos||"")||"A definir";
@@ -179,7 +179,7 @@ function renderJogoRow(jogo,res,ehElim,isAdm,palApo){
 
   let h='<div class="'+rowCls+'">';
   // Col 1: meta — horário + cidade (estádio fica no modal 📊)
-  h+='<div class="jogo-col-meta"><div>'+formatarDataBRT(jogo.utc,true)+'</div>';
+  h+='<div class="jogo-col-meta"><div>'+formatarDataBRT(jogo.utc,!showFullDate)+'</div>';
   if(jogo.cidade) h+='<div class="jogo-local">'+jogo.cidade+'</div>';
   if(isSim) h+='<div><span class="badge-sim">simulado</span></div>';
   h+='</div>';
