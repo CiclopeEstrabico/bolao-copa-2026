@@ -240,16 +240,16 @@ select{appearance:none;cursor:pointer}
     display:grid;
     grid-template-columns:minmax(0,1fr) 86px minmax(0,1fr) 30px;
     gap:4px;
-    padding:7px 8px 18px 8px;
+    padding:7px 8px 24px 8px;
     border-left-width:3px;
     position: relative;
   }
   .jogo-col-meta{
     position:absolute; bottom:2px; left:8px; right:8px;
     display:flex; gap:8px; align-items:center;
-    font-size:.6rem; line-height:1.4;
+    font-size:.6rem; line-height:1.2;
   }
-  .jogo-local { white-space: normal; }
+  .jogo-local { white-space: normal; overflow: visible; text-overflow: clip; }
   .jogo-col-home{font-size:.75rem;gap:4px}
   .jogo-col-away{font-size:.75rem;gap:4px}
   .placar-num{font-size:1rem;min-width:18px}
@@ -263,7 +263,7 @@ select{appearance:none;cursor:pointer}
   .time-nome{max-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
 @media(max-width:400px){
-  .jogo-row{grid-template-columns:minmax(0,1fr) 78px minmax(0,1fr) 26px;gap:3px;padding:6px 6px 16px 6px}
+  .jogo-row{grid-template-columns:minmax(0,1fr) 78px minmax(0,1fr) 26px;gap:3px;padding:6px 6px 22px 6px}
   .jogo-col-meta{bottom:2px; left:6px; right:6px;}
   .jogo-col-home span,.jogo-col-away span{font-size:.68rem;max-width:none}
   .placar-input{width:32px;height:34px;font-size:.88rem}
