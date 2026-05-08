@@ -135,7 +135,7 @@ function atualizarBracket() {
 }
 
 // ---- Roteador ---------------------------------------------------------------
-const ABAS = ["resultados","classificacao","tabela","compilacao","estatisticas","aproveitamento","regras"];
+const ABAS = ["resultados","classificacao","tabela","compilacao","estatisticas","grafico","regras"];
 let _abaAtiva = "resultados";
 
 function iniciarRoteador() {

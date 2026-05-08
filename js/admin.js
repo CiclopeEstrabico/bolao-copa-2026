@@ -1,6 +1,9 @@
 /** admin.js - Resultados oficiais (mesmo layout que resultados) */
 const ADMIN_SENHA = "#bolao2026#";
 
+// Define que estamos na view de admin para evitar simulações indesejadas no ui-jogos.js
+window._isAdminView = true;
+
 // Sobrescreve o renderAbaAtiva do app.js para re-renderizar o admin quando os dados carregarem
 window.renderAbaAtiva = function() {
   if (adminAutenticado()) {
@@ -25,23 +28,6 @@ window.renderAbaAtiva = function() {
     requestAnimationFrame(() => document.body.style.minHeight = oldHeight);
   }
 };
-
-// Admin não deve simular palpites enquanto digita, apenas controla interface de penaltis
-window._onInputPlacar = function(id, isElim) {
-  const hg = parseInt(document.getElementById("sim-hg-"+id)?.value);
-  const ag = parseInt(document.getElementById("sim-ag-"+id)?.value);
-  const pwrap = document.getElementById("pen-wrap-"+id);
-  if (isElim && !isNaN(hg) && !isNaN(ag) && hg === ag) {
-    if (pwrap) pwrap.classList.add("visivel");
-  } else {
-    if (pwrap) pwrap.classList.remove("visivel");
-  }
-};
-window._onBlurPlacar = function() {};
-window._onInputPen = function() {};
-window._onBlurPen = function() {};
-window.simularResultado = function() {};
-window.ativarSimulacao = function() {};
 
 document.addEventListener("DOMContentLoaded", () => {
   const main = document.getElementById("admin-main");

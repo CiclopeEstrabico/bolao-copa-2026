@@ -21,7 +21,7 @@ window.renderCompilacao = function() {
 
   // Filtros de Ordenação
   const ordemStr = window._compOrdem || "pts";
-  h += '<div class="toggle-bar" style="margin-bottom:15px;flex-wrap:wrap">';
+  h += '<div class="toggle-bar" style="margin-bottom:15px">';
   h += '<span class="toggle-label">Ordenar por:</span>';
   h += '<button class="btn-toggle'+(ordemStr==="alfa"?" ativo":"")+'" onclick="window._compOrdem=\'alfa\';renderAbaAtiva()">A-Z</button>';
   h += '<button class="btn-toggle'+(ordemStr==="pts"?" ativo":"")+'" onclick="window._compOrdem=\'pts\';renderAbaAtiva()">Pontos</button>';
@@ -47,7 +47,7 @@ window.renderCompilacao = function() {
   h += '<div class="compilacao-wrap"><table class="compilacao-table"><thead><tr>';
   h += '<th class="col-jogo" style="position:sticky;left:0;background:var(--fundo2);z-index:2">Jogo</th>';
   h += '<th class="col-resultado" style="z-index:1">Resultado</th>';
-  for (const a of ranking) h += '<th title="'+a.nome+'" style="z-index:1;max-width:50px;overflow:hidden;text-overflow:ellipsis;padding:4px 2px">'+(a.apelido||a.nome||"?").substring(0,10)+'</th>';
+  for (const a of ranking) h += '<th title="'+a.nome+'" style="z-index:1;max-width:50px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:4px 2px">'+(a.apelido||a.nome||"?")+'</th>';
   h += '</tr></thead><tbody>';
 
   for (const jogo of jogos) {
@@ -60,7 +60,7 @@ window.renderCompilacao = function() {
     const dataHora = formatarDataBRT(jogo.utc, false);
     h += '<tr><td class="col-jogo" style="position:sticky;left:0;background:var(--card2);white-space:nowrap;padding:6px 8px;z-index:1">';
     h += '<div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">'+dataHora+'</div>';
-    h += '<div style="display:flex;align-items:center;gap:4px;font-size:.75rem">'+htmlBandeira(hC,14)+' <span style="font-weight:600">'+hC+'</span> <span style="color:var(--texto2)">×</span> <span style="font-weight:600">'+aC+'</span> '+htmlBandeira(aC,14)+'</div></td>';
+    h += '<div style="display:flex;align-items:center;gap:4px;font-size:.75rem">'+htmlBandeira(hC,14)+' <span class="compilacao-time-nome" title="'+hN+'">'+hN+'</span> <span style="color:var(--texto2)">×</span> <span class="compilacao-time-nome" title="'+aN+'">'+aN+'</span> '+htmlBandeira(aC,14)+'</div></td>';
     // Resultado oficial
     if (temRes) {
       const pen = r.foi_penaltis ? ' <span style="font-size:.6rem;color:var(--amber)">PEN</span>' : '';

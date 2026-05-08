@@ -16,6 +16,7 @@ function _onInputPlacar(id, ehElim){
   if(pw){ (ehElim&&!isNaN(hg)&&!isNaN(ag)&&hg===ag)?pw.classList.add("visivel"):pw.classList.remove("visivel"); }
 }
 function _onBlurPlacar(id, ehElim) {
+  if (window._isAdminView) return;
   const hg=parseInt(document.getElementById("sim-hg-"+id)?.value);
   const ag=parseInt(document.getElementById("sim-ag-"+id)?.value);
   if(isNaN(hg)||isNaN(ag)) return;
@@ -29,6 +30,7 @@ function _onBlurPlacar(id, ehElim) {
 }
 function _onInputPen(id){}
 function _onBlurPen(id) {
+  if (window._isAdminView) return;
   const hg=parseInt(document.getElementById("sim-hg-"+id)?.value);
   const ag=parseInt(document.getElementById("sim-ag-"+id)?.value);
   const ph=parseInt(document.getElementById("pen-hg-"+id)?.value);
