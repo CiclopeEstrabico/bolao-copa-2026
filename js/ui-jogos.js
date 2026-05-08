@@ -23,7 +23,7 @@ function _onBlurPlacar(id, ehElim) {
   if(ehElim&&hg===ag){ 
     const ph=parseInt(document.getElementById("pen-hg-"+id)?.value);
     const pa=parseInt(document.getElementById("pen-ag-"+id)?.value); 
-    if(!isNaN(ph)&&!isNaN(pa)&&ph!==pa) { if (typeof simularResultado==="function") simularResultado(id,hg,ag,true,ph>pa?"home":"away"); }
+    if(!isNaN(ph)&&!isNaN(pa)&&ph!==pa) { if (typeof simularResultado==="function") simularResultado(id,hg,ag,true,ph>pa?"home":"away",ph,pa); }
     return; 
   }
   if (typeof simularResultado==="function") simularResultado(id,hg,ag,false,null);
@@ -36,7 +36,7 @@ function _onBlurPen(id) {
   const ph=parseInt(document.getElementById("pen-hg-"+id)?.value);
   const pa=parseInt(document.getElementById("pen-ag-"+id)?.value);
   if(isNaN(hg)||isNaN(ag)||isNaN(ph)||isNaN(pa)||ph===pa) return;
-  if (typeof simularResultado==="function") simularResultado(id,hg,ag,true,ph>pa?"home":"away");
+  if (typeof simularResultado==="function") simularResultado(id,hg,ag,true,ph>pa?"home":"away",ph,pa);
 }
 function limparSimulacao(id){ delete APP.resultadosSim[id]; atualizarBracket(); renderAbaAtiva(); }
 function limparResultadoAdmin(id){
@@ -206,7 +206,10 @@ function renderJogoRow(jogo,res,ehElim,isAdm,palApo,showFullDate=false){
   h+='<div class="jogo-col-placar">';
   if(temRes&&!isAdm){
     h+='<div class="placar-display"><span class="placar-num" style="color:'+(chome||"var(--texto)")+'">'+r.homeGoals+'</span><span class="placar-sep">x</span><span class="placar-num" style="color:'+(caway||"var(--texto)")+'">'+r.awayGoals+'</span></div>';
-    if(r.foi_penaltis) h+='<div class="placar-pen">PEN '+(ph!==""&&pa!==""?ph+"x"+pa:"")+'</div>';
+    if(r.foi_penaltis){
+      let pScore = (r.pen_hg !== undefined && r.pen_ag !== undefined) ? ` (${r.pen_hg}-${r.pen_ag})` : "";
+      h+='<div style="font-size:.65rem;color:var(--amber);margin-top:2px;font-weight:700">PEN'+pScore+' '+(r.penaltis_vencedor==="home"?hName:aName)+'</div>';
+    }
     if(pal?.homeGoals!==undefined){
       const br=calcularPontosBrutos(pal,r); const pts=aplicarFator(br.total_bruto,jogo.fase);
       const cor=br.bonus_tipo==="placar_exato"?"#86efac":br.acertou?"#4ade80":"#f87171";
@@ -225,7 +228,7 @@ function renderJogoRow(jogo,res,ehElim,isAdm,palApo,showFullDate=false){
       h+='<input type="number" class="pen-input" id="pen-ag-'+jogo.id+'" value="'+pa+'" min="0" placeholder="0" oninput="_onInputPen(\''+jogo.id+'\')" onblur="_onBlurPen(\''+jogo.id+'\')"></div></div>';
     }
     if(isAdm){
-      h+='<div style="display:flex;gap:4px;margin-top:4px;justify-content:center">';
+      h += '<div class="toggle-bar jogos-toggle" style="margin-bottom:15px">';
       if(temRes) h+='<button class="btn-limpar" onclick="limparResultadoAdmin(\''+jogo.id+'\')">✕ Deletar</button>';
       h+='</div>';
     } else if(isSim){

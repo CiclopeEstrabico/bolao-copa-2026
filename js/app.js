@@ -119,10 +119,10 @@ function desativarSimulacao() {
   document.getElementById("banner-simulacao")?.classList.add("hidden");
   if(document.getElementById("sim-icon")) document.getElementById("sim-icon").style.display = 'none';
 }
-function simularResultado(gameId, hg, ag, foiPen, penVenc) {
+function simularResultado(gameId, hg, ag, foiPen, penVenc, ph, pa) {
   if (!APP.modoSimulacao) ativarSimulacao();
   APP.resultadosSim[gameId] = { gameId, homeGoals: hg, awayGoals: ag,
-    foi_penaltis: !!foiPen, penaltis_vencedor: penVenc||null, simulado: true };
+    foi_penaltis: !!foiPen, penaltis_vencedor: penVenc||null, simulado: true, pen_hg: ph, pen_ag: pa };
   atualizarBracket(); renderAbaAtiva();
 }
 function getResultados() {

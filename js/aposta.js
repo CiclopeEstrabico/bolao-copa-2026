@@ -81,6 +81,7 @@ function renderCadastro() {
 }
 
 async function salvarCadastro() {
+  const nome = document.getElementById("apt-nome")?.value.trim();
   let apelido = document.getElementById("apt-apelido")?.value.trim() || "";
   apelido = apelido.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, '');
   if (apelido.length > 0) {
@@ -161,8 +162,8 @@ function renderEspeciaisAposta(res) {
     .filter((v,i,a)=>a.indexOf(v)===i).filter(c=>c&&c!=="TBD");
   const times = [...new Set((window.SCHEDULE||[]).filter(j=>j.grupo).map(j=>[j.home,j.away]).flat())];
 
-  let h = '<div class="card"><div class="card-titulo">⭐ Palpites Especiais</div>';
-  h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">';
+  let h = '<div class="card" style="max-width:860px;margin:0 auto 20px"><div class="card-titulo">⭐ Palpites Especiais</div>';
+  h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;justify-content:center">';
   for (const f of fases) {
     const val = esp[f.key]||"";
     const info = window.TEAMS_BY_CODE?.[val];
