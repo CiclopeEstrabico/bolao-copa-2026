@@ -42,8 +42,10 @@ window.renderCompilacao = function() {
     const hC = b.home||jogo.home; const aC = b.away||jogo.away;
     const hN = window.TEAMS_BY_CODE[hC]?.name||hC;
     const aN = window.TEAMS_BY_CODE[aC]?.name||aC;
-    h += '<tr><td class="col-jogo" style="position:sticky;left:0;background:var(--card2);white-space:nowrap">';
-    h += '<div style="display:flex;align-items:center;gap:3px;font-size:.7rem">'+htmlBandeira(hC,13)+' <span>'+hN.substring(0,10)+'</span> <span style="color:var(--texto2)">×</span> '+htmlBandeira(aC,13)+' <span>'+aN.substring(0,10)+'</span></div></td>';
+    const dataHora = formatarDataBRT(jogo.utc, false);
+    h += '<tr><td class="col-jogo" style="position:sticky;left:0;background:var(--card2);white-space:nowrap;padding:6px 8px">';
+    h += '<div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">'+dataHora+'</div>';
+    h += '<div style="display:flex;align-items:center;gap:4px;font-size:.75rem">'+htmlBandeira(hC,14)+' <span style="font-weight:600">'+hN+'</span> <span style="color:var(--texto2)">×</span> '+htmlBandeira(aC,14)+' <span style="font-weight:600">'+aN+'</span></div></td>';
     // Resultado oficial
     if (temRes) {
       const pen = r.foi_penaltis ? ' <span style="font-size:.6rem;color:var(--amber)">PEN</span>' : '';
