@@ -110,12 +110,14 @@ function ativarSimulacao() {
   APP.resultadosSim = JSON.parse(JSON.stringify(APP.resultados));
   atualizarBracket(); renderAbaAtiva();
   document.getElementById("banner-simulacao")?.classList.remove("hidden");
+  if(document.getElementById("sim-icon")) document.getElementById("sim-icon").style.display = 'block';
 }
 function desativarSimulacao() {
   APP.modoSimulacao = false;
   APP.resultadosSim = null;
   atualizarBracket(); renderAbaAtiva();
   document.getElementById("banner-simulacao")?.classList.add("hidden");
+  if(document.getElementById("sim-icon")) document.getElementById("sim-icon").style.display = 'none';
 }
 function simularResultado(gameId, hg, ag, foiPen, penVenc) {
   if (!APP.modoSimulacao) ativarSimulacao();

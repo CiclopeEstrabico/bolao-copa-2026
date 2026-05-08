@@ -25,8 +25,8 @@ window.renderCompilacao = function() {
   h += '<span class="toggle-label">Ordenar por:</span>';
   h += '<button class="btn-toggle'+(ordemStr==="alfa"?" ativo":"")+'" onclick="window._compOrdem=\'alfa\';renderAbaAtiva()">A-Z</button>';
   h += '<button class="btn-toggle'+(ordemStr==="pts"?" ativo":"")+'" onclick="window._compOrdem=\'pts\';renderAbaAtiva()">Pontos</button>';
-  h += '<button class="btn-toggle'+(ordemStr==="res"?" ativo":"")+'" onclick="window._compOrdem=\'res\';renderAbaAtiva()">Acertos Result.</button>';
-  h += '<button class="btn-toggle'+(ordemStr==="placar"?" ativo":"")+'" onclick="window._compOrdem=\'placar\';renderAbaAtiva()">Placar Exato</button>';
+  h += '<button class="btn-toggle'+(ordemStr==="res"?" ativo":"")+'" onclick="window._compOrdem=\'res\';renderAbaAtiva()">Resultados</button>';
+  h += '<button class="btn-toggle'+(ordemStr==="placar"?" ativo":"")+'" onclick="window._compOrdem=\'placar\';renderAbaAtiva()">Placar</button>';
   h += '</div>';
 
   const jogos = (window.SCHEDULE||[]).filter(j => faseAtiva==="todos" || j.fase===faseAtiva)

@@ -10,22 +10,21 @@
 </head>
 <body>
 <header class="header">
-  <div style="display:flex;align-items:center;gap:10px">
+  <div style="display:flex;align-items:center;gap:10px;flex:1">
     <img src="assets/logo_verde.avif" alt="Copa 2026" style="height:42px;width:auto;flex-shrink:0" onerror="this.textContent='🏆'">
     <div class="header-titulo">Bolão Copa 2026<small>Aeronáutica · 48 Seleções · 104 Jogos</small></div>
   </div>
-
+  <div id="sim-icon" style="display:none; color:var(--dourado); font-size:1.6rem; text-shadow:0 0 10px rgba(234,179,8,0.5); padding-right:10px" title="Simulação Ativa">⚙️</div>
 </header>
 
 <div class="tabs-wrap">
   <nav class="tabs" role="tablist">
     <button class="tab-btn" data-tab="resultados"    role="tab">Resultados</button>
+    <button class="tab-btn" data-tab="tabela"        role="tab">Torneio</button>
     <button class="tab-btn" data-tab="classificacao" role="tab">Classificação</button>
-    <button class="tab-btn" data-tab="tabela"        role="tab">Tabela</button>
-    <button class="tab-btn" data-tab="compilacao"    role="tab">Compilação</button>
     <button class="tab-btn" data-tab="grafico"       role="tab">Gráfico</button>
+    <button class="tab-btn" data-tab="compilacao"    role="tab">Compilação</button>
     <button class="tab-btn" data-tab="estatisticas"  role="tab">Estatísticas</button>
-
     <button class="tab-btn" data-tab="regras"        role="tab">Regras</button>
   </nav>
 </div>

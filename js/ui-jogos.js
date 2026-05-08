@@ -8,22 +8,33 @@ function setOrdemJogos(v){ _ordemJogos=v; localStorage.setItem("bolao_ordem",v);
 function setModoGrupos(v){ _modoGrupos=v; localStorage.setItem("bolao_grupos_modo",v); renderAbaAtiva(); }
 
 /* ---- auto-simulacao ---- */
-function _onInputPlacar(id, ehElim){ const _h=document.getElementById('sim-hg-'+id),_a=document.getElementById('sim-ag-'+id); if(_h&&_h.value<0)_h.value=0; if(_a&&_a.value<0)_a.value=0;
-  const hg=parseInt(document.getElementById("sim-hg-"+id)?.value);
-  const ag=parseInt(document.getElementById("sim-ag-"+id)?.value);
+function _onInputPlacar(id, ehElim){ 
+  const _h=document.getElementById('sim-hg-'+id),_a=document.getElementById('sim-ag-'+id); 
+  if(_h&&_h.value<0)_h.value=0; if(_a&&_a.value<0)_a.value=0;
+  const hg=parseInt(_h?.value); const ag=parseInt(_a?.value);
   const pw=document.getElementById("pen-wrap-"+id);
   if(pw){ (ehElim&&!isNaN(hg)&&!isNaN(ag)&&hg===ag)?pw.classList.add("visivel"):pw.classList.remove("visivel"); }
-  if(isNaN(hg)||isNaN(ag)) return;
-  if(ehElim&&hg===ag){ const ph=parseInt(document.getElementById("pen-hg-"+id)?.value),pa=parseInt(document.getElementById("pen-ag-"+id)?.value); if(isNaN(ph)||isNaN(pa)||ph===pa) return; simularResultado(id,hg,ag,true,ph>pa?"home":"away"); return; }
-  simularResultado(id,hg,ag,false,null);
 }
-function _onInputPen(id){
+function _onBlurPlacar(id, ehElim) {
+  const hg=parseInt(document.getElementById("sim-hg-"+id)?.value);
+  const ag=parseInt(document.getElementById("sim-ag-"+id)?.value);
+  if(isNaN(hg)||isNaN(ag)) return;
+  if(ehElim&&hg===ag){ 
+    const ph=parseInt(document.getElementById("pen-hg-"+id)?.value);
+    const pa=parseInt(document.getElementById("pen-ag-"+id)?.value); 
+    if(!isNaN(ph)&&!isNaN(pa)&&ph!==pa) { if (typeof simularResultado==="function") simularResultado(id,hg,ag,true,ph>pa?"home":"away"); }
+    return; 
+  }
+  if (typeof simularResultado==="function") simularResultado(id,hg,ag,false,null);
+}
+function _onInputPen(id){}
+function _onBlurPen(id) {
   const hg=parseInt(document.getElementById("sim-hg-"+id)?.value);
   const ag=parseInt(document.getElementById("sim-ag-"+id)?.value);
   const ph=parseInt(document.getElementById("pen-hg-"+id)?.value);
   const pa=parseInt(document.getElementById("pen-ag-"+id)?.value);
   if(isNaN(hg)||isNaN(ag)||isNaN(ph)||isNaN(pa)||ph===pa) return;
-  simularResultado(id,hg,ag,true,ph>pa?"home":"away");
+  if (typeof simularResultado==="function") simularResultado(id,hg,ag,true,ph>pa?"home":"away");
 }
 function limparSimulacao(id){ delete APP.resultadosSim[id]; atualizarBracket(); renderAbaAtiva(); }
 function limparResultadoAdmin(id){
@@ -187,7 +198,7 @@ function renderJogoRow(jogo,res,ehElim,isAdm,palApo,showFullDate=false){
   h+='</div>';
 
   // Col 2: home
-  h+='<div class="jogo-col-home"><span style="color:'+(chome||"inherit")+';font-weight:'+(chome?700:500)+'">'+hName+'</span>'+htmlBandeira(hCode,22)+'</div>';
+  h+='<div class="jogo-col-home"><span style="color:'+(chome||"inherit")+';font-weight:'+(chome?700:500)+'"><span class="team-lg">'+hName+'</span><span class="team-sm">'+hCode+'</span></span>'+htmlBandeira(hCode,22)+'</div>';
 
   // Col 3: placar
   h+='<div class="jogo-col-placar">';
@@ -201,15 +212,15 @@ function renderJogoRow(jogo,res,ehElim,isAdm,palApo,showFullDate=false){
     }
   } else {
     const v1=temRes?hg:(pal?.homeGoals??""); const v2=temRes?ag:(pal?.awayGoals??"");
-    h+='<div class="placar-inputs"><input type="number" class="placar-input" id="sim-hg-'+jogo.id+'" min="0" max="20" value="'+v1+'" placeholder="-" oninput="_onInputPlacar(\''+jogo.id+'\','+ehElim+')">';
+    h+='<div class="placar-inputs"><input type="number" class="placar-input" id="sim-hg-'+jogo.id+'" min="0" max="20" value="'+v1+'" placeholder="-" oninput="_onInputPlacar(\''+jogo.id+'\','+ehElim+')" onblur="_onBlurPlacar(\''+jogo.id+'\','+ehElim+')">';
     h+='<span class="vs">x</span>';
-    h+='<input type="number" class="placar-input" id="sim-ag-'+jogo.id+'" min="0" max="20" value="'+v2+'" placeholder="-" oninput="_onInputPlacar(\''+jogo.id+'\','+ehElim+')"></div>';
+    h+='<input type="number" class="placar-input" id="sim-ag-'+jogo.id+'" min="0" max="20" value="'+v2+'" placeholder="-" oninput="_onInputPlacar(\''+jogo.id+'\','+ehElim+')" onblur="_onBlurPlacar(\''+jogo.id+'\','+ehElim+')"></div>';
     if(ehElim){
       h+='<div class="pen-wrap'+(isEmp?" visivel":"")+'" id="pen-wrap-'+jogo.id+'">';
       h+='<div class="pen-label">Penaltis</div>';
-      h+='<div class="pen-inputs-row"><input type="number" class="pen-input" id="pen-hg-'+jogo.id+'" value="'+ph+'" min="0" placeholder="0" oninput="_onInputPen(\''+jogo.id+'\')">';
+      h+='<div class="pen-inputs-row"><input type="number" class="pen-input" id="pen-hg-'+jogo.id+'" value="'+ph+'" min="0" placeholder="0" oninput="_onInputPen(\''+jogo.id+'\')" onblur="_onBlurPen(\''+jogo.id+'\')">';
       h+='<span class="vs">x</span>';
-      h+='<input type="number" class="pen-input" id="pen-ag-'+jogo.id+'" value="'+pa+'" min="0" placeholder="0" oninput="_onInputPen(\''+jogo.id+'\')"></div></div>';
+      h+='<input type="number" class="pen-input" id="pen-ag-'+jogo.id+'" value="'+pa+'" min="0" placeholder="0" oninput="_onInputPen(\''+jogo.id+'\')" onblur="_onBlurPen(\''+jogo.id+'\')"></div></div>';
     }
     if(isAdm){
       h+='<div style="display:flex;gap:4px;margin-top:4px;justify-content:center">';
@@ -222,7 +233,7 @@ function renderJogoRow(jogo,res,ehElim,isAdm,palApo,showFullDate=false){
   h+='</div>';
 
   // Col 4: away
-  h+='<div class="jogo-col-away">'+htmlBandeira(aCode,22)+'<span style="color:'+(caway||"inherit")+';font-weight:'+(caway?700:500)+'">'+aName+'</span></div>';
+  h+='<div class="jogo-col-away">'+htmlBandeira(aCode,22)+'<span style="color:'+(caway||"inherit")+';font-weight:'+(caway?700:500)+'"><span class="team-lg">'+aName+'</span><span class="team-sm">'+aCode+'</span></span></div>';
 
   // Col 5: acoes
   h+='<div class="jogo-col-acoes"><button class="btn-prog" onclick="PROGNOSE.abrirModal(\''+jogo.id+'\')" title="Info e Estatísticas">📊</button></div>';
