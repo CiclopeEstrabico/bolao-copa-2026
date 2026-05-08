@@ -154,7 +154,7 @@ function mudarAba(aba) {
 function renderAbaAtiva() {
   const fn = { resultados: window.renderResultados, classificacao: window.renderClassificacao,
     tabela: window.renderTabela, compilacao: window.renderCompilacao,
-    estatisticas: window.renderEstatisticas, regras: window.renderRegras };
+    grafico: window.renderGrafico, estatisticas: window.renderEstatisticas, regras: window.renderRegras };
   
   // Salva scroll e foco
   const activeId = document.activeElement?.id;
