@@ -215,8 +215,7 @@ function renderJogoRow(jogo,res,ehElim,isAdm,palApo){
     }
     if(isAdm){
       h+='<div style="display:flex;gap:4px;margin-top:4px;justify-content:center">';
-      h+='<button class="btn-admin" onclick="confirmarAdmin(\''+jogo.id+'\','+ehElim+')">✓ Oficial</button>';
-      if(temRes) h+='<button class="btn-limpar" onclick="limparResultadoAdmin(\''+jogo.id+'\')">✕</button>';
+      if(temRes) h+='<button class="btn-limpar" onclick="limparResultadoAdmin(\''+jogo.id+'\')">✕ Deletar</button>';
       h+='</div>';
     } else if(isSim){
       h+='<div style="margin-top:4px;text-align:center"><button class="btn-limpar" onclick="limparSimulacao(\''+jogo.id+'\')">✕ Reset</button></div>';

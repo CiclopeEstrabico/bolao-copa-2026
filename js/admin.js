@@ -32,9 +32,14 @@ function renderAdmin() {
   h += '<div style="font-size:.9rem;font-weight:800">🔧 Inserir Resultados Oficiais</div>';
   h += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
   h += '<button class="btn btn-perigo btn-sm" onclick="limparTudoAdmin()">🗑 Limpar Resultados</button>';
-  h += '<button class="btn btn-perigo btn-sm" onclick="limparApostadoresAdmin()">🗑 Limpar Apostadores</button>';
-  h += '<button class="btn btn-perigo btn-sm" onclick="limparSeedAdmin()">🧹 Limpar Dados de Teste</button>';
-  h += '<button class="btn btn-secundario btn-sm" onclick="sairAdmin()">Sair</button></div></div>';
+  h += '<button class="btn btn-perigo btn-sm" onclick="limparApostadoresAdmin()">🗑 Limpar Todos Apostadores</button>';
+  h += '<div style="display:flex;gap:4px;align-items:center">';
+  h += '<select id="admin-apaga-apostador" class="form-input" style="padding:4px;height:28px;font-size:.7rem">';
+  h += '<option value="">Deletar um apostador...</option>';
+  APP.apostadores.forEach(a => h += `<option value="${a.id}">${a.apelido || a.nome}</option>`);
+  h += '</select>';
+  h += '<button class="btn btn-perigo btn-sm" onclick="deletarApostadorEspecifico()">✕</button></div>';
+  h += '<button class="btn btn-primario btn-sm" onclick="gravarTudoAdmin()">💾 GRAVAR OFICIAL</button></div></div>';
 
   h += renderJogosComToggle(res, tg, true, null);
 
@@ -62,14 +67,78 @@ function limparTudoAdmin() {
   atualizarBracket(); renderAdmin();
 }
 
-function sairAdmin() {
-  sessionStorage.removeItem("bolao_admin_auth");
-  document.getElementById("admin-main").innerHTML =
-    '<div class="card" style="max-width:340px;margin:40px auto">' +
-    '<div class="card-titulo">🔐 Acesso Admin</div>' +
-    '<div class="form-group"><label>Senha</label>' +
-    '<input type="password" id="admin-senha" onkeydown="if(event.key===\'Enter\')loginAdmin()"></div>' +
-    '<button class="btn btn-primario" onclick="loginAdmin()">Entrar</button></div>';
+function deletarApostadorEspecifico() {
+  const select = document.getElementById("admin-apaga-apostador");
+  const id = select?.value;
+  if (!id) { alert("Selecione um apostador para deletar."); return; }
+  const a = APP.apostadores.find(x => x.id === id);
+  if (!confirm(`Deletar o apostador ${a.apelido || a.nome}?`)) return;
+  
+  // Apaga local
+  APP.apostadores = APP.apostadores.filter(x => x.id !== id);
+  delete APP.palpites[id];
+  _persistirLocal();
+
+  // Apaga Firebase
+  if (APP.db && !APP.modoOffline) {
+    APP.db.collection("apostadores").doc(id).delete();
+    // Apaga também a subcoleção de palpites_jogos do apostador
+    APP.db.collection("apostadores").doc(id).collection("palpites_jogos").get().then(snap => {
+      snap.forEach(doc => doc.ref.delete());
+    });
+  }
+  renderAdmin();
+  alert("Apostador deletado.");
+}
+
+function gravarTudoAdmin() {
+  const log = JSON.parse(localStorage.getItem("bolao_admin_log")||"[]");
+  let gravou = 0;
+
+  window.SCHEDULE.forEach(j => {
+    const hg = parseInt(document.getElementById("sim-hg-"+j.id)?.value);
+    const ag = parseInt(document.getElementById("sim-ag-"+j.id)?.value);
+    
+    // Só grava se os dois inputs estiverem preenchidos
+    if (!isNaN(hg) && !isNaN(ag)) {
+      let foiPen=false, penH=null, penA=null;
+      if (j.fase !== "grupos" && hg === ag) {
+        penH = parseInt(document.getElementById("pen-hg-"+j.id)?.value);
+        penA = parseInt(document.getElementById("pen-ag-"+j.id)?.value);
+        if (!isNaN(penH) && !isNaN(penA) && penH !== penA) foiPen = true;
+      }
+      const pv = foiPen ? (penH > penA ? "home" : "away") : null;
+      
+      const resLocal = APP.resultados[j.id];
+      // Para economizar Firebase, só grava se os dados mudaram de fato
+      if (!resLocal || resLocal.homeGoals !== hg || resLocal.awayGoals !== ag || resLocal.foi_penaltis !== foiPen) {
+        const data = {
+          gameId: j.id, homeGoals: hg, awayGoals: ag,
+          foi_penaltis: foiPen, penaltis_vencedor: pv,
+          penaltis_home: foiPen ? penH : null, penaltis_away: foiPen ? penA : null,
+          inserido_em: new Date().toISOString(), inserido_por: "admin"
+        };
+        
+        APP.resultados[j.id] = data;
+        if (APP.db && !APP.modoOffline) {
+          APP.db.collection("resultados_oficiais").doc(j.id).set(data, {merge: true});
+        }
+        
+        log.push(new Date().toLocaleString("pt-BR") + " | " + j.id + " | Gravado " + hg + "x" + ag);
+        gravou++;
+      }
+    }
+  });
+
+  if (gravou > 0) {
+    _persistirLocal();
+    localStorage.setItem("bolao_admin_log", JSON.stringify(log.slice(-50)));
+    atualizarBracket();
+    renderAdmin();
+    alert(`Salvo com sucesso! ${gravou} jogos gravados no banco de dados.`);
+  } else {
+    alert("Nenhum novo jogo para gravar (digite placares nos inputs).");
+  }
 }
 
 function limparApostadoresAdmin() {
@@ -80,14 +149,4 @@ function limparApostadoresAdmin() {
     APP.db.collectionGroup("palpites_jogos").get().then(s=>s.forEach(d=>d.ref.delete()));
   }
   renderAdmin();
-}
-
-function limparSeedAdmin() {
-  if (!confirm("Limpar dados de teste e recarregar?")) return;
-  localStorage.removeItem("bolao_seed_done");
-  localStorage.removeItem("bolao_seed_res");
-  localStorage.removeItem("bolao_seed_v3");localStorage.removeItem("bolao_seed_v4");
-  APP.apostadores = []; APP.palpites = {}; APP.resultados = {};
-  _persistirLocal();
-  location.reload();
 }
