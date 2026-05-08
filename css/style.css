@@ -90,9 +90,11 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--fundo);color:var(
 .jogo-local a:hover{text-decoration:underline}
 
 /* TOGGLES */
-.toggle-bar{display:flex;align-items:center;gap:6px;margin:8px 0 10px;flex-wrap:wrap}
-.toggle-label{font-size:.73rem;color:var(--texto2);font-weight:600;margin-right:4px}
-.btn-toggle{padding:5px 12px;background:var(--fundo2);border:1px solid var(--borda2);border-radius:20px;color:var(--texto2);font-size:.74rem;font-weight:600;cursor:pointer;transition:var(--trans);font-family:inherit}
+.toggle-bar{display:flex;align-items:center;gap:6px;margin:8px 0 10px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+.toggle-bar::-webkit-scrollbar{height:2px}
+.toggle-bar::-webkit-scrollbar-thumb{background:var(--borda);border-radius:4px}
+.toggle-label{font-size:.73rem;color:var(--texto2);font-weight:600;margin-right:4px;white-space:nowrap;flex-shrink:0}
+.btn-toggle{padding:5px 12px;background:var(--fundo2);border:1px solid var(--borda2);border-radius:20px;color:var(--texto2);font-size:.74rem;font-weight:600;cursor:pointer;transition:var(--trans);font-family:inherit;white-space:nowrap;flex-shrink:0}
 .btn-toggle.ativo{background:var(--verde-dark);border-color:var(--verde);color:#fff}
 .btn-toggle:hover:not(.ativo){border-color:var(--verde-light);color:var(--texto)}
 .toggle-sep{width:1px;height:16px;background:var(--borda2);margin:0 2px}
@@ -112,9 +114,11 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--fundo);color:var(
 .grupo-mini-header{background:linear-gradient(90deg,var(--verde-dark),var(--verde));color:#fff;font-weight:800;font-size:.7rem;letter-spacing:.06em;padding:5px 10px}
 .tabela-mini{width:100%;border-collapse:collapse;font-size:.7rem}
 .tabela-mini th{padding:4px;text-align:center;color:var(--texto2);font-size:.6rem;border-bottom:1px solid var(--borda)}
-.tabela-mini th:first-child{text-align:left;padding-left:8px}
+.tabela-mini th:first-child{text-align:left;padding-left:8px;width:100%}
+.tabela-mini th:not(:first-child){width:1%;white-space:nowrap}
 .tabela-mini td{padding:4px;text-align:center;border-bottom:1px solid rgba(255,255,255,.03)}
-.tabela-mini td:first-child{text-align:left;padding-left:8px}
+.tabela-mini td:first-child{text-align:left;padding-left:8px;width:100%}
+.tabela-mini td:not(:first-child){width:1%;white-space:nowrap}
 .tabela-mini tr.row-classif td{color:var(--verde-ok);font-weight:600}
 .tabela-mini tr.row-terceiro td{color:var(--dourado)}
 .tabela-mini tr:last-child td{border-bottom:none}
