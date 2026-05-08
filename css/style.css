@@ -242,6 +242,10 @@ select{appearance:none;cursor:pointer}
   .jogo-col-acoes{width:30px}
   .btn-prog{width:28px;height:28px;font-size:.72rem}
 }
+@media(max-width:500px){
+  .td-hid{display:none}
+  .time-nome{max-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
 @media(max-width:400px){
   .jogo-row{grid-template-columns:44px minmax(0,1fr) 78px minmax(0,1fr) 26px;gap:3px;padding:6px 6px}
   .jogo-col-home span,.jogo-col-away span{font-size:.68rem;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ui-jogos.js v3 - layout grid, penaltis centrados, 2 toggles, stats no modal
  */
 let _ordemJogos = localStorage.getItem("bolao_ordem") || "grupos";
@@ -64,11 +64,11 @@ function renderGruposGrid(tg,res){
     const jg=(window.SCHEDULE||[]).filter(j=>j.grupo===L);
     const ok=jg.length===6&&jg.every(j=>res[j.id]?.homeGoals!==undefined);
     h+='<div class="grupo-mini"><div class="grupo-mini-header">GRUPO '+L+'</div>';
-    h+='<table class="tabela-mini"><thead><tr><th>Seleção</th><th title="Pts">P</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr></thead><tbody>';
+    h+='<table class="tabela-mini"><thead><tr><th>Seleção</th><th title="Pts">P</th><th class="td-hid">J</th><th class="td-hid">V</th><th class="td-hid">E</th><th class="td-hid">D</th><th title="Gols Pró">GP</th><th title="Gols Contra">GC</th><th>SG</th></tr></thead><tbody>';
     st.forEach((t,i)=>{
       const cls=ok&&i<2?"row-classif":(ok&&tg.melhoresTerceiros?.some(x=>x.code===t.code)?"row-terceiro":"");
       h+='<tr class="'+cls+'"><td style="display:flex;align-items:center;gap:4px;padding:5px 8px">'+htmlBandeira(t.code,14)+'<span>'+(window.TEAMS_BY_CODE[t.code]?.name||t.code)+'</span></td>';
-      h+='<td class="num-pts">'+t.Pts+'</td><td class="num">'+t.J+'</td><td class="num">'+t.V+'</td><td class="num">'+t.E+'</td><td class="num">'+t.D+'</td><td class="num">'+(t.SG>=0?"+":"")+t.SG+'</td></tr>';
+      h+='<td class="num-pts">'+t.Pts+'</td><td class="num td-hid">'+t.J+'</td><td class="num td-hid">'+t.V+'</td><td class="num td-hid">'+t.E+'</td><td class="num td-hid">'+t.D+'</td><td class="num">'+t.GP+'</td><td class="num">'+t.GC+'</td><td class="num" style="font-weight:600">'+(t.SG>0?"+":"")+t.SG+'</td></tr>';
     });
     h+='</tbody></table>';
     if(ok&&st[0]){
@@ -135,11 +135,11 @@ function renderGrupoMini(L,tg,res){
   const st=tg.grupos[L]||[]; if(!st.length) return "";
   const jg=(window.SCHEDULE||[]).filter(j=>j.grupo===L);
   const ok=jg.every(j=>res[j.id]?.homeGoals!==undefined);
-  let h='<div style="padding:6px 10px;border-bottom:1px solid var(--borda)"><table class="tabela-mini"><thead><tr><th>Seleção</th><th>P</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr></thead><tbody>';
+  let h='<div style="padding:6px 10px;border-bottom:1px solid var(--borda)"><table class="tabela-mini"><thead><tr><th>Seleção</th><th>P</th><th class="td-hid">J</th><th class="td-hid">V</th><th class="td-hid">E</th><th class="td-hid">D</th><th title="Gols Pró">GP</th><th title="Gols Contra">GC</th><th>SG</th></tr></thead><tbody>';
   st.forEach((t,i)=>{
     const cls=ok&&i<2?"row-classif":(ok&&tg.melhoresTerceiros?.some(x=>x.code===t.code)?"row-terceiro":"");
     h+='<tr class="'+cls+'"><td style="display:flex;align-items:center;gap:4px;padding:4px 6px">'+htmlBandeira(t.code,13)+'<span style="font-size:.69rem">'+(window.TEAMS_BY_CODE[t.code]?.name||t.code)+'</span></td>';
-    h+='<td class="num-pts">'+t.Pts+'</td><td class="num">'+t.J+'</td><td class="num">'+t.V+'</td><td class="num">'+t.E+'</td><td class="num">'+t.D+'</td><td class="num">'+(t.SG>=0?"+":"")+t.SG+'</td></tr>';
+    h+='<td class="num-pts">'+t.Pts+'</td><td class="num td-hid">'+t.J+'</td><td class="num td-hid">'+t.V+'</td><td class="num td-hid">'+t.E+'</td><td class="num td-hid">'+t.D+'</td><td class="num">'+t.GP+'</td><td class="num">'+t.GC+'</td><td class="num" style="font-weight:600">'+(t.SG>0?"+":"")+t.SG+'</td></tr>';
   });
   return h+'</tbody></table></div>';
 }

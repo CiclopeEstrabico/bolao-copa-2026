@@ -113,34 +113,47 @@ window.BRACKET = (() => {
       else              { hStats.E++; hStats.Pts += 1; aStats.E++; aStats.Pts += 1; }
     }
 
-    // Ordenar: Pts → SG → GP → confronto direto
+    // Passo 1: Separar em grupos por pontos para aplicar o confronto direto
+    const timesByPts = {};
+    for (const t of times) {
+       if (!timesByPts[t.Pts]) timesByPts[t.Pts] = [];
+       timesByPts[t.Pts].push(t);
+    }
+
+    // Calcular estatísticas da mini-liga (confronto direto) para times empatados em pontos
+    for (const pts of Object.keys(timesByPts)) {
+       const tied = timesByPts[pts];
+       for (const t of tied) { t.Pts_CD = 0; t.SG_CD = 0; t.GP_CD = 0; }
+       if (tied.length > 1) {
+          const tiedCodes = tied.map(t => t.code);
+          const jogosMini = jogos.filter(j => tiedCodes.includes(j.home) && tiedCodes.includes(j.away));
+          for (const jogo of jogosMini) {
+             const res = resultados[jogo.id];
+             if (!res || res.homeGoals === undefined) continue;
+             const hg = res.homeGoals, ag = res.awayGoals;
+             const hT = tied.find(x => x.code === jogo.home);
+             const aT = tied.find(x => x.code === jogo.away);
+             hT.GP_CD += hg; hT.SG_CD += (hg - ag);
+             aT.GP_CD += ag; aT.SG_CD += (ag - hg);
+             if (hg > ag) { hT.Pts_CD += 3; }
+             else if (hg < ag) { aT.Pts_CD += 3; }
+             else { hT.Pts_CD += 1; aT.Pts_CD += 1; }
+          }
+       }
+    }
+
+    // Ordenar: Pts → Confronto Direto (Pts, SG, GP) → Global (SG, GP)
     const sorted = [...times].sort((a, b) => {
       if (b.Pts !== a.Pts) return b.Pts - a.Pts;
+      if (b.Pts_CD !== a.Pts_CD) return b.Pts_CD - a.Pts_CD;
+      if (b.SG_CD !== a.SG_CD) return b.SG_CD - a.SG_CD;
+      if (b.GP_CD !== a.GP_CD) return b.GP_CD - a.GP_CD;
       if (b.SG  !== a.SG)  return b.SG  - a.SG;
       if (b.GP  !== a.GP)  return b.GP  - a.GP;
-      // Confronto direto
-      const cd = _confrontoDireto(a.code, b.code, grupo, resultados);
-      return cd;
+      return 0;
     });
 
     return sorted.map((t, i) => ({ ...t, posicao: i + 1, grupo }));
-  }
-
-  function _confrontoDireto(codeA, codeB, grupo, resultados) {
-    const jogo = window.SCHEDULE.find(j =>
-      j.grupo === grupo && (
-        (j.home === codeA && j.away === codeB) ||
-        (j.home === codeB && j.away === codeA)
-      )
-    );
-    if (!jogo) return 0;
-    const res = resultados[jogo.id];
-    if (!res || res.homeGoals === undefined) return 0;
-    const hg = res.homeGoals, ag = res.awayGoals;
-    const aIsHome = jogo.home === codeA;
-    const ptA = aIsHome ? (hg > ag ? 3 : hg === ag ? 1 : 0) : (ag > hg ? 3 : ag === hg ? 1 : 0);
-    const ptB = aIsHome ? (ag > hg ? 3 : hg === ag ? 1 : 0) : (hg > ag ? 3 : hg === ag ? 1 : 0);
-    return ptB - ptA; // positivo = B é melhor
   }
 
   // ══════════════════════════════════════════════════════════════════════════
