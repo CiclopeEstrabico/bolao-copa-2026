@@ -4,7 +4,7 @@
  * Ou rodar com Node.js: node scripts/gerar-tokens.js
  */
 
-const QUANTIDADE = 100; // quantos tokens gerar
+const QUANTIDADE = 300; // quantos tokens gerar
 const BASE_URL = "https://CiclopeEstrabico.github.io/bolao-copa-2026";
 
 function gerarToken() {
@@ -17,7 +17,7 @@ function gerarToken() {
     const b = c.randomBytes(8);
     arr.set(b);
   }
-  return Array.from(arr).map(b => b.toString(16).padStart(2,"0")).join("");
+  return Array.from(arr).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
 const tokens = [];
@@ -31,5 +31,5 @@ tokens.forEach(t => console.log(`  "${t}",`));
 console.log("];");
 console.log("\n// Links:");
 tokens.forEach((t, i) => {
-  console.log(`Token ${i+1}: ${BASE_URL}/aposta.html?token=${t}`);
+  console.log(`Token ${i + 1}: ${BASE_URL}/aposta.html?token=${t}`);
 });
