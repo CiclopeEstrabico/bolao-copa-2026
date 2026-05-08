@@ -1,4 +1,4 @@
-﻿/** admin.js - Resultados oficiais (mesmo layout que resultados) */
+/** admin.js - Resultados oficiais (mesmo layout que resultados) */
 const ADMIN_SENHA = "#bolao2026#";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -77,7 +77,7 @@ function limparApostadoresAdmin() {
   APP.apostadores = []; APP.palpites = {}; _persistirLocal();
   if (APP.db && !APP.modoOffline) {
     APP.db.collection("apostadores").get().then(s=>s.forEach(d=>d.ref.delete()));
-    APP.db.collection("palpites").get().then(s=>s.forEach(d=>d.ref.delete()));
+    APP.db.collectionGroup("palpites_jogos").get().then(s=>s.forEach(d=>d.ref.delete()));
   }
   renderAdmin();
 }
