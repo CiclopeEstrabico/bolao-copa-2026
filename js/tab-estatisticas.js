@@ -83,18 +83,6 @@ window.renderEstatisticas = function() {
     h += '</div></div>';
   }
 
-  // Head-to-Head (se >= 2 apostadores)
-  if (apos.length >= 2) {
-    h += '<div class="card"><div class="card-titulo">⚔️ Head-to-Head</div>';
-    h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">';
-    h += '<select id="hth-a1" style="flex:1" onchange="renderHtH()"><option value="">Apostador 1</option>';
-    for (const a of apos) h += '<option value="'+a.id+'">'+(a.apelido||a.nome||a.token)+'</option>';
-    h += '</select><span style="align-self:center">vs</span>';
-    h += '<select id="hth-a2" style="flex:1" onchange="renderHtH()"><option value="">Apostador 2</option>';
-    for (const a of apos) h += '<option value="'+a.id+'">'+(a.apelido||a.nome||a.token)+'</option>';
-    h += '</select></div>';
-    h += '<div id="hth-resultado"></div></div>';
-  }
 
   // Resumo Avançado de Todos os Jogos
   h += '<div class="card"><div class="card-titulo">📈 Estatísticas Avançadas por Jogo</div>';
@@ -195,6 +183,19 @@ window.renderEstatisticas = function() {
   }
   h += '</tbody></table></div></div>';
 
+  // Head-to-Head (se >= 2 apostadores)
+  if (apos.length >= 2) {
+    h += '<div class="card"><div class="card-titulo">⚔️ Head-to-Head</div>';
+    h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">';
+    h += '<select id="hth-a1" style="flex:1" onchange="renderHtH()"><option value="">Apostador 1</option>';
+    for (const a of apos) h += '<option value="'+a.id+'">'+(a.apelido||a.nome||a.token)+'</option>';
+    h += '</select><span style="align-self:center">vs</span>';
+    h += '<select id="hth-a2" style="flex:1" onchange="renderHtH()"><option value="">Apostador 2</option>';
+    for (const a of apos) h += '<option value="'+a.id+'">'+(a.apelido||a.nome||a.token)+'</option>';
+    h += '</select></div>';
+    h += '<div id="hth-resultado"></div></div>';
+  }
+
   el.innerHTML = h;
 };
 
@@ -221,7 +222,7 @@ window.renderHtH = function() {
     const b=APP.bracket?.[jogo.id]||{}; const hC=b.home||jogo.home; const aC=b.away||jogo.away;
     const cor1=v1>v2?"var(--verde-ok)":v1<v2?"#f87171":"var(--texto2)";
     const cor2=v2>v1?"var(--verde-ok)":v2<v1?"#f87171":"var(--texto2)";
-    rows += '<tr><td style="text-align:left;font-size:.73rem">'+
+    rows += '<tr><td style="text-align:left;font-size:.73rem;position:sticky;left:0;background:var(--fundo);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">'+
       (window.TEAMS_BY_CODE?.[hC]?.name||hC)+' × '+(window.TEAMS_BY_CODE?.[aC]?.name||aC)+'</td>'+
       '<td style="font-size:.72rem">'+r.homeGoals+'×'+r.awayGoals+'</td>'+
       '<td style="color:'+cor1+';font-weight:700">'+(p1?p1.homeGoals+'×'+p1.awayGoals+' ('+v1+'pts)':'—')+'</td>'+
@@ -234,7 +235,7 @@ window.renderHtH = function() {
   h += '<div style="font-size:1.1rem;font-weight:900;color:'+corTot1+'">'+pts1.toFixed(1)+' pts<div style="font-size:.72rem;color:var(--texto2)">'+n1+'</div></div>';
   h += '<div style="font-size:.8rem;color:var(--texto2)">'+ganhou1+'–'+empHtH+'–'+ganhou2+'</div>';
   h += '<div style="font-size:1.1rem;font-weight:900;color:'+corTot2+'">'+pts2.toFixed(1)+' pts<div style="font-size:.72rem;color:var(--texto2)">'+n2+'</div></div></div>';
-  h += '<div style="overflow-x:auto"><table class="compilacao-table"><thead><tr><th style="text-align:left">Jogo</th><th>Resultado</th><th>'+n1+'</th><th>'+n2+'</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  h += '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="compilacao-table" style="min-width:350px"><thead><tr><th style="text-align:left;position:sticky;left:0;background:var(--card);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Jogo</th><th>Resultado</th><th>'+n1+'</th><th>'+n2+'</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   out.innerHTML = h;
 };
 

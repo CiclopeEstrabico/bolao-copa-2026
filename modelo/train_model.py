@@ -140,7 +140,7 @@ def pad_sequence(seq: list, seq_len: int) -> np.ndarray:
     return arr
 
 
-USE_FIXED_ELO = False  # Se True, usa o ELO final do time para todos os cálculos de delta no dataset alvo
+USE_FIXED_ELO = True  # Se True, usa o ELO final do time para todos os cálculos de delta no dataset alvo
 
 class FootballDataset(Dataset):
     def __init__(self, records: list, seq_len: int, final_elos: dict = None):
