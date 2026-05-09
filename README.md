@@ -1,4 +1,4 @@
-﻿# Bolao Aeronautica - Copa do Mundo 2026
+# Bolao Aeronautica - Copa do Mundo 2026
 
 Sistema web para bolao da Copa 2026. Hospedagem gratuita: GitHub Pages + Firebase Firestore.
 
@@ -48,6 +48,10 @@ tests/
 
 scripts/
   gerar-tokens.js Script para gerar novos tokens
+
+modelo/
+  results/        Artefatos da simulação (CSV, JSON, PNG, PKL)
+  *.py            Scripts de treinamento e simulação (Dixon-Coles, GRU)
 ```
 
 ## Pontuacao
