@@ -45,7 +45,7 @@ from torch.utils.data import Dataset, DataLoader
 # ─────────────────────────────────────────────────────────────────────
 # HIPERPARÂMETROS
 # ─────────────────────────────────────────────────────────────────────
-SEQ_LEN           = 25          # jogos na janela de forma
+# Parâmetros padrão removidos, definidos dinamicamente
 FEAT_PER_GAME     = 6     # delta_elo, goals_scored, goals_conceded, tw, result, decay_weight
 GRU_HIDDEN        = 48    # ligeiramente maior que v1 (mais capacidade para K-att/K-def)
 DROPOUT           = 0.25
@@ -119,17 +119,17 @@ def rho_from_delta_torch(delta_eff: torch.Tensor) -> torch.Tensor:
 # ─────────────────────────────────────────────────────────────────────
 # DATASET
 # ─────────────────────────────────────────────────────────────────────
-def pad_sequence(seq: list) -> np.ndarray:
+def pad_sequence(seq: list, seq_len: int) -> np.ndarray:
     """
-    Converte lista de dicts → array (SEQ_LEN, FEAT_PER_GAME).
+    Converte lista de dicts → array (seq_len, FEAT_PER_GAME).
     Padding à esquerda (zeros). decay_weight já está em cada entry.
     Feat: [delta_elo/nd, goals_scored/ng, goals_conceded/ng, tw, result, decay_weight]
     """
-    arr = np.zeros((SEQ_LEN, FEAT_PER_GAME), dtype=np.float32)
-    n   = min(len(seq), SEQ_LEN)
+    arr = np.zeros((seq_len, FEAT_PER_GAME), dtype=np.float32)
+    n   = min(len(seq), seq_len)
     if n == 0:
         return arr
-    start = SEQ_LEN - n
+    start = seq_len - n
     for i, entry in enumerate(seq[-n:]):
         arr[start + i, 0] = entry['delta_elo']        / NORM_DELTA_ELO
         arr[start + i, 1] = entry['goals_scored']     / NORM_GOALS
@@ -143,8 +143,9 @@ def pad_sequence(seq: list) -> np.ndarray:
 USE_FIXED_ELO = False  # Se True, usa o ELO final do time para todos os cálculos de delta no dataset alvo
 
 class FootballDataset(Dataset):
-    def __init__(self, records: list, final_elos: dict = None):
+    def __init__(self, records: list, seq_len: int, final_elos: dict = None):
         self.records = records
+        self.seq_len = seq_len
         self.final_elos = final_elos
 
     def __len__(self):
@@ -152,8 +153,8 @@ class FootballDataset(Dataset):
 
     def __getitem__(self, idx):
         r = self.records[idx]
-        seq_h = pad_sequence(r['seq_home'])
-        seq_a = pad_sequence(r['seq_away'])
+        seq_h = pad_sequence(r['seq_home'], self.seq_len)
+        seq_a = pad_sequence(r['seq_away'], self.seq_len)
 
         # delta_elo_raw SEM home_adv (compatível com v2 do build_dataset)
         if USE_FIXED_ELO and self.final_elos:
@@ -395,13 +396,15 @@ def main():
 
     state_path = os.path.join(SCRIPT_DIR, "copa2026_state.pkl")
     final_elos = {}
+    seq_len_config = 25
     if os.path.exists(state_path):
         with open(state_path, "rb") as f:
             st = pickle.load(f)
             final_elos = st.get('team_elos', {})
+            seq_len_config = st.get('seq_len', 25)
 
-    train_ds = FootballDataset(train_recs, final_elos)
-    val_ds   = FootballDataset(val_recs, final_elos)
+    train_ds = FootballDataset(train_recs, seq_len_config, final_elos)
+    val_ds   = FootballDataset(val_recs, seq_len_config, final_elos)
     # pin_memory=True acelera transferência CPU→GPU
     pin = device.type == "cuda"
     train_dl = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True,
@@ -516,15 +519,15 @@ def main():
     print("[6/6] Salvando artefatos...")
 
     config = {
-        'SEQ_LEN':           SEQ_LEN,
-        'FEAT_PER_GAME':     FEAT_PER_GAME,
         'GRU_HIDDEN':        GRU_HIDDEN,
+        'FEAT_PER_GAME':     FEAT_PER_GAME,
+        'SEQ_LEN':           seq_len_config,
+        'best_val_nll':      best_val_nll,
         'DROPOUT':           DROPOUT,
         'NORM_DELTA_ELO':    NORM_DELTA_ELO,
         'NORM_GOALS':        NORM_GOALS,
         'EPS_K':             EPS_K,
         'K_REG_WEIGHT':      K_REG_WEIGHT,
-        'best_val_nll':      best_val_nll,
         'architecture':      'GRU_K_att_K_def_v2',
         'prior_params_file': 'prior_params.json',
     }

@@ -34,7 +34,6 @@ ELO_START   = 1500
 ELO_HOME_ADV = 100    # usado só no update ELO (fixo, não exportado no delta_elo_raw)
 
 SEQ_LEN = 25          # jogos na janela de forma
-USE_FIXED_ELO = False # Se True, usa o ELO final para todo o histórico (ignora o delta_elo temporal)
 
 # Decaimento por posição: w = exp(-DECAY_LAMBDA * pos_from_end)
 # pos_from_end=0 → jogo mais recente, pos_from_end=SEQ_LEN-1 → jogo mais antigo
@@ -255,18 +254,13 @@ def compute_elo(df: pd.DataFrame):
 # ─────────────────────────────────────────────────────────────────────
 # 1.3  SEQUÊNCIAS DE FORMA (com decay_weight por posição)
 # ─────────────────────────────────────────────────────────────────────
-def build_sequences(annotated: pd.DataFrame, final_ratings: dict = None):
+def build_sequences(annotated: pd.DataFrame):
     print("[3/7] Construindo sequências de forma com decay por posição...")
     forms: dict = {}
     training = []
 
     for _, row in annotated.iterrows():
         ht, at = row['home_team'], row['away_team']
-        
-        if USE_FIXED_ELO and final_ratings:
-            delta = final_ratings.get(ht, ELO_START) - final_ratings.get(at, ELO_START)
-        else:
-            delta = row['delta_elo_raw']
 
         # Snapshot das sequências ANTES do jogo (para treino)
         raw_seq_h = list(forms.get(ht, deque(maxlen=SEQ_LEN)))
@@ -282,7 +276,7 @@ def build_sequences(annotated: pd.DataFrame, final_ratings: dict = None):
             'away_team':         at,
             'home_score':        row['home_score'],
             'away_score':        row['away_score'],
-            'delta_elo_raw':     delta,   # SEM home_adv
+            'delta_elo_raw':     row['delta_elo_raw'],   # SEM home_adv
             'is_neutral':        bool(row['neutral']),
             'tournament_weight': row['tournament_weight'],
             'seq_home':          seq_h,
@@ -294,14 +288,14 @@ def build_sequences(annotated: pd.DataFrame, final_ratings: dict = None):
 
         # Entrada sem decay_weight (será calculado dinamicamente em add_decay_weights)
         entry_h = {
-            'delta_elo':         delta,
+            'delta_elo':         row['delta_elo_raw'],
             'goals_scored':      float(row['home_score']),
             'goals_conceded':    float(row['away_score']),
             'tournament_weight': row['tournament_weight'],
             'result':            result_h,
         }
         entry_a = {
-            'delta_elo':         -delta,
+            'delta_elo':         -row['delta_elo_raw'],
             'goals_scored':      float(row['away_score']),
             'goals_conceded':    float(row['home_score']),
             'tournament_weight': row['tournament_weight'],
@@ -338,7 +332,7 @@ def main():
     annotated.to_csv(out_elo, index=False)
     print(f"    >> {out_elo}  ({len(annotated):,} linhas)")
 
-    training, forms = build_sequences(annotated, final_ratings)
+    training, forms = build_sequences(annotated)
 
     print("[5/7] Salvando training_sequences.pkl...")
     out_train = os.path.join(OUTPUT_DIR, "training_sequences.pkl")
