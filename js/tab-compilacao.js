@@ -12,16 +12,15 @@ window.renderCompilacao = function() {
   const faseAtiva = window._compFase||"grupos";
   const nomesFase = {todos:"Todos",grupos:"Grupos","32avos":"32 Avos",oitavas:"Oitavas",quartas:"Quartas",semis:"Semis",terceiro:"3o Lugar",final:"Final"};
 
-  let h = '<div class="toggle-bar" style="margin-bottom:10px">';
+  let h = '<div class="toggle-bar" style="margin-bottom:15px">';
   h += '<span class="toggle-label">Fase:</span>';
   for (const f of fases) {
     h += '<button class="btn-toggle'+(faseAtiva===f?" ativo":"")+'" onclick="window._compFase=\''+f+'\';renderAbaAtiva()">'+nomesFase[f]+'</button>';
   }
-  h += '</div>';
 
-  // Filtros de Ordenação
+  h += '<div class="toggle-sep"></div>';
+
   const ordemStr = window._compOrdem || "pts";
-  h += '<div class="toggle-bar" style="margin-bottom:15px; display:flex; flex-wrap:wrap; align-items:center;">';
   h += '<span class="toggle-label">Ordenar por:</span>';
   h += '<button class="btn-toggle'+(ordemStr==="alfa"?" ativo":"")+'" onclick="window._compOrdem=\'alfa\';renderAbaAtiva()">A-Z</button>';
   h += '<button class="btn-toggle'+(ordemStr==="pts"?" ativo":"")+'" onclick="window._compOrdem=\'pts\';renderAbaAtiva()">Pontos</button>';
