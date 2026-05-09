@@ -1,26 +1,66 @@
-/** admin.js - Resultados oficiais com autenticação Google */
+/**
+ * admin.js — Painel de controle do Bolão Copa 2026
+ *
+ * Estratégia de integração com app.js:
+ *   - app.js chama iniciarRoteador() e renderAbaAtiva() via DOMContentLoaded.
+ *   - admin.js é carregado DEPOIS de app.js no HTML, então sobrescreve essas
+ *     funções no nível do módulo (fora de qualquer listener). Quando o
+ *     DOMContentLoaded do app.js disparar, ele já encontra as versões admin.
+ */
 
 window._isAdminView = true;
 
-// ─── Lista de UIDs autorizados como admin ─────────────────────────────────────
+// ─── UIDs autorizados ─────────────────────────────────────────────────────────
 const ADMIN_UIDS = [
   "oSnCwYjIe6eh7W1pUhZZUtX0B1q2",
-  "",
+  "J0anvKKB5deimhpidxz6B7Ql2yd2",
   "",
   "",
 ];
 
-// ─── Roteador de abas admin ───────────────────────────────────────────────────
+// ─── Estado do roteador admin ─────────────────────────────────────────────────
 const ADMIN_ABAS = ["resultados", "apostadores", "tokens"];
 let _adminAbaAtiva = "resultados";
 
-// Sobrescreve renderAbaAtiva do app.js para o contexto admin
-window.renderAbaAtiva = function () {
-  if (!adminAutenticado()) { renderLogin(); return; }
-  _renderAdminAbaAtiva();
+// ─── Sobrescreve iniciarRoteador (chamada por app.js dentro do initApp) ───────
+// Definido no nível do módulo → sobrescreve a função do app.js antes que o
+// DOMContentLoaded dispare, porque admin.js é carregado por último no HTML.
+window.iniciarRoteador = function () {
+  firebase.auth().onAuthStateChanged(user => {
+    if (user && ADMIN_UIDS.filter(Boolean).includes(user.uid)) {
+      _montarRoteadorAdmin();
+    } else {
+      _renderLogin();
+    }
+  });
 };
 
-function _renderAdminAbaAtiva() {
+function _montarRoteadorAdmin() {
+  document.querySelectorAll("[data-tab]").forEach(btn =>
+    btn.addEventListener("click", () => _mudarAbaAdmin(btn.dataset.tab))
+  );
+  const hash = location.hash.replace("#", "");
+  _mudarAbaAdmin(ADMIN_ABAS.includes(hash) ? hash : "resultados");
+}
+
+function _mudarAbaAdmin(aba) {
+  if (!ADMIN_ABAS.includes(aba)) return;
+  _adminAbaAtiva = aba;
+  location.hash = aba;
+  document.querySelectorAll("[data-tab]").forEach(b =>
+    b.classList.toggle("ativa", b.dataset.tab === aba));
+  document.querySelectorAll(".aba-conteudo").forEach(el =>
+    el.classList.toggle("hidden", el.dataset.aba !== aba));
+  _renderAbaAdmin();
+}
+
+// ─── Sobrescreve renderAbaAtiva (chamada pelos listeners do Firestore) ────────
+window.renderAbaAtiva = function () {
+  if (!_adminAutenticado()) return;
+  _renderAbaAdmin();
+};
+
+function _renderAbaAdmin() {
   const fn = {
     resultados:  renderAdmin,
     apostadores: renderApostadores,
@@ -29,34 +69,17 @@ function _renderAdminAbaAtiva() {
   fn[_adminAbaAtiva]?.();
 }
 
-function iniciarRoteadorAdmin() {
-  document.querySelectorAll("[data-tab]").forEach(btn =>
-    btn.addEventListener("click", () => mudarAbaAdmin(btn.dataset.tab))
-  );
-  const hash = location.hash.replace("#", "");
-  mudarAbaAdmin(ADMIN_ABAS.includes(hash) ? hash : "resultados");
-}
-
-function mudarAbaAdmin(aba) {
-  if (!ADMIN_ABAS.includes(aba)) return;
-  _adminAbaAtiva = aba;
-  location.hash = aba;
-  document.querySelectorAll("[data-tab]").forEach(b =>
-    b.classList.toggle("ativa", b.dataset.tab === aba));
-  document.querySelectorAll(".aba-conteudo").forEach(el =>
-    el.classList.toggle("hidden", el.dataset.aba !== aba));
-  if (adminAutenticado()) _renderAdminAbaAtiva();
-}
-
-// ─── Auth helpers ─────────────────────────────────────────────────────────────
-function adminAutenticado() {
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+function _adminAutenticado() {
   try {
     const user = firebase.auth().currentUser;
-    return user && ADMIN_UIDS.filter(Boolean).includes(user.uid);
-  } catch (e) {
-    return false;
-  }
+    return !!(user && ADMIN_UIDS.filter(Boolean).includes(user.uid));
+  } catch (e) { return false; }
 }
+
+// Exposta globalmente pois app.js também declara adminAutenticado() com outra
+// lógica (sessionStorage). No contexto admin.html, esta versão prevalece.
+window.adminAutenticado = _adminAutenticado;
 
 function loginAdmin() {
   const provider = new firebase.auth.GoogleAuthProvider();
@@ -67,7 +90,7 @@ function loginAdmin() {
         alert("Essa conta Google não tem permissão de admin.");
         return;
       }
-      _renderAdminAbaAtiva();
+      _montarRoteadorAdmin();
     })
     .catch(e => alert("Erro no login: " + e.message));
 }
@@ -76,27 +99,12 @@ function logoutAdmin() {
   firebase.auth().signOut().then(() => location.reload());
 }
 
-// ─── Inicialização ────────────────────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", () => {
-  firebase.auth().onAuthStateChanged(user => {
-    if (user && ADMIN_UIDS.filter(Boolean).includes(user.uid)) {
-      iniciarRoteadorAdmin();
-    } else {
-      renderLogin();
-    }
-  });
-});
-
-function renderLogin() {
-  // Mostra tela de login em todas as abas
-  ["aba-resultados", "aba-apostadores", "aba-tokens"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.add("hidden");
-  });
-  // Coloca o login na aba de resultados e mostra só ela
-  const main = document.getElementById("aba-resultados");
+function _renderLogin() {
+  // Esconde todas as abas e mostra a primeira com o card de login
+  document.querySelectorAll(".aba-conteudo").forEach((el, i) =>
+    el.classList.toggle("hidden", i !== 0));
+  const main = document.querySelector(".aba-conteudo");
   if (!main) return;
-  main.classList.remove("hidden");
   main.innerHTML =
     '<div class="card" style="max-width:340px;margin:40px auto">' +
       '<div class="card-titulo">🔐 Acesso Admin</div>' +
@@ -106,9 +114,6 @@ function renderLogin() {
       '<button class="btn btn-primario" onclick="loginAdmin()">🔑 Entrar com Google</button>' +
     '</div>';
 }
-
-// ─── renderAbaAtiva (mantém compatibilidade com app.js) ──────────────────────
-// já definido acima como window.renderAbaAtiva
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ABA RESULTADOS
@@ -125,11 +130,11 @@ function renderAdmin() {
 
   let h = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">';
   h += '<div style="font-size:.9rem;font-weight:800;display:flex;gap:8px;align-items:center">';
-  h += '🔧 Inserir Resultados Oficiais';
-  h += `<button class="btn ${btnClass} btn-sm" onclick="toggleApostasLiberadas()">${btnTxt}</button>`;
+  h += '🔧 Resultados Oficiais';
+  h += '<button class="btn ' + btnClass + ' btn-sm" onclick="toggleApostasLiberadas()">' + btnTxt + '</button>';
   h += '</div>';
   h += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
-  h += '<button class="btn btn-perigo btn-sm" onclick="limparTudoAdmin()">🗑 Limpar Resultados</button>';
+  h += '<button class="btn btn-perigo btn-sm" onclick="limparTudoAdmin()">🗑 Limpar</button>';
   h += '<button class="btn btn-primario btn-sm" onclick="gravarTudoAdmin()">💾 GRAVAR OFICIAL</button>';
   h += '<button class="btn btn-sm" onclick="logoutAdmin()" style="background:var(--borda)">Sair</button>';
   h += '</div></div>';
@@ -142,14 +147,13 @@ function renderAdmin() {
     h += '<div class="card"><div class="card-titulo">📋 Log ' +
       '<button class="btn btn-perigo btn-sm" onclick="limparLog()">Limpar</button></div>';
     h += '<div style="font-size:.7rem;color:var(--texto2);display:flex;flex-direction:column;gap:3px;max-height:200px;overflow-y:auto">';
-    log.slice().reverse().forEach(l => (h += `<div style="padding:3px 0;border-bottom:1px solid var(--borda)">${l}</div>`));
-    h += "</div></div>";
+    log.slice().reverse().forEach(l => (h += '<div style="padding:3px 0;border-bottom:1px solid var(--borda)">' + l + '</div>'));
+    h += '</div></div>';
   }
 
   main.innerHTML = h;
 }
 
-// ─── Ações de Resultados ──────────────────────────────────────────────────────
 function limparLog() {
   if (!confirm("Limpar log?")) return;
   localStorage.removeItem("bolao_admin_log");
@@ -157,7 +161,7 @@ function limparLog() {
 }
 
 function limparTudoAdmin() {
-  if (!adminAutenticado()) return alert("Não autorizado.");
+  if (!_adminAutenticado()) return alert("Não autorizado.");
   if (!confirm("⚠️ LIMPAR TODOS OS RESULTADOS OFICIAIS?\nIsso não pode ser desfeito.")) return;
   APP.resultados = {};
   APP.resultadosSim = {};
@@ -170,7 +174,7 @@ function limparTudoAdmin() {
 }
 
 function gravarTudoAdmin() {
-  if (!adminAutenticado()) return alert("Não autorizado.");
+  if (!_adminAutenticado()) return alert("Não autorizado.");
   const log = JSON.parse(localStorage.getItem("bolao_admin_log") || "[]");
   let gravou = 0;
 
@@ -196,15 +200,12 @@ function gravarTudoAdmin() {
           gameId: j.id, homeGoals: hg, awayGoals: ag,
           foi_penaltis: foiPen, penaltis_vencedor: pv,
           penaltis_home: foiPen ? penH : null, penaltis_away: foiPen ? penA : null,
-          inserido_em: new Date().toISOString(),
-          inserido_por: "admin"
+          inserido_em: new Date().toISOString(), inserido_por: "admin"
         };
-
         APP.resultados[j.id] = data;
         if (APP.db && !APP.modoOffline)
           APP.db.collection("resultados_oficiais").doc(j.id).set(data, { merge: true });
-
-        log.push(new Date().toLocaleString("pt-BR") + " | " + j.id + " | Gravado " + hg + "x" + ag);
+        log.push(new Date().toLocaleString("pt-BR") + " | " + j.id + " | " + hg + "x" + ag);
         gravou++;
       }
     }
@@ -215,36 +216,35 @@ function gravarTudoAdmin() {
     localStorage.setItem("bolao_admin_log", JSON.stringify(log.slice(-50)));
     atualizarBracket();
     renderAdmin();
-    alert(`Salvo com sucesso! ${gravou} jogos gravados no banco de dados.`);
+    alert("✅ " + gravou + " jogos gravados.");
   } else {
-    alert("Nenhum novo jogo para gravar (digite placares nos inputs).");
+    alert("Nenhum novo placar para gravar.");
   }
 }
 
 function toggleApostasLiberadas() {
-  if (!adminAutenticado()) return alert("Não autorizado.");
-  if (APP.modoOffline) return alert("Indisponível offline");
+  if (!_adminAutenticado()) return alert("Não autorizado.");
+  if (APP.modoOffline) return alert("Indisponível offline.");
   const atual = APP.configStatus?.apostas_liberadas || false;
   const novo = !atual;
-  if (!confirm(`Deseja realmente ${novo ? "LIBERAR" : "TRAVAR"} as apostas?`)) return;
+  if (!confirm("Deseja realmente " + (novo ? "LIBERAR" : "TRAVAR") + " as apostas?")) return;
   APP.db.collection("config").doc("status")
     .set({ apostas_liberadas: novo }, { merge: true })
-    .then(() => alert(`Apostas ${novo ? "LIBERADAS" : "TRAVADAS"} com sucesso!`))
-    .catch(e => { console.error(e); alert("Erro ao alterar o status."); });
+    .then(() => alert("Apostas " + (novo ? "LIBERADAS ✅" : "TRAVADAS 🔒") + " com sucesso!"))
+    .catch(e => alert("Erro: " + e.message));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ABA APOSTADORES
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// Fases e quantidades totais de jogos por fase
 const FASES_CONFIG = [
-  { key: "grupos",   label: "Grupos"   },
-  { key: "32avos",   label: "32avos"   },
-  { key: "oitavas",  label: "Oitavas"  },
-  { key: "quartas",  label: "Quartas"  },
-  { key: "semis",    label: "Semis"    },
-  { key: "final",    label: "Final"    },
+  { key: "grupos",  label: "Grupos"  },
+  { key: "32avos",  label: "32avos"  },
+  { key: "oitavas", label: "Oitavas" },
+  { key: "quartas", label: "Quartas" },
+  { key: "semis",   label: "Semis"   },
+  { key: "final",   label: "Final"   },
 ];
 
 function _totalJogosFase(fase) {
@@ -253,20 +253,15 @@ function _totalJogosFase(fase) {
 
 function _palpitesFase(apostadorId, fase) {
   const pals = APP.palpites[apostadorId] || {};
-  const jogos = (window.SCHEDULE || []).filter(j => j.fase === fase);
-  let count = 0;
-  for (const j of jogos) {
+  return (window.SCHEDULE || []).filter(j => j.fase === fase).filter(j => {
     const p = pals[j.id];
-    if (p && p.homeGoals !== undefined && p.awayGoals !== undefined) count++;
-  }
-  return count;
+    return p && p.homeGoals !== undefined && p.awayGoals !== undefined;
+  }).length;
 }
 
 function _especialesPreenchidos(apostador) {
   const esp = apostador.especiais || {};
-  const keys = ["campeao", "vice", "terceiro"];
-  const preenchidos = keys.filter(k => esp[k] && esp[k] !== "").length;
-  return { preenchidos, total: keys.length };
+  return { preenchidos: ["campeao", "vice", "terceiro"].filter(k => esp[k]).length, total: 3 };
 }
 
 function renderApostadores() {
@@ -276,8 +271,9 @@ function renderApostadores() {
   const apostadores = APP.apostadores;
 
   let h = '<div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">';
-  h += '<div style="font-size:.9rem;font-weight:800">👥 Apostadores <span style="font-size:.75rem;font-weight:400;color:var(--texto2)">(' + apostadores.length + ' cadastrados)</span></div>';
-  h += '</div>';
+  h += '<div style="font-size:.9rem;font-weight:800">👥 Apostadores';
+  h += ' <span style="font-size:.74rem;font-weight:400;color:var(--texto2)">(' + apostadores.length + ' cadastrados)</span>';
+  h += '</div></div>';
 
   if (!apostadores.length) {
     h += '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador cadastrado ainda.</div>';
@@ -285,183 +281,178 @@ function renderApostadores() {
     return;
   }
 
-  // Tabela horizontal responsiva
-  h += '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">';
-  h += '<table style="width:100%;border-collapse:collapse;font-size:.75rem;min-width:700px">';
+  // Número de colunas: Apostador + Token + fases + especiais + ações
+  const numCols = 2 + FASES_CONFIG.length + 1 + 1;
 
-  // Cabeçalho
-  h += '<thead><tr style="background:var(--fundo2);position:sticky;top:0;z-index:2">';
-  h += '<th style="' + _thStyle("left") + 'min-width:120px">Apostador</th>';
-  h += '<th style="' + _thStyle() + '">Token</th>';
+  h += '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--radius-sm);border:1px solid var(--borda)">';
+  h += '<table style="width:100%;border-collapse:collapse;font-size:.74rem;min-width:680px">';
+
+  h += '<thead><tr style="background:var(--fundo2)">';
+  h += _th("Apostador", "left", "min-width:130px");
+  h += _th("Token");
   for (const f of FASES_CONFIG) {
     const total = _totalJogosFase(f.key);
-    h += '<th style="' + _thStyle() + '">' + f.label + '<br><span style="font-weight:400;color:var(--texto2)">/' + total + '</span></th>';
+    h += _th(f.label + (total ? '<br><span style="font-weight:400;opacity:.55">/' + total + '</span>' : ''));
   }
-  h += '<th style="' + _thStyle() + '">Especiais<br><span style="font-weight:400;color:var(--texto2)">/3</span></th>';
-  h += '<th style="' + _thStyle() + '">Ações</th>';
+  h += _th('Especiais<br><span style="font-weight:400;opacity:.55">/3</span>');
+  h += _th("Ações");
   h += '</tr></thead><tbody>';
 
-  for (const a of apostadores) {
+  apostadores.forEach((a, idx) => {
     const esp = _especialesPreenchidos(a);
-    h += '<tr style="border-bottom:1px solid var(--borda)" id="row-apt-' + a.id + '">';
+    const bg = idx % 2 !== 0 ? "background:var(--fundo2)" : "";
 
-    // Nome + Apelido
-    h += '<td style="' + _tdStyle("left") + '">';
-    h += '<div style="font-weight:700;color:var(--texto1)">' + (a.apelido || "—") + '</div>';
-    h += '<div style="color:var(--texto2);font-size:.68rem">' + (a.nome || "sem nome") + '</div>';
+    h += '<tr style="border-bottom:1px solid var(--borda);' + bg + '" id="row-' + a.id + '">';
+
+    // Nome/apelido
+    h += '<td style="' + _tdS("left") + '">';
+    h += '<div style="font-weight:700">' + _esc(a.apelido || "—") + '</div>';
+    h += '<div style="color:var(--texto2);font-size:.65rem;margin-top:1px">' + _esc(a.nome || "sem nome") + '</div>';
     h += '</td>';
 
     // Token
-    h += '<td style="' + _tdStyle() + '">';
-    h += '<code style="font-size:.68rem;background:var(--fundo2);padding:2px 5px;border-radius:4px;color:var(--dourado)">' + (a.token || "—") + '</code>';
-    h += '</td>';
+    h += '<td style="' + _tdS() + '">';
+    h += '<code style="font-size:.66rem;background:var(--fundo);padding:2px 5px;border-radius:3px;color:var(--dourado)">';
+    h += _esc(a.token || "—") + '</code></td>';
 
-    // Apostas por fase
+    // Fases
     for (const f of FASES_CONFIG) {
       const total = _totalJogosFase(f.key);
       const feitos = _palpitesFase(a.id, f.key);
-      const cor = total === 0 ? "var(--texto2)" : feitos === total ? "var(--verde-light)" : feitos > 0 ? "var(--dourado)" : "var(--texto2)";
-      h += '<td style="' + _tdStyle() + 'color:' + cor + ';font-weight:' + (feitos > 0 ? "700" : "400") + '">' + feitos + '</td>';
+      let cor = "var(--texto2)";
+      if (total > 0 && feitos === total) cor = "var(--verde-light)";
+      else if (feitos > 0) cor = "var(--dourado)";
+      h += '<td style="' + _tdS() + 'color:' + cor + ';font-weight:' + (feitos > 0 ? 700 : 400) + '">';
+      h += feitos;
+      if (total) h += '<span style="opacity:.4;font-size:.64rem">/' + total + '</span>';
+      h += '</td>';
     }
 
     // Especiais
-    const corEsp = esp.preenchidos === esp.total ? "var(--verde-light)" : esp.preenchidos > 0 ? "var(--dourado)" : "var(--texto2)";
-    h += '<td style="' + _tdStyle() + 'color:' + corEsp + ';font-weight:' + (esp.preenchidos > 0 ? "700" : "400") + '">' + esp.preenchidos + '</td>';
+    {
+      const { preenchidos, total } = esp;
+      const cor = preenchidos === total ? "var(--verde-light)" : preenchidos > 0 ? "var(--dourado)" : "var(--texto2)";
+      h += '<td style="' + _tdS() + 'color:' + cor + ';font-weight:' + (preenchidos > 0 ? 700 : 400) + '">';
+      h += preenchidos + '<span style="opacity:.4;font-size:.64rem">/3</span></td>';
+    }
 
     // Ações
-    h += '<td style="' + _tdStyle() + '">';
-    h += '<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap">';
-    h += '<button class="btn btn-sm" onclick="editarApostador(\'' + a.id + '\')" style="font-size:.65rem;padding:3px 7px">✏️ Editar</button>';
-    h += '<button class="btn btn-perigo btn-sm" onclick="deletarApostadorId(\'' + a.id + '\')" style="font-size:.65rem;padding:3px 7px">🗑</button>';
-    h += '</div>';
-    h += '</td>';
+    h += '<td style="' + _tdS() + '">';
+    h += '<div style="display:flex;gap:4px;justify-content:center">';
+    h += '<button class="btn btn-sm" onclick="toggleEditApostador(\'' + a.id + '\')" style="font-size:.64rem;padding:3px 7px" title="Editar">✏️</button>';
+    h += '<button class="btn btn-perigo btn-sm" onclick="deletarApostadorId(\'' + a.id + '\')" style="font-size:.64rem;padding:3px 7px" title="Deletar">🗑</button>';
+    h += '</div></td>';
     h += '</tr>';
 
-    // Linha de edição (inline, hidden by default)
-    h += '<tr id="edit-row-' + a.id + '" style="display:none;background:var(--fundo2)">';
-    h += '<td colspan="' + (FASES_CONFIG.length + 4) + '" style="padding:10px 12px">';
-    h += _renderEditApostador(a);
+    // Linha de edição inline (oculta por padrão)
+    h += '<tr id="edit-row-' + a.id + '" style="display:none">';
+    h += '<td colspan="' + numCols + '" style="padding:10px 14px;background:color-mix(in srgb,var(--fundo2) 70%,transparent)">';
+    h += _htmlEditApostador(a);
     h += '</td></tr>';
-  }
+  });
 
   h += '</tbody></table></div>';
   el.innerHTML = h;
 }
 
-function _thStyle(align) {
-  return 'padding:8px 10px;text-align:' + (align || 'center') + ';font-size:.7rem;font-weight:700;border-bottom:2px solid var(--borda);white-space:nowrap;';
+function _th(label, align, extra) {
+  return '<th style="padding:8px 10px;text-align:' + (align || "center") + ';font-size:.7rem;' +
+    'font-weight:700;border-bottom:2px solid var(--borda);white-space:nowrap;' + (extra || "") + '">' + label + '</th>';
 }
-function _tdStyle(align) {
-  return 'padding:7px 10px;text-align:' + (align || 'center') + ';vertical-align:middle;';
+function _tdS(align) {
+  return 'padding:7px 10px;text-align:' + (align || "center") + ';vertical-align:middle;';
+}
+function _esc(str) {
+  return String(str).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 }
 
-function _renderEditApostador(a) {
-  const fases = FASES_CONFIG.map(f => f.key);
-  let h = '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">';
+function _htmlEditApostador(a) {
+  let h = '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">';
 
-  h += '<div><label style="font-size:.68rem;color:var(--texto2);display:block;margin-bottom:3px">Nome</label>';
-  h += '<input id="edit-nome-' + a.id + '" type="text" class="form-input" value="' + (a.nome || "") + '" style="padding:4px 8px;font-size:.75rem;width:150px"></div>';
+  h += '<div><label style="font-size:.67rem;color:var(--texto2);display:block;margin-bottom:3px">Nome</label>';
+  h += '<input id="edit-nome-' + a.id + '" type="text" class="form-input" value="' + _esc(a.nome || "") + '" style="padding:4px 8px;font-size:.74rem;width:160px"></div>';
 
-  h += '<div><label style="font-size:.68rem;color:var(--texto2);display:block;margin-bottom:3px">Apelido</label>';
-  h += '<input id="edit-apelido-' + a.id + '" type="text" class="form-input" maxlength="8" value="' + (a.apelido || "") + '" style="padding:4px 8px;font-size:.75rem;width:90px"></div>';
+  h += '<div><label style="font-size:.67rem;color:var(--texto2);display:block;margin-bottom:3px">Apelido</label>';
+  h += '<input id="edit-apelido-' + a.id + '" type="text" class="form-input" maxlength="8" value="' + _esc(a.apelido || "") + '" style="padding:4px 8px;font-size:.74rem;width:90px"></div>';
 
-  h += '<div><label style="font-size:.68rem;color:var(--texto2);display:block;margin-bottom:3px">Limpar apostas</label>';
-  h += '<select id="edit-limpar-fase-' + a.id + '" class="form-input" style="padding:4px 8px;font-size:.72rem">';
-  h += '<option value="">Selecionar fase...</option>';
-  for (const f of FASES_CONFIG) h += '<option value="' + f.key + '">' + f.label + '</option>';
+  h += '<div><label style="font-size:.67rem;color:var(--texto2);display:block;margin-bottom:3px">Limpar apostas de</label>';
+  h += '<select id="edit-fase-' + a.id + '" class="form-input" style="padding:4px 8px;font-size:.72rem;height:28px">';
+  h += '<option value="">— selecionar —</option>';
+  for (const f of FASES_CONFIG)
+    h += '<option value="' + f.key + '">' + f.label + '</option>';
   h += '<option value="especiais">Especiais</option>';
   h += '<option value="todas">⚠️ TODAS</option>';
   h += '</select></div>';
 
   h += '<div style="display:flex;gap:6px;margin-top:auto">';
   h += '<button class="btn btn-primario btn-sm" onclick="salvarEdicaoApostador(\'' + a.id + '\')" style="font-size:.7rem">💾 Salvar</button>';
-  h += '<button class="btn btn-perigo btn-sm" onclick="limparApostasApostador(\'' + a.id + '\')" style="font-size:.7rem">🗑 Limpar fase</button>';
-  h += '<button class="btn btn-sm" onclick="cancelarEdicaoApostador(\'' + a.id + '\')" style="font-size:.7rem;background:var(--borda)">Cancelar</button>';
-  h += '</div>';
-  h += '</div>';
+  h += '<button class="btn btn-perigo btn-sm" onclick="limparFaseApostador(\'' + a.id + '\')" style="font-size:.7rem">🗑 Limpar</button>';
+  h += '<button class="btn btn-sm" onclick="toggleEditApostador(\'' + a.id + '\')" style="font-size:.7rem;background:var(--borda)">✕ Fechar</button>';
+  h += '</div></div>';
   return h;
 }
 
-function editarApostador(id) {
-  // Fecha outros abertos
+function toggleEditApostador(id) {
   document.querySelectorAll('[id^="edit-row-"]').forEach(r => {
     if (r.id !== "edit-row-" + id) r.style.display = "none";
   });
   const row = document.getElementById("edit-row-" + id);
-  if (!row) return;
-  row.style.display = row.style.display === "none" ? "" : "none";
-}
-
-function cancelarEdicaoApostador(id) {
-  const row = document.getElementById("edit-row-" + id);
-  if (row) row.style.display = "none";
+  if (row) row.style.display = row.style.display === "none" ? "" : "none";
 }
 
 async function salvarEdicaoApostador(id) {
-  if (!adminAutenticado()) return alert("Não autorizado.");
+  if (!_adminAutenticado()) return alert("Não autorizado.");
   const a = APP.apostadores.find(x => x.id === id);
   if (!a) return;
 
   const novoNome = document.getElementById("edit-nome-" + id)?.value.trim();
-  let novoApelido = document.getElementById("edit-apelido-" + id)?.value.trim() || "";
-  novoApelido = novoApelido.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, "");
-  if (novoApelido.length > 0)
-    novoApelido = novoApelido.charAt(0).toUpperCase() + novoApelido.slice(1).toLowerCase();
+  let novoApelido = (document.getElementById("edit-apelido-" + id)?.value.trim() || "")
+    .replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, "");
+  if (novoApelido)
+    novoApelido = novoApelido[0].toUpperCase() + novoApelido.slice(1).toLowerCase();
 
-  if (!novoNome) { alert("Nome não pode ser vazio."); return; }
-
+  if (!novoNome) return alert("Nome não pode ser vazio.");
   a.nome = novoNome;
   a.apelido = novoApelido;
-
   await gravarApostador(a);
-  cancelarEdicaoApostador(id);
+  toggleEditApostador(id);
   renderApostadores();
-  alert("Apostador atualizado!");
 }
 
-async function limparApostasApostador(id) {
-  if (!adminAutenticado()) return alert("Não autorizado.");
-  const fase = document.getElementById("edit-limpar-fase-" + id)?.value;
-  if (!fase) { alert("Selecione uma fase para limpar."); return; }
+async function limparFaseApostador(id) {
+  if (!_adminAutenticado()) return alert("Não autorizado.");
+  const fase = document.getElementById("edit-fase-" + id)?.value;
+  if (!fase) return alert("Selecione uma fase para limpar.");
 
   const a = APP.apostadores.find(x => x.id === id);
   const nome = a?.apelido || a?.nome || id;
-
-  const descFase = fase === "todas" ? "TODAS as apostas" : fase === "especiais" ? "apostas especiais" : "apostas da fase: " + fase;
-  if (!confirm(`Limpar ${descFase} de ${nome}?`)) return;
+  const desc = fase === "todas" ? "TODAS as apostas" : fase === "especiais" ? "apostas especiais" : "apostas: " + fase;
+  if (!confirm("Limpar " + desc + " de " + nome + "?")) return;
 
   if (fase === "especiais") {
-    // Limpa especiais no apostador
     if (a) { a.especiais = {}; await gravarApostador(a); }
   } else {
-    // Limpa apostas de jogos da(s) fase(s)
     const fasesFiltro = fase === "todas" ? FASES_CONFIG.map(f => f.key) : [fase];
     const jogosParaLimpar = (window.SCHEDULE || []).filter(j => fasesFiltro.includes(j.fase));
-
     for (const j of jogosParaLimpar) {
       if (APP.palpites[id]) delete APP.palpites[id][j.id];
-      if (APP.db && !APP.modoOffline) {
+      if (APP.db && !APP.modoOffline)
         await APP.db.collection("apostadores").doc(id)
           .collection("palpites_jogos").doc(j.id).delete().catch(() => {});
-      }
     }
-
-    if (fase === "todas" && a) {
-      a.especiais = {};
-      await gravarApostador(a);
-    }
+    if (fase === "todas" && a) { a.especiais = {}; await gravarApostador(a); }
     _persistirLocal();
   }
 
-  cancelarEdicaoApostador(id);
+  toggleEditApostador(id);
   renderApostadores();
-  alert("Apostas limpas com sucesso!");
+  alert("✅ Apostas limpas.");
 }
 
 function deletarApostadorId(id) {
-  if (!adminAutenticado()) return alert("Não autorizado.");
+  if (!_adminAutenticado()) return alert("Não autorizado.");
   const a = APP.apostadores.find(x => x.id === id);
-  if (!confirm(`Deletar o apostador "${a?.apelido || a?.nome}"? Esta ação não pode ser desfeita.`)) return;
+  if (!confirm('Deletar "' + _esc(a?.apelido || a?.nome || id) + '"? Não pode ser desfeito.')) return;
 
   APP.apostadores = APP.apostadores.filter(x => x.id !== id);
   delete APP.palpites[id];
@@ -473,7 +464,6 @@ function deletarApostadorId(id) {
       .then(snap => snap.forEach(doc => doc.ref.delete()));
   }
   renderApostadores();
-  alert("Apostador deletado.");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -484,156 +474,128 @@ async function renderTokens() {
   const el = document.getElementById("aba-tokens");
   if (!el) return;
 
-  el.innerHTML = '<div class="loading"><div class="spinner"></div>Buscando tokens...</div>';
-
-  let tokens = [];
-  if (APP.db && !APP.modoOffline) {
-    try {
-      const snap = await APP.db.collection("tokens").get();
-      tokens = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch (e) {
-      el.innerHTML = '<div class="card" style="color:var(--vermelho)">Erro ao carregar tokens: ' + e.message + '</div>';
-      return;
-    }
-  } else {
-    el.innerHTML = '<div class="card" style="color:var(--texto2)">Tokens não disponíveis no modo offline.</div>';
+  if (APP.modoOffline) {
+    el.innerHTML = '<div class="card" style="color:var(--texto2);text-align:center;padding:30px">Tokens indisponíveis no modo offline.</div>';
     return;
   }
 
-  // Mapeia tokens usados
-  const tokensUsados = new Set(APP.apostadores.map(a => a.token).filter(Boolean));
+  el.innerHTML = '<div class="loading"><div class="spinner"></div>Buscando tokens...</div>';
 
-  const livres = tokens.filter(t => t.ativo !== false && !tokensUsados.has(t.token));
-  const usados = tokens.filter(t => tokensUsados.has(t.token));
+  let tokens = [];
+  try {
+    const snap = await APP.db.collection("tokens").get();
+    tokens = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (e) {
+    el.innerHTML = '<div class="card" style="color:var(--vermelho)">Erro ao carregar tokens: ' + _esc(e.message) + '</div>';
+    return;
+  }
+
+  const tokensUsados = new Set(APP.apostadores.map(a => a.token).filter(Boolean));
+  const usados   = tokens.filter(t => tokensUsados.has(t.token));
+  const livres   = tokens.filter(t => t.ativo !== false && !tokensUsados.has(t.token));
   const inativos = tokens.filter(t => t.ativo === false && !tokensUsados.has(t.token));
 
-  let h = '<div style="margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">';
+  let h = '<div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">';
   h += '<div style="font-size:.9rem;font-weight:800">🔑 Tokens</div>';
-  h += '<span style="font-size:.72rem;padding:2px 8px;border-radius:10px;background:var(--verde-ok);color:#fff">' + usados.length + ' usados</span>';
-  h += '<span style="font-size:.72rem;padding:2px 8px;border-radius:10px;background:var(--fundo2);color:var(--verde-light);border:1px solid var(--verde-light)">' + livres.length + ' disponíveis</span>';
-  if (inativos.length) h += '<span style="font-size:.72rem;padding:2px 8px;border-radius:10px;background:var(--fundo2);color:var(--texto2);border:1px solid var(--borda)">' + inativos.length + ' inativos</span>';
+  h += '<span style="font-size:.71rem;padding:2px 8px;border-radius:10px;background:var(--verde-ok);color:#fff">' + usados.length + ' em uso</span>';
+  h += '<span style="font-size:.71rem;padding:2px 8px;border-radius:10px;border:1px solid var(--verde-light);color:var(--verde-light)">' + livres.length + ' livres</span>';
+  if (inativos.length)
+    h += '<span style="font-size:.71rem;padding:2px 8px;border-radius:10px;border:1px solid var(--borda);color:var(--texto2)">' + inativos.length + ' inativos</span>';
   h += '<button class="btn btn-primario btn-sm" onclick="criarToken()" style="margin-left:auto">+ Novo Token</button>';
   h += '</div>';
 
-  // ── Tokens em uso ──
   if (usados.length) {
-    h += '<div class="card">';
-    h += '<div class="card-titulo">✅ Em Uso (' + usados.length + ')</div>';
-    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">';
-    for (const t of usados) {
-      const apt = APP.apostadores.find(a => a.token === t.token);
-      h += _renderTokenCard(t, apt, "usado");
-    }
+    h += '<div class="card"><div class="card-titulo">✅ Em Uso (' + usados.length + ')</div>';
+    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px">';
+    usados.forEach(t => { h += _tokenCard(t, APP.apostadores.find(a => a.token === t.token), "usado"); });
     h += '</div></div>';
   }
 
-  // ── Tokens disponíveis ──
   if (livres.length) {
-    h += '<div class="card">';
-    h += '<div class="card-titulo">🟢 Disponíveis (' + livres.length + ')</div>';
-    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">';
-    for (const t of livres) {
-      h += _renderTokenCard(t, null, "livre");
-    }
+    h += '<div class="card"><div class="card-titulo">🟢 Disponíveis (' + livres.length + ')</div>';
+    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px">';
+    livres.forEach(t => { h += _tokenCard(t, null, "livre"); });
     h += '</div></div>';
   }
 
-  // ── Tokens inativos ──
   if (inativos.length) {
-    h += '<div class="card">';
-    h += '<div class="card-titulo">⛔ Inativos (' + inativos.length + ')</div>';
-    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">';
-    for (const t of inativos) {
-      h += _renderTokenCard(t, null, "inativo");
-    }
+    h += '<div class="card"><div class="card-titulo">⛔ Inativos (' + inativos.length + ')</div>';
+    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px">';
+    inativos.forEach(t => { h += _tokenCard(t, null, "inativo"); });
     h += '</div></div>';
   }
 
   if (!tokens.length) {
-    h += '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum token cadastrado ainda.<br>Crie o primeiro token abaixo.<br><br>';
-    h += '<button class="btn btn-primario" onclick="criarToken()">+ Criar Token</button></div>';
+    h += '<div class="card" style="text-align:center;padding:30px;color:var(--texto2)">';
+    h += 'Nenhum token cadastrado.<br><br>';
+    h += '<button class="btn btn-primario" onclick="criarToken()">+ Criar primeiro token</button></div>';
   }
 
   el.innerHTML = h;
 }
 
-function _renderTokenCard(t, apt, tipo) {
+function _tokenCard(t, apt, tipo) {
   const corBorda = tipo === "usado" ? "var(--verde-ok)" : tipo === "livre" ? "var(--verde-light)" : "var(--borda)";
-  const baseUrl = location.origin + location.pathname.replace("admin.html", "") + "aposta.html?token=";
-  const link = baseUrl + (t.token || t.id);
+  const tokenVal = t.token || t.id;
+  const baseUrl = location.origin + location.pathname.replace(/admin\.html.*/, "") + "aposta.html?token=";
+  const link = baseUrl + tokenVal;
 
   let h = '<div style="background:var(--fundo2);border-radius:var(--radius-sm);padding:10px 12px;border-left:3px solid ' + corBorda + '">';
 
-  // Token value
-  h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">';
-  h += '<code style="font-size:.72rem;color:var(--dourado);background:var(--fundo);padding:2px 6px;border-radius:4px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (t.token || t.id) + '</code>';
-  h += '<button onclick="copiarTexto(\'' + (t.token || t.id) + '\')" style="border:none;background:none;cursor:pointer;font-size:.9rem;padding:2px" title="Copiar token">📋</button>';
+  h += '<div style="display:flex;align-items:center;gap:5px;margin-bottom:6px">';
+  h += '<code style="font-size:.7rem;color:var(--dourado);background:var(--fundo);padding:2px 6px;border-radius:3px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(tokenVal) + '</code>';
+  h += '<button onclick="copiarTexto(\'' + _esc(tokenVal) + '\',this)" title="Copiar token" style="border:none;background:none;cursor:pointer;font-size:.85rem;padding:1px 3px;flex-shrink:0">📋</button>';
   h += '</div>';
 
   if (apt) {
-    h += '<div style="font-size:.72rem;font-weight:700;color:var(--texto1)">' + (apt.apelido || apt.nome || "—") + '</div>';
-    h += '<div style="font-size:.65rem;color:var(--texto2)">' + (apt.nome || "") + '</div>';
+    h += '<div style="font-size:.73rem;font-weight:700">' + _esc(apt.apelido || apt.nome || "—") + '</div>';
+    if (apt.nome && apt.apelido) h += '<div style="font-size:.65rem;color:var(--texto2)">' + _esc(apt.nome) + '</div>';
   } else if (tipo === "livre") {
-    h += '<div style="font-size:.7rem;color:var(--verde-light)">Disponível</div>';
-    h += '<div style="font-size:.65rem;color:var(--texto2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">';
-    h += '<a href="' + link + '" target="_blank" style="color:var(--texto2);text-decoration:none">' + link + '</a></div>';
+    h += '<div style="font-size:.68rem;color:var(--verde-light);margin-bottom:2px">Disponível</div>';
+    h += '<div style="font-size:.62rem;color:var(--texto2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">';
+    h += '<a href="' + link + '" target="_blank" style="color:inherit">' + link + '</a></div>';
   } else {
-    h += '<div style="font-size:.7rem;color:var(--texto2)">Inativo</div>';
+    h += '<div style="font-size:.68rem;color:var(--texto2)">Inativo</div>';
   }
 
-  h += '<div style="display:flex;gap:4px;margin-top:8px">';
-  if (tipo !== "usado") {
-    h += '<button class="btn btn-sm" onclick="copiarLink(\'' + link + '\')" style="font-size:.62rem;padding:2px 6px">🔗 Copiar Link</button>';
-  }
-  if (tipo !== "usado") {
+  h += '<div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">';
+  if (tipo !== "usado")
+    h += '<button class="btn btn-sm" onclick="copiarLink(\'' + link + '\',this)" style="font-size:.62rem;padding:2px 6px">🔗 Link</button>';
+  if (tipo !== "usado")
     h += '<button class="btn btn-perigo btn-sm" onclick="deletarToken(\'' + t.id + '\')" style="font-size:.62rem;padding:2px 6px">🗑</button>';
-  }
   h += '</div>';
   h += '</div>';
   return h;
 }
 
-function copiarTexto(txt) {
+function copiarTexto(txt, btn) {
   navigator.clipboard?.writeText(txt).then(() => {
-    // feedback visual mínimo
-    const el = event.target;
-    const orig = el.textContent;
-    el.textContent = "✓";
-    setTimeout(() => (el.textContent = orig), 1200);
+    if (btn) { const o = btn.textContent; btn.textContent = "✓"; setTimeout(() => btn.textContent = o, 1200); }
   }).catch(() => alert("Token: " + txt));
 }
 
-function copiarLink(url) {
+function copiarLink(url, btn) {
   navigator.clipboard?.writeText(url).then(() => {
-    const el = event.target;
-    const orig = el.textContent;
-    el.textContent = "✓ Copiado!";
-    setTimeout(() => (el.textContent = orig), 1500);
+    if (btn) { const o = btn.textContent; btn.textContent = "✓ Copiado!"; setTimeout(() => btn.textContent = o, 1500); }
   }).catch(() => alert("Link: " + url));
 }
 
 async function criarToken() {
-  if (!adminAutenticado()) return alert("Não autorizado.");
+  if (!_adminAutenticado()) return alert("Não autorizado.");
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
   const token = Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-
-  if (!confirm(`Criar token: ${token}?`)) return;
-
+  if (!confirm("Criar token: " + token + "?")) return;
   try {
     await APP.db.collection("tokens").add({ token, ativo: true, criado_em: new Date().toISOString() });
     renderTokens();
-  } catch (e) {
-    alert("Erro ao criar token: " + e.message);
-  }
+  } catch (e) { alert("Erro: " + e.message); }
 }
 
 async function deletarToken(tokenDocId) {
-  if (!adminAutenticado()) return alert("Não autorizado.");
+  if (!_adminAutenticado()) return alert("Não autorizado.");
   if (!confirm("Deletar este token permanentemente?")) return;
   try {
     await APP.db.collection("tokens").doc(tokenDocId).delete();
     renderTokens();
-  } catch (e) {
-    alert("Erro ao deletar: " + e.message);
-  }
+  } catch (e) { alert("Erro: " + e.message); }
 }
