@@ -44,7 +44,7 @@ window.renderCompilacao = function () {
   });
 
   h += '<div class="compilacao-wrap"><table class="compilacao-table"><thead><tr>';
-  h += '<th class="col-jogo" style="position:sticky;left:0;background:var(--fundo2);z-index:2">Jogo</th>';
+  h += '<th class="col-jogo" style="position:sticky;left:0;background:var(--fundo2);z-index:2;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Jogo</th>';
   h += '<th class="col-resultado" style="z-index:1">Resultado</th>';
   for (const a of ranking) h += '<th title="' + a.nome + '" style="z-index:1;max-width:50px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:4px 2px">' + (a.apelido || a.nome || "?") + '</th>';
   h += '</tr></thead><tbody>';
@@ -57,7 +57,7 @@ window.renderCompilacao = function () {
     const hN = getShortName(hC);
     const aN = getShortName(aC);
     const dataHora = formatarDataBRT(jogo.utc, false);
-    h += '<tr><td class="col-jogo" style="position:sticky;left:0;background:var(--card2);padding:6px 8px;z-index:1">';
+    h += '<tr><td class="col-jogo" style="position:sticky;left:0;background:var(--card2);padding:6px 8px;z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">';
     h += '<div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">' + dataHora + '</div>';
     h += '<div style="display:flex;align-items:center;gap:4px;font-weight:700">' + htmlBandeira(hC, 14) + ' <span class="compilacao-time-nome" title="' + hN + '">' + hN + '</span> <span style="color:var(--texto2)">×</span> <span class="compilacao-time-nome" title="' + aN + '">' + aN + '</span> ' + htmlBandeira(aC, 14) + '</div></td>';
     // Resultado oficial

@@ -88,7 +88,7 @@ window.renderEstatisticas = function () {
   h += '<div class="card"><div class="card-titulo">📈 Estatísticas Avançadas por Jogo</div>';
   h += '<div class="compilacao-wrap"><table class="compilacao-table" style="min-width:1400px; font-size:.72rem">';
   h += '<thead><tr>';
-  h += '<th class="stat-col-jogo" style="text-align:left;position:sticky;left:0;background:var(--card);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Jogo</th>';
+  h += '<th class="stat-col-jogo" style="text-align:left;position:sticky;left:0;background:var(--fundo2);z-index:2;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Jogo</th>';
   h += '<th class="col-resultado">Resultado</th>';
   h += '<th>Apostas Time 1</th>';
   h += '<th>Apostas Empate</th>';
@@ -152,10 +152,10 @@ window.renderEstatisticas = function () {
     const rowBg = (r && r.homeGoals !== undefined) ? '' : ' opacity:0.65;';
 
     h += `<tr style="${rowBg}">`;
-    h += `<td class="stat-col-jogo" style="text-align:left;position:sticky;left:0;background:var(--card);z-index:1;border-right:1px solid var(--borda)">
-            <div style="font-size:.62rem;color:var(--texto2);margin-bottom:3px">${formatarDataBRT(jogo.utc, true)}</div>
+    h += `<td class="stat-col-jogo" style="text-align:left;position:sticky;left:0;background:var(--card2);padding:6px 8px;z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">
+            <div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">${formatarDataBRT(jogo.utc, true)}</div>
             <div style="display:flex;align-items:center;gap:4px;font-weight:700">
-              ${htmlBandeira(hC, 12)} <span class="stat-time-nome">${hName}</span> <span style="color:var(--texto2)">×</span> <span class="stat-time-nome">${aName}</span> ${htmlBandeira(aC, 12)}
+              ${htmlBandeira(hC,14)} <span class="stat-time-nome">${hName}</span> <span style="color:var(--texto2)">×</span> <span class="stat-time-nome">${aName}</span> ${htmlBandeira(aC,14)}
             </div>
           </td>`;
 
