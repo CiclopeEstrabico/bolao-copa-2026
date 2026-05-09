@@ -27,7 +27,7 @@ function calcularPontosBrutos(palpite, resultado) {
   const cfg = window.CONFIG.pontuacao;
 
   if (!resultado || resultado.homeGoals === undefined) {
-    return { total_bruto:0, base:0, bonus_pts:0, bonus_tipo:null, descricao:"Aguardando resultado", acertou:null };
+    return { total_bruto: 0, base: 0, bonus_pts: 0, bonus_tipo: null, descricao: "Aguardando resultado", acertou: null };
   }
 
   const Hp = Number(palpite.homeGoals);
@@ -41,7 +41,7 @@ function calcularPontosBrutos(palpite, resultado) {
   const res_pal = _vencedor(Hp, Ap);
 
   if (res_pal !== res_ef) {
-    return { total_bruto:0, base:0, bonus_pts:0, bonus_tipo:"erro", descricao:"Resultado errado", acertou:false };
+    return { total_bruto: 0, base: 0, bonus_pts: 0, bonus_tipo: "erro", descricao: "Resultado errado", acertou: false };
   }
 
   // Placar exato: nao aplicavel em jogo de penaltis
@@ -68,7 +68,7 @@ function calcularPontosBrutos(palpite, resultado) {
     const acertou_diff = Math.abs(Hp - Ap) === Math.abs(Hr - Ar);
     const acertou_gols = Hp === Hr || Ap === Ar;
     if (acertou_diff) { bonus += cfg.bonus_diferenca_gols; tipos.push("diferenca"); }
-    if (acertou_gols)  { bonus += cfg.bonus_gols_um_time;   tipos.push("gols"); }
+    if (acertou_gols) { bonus += cfg.bonus_gols_um_time; tipos.push("gols"); }
   }
 
   return {
@@ -99,8 +99,8 @@ function calcularPontosEspeciais(participante, campeaoOf, viceOf, terceiroOf) {
   const cfg = window.CONFIG.pontuacao.extras;
   let total = 0;
   const detalhes = [];
-  if (campeaoOf  && participante.palpite_campeao  === campeaoOf)  { total += cfg.primeiro_lugar; detalhes.push("Campeao +" + cfg.primeiro_lugar); }
-  if (viceOf     && participante.palpite_vice     === viceOf)     { total += cfg.segundo_lugar;  detalhes.push("Vice +" + cfg.segundo_lugar); }
+  if (campeaoOf && participante.palpite_campeao === campeaoOf) { total += cfg.primeiro_lugar; detalhes.push("Campeao +" + cfg.primeiro_lugar); }
+  if (viceOf && participante.palpite_vice === viceOf) { total += cfg.segundo_lugar; detalhes.push("Vice +" + cfg.segundo_lugar); }
   if (terceiroOf && participante.palpite_terceiro === terceiroOf) { total += cfg.terceiro_lugar; detalhes.push("3o lugar +" + cfg.terceiro_lugar); }
   return { total_especiais: total, detalhes };
 }
@@ -136,9 +136,10 @@ function calcularPontosApostador(palpites, resultados, participante, especiais) 
     } else if (brutos.acertou === true) {
       acertos_resultado++; // Todo resultado correto conta
       if (brutos.bonus_tipo === "placar_exato") {
-        acertos_placar++;
         if (brutos.bonus_pts === (window.CONFIG?.pontuacao?.bonus_placar_exato_alto || 5)) {
           acertos_placar_alto++;
+        } else {
+          acertos_placar++;
         }
       } else {
         if (brutos.bonus_pts > 0) {
@@ -201,14 +202,15 @@ function gerarRanking(todosOsPalpites, resultados, participantes, especiais) {
 
   stats.sort((a, b) => {
     if (b.stats.total !== a.stats.total) return b.stats.total - a.stats.total;
-    if (b.stats.acertos_placar_exato !== a.stats.acertos_placar_exato)
-      return b.stats.acertos_placar_exato - a.stats.acertos_placar_exato;
+    const totA = a.stats.acertos_placar_exato + a.stats.acertos_placar_alto;
+    const totB = b.stats.acertos_placar_exato + b.stats.acertos_placar_alto;
+    if (totB !== totA) return totB - totA;
     return b.stats.acertos_resultado - a.stats.acertos_resultado;
   });
 
   let pos = 1;
   return stats.map((item, i) => {
-    if (i > 0 && item.stats.total < stats[i-1].stats.total) pos = i + 1;
+    if (i > 0 && item.stats.total < stats[i - 1].stats.total) pos = i + 1;
     return { posicao: pos, ...item };
   });
 }
