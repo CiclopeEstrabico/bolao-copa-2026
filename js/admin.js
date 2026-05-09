@@ -124,20 +124,41 @@ function renderAdmin() {
 
   const res = getResultados();
   const tg = window.BRACKET.calcularTodosOsGrupos(res);
-  const st = APP.configStatus?.apostas_liberadas;
-  const btnTxt = st ? "🔓 Travar Apostas" : "🔒 Liberar Apostas";
-  const btnClass = st ? "btn-perigo" : "btn-primario";
+  const status = APP.configStatus || {};
 
-  let h = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">';
-  h += '<div style="font-size:.9rem;font-weight:800;display:flex;gap:8px;align-items:center">';
-  h += '🔧 Resultados Oficiais';
-  h += '<button class="btn ' + btnClass + ' btn-sm" onclick="toggleApostasLiberadas()">' + btnTxt + '</button>';
-  h += '</div>';
+  let h = '<div style="display:flex;flex-direction:column;gap:12px;margin-bottom:12px">';
+  
+  // Linha de controles de trava (Mobile-First)
+  h += '<div class="card" style="padding:10px;margin-bottom:0">';
+  h += '<div style="font-size:.75rem;font-weight:700;color:var(--texto2);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">🔓 Controle de Acesso (Manual)</div>';
+  h += '<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;-ms-overflow-style:none">';
+  
+  const bts = [
+    { k: "grupos",  l: "Grupos" },
+    { k: "32avos",  l: "32avos" },
+    { k: "oitavas", l: "Oitavas" },
+    { k: "quartas", l: "Quartas" },
+    { k: "semis",   l: "Semis" },
+    { k: "finais",  l: "Finais" }
+  ];
+
+  bts.forEach(b => {
+    const liberado = !!status["liberado_" + b.k];
+    const icon = liberado ? "🔓" : "🔒";
+    const cl = liberado ? "btn-primario" : "btn-perigo";
+    h += `<button class="btn ${cl} btn-sm" onclick="toggleStatusFase('${b.k}')" style="white-space:nowrap;font-size:.65rem;padding:4px 8px;flex-shrink:0">${icon} ${b.l}</button>`;
+  });
+  
+  h += '</div></div>';
+
+  // Linha de ações globais
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">';
+  h += '<div style="font-size:.9rem;font-weight:800">🔧 Resultados Oficiais</div>';
   h += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
   h += '<button class="btn btn-perigo btn-sm" onclick="limparTudoAdmin()">🗑 Limpar</button>';
   h += '<button class="btn btn-primario btn-sm" onclick="gravarTudoAdmin()">💾 GRAVAR OFICIAL</button>';
   h += '<button class="btn btn-sm" onclick="logoutAdmin()" style="background:var(--borda)">Sair</button>';
-  h += '</div></div>';
+  h += '</div></div></div>';
 
   h += renderJogosComToggle(res, tg, true, null);
 
@@ -222,15 +243,18 @@ function gravarTudoAdmin() {
   }
 }
 
-function toggleApostasLiberadas() {
+function toggleStatusFase(fase) {
   if (!_adminAutenticado()) return alert("Não autorizado.");
   if (APP.modoOffline) return alert("Indisponível offline.");
-  const atual = APP.configStatus?.apostas_liberadas || false;
+  const key = "liberado_" + fase;
+  const atual = !!(APP.configStatus && APP.configStatus[key]);
   const novo = !atual;
-  if (!confirm("Deseja realmente " + (novo ? "LIBERAR" : "TRAVAR") + " as apostas?")) return;
+  
+  if (!confirm("Deseja realmente " + (novo ? "LIBERAR" : "TRAVAR") + " apostas de " + fase + "?")) return;
+  
   APP.db.collection("config").doc("status")
-    .set({ apostas_liberadas: novo }, { merge: true })
-    .then(() => alert("Apostas " + (novo ? "LIBERADAS ✅" : "TRAVADAS 🔒") + " com sucesso!"))
+    .set({ [key]: novo }, { merge: true })
+    .then(() => alert("Fase " + fase.toUpperCase() + " " + (novo ? "LIBERADA ✅" : "TRAVADA 🔒")))
     .catch(e => alert("Erro: " + e.message));
 }
 
@@ -244,16 +268,18 @@ const FASES_CONFIG = [
   { key: "oitavas", label: "Oitavas" },
   { key: "quartas", label: "Quartas" },
   { key: "semis",   label: "Semis"   },
-  { key: "final",   label: "Final"   },
+  { key: "finais",  label: "Finais"  },
 ];
 
 function _totalJogosFase(fase) {
-  return (window.SCHEDULE || []).filter(j => j.fase === fase).length;
+  const fases = fase === "finais" ? ["final", "terceiro"] : [fase];
+  return (window.SCHEDULE || []).filter(j => fases.includes(j.fase)).length;
 }
 
 function _palpitesFase(apostadorId, fase) {
+  const fases = fase === "finais" ? ["final", "terceiro"] : [fase];
   const pals = APP.palpites[apostadorId] || {};
-  return (window.SCHEDULE || []).filter(j => j.fase === fase).filter(j => {
+  return (window.SCHEDULE || []).filter(j => fases.includes(j.fase)).filter(j => {
     const p = pals[j.id];
     return p && p.homeGoals !== undefined && p.awayGoals !== undefined;
   }).length;
@@ -432,7 +458,8 @@ async function limparFaseApostador(id) {
   if (fase === "especiais") {
     if (a) { a.especiais = {}; await gravarApostador(a); }
   } else {
-    const fasesFiltro = fase === "todas" ? FASES_CONFIG.map(f => f.key) : [fase];
+    const fasesFiltro = fase === "todas" ? ["grupos", "32avos", "oitavas", "quartas", "semis", "final", "terceiro"] : 
+                       (fase === "finais" ? ["final", "terceiro"] : [fase]);
     const jogosParaLimpar = (window.SCHEDULE || []).filter(j => fasesFiltro.includes(j.fase));
     for (const j of jogosParaLimpar) {
       if (APP.palpites[id]) delete APP.palpites[id][j.id];

@@ -107,7 +107,9 @@ async function gravarApostador(apostador) {
 }
 
 async function gravarPalpite(apostadorId, gameId, homeGoals, awayGoals) {
-  const data = { apostadorId, gameId, homeGoals, awayGoals,
+  const jogo = window.SCHEDULE_BY_ID[gameId];
+  const fase = (jogo.fase === "final" || jogo.fase === "terceiro") ? "finais" : jogo.fase;
+  const data = { apostadorId, gameId, homeGoals, awayGoals, fase,
     atualizado_em: new Date().toISOString() };
   if (APP.modoOffline) {
     if (!APP.palpites[apostadorId]) APP.palpites[apostadorId] = {};
@@ -214,10 +216,14 @@ function nomeTime(code) {
 function jogoAceita(jogoId) {
   const jogo = window.SCHEDULE_BY_ID[jogoId];
   if (!jogo) return false;
-  const dlJogo = new Date(jogo.utc).getTime() - window.CONFIG.deadline_min_antes_jogo * 60000;
-  const faseConf = window.CONFIG.fases_apostas.find(f => f.fases_cobertas.includes(jogo.fase));
-  if (!faseConf) return false;
-  return Date.now() < Math.min(dlJogo, new Date(faseConf.deadline_utc).getTime());
+  const status = APP.configStatus || {};
+  if (jogo.fase === "grupos") return !!status.liberado_grupos;
+  if (jogo.fase === "32avos") return !!status.liberado_32avos;
+  if (jogo.fase === "oitavas") return !!status.liberado_oitavas;
+  if (jogo.fase === "quartas") return !!status.liberado_quartas;
+  if (jogo.fase === "semis") return !!status.liberado_semis;
+  if (jogo.fase === "final" || jogo.fase === "terceiro") return !!status.liberado_finais;
+  return false;
 }
 function adminAutenticado() {
   return sessionStorage.getItem("bolao_admin") === window.CONFIG.admin_senha;
