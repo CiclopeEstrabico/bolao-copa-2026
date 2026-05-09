@@ -3,7 +3,7 @@
 window._isAdminView = true;
 
 // ─── UID do admin (não é segredo — não é senha, não autentica sozinho) ───────
-const ADMIN_UID = "SEU_UID_AQUI";
+const ADMIN_UID = "oSnCwYjIe6eh7W1pUhZZUtX0B1q2";
 
 // ─── Auth helpers ─────────────────────────────────────────────────────────────
 function adminAutenticado() {
