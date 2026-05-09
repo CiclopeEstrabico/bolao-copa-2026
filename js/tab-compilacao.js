@@ -27,8 +27,6 @@ window.renderCompilacao = function() {
   h += '<button class="btn-toggle'+(ordemStr==="pts"?" ativo":"")+'" onclick="window._compOrdem=\'pts\';renderAbaAtiva()">Pontos</button>';
   h += '<button class="btn-toggle'+(ordemStr==="res"?" ativo":"")+'" onclick="window._compOrdem=\'res\';renderAbaAtiva()">Resultados</button>';
   h += '<button class="btn-toggle'+(ordemStr==="placar"?" ativo":"")+'" onclick="window._compOrdem=\'placar\';renderAbaAtiva()">Placar</button>';
-  h += '<button class="btn btn-primario btn-sm" style="margin-left:auto;margin-right:8px" onclick="exportarCompilacaoCsv()">📊 Exportar CSV</button>';
-  h += '<button class="btn btn-primario btn-sm" onclick="exportarCompilacaoJson()">📥 Exportar JSON</button>';
   h += '</div>';
 
   const jogos = (window.SCHEDULE||[]).filter(j => faseAtiva==="todos" || j.fase===faseAtiva)
@@ -122,6 +120,12 @@ window.renderCompilacao = function() {
     h += '</tr>';
   }
   h += '</tbody></table></div>';
+  
+  h += '<div style="display:flex;justify-content:center;gap:12px;margin-top:20px;margin-bottom:10px">';
+  h += '<button class="btn btn-secundario" onclick="exportarCompilacaoCsv()">📊 Exportar CSV</button>';
+  h += '<button class="btn btn-secundario" onclick="exportarCompilacaoJson()">📥 Exportar JSON</button>';
+  h += '</div>';
+
   el.innerHTML = h;
 };
 
