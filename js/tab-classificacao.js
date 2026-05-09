@@ -75,9 +75,22 @@ window.renderClassificacao = function() {
       const jg = st.jogos?.find(x=>x.gameId===jId);
       if (!jg) { spark += '<span style="color:var(--texto2)">·</span>'; continue; }
       if (jg.acertou === null) { spark += '<span style="color:var(--texto2)">·</span>'; continue; }
-      if (jg.bonus_tipo==="placar_exato") spark += '<span style="color:#86efac" title="Placar exato +'+jg.pontos+'pts">🟢</span>';
-      else if (jg.acertou) spark += '<span style="color:#4ade80" title="Acertou +'+jg.pontos+'pts">✓</span>';
-      else spark += '<span style="color:#f87171" title="Errou">✗</span>';
+      
+      if (jg.bonus_tipo === "placar_exato") {
+        if (jg.bonus_pts === (window.CONFIG?.pontuacao?.bonus_placar_exato_alto || 5)) {
+          spark += '<span title="Placar alto +'+jg.pontos+'pts">🔥</span>';
+        } else {
+          spark += '<span title="Placar exato +'+jg.pontos+'pts">🎯</span>';
+        }
+      } else if (jg.acertou) {
+        if (jg.bonus_pts > 0) {
+          spark += '<span title="Resultado com Bônus +'+jg.pontos+'pts">✨</span>';
+        } else {
+          spark += '<span style="color:var(--texto)" title="Resultado +'+jg.pontos+'pts">✓</span>';
+        }
+      } else {
+        spark += '<span style="color:var(--texto2)" title="Errou">✗</span>';
+      }
     }
 
     const jReal = st.jogos_realizados || 0;

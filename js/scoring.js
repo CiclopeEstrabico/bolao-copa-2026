@@ -155,6 +155,7 @@ function calcularPontosApostador(palpites, resultados, participante, especiais) 
       gameId: jogo.id, fase: jogo.fase, pontos,
       total_bruto: brutos.total_bruto,
       bonus_tipo: brutos.bonus_tipo,
+      bonus_pts: brutos.bonus_pts,
       detalhe: brutos.descricao,
       acertou: brutos.acertou
     });
