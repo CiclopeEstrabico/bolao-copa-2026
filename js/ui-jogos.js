@@ -217,15 +217,18 @@ function renderJogoRow(jogo,res,ehElim,isAdm,palApo,showFullDate=false){
     }
   } else {
     const v1=temRes?hg:(pal?.homeGoals??""); const v2=temRes?ag:(pal?.awayGoals??"");
-    h+='<div class="placar-inputs"><input type="number" class="placar-input" id="sim-hg-'+jogo.id+'" min="0" max="20" value="'+v1+'" placeholder="-" oninput="_onInputPlacar(\''+jogo.id+'\','+ehElim+')" onblur="_onBlurPlacar(\''+jogo.id+'\','+ehElim+')">';
+    const isLockedAposta = !isAdm && window.location.pathname.includes("aposta.html") && window.APP?.configStatus?.apostas_liberadas === false;
+    const disAttr = isLockedAposta ? ' disabled style="background-color:var(--fundo2);color:var(--texto2);opacity:0.6;cursor:not-allowed;"' : '';
+    
+    h+='<div class="placar-inputs"><input type="number" class="placar-input" id="sim-hg-'+jogo.id+'" min="0" max="20" value="'+v1+'" placeholder="-" oninput="_onInputPlacar(\''+jogo.id+'\','+ehElim+')" onblur="_onBlurPlacar(\''+jogo.id+'\','+ehElim+')"'+disAttr+'>';
     h+='<span class="vs">x</span>';
-    h+='<input type="number" class="placar-input" id="sim-ag-'+jogo.id+'" min="0" max="20" value="'+v2+'" placeholder="-" oninput="_onInputPlacar(\''+jogo.id+'\','+ehElim+')" onblur="_onBlurPlacar(\''+jogo.id+'\','+ehElim+')"></div>';
+    h+='<input type="number" class="placar-input" id="sim-ag-'+jogo.id+'" min="0" max="20" value="'+v2+'" placeholder="-" oninput="_onInputPlacar(\''+jogo.id+'\','+ehElim+')" onblur="_onBlurPlacar(\''+jogo.id+'\','+ehElim+')"'+disAttr+'></div>';
     if(ehElim){
       h+='<div class="pen-wrap'+(isEmp?" visivel":"")+'" id="pen-wrap-'+jogo.id+'">';
       h+='<div class="pen-label">Penaltis</div>';
-      h+='<div class="pen-inputs-row"><input type="number" class="pen-input" id="pen-hg-'+jogo.id+'" value="'+ph+'" min="0" placeholder="0" oninput="_onInputPen(\''+jogo.id+'\')" onblur="_onBlurPen(\''+jogo.id+'\')">';
+      h+='<div class="pen-inputs-row"><input type="number" class="pen-input" id="pen-hg-'+jogo.id+'" value="'+ph+'" min="0" placeholder="0" oninput="_onInputPen(\''+jogo.id+'\')" onblur="_onBlurPen(\''+jogo.id+'\')"'+disAttr+'>';
       h+='<span class="vs">x</span>';
-      h+='<input type="number" class="pen-input" id="pen-ag-'+jogo.id+'" value="'+pa+'" min="0" placeholder="0" oninput="_onInputPen(\''+jogo.id+'\')" onblur="_onBlurPen(\''+jogo.id+'\')"></div></div>';
+      h+='<input type="number" class="pen-input" id="pen-ag-'+jogo.id+'" value="'+pa+'" min="0" placeholder="0" oninput="_onInputPen(\''+jogo.id+'\')" onblur="_onBlurPen(\''+jogo.id+'\')"'+disAttr+'></div></div>';
     }
     if(isAdm){
       h += '<div class="toggle-bar jogos-toggle" style="margin-bottom:15px">';
