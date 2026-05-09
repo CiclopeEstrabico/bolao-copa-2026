@@ -419,7 +419,7 @@ class CopaSim:
     def run(self, n=N_SIMULATIONS):
         N = self.n_teams
         C = {k: np.zeros(N, dtype=np.int32)
-             for k in ('groups', 'r16', 'qf', 'sf', 'final', 'title')}
+             for k in ('groups', 'r32', 'r16', 'qf', 'sf', 'final', 'title')}
 
         print(f"[3/4] Simulando {n:,} Copas (vetorizado)...")
         t0 = time.time()
@@ -463,6 +463,10 @@ class CopaSim:
             np.stack([second(6), second(10)],  axis=1),
             np.stack([second(7), second(11)],  axis=1),
         ], axis=1)
+
+        for k in range(16):
+            np.add.at(C['r32'], bracket_pairs[:, k, 0], 1)
+            np.add.at(C['r32'], bracket_pairs[:, k, 1], 1)
 
         r16 = self._play_round(bracket_pairs)
         for k in range(16): np.add.at(C['r16'], r16[:, k], 1)
@@ -568,7 +572,7 @@ def main():
             'P_semis':         round(C['sf'].get(team, 0)     / N_SIMULATIONS * 100, 2),
             'P_quarters':      round(C['qf'].get(team, 0)     / N_SIMULATIONS * 100, 2),
             'P_r16':           round(C['r16'].get(team, 0)    / N_SIMULATIONS * 100, 2),
-            'P_groups':        round(C['groups'].get(team, 0) / N_SIMULATIONS * 100, 2),
+            'P_r32':           round(C['r32'].get(team, 0)    / N_SIMULATIONS * 100, 2),
             'Host':            team in HOSTS,
         })
 
@@ -595,8 +599,8 @@ def main():
 
     # 2) Heatmap de Probabilidade de Avanço
     plt.figure(figsize=(12, 14))
-    phases = ['P_r16', 'P_quarters', 'P_semis', 'P_final', 'P_champion']
-    phase_labels = ['Oitavas', 'Quartas', 'Semi', 'Final', 'Campeão']
+    phases = ['P_r32', 'P_r16', 'P_quarters', 'P_semis', 'P_final', 'P_champion']
+    phase_labels = ['16-Avos', 'Oitavas', 'Quartas', 'Semi', 'Final', 'Campeão']
     
     heatmap_df = df.set_index('Team')[phases].copy()
     data = heatmap_df.values
