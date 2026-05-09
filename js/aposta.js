@@ -33,7 +33,7 @@ async function iniciarAposta() {
   const token = params.get("token");
   _modoVer = params.has("ver");
 
-  if (!token) { mostrarErroAposta("Link inválido. Solicite seu link personalizado."); return; }
+  if (!token) { renderLoginToken(); return; }
 
   await new Promise(r => setTimeout(r, 1000));
   atualizarBracket();
@@ -79,6 +79,42 @@ async function iniciarAposta() {
   } else {
     renderAposta();
   }
+}
+
+function renderLoginToken() {
+  const el = document.getElementById("aposta-main");
+  if (!el) return;
+  el.innerHTML =
+    '<div class="card" style="max-width:360px;margin:60px auto;text-align:center">' +
+      '<div style="font-size:2.2rem;margin-bottom:8px">🏆</div>' +
+      '<div class="card-titulo" style="justify-content:center">Bolão Copa 2026</div>' +
+      '<p style="font-size:.85rem;color:var(--texto2);margin:0 0 18px">Digite o token que você recebeu do organizador.</p>' +
+      '<div class="form-group" style="text-align:left">' +
+        '<label>Seu token</label>' +
+        '<input type="text" id="token-input" placeholder="Ex: pfvit651u6kb" maxlength="20" ' +
+          'style="font-family:monospace;letter-spacing:.05em" ' +
+          'onkeydown="if(event.key===\'Enter\')entrarComToken()">' +
+      '</div>' +
+      '<button class="btn btn-primario" style="width:100%" onclick="entrarComToken()">Entrar →</button>' +
+      '<div id="token-erro" style="margin-top:12px;font-size:.8rem;color:var(--vermelho);min-height:18px"></div>' +
+    '</div>';
+  setTimeout(() => document.getElementById("token-input")?.focus(), 100);
+}
+
+async function entrarComToken() {
+  const input = document.getElementById("token-input");
+  const erroEl = document.getElementById("token-erro");
+  const token = input?.value.trim().toLowerCase();
+
+  if (!token) { if (erroEl) erroEl.textContent = "Digite seu token."; return; }
+  if (erroEl) erroEl.textContent = "";
+
+  const btn = document.querySelector("#aposta-main .btn-primario");
+  if (btn) { btn.disabled = true; btn.textContent = "Verificando..."; }
+
+  // Redireciona para a mesma página com o token na URL
+  // (reutiliza todo o fluxo normal de iniciarAposta)
+  window.location.href = "aposta.html?token=" + encodeURIComponent(token);
 }
 
 function mostrarErroAposta(msg) {
