@@ -56,7 +56,7 @@ MIN_GAMES_TEAM    = 5
 PATIENCE_ES       = 25
 PATIENCE_LR       = 12
 VAL_SPLIT         = 0.10
-K_REG_WEIGHT      = 1e-1  # L2 sobre log(K_att) e log(K_def)
+K_REG_WEIGHT      = 5e-1  # L2 sobre log(K_att) e log(K_def)
 USE_GRAD_CKPT     = False  # ativar se OOM mesmo com batch=256
 USE_AMP           = True   # mixed precision (desativa automaticamente se não CUDA)
 
@@ -141,7 +141,7 @@ def pad_sequence(seq: list, seq_len: int) -> np.ndarray:
     return arr
 
 
-USE_FIXED_ELO = True  # Se True, usa o ELO final do time para todos os cálculos de delta no dataset alvo
+USE_FIXED_ELO = False  # Se True, usa o ELO final do time para todos os cálculos de delta no dataset alvo
 
 class FootballDataset(Dataset):
     def __init__(self, records: list, seq_len: int, final_elos: dict = None):

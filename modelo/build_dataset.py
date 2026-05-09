@@ -34,7 +34,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 ELO_START   = 1500
 ELO_HOME_ADV = 100    # usado só no update ELO (fixo, não exportado no delta_elo_raw)
 
-SEQ_LEN = 25          # jogos na janela de forma
+SEQ_LEN = 20          # jogos na janela de forma
 
 # Decaimento por posição: w = exp(-DECAY_LAMBDA * pos_from_end)
 # pos_from_end=0 → jogo mais recente, pos_from_end=SEQ_LEN-1 → jogo mais antigo

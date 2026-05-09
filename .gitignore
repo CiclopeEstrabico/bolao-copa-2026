@@ -1,4 +1,4 @@
-firebase.rules
+firestore.rules
 modelo/results/training_sequences.pkl
 modelo/results/copa2026_state.pkl
 modelo/results/heatmaps/

@@ -1,242 +1,242 @@
 {
-  "Norway": {
-    "elo": 1931.6,
-    "K_att": 1.1548,
-    "K_def": 0.9569
-  },
-  "Germany": {
-    "elo": 1984.8,
-    "K_att": 1.1065,
-    "K_def": 0.9137
-  },
-  "Sweden": {
-    "elo": 1783.3,
-    "K_att": 1.0979,
-    "K_def": 1.0089
+  "New Zealand": {
+    "elo": 1730.5,
+    "K_att": 1.1617,
+    "K_def": 0.9868
   },
   "United States": {
     "elo": 1809.7,
-    "K_att": 1.0852,
-    "K_def": 1.0167
+    "K_att": 1.0932,
+    "K_def": 1.0374
   },
-  "Netherlands": {
-    "elo": 2009.9,
-    "K_att": 1.0808,
-    "K_def": 0.9317
+  "Sweden": {
+    "elo": 1783.3,
+    "K_att": 1.081,
+    "K_def": 1.0661
   },
-  "Spain": {
-    "elo": 2181.9,
-    "K_att": 1.0776,
-    "K_def": 0.913
-  },
-  "Belgium": {
-    "elo": 1943.8,
-    "K_att": 1.0621,
-    "K_def": 0.9139
-  },
-  "Haiti": {
-    "elo": 1675.8,
-    "K_att": 1.0604,
-    "K_def": 0.9582
-  },
-  "Cura\u00e7ao": {
-    "elo": 1586.0,
-    "K_att": 1.0601,
-    "K_def": 1.0141
-  },
-  "Switzerland": {
-    "elo": 1943.8,
-    "K_att": 1.06,
-    "K_def": 0.9567
-  },
-  "New Zealand": {
-    "elo": 1730.5,
-    "K_att": 1.0574,
-    "K_def": 0.9801
-  },
-  "Austria": {
-    "elo": 1887.9,
-    "K_att": 1.047,
-    "K_def": 0.914
-  },
-  "Portugal": {
-    "elo": 2024.8,
-    "K_att": 1.041,
-    "K_def": 0.9078
+  "Norway": {
+    "elo": 1931.6,
+    "K_att": 1.065,
+    "K_def": 1.0605
   },
   "Jordan": {
     "elo": 1762.9,
-    "K_att": 1.0378,
-    "K_def": 0.9551
+    "K_att": 1.0602,
+    "K_def": 1.0104
   },
-  "Colombia": {
-    "elo": 2041.7,
-    "K_att": 1.0336,
-    "K_def": 0.9423
-  },
-  "Czech Republic": {
-    "elo": 1782.2,
-    "K_att": 1.0256,
-    "K_def": 0.9392
-  },
-  "Turkey": {
-    "elo": 1928.4,
-    "K_att": 1.0254,
-    "K_def": 0.9178
-  },
-  "Algeria": {
-    "elo": 1860.8,
-    "K_att": 1.0238,
-    "K_def": 0.9119
-  },
-  "South Africa": {
-    "elo": 1644.7,
-    "K_att": 1.0224,
-    "K_def": 0.9478
-  },
-  "Croatia": {
-    "elo": 1980.8,
-    "K_att": 1.021,
-    "K_def": 0.9354
+  "Haiti": {
+    "elo": 1675.8,
+    "K_att": 1.0491,
+    "K_def": 1.0137
   },
   "Ghana": {
     "elo": 1626.0,
-    "K_att": 1.0191,
-    "K_def": 0.9828
+    "K_att": 1.0242,
+    "K_def": 0.9909
   },
-  "Japan": {
-    "elo": 1983.3,
-    "K_att": 1.018,
-    "K_def": 0.9033
+  "Cura\u00e7ao": {
+    "elo": 1586.0,
+    "K_att": 1.0203,
+    "K_def": 1.0161
   },
-  "Brazil": {
-    "elo": 2060.8,
-    "K_att": 1.0144,
-    "K_def": 0.9187
+  "Switzerland": {
+    "elo": 1943.8,
+    "K_att": 1.0183,
+    "K_def": 1.0124
+  },
+  "Colombia": {
+    "elo": 2041.7,
+    "K_att": 1.0166,
+    "K_def": 0.9776
   },
   "Qatar": {
     "elo": 1553.5,
-    "K_att": 1.0006,
-    "K_def": 1.0134
+    "K_att": 1.0134,
+    "K_def": 1.0851
   },
-  "Panama": {
-    "elo": 1824.7,
-    "K_att": 0.9988,
-    "K_def": 0.914
+  "Belgium": {
+    "elo": 1943.8,
+    "K_att": 1.0108,
+    "K_def": 1.0239
   },
   "Scotland": {
     "elo": 1790.7,
-    "K_att": 0.9909,
-    "K_def": 0.9461
-  },
-  "Australia": {
-    "elo": 1886.4,
-    "K_att": 0.9875,
-    "K_def": 0.9025
-  },
-  "South Korea": {
-    "elo": 1861.7,
-    "K_att": 0.9868,
-    "K_def": 0.9287
-  },
-  "Senegal": {
-    "elo": 1921.9,
-    "K_att": 0.986,
-    "K_def": 0.8957
-  },
-  "France": {
-    "elo": 2120.4,
-    "K_att": 0.9855,
-    "K_def": 0.8904
-  },
-  "Iran": {
-    "elo": 1879.9,
-    "K_att": 0.9789,
-    "K_def": 0.8953
+    "K_att": 0.9957,
+    "K_def": 0.9575
   },
   "Bosnia and Herzegovina": {
     "elo": 1651.3,
-    "K_att": 0.9752,
-    "K_def": 0.9468
+    "K_att": 0.9944,
+    "K_def": 0.9679
   },
-  "England": {
-    "elo": 2044.7,
-    "K_att": 0.9722,
-    "K_def": 0.908
+  "Germany": {
+    "elo": 1984.8,
+    "K_att": 0.9926,
+    "K_def": 1.0392
   },
-  "Argentina": {
-    "elo": 2169.0,
-    "K_att": 0.9722,
-    "K_def": 0.8745
+  "South Africa": {
+    "elo": 1644.7,
+    "K_att": 0.9906,
+    "K_def": 0.9931
   },
-  "Tunisia": {
-    "elo": 1762.4,
-    "K_att": 0.9678,
-    "K_def": 0.9034
+  "Netherlands": {
+    "elo": 2009.9,
+    "K_att": 0.9893,
+    "K_def": 1.0443
+  },
+  "South Korea": {
+    "elo": 1861.7,
+    "K_att": 0.9787,
+    "K_def": 0.9939
+  },
+  "Portugal": {
+    "elo": 2024.8,
+    "K_att": 0.9773,
+    "K_def": 0.9923
   },
   "Saudi Arabia": {
     "elo": 1669.8,
-    "K_att": 0.9516,
-    "K_def": 0.9335
+    "K_att": 0.9756,
+    "K_def": 0.9583
   },
-  "Ivory Coast": {
-    "elo": 1798.0,
-    "K_att": 0.9435,
-    "K_def": 0.8734
+  "Turkey": {
+    "elo": 1928.4,
+    "K_att": 0.9751,
+    "K_def": 1.0144
   },
-  "Mexico": {
-    "elo": 1927.1,
-    "K_att": 0.9376,
-    "K_def": 0.8825
+  "Brazil": {
+    "elo": 2060.8,
+    "K_att": 0.9741,
+    "K_def": 0.969
+  },
+  "Japan": {
+    "elo": 1983.3,
+    "K_att": 0.97,
+    "K_def": 0.978
+  },
+  "Algeria": {
+    "elo": 1860.8,
+    "K_att": 0.9695,
+    "K_def": 0.9997
+  },
+  "Croatia": {
+    "elo": 1980.8,
+    "K_att": 0.9694,
+    "K_def": 1.0379
+  },
+  "Czech Republic": {
+    "elo": 1782.2,
+    "K_att": 0.9684,
+    "K_def": 1.0287
+  },
+  "Australia": {
+    "elo": 1886.4,
+    "K_att": 0.9678,
+    "K_def": 0.9771
   },
   "Cape Verde": {
     "elo": 1662.1,
-    "K_att": 0.9339,
-    "K_def": 0.8966
+    "K_att": 0.9653,
+    "K_def": 0.9654
   },
-  "Morocco": {
-    "elo": 1967.4,
-    "K_att": 0.9329,
-    "K_def": 0.8724
+  "Iran": {
+    "elo": 1879.9,
+    "K_att": 0.9651,
+    "K_def": 0.9778
   },
-  "Canada": {
-    "elo": 1883.8,
-    "K_att": 0.9274,
-    "K_def": 0.8746
+  "Austria": {
+    "elo": 1887.9,
+    "K_att": 0.9648,
+    "K_def": 1.0014
   },
   "Paraguay": {
     "elo": 1893.3,
-    "K_att": 0.9267,
-    "K_def": 0.8972
+    "K_att": 0.9638,
+    "K_def": 0.9318
   },
-  "Uzbekistan": {
-    "elo": 1817.6,
-    "K_att": 0.9166,
-    "K_def": 0.8683
+  "Senegal": {
+    "elo": 1921.9,
+    "K_att": 0.9637,
+    "K_def": 0.9934
+  },
+  "Panama": {
+    "elo": 1824.7,
+    "K_att": 0.9624,
+    "K_def": 1.0079
+  },
+  "France": {
+    "elo": 2120.4,
+    "K_att": 0.9592,
+    "K_def": 1.0504
+  },
+  "Tunisia": {
+    "elo": 1762.4,
+    "K_att": 0.9586,
+    "K_def": 0.9584
+  },
+  "Spain": {
+    "elo": 2181.9,
+    "K_att": 0.9569,
+    "K_def": 1.0954
+  },
+  "England": {
+    "elo": 2044.7,
+    "K_att": 0.9548,
+    "K_def": 0.9975
+  },
+  "Mexico": {
+    "elo": 1927.1,
+    "K_att": 0.9513,
+    "K_def": 0.9415
+  },
+  "Ivory Coast": {
+    "elo": 1798.0,
+    "K_att": 0.9475,
+    "K_def": 0.9435
+  },
+  "Canada": {
+    "elo": 1883.8,
+    "K_att": 0.9417,
+    "K_def": 0.9297
   },
   "Iraq": {
     "elo": 1723.7,
-    "K_att": 0.9095,
-    "K_def": 0.8727
+    "K_att": 0.9319,
+    "K_def": 0.9711
+  },
+  "Argentina": {
+    "elo": 2169.0,
+    "K_att": 0.9318,
+    "K_def": 0.9827
   },
   "Uruguay": {
     "elo": 1959.7,
-    "K_att": 0.9038,
-    "K_def": 0.8686
+    "K_att": 0.9314,
+    "K_def": 0.9371
+  },
+  "Uzbekistan": {
+    "elo": 1817.6,
+    "K_att": 0.929,
+    "K_def": 0.9378
   },
   "Egypt": {
     "elo": 1791.1,
-    "K_att": 0.9031,
-    "K_def": 0.862
+    "K_att": 0.927,
+    "K_def": 0.9451
   },
   "DR Congo": {
     "elo": 1749.5,
-    "K_att": 0.8975,
-    "K_def": 0.8471
+    "K_att": 0.9178,
+    "K_def": 0.9514
+  },
+  "Morocco": {
+    "elo": 1967.4,
+    "K_att": 0.911,
+    "K_def": 0.9805
   },
   "Ecuador": {
     "elo": 1999.0,
-    "K_att": 0.8881,
-    "K_def": 0.845
+    "K_att": 0.898,
+    "K_def": 0.8989
   }
 }

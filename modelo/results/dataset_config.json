@@ -1,6 +1,6 @@
 {
   "FEAT_PER_GAME": 6,
-  "SEQ_LEN": 25,
+  "SEQ_LEN": 20,
   "DECAY_LAMBDA": 0.09902102579427789,
   "DECAY_HALFLIFE_GAMES": 7,
   "features": [
