@@ -2,20 +2,32 @@
 
 window._isAdminView = true;
 
-// ─── UID do admin (não é segredo — não é senha, não autentica sozinho) ───────
-const ADMIN_UID = "oSnCwYjIe6eh7W1pUhZZUtX0B1q2";
+// ─── Lista de UIDs autorizados como admin ─────────────────────────────────────
+// Preencha os UIDs abaixo. Strings vazias ("") são ignoradas automaticamente.
+// Para adicionar um novo admin: peça pra ele tentar logar uma vez,
+// depois copie o UID dele em Firebase Console > Authentication > Users.
+const ADMIN_UIDS = [
+  "oSnCwYjIe6eh7W1pUhZZUtX0B1q2",  // Admin 1 — cole o UID aqui
+  "",  // Admin 2 — cole o UID aqui
+  "",  // Admin 3 — cole o UID aqui
+  "",  // Admin 4 — cole o UID aqui
+];
 
 // ─── Auth helpers ─────────────────────────────────────────────────────────────
 function adminAutenticado() {
-  const user = firebase.auth().currentUser;
-  return user && user.uid === ADMIN_UID;
+  try {
+    const user = firebase.auth().currentUser;
+    return user && ADMIN_UIDS.filter(Boolean).includes(user.uid);
+  } catch (e) {
+    return false;
+  }
 }
 
 function loginAdmin() {
   const provider = new firebase.auth.GoogleAuthProvider();
   firebase.auth().signInWithPopup(provider)
     .then(result => {
-      if (result.user.uid !== ADMIN_UID) {
+      if (!ADMIN_UIDS.filter(Boolean).includes(result.user.uid)) {
         firebase.auth().signOut();
         alert("Essa conta Google não tem permissão de admin.");
         return;
@@ -31,9 +43,8 @@ function logoutAdmin() {
 
 // ─── Inicialização ────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-  // Aguarda o Firebase Auth resolver o estado antes de qualquer coisa
   firebase.auth().onAuthStateChanged(user => {
-    if (user && user.uid === ADMIN_UID) {
+    if (user && ADMIN_UIDS.filter(Boolean).includes(user.uid)) {
       renderAdmin();
     } else {
       renderLogin();
@@ -46,11 +57,11 @@ function renderLogin() {
   if (!main) return;
   main.innerHTML =
     '<div class="card" style="max-width:340px;margin:40px auto">' +
-    '<div class="card-titulo">🔐 Acesso Admin</div>' +
-    '<p style="font-size:.85rem;color:var(--texto2);margin-bottom:16px">' +
-    'Faça login com a conta Google autorizada.' +
-    '</p>' +
-    '<button class="btn btn-primario" onclick="loginAdmin()">🔑 Entrar com Google</button>' +
+      '<div class="card-titulo">🔐 Acesso Admin</div>' +
+      '<p style="font-size:.85rem;color:var(--texto2);margin-bottom:16px">' +
+        'Faça login com a conta Google autorizada.' +
+      '</p>' +
+      '<button class="btn btn-primario" onclick="loginAdmin()">🔑 Entrar com Google</button>' +
     '</div>';
 }
 
@@ -71,7 +82,7 @@ window.renderAbaAtiva = function () {
     const el = document.getElementById(activeId);
     if (el) {
       el.focus();
-      try { el.setSelectionRange(sStart ?? el.value.length, sEnd ?? el.value.length); } catch (e) { }
+      try { el.setSelectionRange(sStart ?? el.value.length, sEnd ?? el.value.length); } catch (e) {}
     }
   }
   window.scrollTo(0, sy);
@@ -103,7 +114,7 @@ function renderAdmin() {
   h += '</select>';
   h += '<button class="btn btn-perigo btn-sm" onclick="deletarApostadorEspecifico()">✕</button></div>';
   h += '<button class="btn btn-primario btn-sm" onclick="gravarTudoAdmin()">💾 GRAVAR OFICIAL</button>';
-  h += `<button class="btn btn-sm" onclick="logoutAdmin()" style="background:var(--borda)">Sair</button>`;
+  h += '<button class="btn btn-sm" onclick="logoutAdmin()" style="background:var(--borda)">Sair</button>';
   h += '</div></div>';
 
   h += renderJogosComToggle(res, tg, true, null);
@@ -190,7 +201,7 @@ function gravarTudoAdmin() {
           foi_penaltis: foiPen, penaltis_vencedor: pv,
           penaltis_home: foiPen ? penH : null, penaltis_away: foiPen ? penA : null,
           inserido_em: new Date().toISOString(),
-          inserido_por: "admin"   // ← sem vazar o UID aqui
+          inserido_por: "admin"
         };
 
         APP.resultados[j.id] = data;
