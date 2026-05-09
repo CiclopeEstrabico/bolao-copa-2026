@@ -7,5 +7,4 @@ seed-test-data.js
 
 # Variáveis de ambiente
 .env
-CLAUDE.md
 modelo/results/training_sequences.pkl
