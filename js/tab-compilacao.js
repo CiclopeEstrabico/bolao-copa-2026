@@ -57,7 +57,7 @@ window.renderCompilacao = function() {
     const hN = window.TEAMS_BY_CODE[hC]?.name||hC;
     const aN = window.TEAMS_BY_CODE[aC]?.name||aC;
     const dataHora = formatarDataBRT(jogo.utc, false);
-    h += '<tr><td class="col-jogo" style="position:sticky;left:0;background:var(--card2);white-space:nowrap;padding:6px 8px;z-index:1">';
+    h += '<tr><td class="col-jogo" style="position:sticky;left:0;background:var(--card2);padding:6px 8px;z-index:1">';
     h += '<div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">'+dataHora+'</div>';
     h += '<div style="display:flex;align-items:center;gap:4px;font-weight:700">'+htmlBandeira(hC,14)+' <span class="compilacao-time-nome" title="'+hN+'">'+hN+'</span> <span style="color:var(--texto2)">×</span> <span class="compilacao-time-nome" title="'+aN+'">'+aN+'</span> '+htmlBandeira(aC,14)+'</div></td>';
     // Resultado oficial
