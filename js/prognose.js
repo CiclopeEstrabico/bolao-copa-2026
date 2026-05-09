@@ -4,6 +4,74 @@
 
 window.PROGNOSE = {
 
+  loadData: async function() {
+    try {
+      const p1 = fetch('modelo/prior_params.json').then(r => r.json());
+      const p2 = fetch('modelo/k_factors_final.json').then(r => r.json());
+      const [priors, kFactors] = await Promise.all([p1, p2]);
+      window.MODELO_DATA = { priors, kFactors };
+    } catch (e) {
+      console.warn("Erro ao carregar modelo v2 (JSONs). Usando fallback v1.", e);
+    }
+  },
+
+  CODE_TO_EN_NAME: {
+    "MEX": "Mexico", "RSA": "South Africa", "KOR": "South Korea", "CZE": "Czech Republic",
+    "CAN": "Canada", "BIH": "Bosnia and Herzegovina", "QAT": "Qatar", "SUI": "Switzerland",
+    "BRA": "Brazil", "MAR": "Morocco", "HAI": "Haiti", "SCO": "Scotland",
+    "USA": "United States", "PAR": "Paraguay", "AUS": "Australia", "TUR": "Turkey",
+    "GER": "Germany", "CUW": "Curaçao", "CIV": "Ivory Coast", "ECU": "Ecuador",
+    "NED": "Netherlands", "JPN": "Japan", "SWE": "Sweden", "TUN": "Tunisia",
+    "BEL": "Belgium", "EGY": "Egypt", "IRN": "Iran", "NZL": "New Zealand",
+    "ESP": "Spain", "CPV": "Cape Verde", "KSA": "Saudi Arabia", "URU": "Uruguay",
+    "FRA": "France", "SEN": "Senegal", "IRQ": "Iraq", "NOR": "Norway",
+    "ARG": "Argentina", "ALG": "Algeria", "AUT": "Austria", "JOR": "Jordan",
+    "POR": "Portugal", "COD": "DR Congo", "UZB": "Uzbekistan", "COL": "Colombia",
+    "ENG": "England", "CRO": "Croatia", "GHA": "Ghana", "PAN": "Panama"
+  },
+
+  calcularV2: function(homeCode, awayCode, isNeutral = false) {
+    if (!window.MODELO_DATA || !window.MODELO_DATA.priors || !window.MODELO_DATA.kFactors) return null;
+    const priors = window.MODELO_DATA.priors;
+    const kf = window.MODELO_DATA.kFactors;
+    
+    const hN = this.CODE_TO_EN_NAME[homeCode] || homeCode;
+    const aN = this.CODE_TO_EN_NAME[awayCode] || awayCode;
+
+    const eloH = kf[hN]?.elo || window.ELO_RATINGS[homeCode] || 1500;
+    const eloA = kf[aN]?.elo || window.ELO_RATINGS[awayCode] || 1500;
+    const K_att_h = kf[hN]?.K_att || 1.0;
+    const K_def_h = kf[hN]?.K_def || 1.0;
+    const K_att_a = kf[aN]?.K_att || 1.0;
+    const K_def_a = kf[aN]?.K_def || 1.0;
+    
+    let delta_eff_elo = eloH - eloA;
+    if (!isNeutral) {
+        delta_eff_elo += priors.home_adv;
+    }
+    
+    const lam_base_h = Math.exp(priors.a + priors.b * delta_eff_elo + priors.c * Math.pow(delta_eff_elo, 2));
+    const lam_base_a = Math.exp(priors.a - priors.b * delta_eff_elo + priors.c * Math.pow(delta_eff_elo, 2));
+    
+    const lH = lam_base_h * K_att_h * K_def_a;
+    const lA = lam_base_a * K_att_a * K_def_h;
+
+    const rho0 = priors.rho0_raw;
+    const rho1 = priors.rho1_neg;
+    const arg = rho0 - rho1 * Math.abs(delta_eff_elo) / 400.0;
+    const rho = 0.2 * Math.tanh(arg);
+
+    return { lH, lA, rho, eloH, eloA };
+  },
+
+  dixonColesTau: function(x, y, lamA, lamB, rho) {
+    if (x === 0 && y === 0) return Math.max(1e-6, 1 - lamA * lamB * rho);
+    if (x === 1 && y === 0) return Math.max(1e-6, 1 + lamA * rho);
+    if (x === 0 && y === 1) return Math.max(1e-6, 1 + lamB * rho);
+    if (x === 1 && y === 1) return Math.max(1e-6, 1 - rho);
+    return 1.0;
+  },
+
   lambda: function(deltaElo) {
     const DR = deltaElo / 1000;
     const cfg = window.ELO_CONFIG;
@@ -17,27 +85,47 @@ window.PROGNOSE = {
     return e * Math.pow(lambda, k) / f;
   },
 
-  calcular: function(homeCode, awayCode) {
-    const eloH = window.ELO_RATINGS[homeCode] || 1500;
-    const eloA = window.ELO_RATINGS[awayCode] || 1500;
-    const lH = this.lambda(eloH - eloA);
-    const lA = this.lambda(eloA - eloH);
+  calcular: function(homeCode, awayCode, isNeutral = false) {
+    let lH, lA, rho, eloH, eloA;
+    const v2 = this.calcularV2(homeCode, awayCode, isNeutral);
+    if (v2) {
+      lH = v2.lH; lA = v2.lA; rho = v2.rho; eloH = v2.eloH; eloA = v2.eloA;
+    } else {
+      eloH = window.ELO_RATINGS[homeCode] || 1500;
+      eloA = window.ELO_RATINGS[awayCode] || 1500;
+      lH = this.lambda(eloH - eloA);
+      lA = this.lambda(eloA - eloH);
+      rho = 0;
+    }
+
     const N = 7; // 0 até 6+
-    const pH = Array.from({length:N}, (_,k) => k===6 ? 1 - Array.from({length:6},(_,x)=>this.poisson(lH,x)).reduce((a,b)=>a+b,0) : this.poisson(lH, k));
-    const pA = Array.from({length:N}, (_,k) => k===6 ? 1 - Array.from({length:6},(_,x)=>this.poisson(lA,x)).reduce((a,b)=>a+b,0) : this.poisson(lA, k));
-    let home=0, draw=0, away=0;
     const matrix = [];
+    let tot = 0;
+    
     for (let i=0;i<N;i++) {
       matrix[i]=[];
       for (let j=0;j<N;j++) {
-        const v=pH[i]*pA[j];
-        matrix[i][j]=v;
+        let p_i = i === N-1 ? 1 - Array.from({length:N-1},(_,x)=>this.poisson(lH,x)).reduce((a,b)=>a+b,0) : this.poisson(lH, i);
+        let p_j = j === N-1 ? 1 - Array.from({length:N-1},(_,x)=>this.poisson(lA,x)).reduce((a,b)=>a+b,0) : this.poisson(lA, j);
+        
+        let v = p_i * p_j;
+        if (i <= 1 && j <= 1) {
+            v *= this.dixonColesTau(i, j, lH, lA, rho);
+        }
+        matrix[i][j] = v;
+        tot += v;
+      }
+    }
+    
+    let home=0, draw=0, away=0;
+    for (let i=0;i<N;i++) {
+      for (let j=0;j<N;j++) {
+        matrix[i][j] /= tot;
+        let v = matrix[i][j];
         if(i>j) home+=v; else if(i===j) draw+=v; else away+=v;
       }
     }
-    const tot=home+draw+away;
-    return { lH, lA, home:home/tot, draw:draw/tot, away:away/tot, matrix, N,
-      eloH, eloA, homeCode, awayCode };
+    return { lH, lA, home, draw, away, matrix, N, eloH, eloA, homeCode, awayCode, rho };
   },
 
   statsPalpites: function(gameId) {
@@ -112,9 +200,11 @@ window.PROGNOSE = {
 
   _renderPrevisao: function(gameId, hC, aC, hName, aName) {
     if (!window.ELO_RATINGS?.[hC] || !window.ELO_RATINGS?.[aC]) {
-      return '<p style="text-align:center;padding:30px;color:var(--texto2)">Dados ELO não disponíveis.</p>';
+      return '<p style="text-align:center;padding:30px;color:var(--texto2)">Dados não disponíveis.</p>';
     }
-    const c = this.calcular(hC, aC);
+    const jogoInfo = window.SCHEDULE_BY_ID?.[gameId];
+    const isNeutral = jogoInfo ? (jogoInfo.pais !== hC && jogoInfo.pais !== aC) : true;
+    const c = this.calcular(hC, aC, isNeutral);
     const fmt = n => (n*100).toFixed(1)+"%";
     let h = '';
     // ELO
@@ -137,13 +227,23 @@ window.PROGNOSE = {
     for (let j=0;j<c.N;j++) h += '<th>'+aName.substring(0,3)+' '+(j===6?"6+":j)+'</th>';
     h += '</tr></thead><tbody>';
     const all = c.matrix.flat().sort((a,b)=>b-a);
-    const top1=all[0], top5=all[4]||0;
+    const top1 = all[0] || 1;
     for (let i=0;i<c.N;i++) {
       h += '<tr><th>'+hName.substring(0,3)+' '+(i===6?"6+":i)+'</th>';
       for (let j=0;j<c.N;j++) {
-        const v=c.matrix[i][j];
-        const cls=v>=top1*0.8?"cell-hot":v>=top5?"cell-warm":v>=top1*0.2?"cell-mid":"cell-cold";
-        h += '<td class="'+cls+(i===j?" cell-diag":"")+'">'+(v*100).toFixed(1)+'%</td>';
+        const v = c.matrix[i][j];
+        const p = Math.max(0, Math.min(1, v / top1));
+        
+        // Heatmap: Vermelho (hue=0) para prob alta, Amarelo (hue=60) para prob baixa
+        const hue = 60 * (1 - p);
+        const alpha = 0.1 + 0.6 * p; 
+        const bg = `hsla(${hue}, 100%, 50%, ${alpha})`;
+        
+        const fw = p > 0.8 ? '800' : (p > 0.4 ? '600' : '400');
+        const color = p > 0.5 ? '#fff' : 'var(--texto2)';
+        const border = i === j ? 'outline:1px solid rgba(255,255,255,0.2);outline-offset:-1px;' : '';
+        
+        h += `<td style="background:${bg};color:${color};font-weight:${fw};${border}">${(v*100).toFixed(1)}%</td>`;
       }
       h += '</tr>';
     }
@@ -205,3 +305,7 @@ function _infoRow(icon, label, valor) {
     '<div><div style="font-size:.65rem;color:var(--texto2);font-weight:600;text-transform:uppercase;letter-spacing:.04em">'+label+'</div>' +
     '<div style="font-size:.82rem;font-weight:600;margin-top:2px">'+valor+'</div></div></div>';
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.PROGNOSE && PROGNOSE.loadData) PROGNOSE.loadData();
+});

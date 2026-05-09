@@ -56,8 +56,15 @@ function renderAdmin() {
   const res = getResultados();
   const tg = window.BRACKET.calcularTodosOsGrupos(res);
 
+  const st = APP.configStatus?.apostas_liberadas;
+  const btnTxt = st ? "🔓 Travar Apostas" : "🔒 Liberar Apostas";
+  const btnClass = st ? "btn-perigo" : "btn-primario";
+
   let h = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">';
-  h += '<div style="font-size:.9rem;font-weight:800">🔧 Inserir Resultados Oficiais</div>';
+  h += '<div style="font-size:.9rem;font-weight:800;display:flex;gap:8px;align-items:center;">';
+  h += '🔧 Inserir Resultados Oficiais';
+  h += `<button class="btn ${btnClass} btn-sm" onclick="toggleApostasLiberadas()">${btnTxt}</button>`;
+  h += '</div>';
   h += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
   h += '<button class="btn btn-perigo btn-sm" onclick="limparTudoAdmin()">🗑 Limpar Resultados</button>';
   h += '<div style="display:flex;gap:4px;align-items:center">';
@@ -175,4 +182,18 @@ function gravarTudoAdmin() {
   }
 }
 
-
+function toggleApostasLiberadas() {
+  if (APP.modoOffline) return alert("Indisponível offline");
+  const atual = APP.configStatus?.apostas_liberadas || false;
+  const novo = !atual;
+  if (!confirm(`Deseja realmente ${novo ? "LIBERAR" : "TRAVAR"} as apostas?`)) return;
+  APP.db.collection("config").doc("status").set({
+    apostas_liberadas: novo,
+    admin_senha: ADMIN_SENHA
+  }, {merge: true}).then(() => {
+    alert(`Apostas ${novo ? "LIBERADAS" : "TRAVADAS"} com sucesso!`);
+  }).catch(e => {
+    console.error(e);
+    alert("Erro ao alterar o status.");
+  });
+}

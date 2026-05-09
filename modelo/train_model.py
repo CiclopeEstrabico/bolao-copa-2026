@@ -45,7 +45,7 @@ from torch.utils.data import Dataset, DataLoader
 # ─────────────────────────────────────────────────────────────────────
 # HIPERPARÂMETROS
 # ─────────────────────────────────────────────────────────────────────
-SEQ_LEN           = 30
+SEQ_LEN           = 25          # jogos na janela de forma
 FEAT_PER_GAME     = 6     # delta_elo, goals_scored, goals_conceded, tw, result, decay_weight
 GRU_HIDDEN        = 48    # ligeiramente maior que v1 (mais capacidade para K-att/K-def)
 DROPOUT           = 0.25
@@ -524,6 +524,19 @@ def main():
         print("    >> Extraindo K_att / K_def por time...")
         df_k = extract_k_factors(model, state_path, device=device)
         df_k.to_csv(os.path.join(OUTPUT_DIR, "k_factors_final.csv"), index=False)
+        
+        # Output JSON as requested
+        # Format: { "BRA": { "elo": 1970, "K_att": 1.02, "K_def": 0.98 }, ... }
+        k_json = {}
+        for _, row in df_k.iterrows():
+            k_json[row['team']] = {
+                'elo': row['elo'],
+                'K_att': row['K_att'],
+                'K_def': row['K_def']
+            }
+        with open(os.path.join(OUTPUT_DIR, "k_factors_final.json"), 'w') as f:
+            json.dump(k_json, f, indent=2)
+            
         print("\n  Top 10 times por K_att (ataque acima do esperado):")
         print(f"  {'Time':<30} {'ELO':>6}  {'K_att':>6}  {'K_def':>6}  {'jogos':>6}")
         print("  " + "-" * 60)
@@ -531,7 +544,7 @@ def main():
             print(f"  {row['team']:<30} {row['elo']:>6.0f}  "
                   f"{row['K_att']:>6.4f}  {row['K_def']:>6.4f}  {int(row['n_games']):>6}")
     else:
-        print("    !! copa2026_state.pkl não encontrado — k_factors_final.csv não gerado")
+        print("    !! copa2026_state.pkl não encontrado — k_factors_final.csv/json não gerado")
 
     print("\n=== train_model.py concluído ===")
     print("Outputs:")

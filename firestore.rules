@@ -7,17 +7,23 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/config/global).data.admin_senha == "#bolao2026#";
     }
 
-    // Config: leitura publica, escrita apenas via Console Firebase
+    // Função utilitária para checar se as apostas estão liberadas
+    function apostasLiberadas() {
+      let doc = get(/databases/$(database)/documents/config/status);
+      return doc != null && doc.data.apostas_liberadas == true;
+    }
+
+    // Config: leitura publica, admin pode escrever
     match /config/{doc} {
       allow read: if true;
-      allow write: if false;
+      allow write: if request.resource.data.admin_senha == "#bolao2026#";
     }
 
     // Apostadores: leitura publica, criação/escrita com token valido ou admin
     match /apostadores/{apostadorId} {
       allow read: if true;
       allow write: if isAdmin() || 
-        (request.resource != null && request.resource.data.token != null && 
+        (apostasLiberadas() && request.resource != null && request.resource.data.token != null && 
         (resource == null || request.resource.data.token == resource.data.token));
     }
 
@@ -25,7 +31,7 @@ service cloud.firestore {
     match /apostadores/{apostadorId}/palpites_jogos/{gameId} {
       allow read: if true;
       allow write: if isAdmin() ||
-        (request.resource != null && request.resource.data.apostadorId == apostadorId &&
+        (apostasLiberadas() && request.resource != null && request.resource.data.apostadorId == apostadorId &&
          get(/databases/$(database)/documents/apostadores/$(apostadorId)).data.token
            == get(/databases/$(database)/documents/apostadores/$(apostadorId)).data.token);
     }

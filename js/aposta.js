@@ -115,11 +115,11 @@ function calcularProjecao() {
 function renderAposta() {
   const el = document.getElementById("aposta-main");
   if (!el) return;
-  const nome = _apostador.apelido || _apostador.nome || "Apostador";
+  const displayName = _apostador.nome ? `${_apostador.nome}` + (_apostador.apelido ? ` ("${_apostador.apelido}")` : "") : "Apostador";
 
   // Header com nome
   const hn = document.getElementById("header-nome");
-  if (hn) hn.innerHTML = (_modoVer?"Palpites de ":"Olá, ")+"<strong>"+nome+"</strong><small>Copa 2026</small>";
+  if (hn) hn.innerHTML = (_modoVer?"Palpites de ":"Olá, ")+"<strong>"+displayName+"</strong><small>Bolão Copa 2026</small>";
 
   const resOficiais = getResultados();
   const tg = calcularProjecao();

@@ -13,15 +13,20 @@ function initApp() {
   if (semConfig) {
     console.warn("[app] Modo offline ativo");
     APP.modoOffline = true;
+    APP.configStatus = { apostas_liberadas: true }; // default no offline
     carregarDadosLocais();
   } else {
     try {
       firebase.initializeApp(window.FIREBASE_CONFIG);
       APP.db = firebase.firestore();
-      listenResultados(); listenApostadores(); listenPalpites();
+      APP.configStatus = { apostas_liberadas: false };
+      listenResultados(); listenApostadores(); listenPalpites(); listenConfigStatus();
     } catch(e) {
-      if (e.code === "app/duplicate-app") APP.db = firebase.firestore();
-      else { APP.modoOffline = true; carregarDadosLocais(); }
+      if (e.code === "app/duplicate-app") {
+        APP.db = firebase.firestore();
+        APP.configStatus = { apostas_liberadas: false };
+        listenConfigStatus();
+      } else { APP.modoOffline = true; APP.configStatus = { apostas_liberadas: true }; carregarDadosLocais(); }
     }
   }
   atualizarBracket();
@@ -66,6 +71,15 @@ function listenPalpites() {
       if (!APP.palpites[data.apostadorId]) APP.palpites[data.apostadorId] = {};
       APP.palpites[data.apostadorId][data.gameId] = data;
     });
+    renderAbaAtiva();
+  });
+  APP._unsubs.push(u);
+}
+function listenConfigStatus() {
+  const u = APP.db.collection("config").doc("status").onSnapshot(doc => {
+    if (doc.exists) {
+      APP.configStatus = doc.data();
+    }
     renderAbaAtiva();
   });
   APP._unsubs.push(u);
@@ -151,16 +165,16 @@ function mudarAba(aba) {
     b.classList.toggle("ativa", b.dataset.tab === aba));
   document.querySelectorAll(".aba-conteudo").forEach(el =>
     el.classList.toggle("hidden", el.dataset.aba !== aba));
-  renderAbaAtiva();
+  renderAbaAtiva(true);
 }
-function renderAbaAtiva() {
+function renderAbaAtiva(resetScroll = false) {
   const fn = { resultados: window.renderResultados, classificacao: window.renderClassificacao,
     tabela: window.renderTabela, compilacao: window.renderCompilacao,
     grafico: window.renderGrafico, estatisticas: window.renderEstatisticas, regras: window.renderRegras };
   
   // Salva scroll e foco
-  const activeId = document.activeElement?.id;
-  const sy = window.scrollY;
+  const activeId = resetScroll ? null : document.activeElement?.id;
+  const sy = resetScroll ? 0 : window.scrollY;
   const sStart = document.activeElement?.selectionStart;
   const sEnd = document.activeElement?.selectionEnd;
   

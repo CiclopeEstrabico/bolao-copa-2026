@@ -21,12 +21,14 @@ window.renderCompilacao = function() {
 
   // Filtros de Ordenação
   const ordemStr = window._compOrdem || "pts";
-  h += '<div class="toggle-bar" style="margin-bottom:15px">';
+  h += '<div class="toggle-bar" style="margin-bottom:15px; display:flex; flex-wrap:wrap; align-items:center;">';
   h += '<span class="toggle-label">Ordenar por:</span>';
   h += '<button class="btn-toggle'+(ordemStr==="alfa"?" ativo":"")+'" onclick="window._compOrdem=\'alfa\';renderAbaAtiva()">A-Z</button>';
   h += '<button class="btn-toggle'+(ordemStr==="pts"?" ativo":"")+'" onclick="window._compOrdem=\'pts\';renderAbaAtiva()">Pontos</button>';
   h += '<button class="btn-toggle'+(ordemStr==="res"?" ativo":"")+'" onclick="window._compOrdem=\'res\';renderAbaAtiva()">Resultados</button>';
   h += '<button class="btn-toggle'+(ordemStr==="placar"?" ativo":"")+'" onclick="window._compOrdem=\'placar\';renderAbaAtiva()">Placar</button>';
+  h += '<button class="btn btn-primario btn-sm" style="margin-left:auto;margin-right:8px" onclick="exportarCompilacaoCsv()">📊 Exportar CSV</button>';
+  h += '<button class="btn btn-primario btn-sm" onclick="exportarCompilacaoJson()">📥 Exportar JSON</button>';
   h += '</div>';
 
   const jogos = (window.SCHEDULE||[]).filter(j => faseAtiva==="todos" || j.fase===faseAtiva)
@@ -121,4 +123,105 @@ window.renderCompilacao = function() {
   }
   h += '</tbody></table></div>';
   el.innerHTML = h;
+};
+
+window.exportarCompilacaoJson = function() {
+  const res = getResultados();
+  const apos = APP.apostadores||[];
+  const pals = APP.palpites||{};
+  
+  const ranking = apos.map(a => {
+    const st = window.calcularPontosApostador(pals[a.id]||{}, res, a, {});
+    return { 
+      id: a.id,
+      nome: a.nome,
+      apelido: a.apelido,
+      pts: st.total,
+      placar_exato: st.acertos_placar_exato,
+      resultado_correto: st.acertos_resultado,
+      palpites: pals[a.id] || {}
+    };
+  }).sort((a,b) => b.pts - a.pts);
+
+  const exportData = {
+    timestamp: new Date().toISOString(),
+    status_apostas: APP.configStatus?.apostas_liberadas ? "LIBERADAS" : "TRAVADAS",
+    resultados_oficiais: res,
+    ranking_e_palpites: ranking
+  };
+
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+  const el = document.createElement('a');
+  el.setAttribute("href", dataStr);
+  el.setAttribute("download", "bolao_copa_export_" + new Date().toISOString().replace(/[:.]/g,"-") + ".json");
+  document.body.appendChild(el);
+  el.click();
+  el.remove();
+};
+
+window.exportarCompilacaoCsv = function() {
+  const res = getResultados();
+  const apos = APP.apostadores||[];
+  const pals = APP.palpites||{};
+  const jogos = window.SCHEDULE||[];
+  
+  if (!apos.length || !jogos.length) return;
+
+  const ranking = apos.map(a => {
+    const st = window.calcularPontosApostador(pals[a.id]||{}, res, a, {});
+    return { ...a, pts: st.total };
+  }).sort((a,b) => b.pts - a.pts);
+
+  let csvContent = "\uFEFF"; // BOM para forçar UTF-8 no Excel
+  
+  const headers = ["ID Jogo", "Fase", "Data", "Mandante", "Visitante", "Resultado Oficial"];
+  for (const a of ranking) {
+    headers.push(`"${a.nome} (${a.apelido || ''})"`);
+  }
+  csvContent += headers.join(";") + "\r\n";
+
+  for (const jogo of jogos) {
+    const r = res[jogo.id];
+    const temRes = r && r.homeGoals !== undefined;
+    
+    const hN = window.TEAMS_BY_CODE[jogo.home]?.name || jogo.home;
+    const aN = window.TEAMS_BY_CODE[jogo.away]?.name || jogo.away;
+    const dataHora = window.formatarDataBRT ? window.formatarDataBRT(jogo.utc, false) : jogo.utc;
+    
+    let resOficial = "";
+    if (temRes) {
+      resOficial = `${r.homeGoals}x${r.awayGoals}`;
+      if (r.foi_penaltis) resOficial += " (PEN)";
+    }
+    
+    const row = [
+      jogo.id,
+      jogo.fase,
+      `"${dataHora}"`,
+      `"${hN}"`,
+      `"${aN}"`,
+      `"${resOficial}"`
+    ];
+    
+    for (const a of ranking) {
+      const p = pals[a.id]?.[jogo.id];
+      if (p && p.homeGoals !== undefined) {
+        row.push(`${p.homeGoals}x${p.awayGoals}`);
+      } else {
+        row.push("");
+      }
+    }
+    
+    csvContent += row.join(";") + "\r\n";
+  }
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const el = document.createElement('a');
+  el.setAttribute("href", url);
+  el.setAttribute("download", "bolao_copa_export_" + new Date().toISOString().replace(/[:.]/g,"-") + ".csv");
+  document.body.appendChild(el);
+  el.click();
+  el.remove();
+  URL.revokeObjectURL(url);
 };

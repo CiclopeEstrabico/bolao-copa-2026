@@ -78,9 +78,9 @@
 <script src="js/tab-regras.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-
-    }, 1200);
+    if (window.PROGNOSE && PROGNOSE.loadData) {
+      PROGNOSE.loadData();
+    }
   });
 </script>
 </body>
