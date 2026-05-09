@@ -44,12 +44,22 @@ window.renderClassificacao = function() {
   }
 
   // Tabela ranking
-  h += '<div class="card" style="padding:0;overflow:x:auto"><table class="tabela-detalhe" style="width:100%">';
-  h += '<thead><tr><th style="width:36px">Pos</th><th style="text-align:left">Apostador</th>';
-  h += '<th title="Total de pontos e % dos pontos disputados">🏆 Pts</th><th title="Placares exatos e % de acerto">🎯 Placar</th>';
-  h += '<th title="Acertos resultado e % de acerto">✓ Res.</th>';
-  h += '<th title="Últimos 5 jogos" style="min-width:70px">Últimos 5</th>';
+  h += '<div class="card" style="padding:0;overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="tabela-detalhe" style="width:100%;min-width:750px">';
+  h += '<thead><tr><th style="width:36px">Pos</th><th style="text-align:left;position:sticky;left:0;background:var(--card);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Apostador</th>';
+  h += '<th title="Pontos Totais" style="text-align:center">🏆 Pts</th>';
+  h += '<th title="Todos os resultados corretos" style="text-align:center">✓ Res.</th>';
+  h += '<th title="Resultados que renderam Bônus +1 ou +2" style="text-align:center">✨ Bônus+1</th>';
+  h += '<th title="Todos os placares exatos" style="text-align:center">🎯 Placar</th>';
+  h += '<th title="Placares exatos com 4 ou mais gols" style="text-align:center">🔥 Bônus+3</th>';
+  h += '<th title="Últimos 5 jogos" style="text-align:center">Forma</th>';
   h += '</tr></thead><tbody>';
+
+  const _renderCol = (val, pct, valCor) => {
+    return '<td><div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 12px">' +
+           '<span style="font-weight:800;font-size:1rem;color:'+valCor+'">' + val + '</span>' +
+           '<span style="font-size:.68rem;color:var(--texto2);font-weight:600">' + pct + '%</span>' +
+           '</div></td>';
+  };
 
   ranking.forEach((item, i) => {
     const p = item.participante; const st = item.stats;
@@ -72,19 +82,22 @@ window.renderClassificacao = function() {
 
     const jReal = st.jogos_realizados || 0;
     const pctPts = maxPtsGeral > 0 ? ((st.total / maxPtsGeral) * 100).toFixed(1) : "0.0";
-    const pctPlacar = jReal > 0 ? ((st.acertos_placar_exato / jReal) * 100).toFixed(1) : "0.0";
     const pctRes = jReal > 0 ? ((st.acertos_resultado / jReal) * 100).toFixed(1) : "0.0";
+    const pctBonus1 = jReal > 0 ? ((st.acertos_bonus1 / jReal) * 100).toFixed(1) : "0.0";
+    const pctPlacar = jReal > 0 ? ((st.acertos_placar_exato / jReal) * 100).toFixed(1) : "0.0";
+    const pctPlacarAlto = jReal > 0 ? ((st.acertos_placar_alto / jReal) * 100).toFixed(1) : "0.0";
     const aprov = st.aproveitamento_pct;
-    const aprovCor = aprov>=70?'var(--verde-ok)':aprov>=45?'var(--dourado)':'#f87171';
 
     h += '<tr style="cursor:pointer" onclick="_toggleRankingDetalhe(\'rd-'+i+'\')">';
     h += '<td style="text-align:center;font-weight:900;font-size:.95rem">';
     h += (medalhao||pos)+'<span style="font-size:.65rem;color:'+movCor+'"> '+mov+'</span></td>';
-    h += '<td style="text-align:left;font-weight:600">'+(p.apelido||p.nome||p.token?.substring(0,8)||"?")+'</td>';
-    h += '<td><div style="display:flex;align-items:baseline;justify-content:center;gap:3px"><span style="font-weight:900;font-size:.95rem;color:var(--verde-light)">'+st.total.toFixed(1)+'</span><span style="font-size:.6rem;color:var(--texto2);font-weight:600">'+pctPts+'%</span></div></td>';
-    h += '<td><div style="display:flex;align-items:baseline;justify-content:center;gap:3px"><span style="color:#86efac;font-weight:700">'+st.acertos_placar_exato+'</span><span style="font-size:.6rem;color:var(--texto2);font-weight:500">'+pctPlacar+'%</span></div></td>';
-    h += '<td><div style="display:flex;align-items:baseline;justify-content:center;gap:3px"><span style="color:var(--verde-ok);font-weight:700">'+st.acertos_resultado+'</span><span style="font-size:.6rem;color:var(--texto2);font-weight:500">'+pctRes+'%</span></div></td>';
-    h += '<td style="letter-spacing:1px;vertical-align:middle">'+spark+'</td></tr>';
+    h += '<td style="text-align:left;font-weight:600;position:sticky;left:0;background:var(--fundo);z-index:1">'+(p.apelido||p.nome||p.token?.substring(0,8)||"?")+'</td>';
+    h += _renderCol(st.total.toFixed(1), pctPts, "var(--verde-light)");
+    h += _renderCol(st.acertos_resultado, pctRes, "var(--texto)");
+    h += _renderCol(st.acertos_bonus1, pctBonus1, "#fbbf24");
+    h += _renderCol(st.acertos_placar_exato, pctPlacar, "#86efac");
+    h += _renderCol(st.acertos_placar_alto, pctPlacarAlto, "#f87171");
+    h += '<td style="letter-spacing:1px;vertical-align:middle;text-align:center">'+spark+'</td></tr>';
 
     // Linha de detalhe expansível
     h += '<tr id="rd-'+i+'" style="display:none"><td colspan="6" style="padding:0">';

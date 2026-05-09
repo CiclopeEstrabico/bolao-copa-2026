@@ -1,4 +1,4 @@
-﻿/**
+/**
  * scoring.js - Motor de pontuacao do Bolao Copa 2026
  * Funcoes puras. Sem Firebase, sem DOM. Testavel isoladamente.
  * Depende de: data/config.js (window.CONFIG), data/schedule.js (window.SCHEDULE)
@@ -111,7 +111,9 @@ function calcularPontosEspeciais(participante, campeaoOf, viceOf, terceiroOf) {
 function calcularPontosApostador(palpites, resultados, participante, especiais) {
   especiais = especiais || {};
   let total = 0, total_grupos = 0, total_elim = 0;
-  let acertos_placar = 0, acertos_resultado = 0, erros = 0, sem_palpite = 0, jogos_realizados = 0;
+  let acertos_placar = 0, acertos_placar_alto = 0;
+  let acertos_resultado = 0, acertos_bonus1 = 0;
+  let erros = 0, sem_palpite = 0, jogos_realizados = 0;
   const jogos = [];
 
   for (const jogo of (window.SCHEDULE || [])) {
@@ -129,9 +131,21 @@ function calcularPontosApostador(palpites, resultados, participante, especiais) 
     const brutos = calcularPontosBrutos(palpite, resultado);
     const pontos = aplicarFator(brutos.total_bruto, jogo.fase);
 
-    if (brutos.acertou === false)             erros++;
-    else if (brutos.bonus_tipo === "placar_exato") acertos_placar++;
-    else if (brutos.acertou === true)          acertos_resultado++;
+    if (brutos.acertou === false) {
+      erros++;
+    } else if (brutos.acertou === true) {
+      acertos_resultado++; // Todo resultado correto conta
+      if (brutos.bonus_tipo === "placar_exato") {
+        acertos_placar++;
+        if (brutos.bonus_pts === (window.CONFIG?.pontuacao?.bonus_placar_exato_alto || 5)) {
+          acertos_placar_alto++;
+        }
+      } else {
+        if (brutos.bonus_pts > 0) {
+          acertos_bonus1 += brutos.bonus_pts; // Conta a quantidade de pontos de bonus (+1 ou +2)
+        }
+      }
+    }
 
     total += pontos;
     if (jogo.fase === "grupos") total_grupos += pontos;
@@ -162,7 +176,9 @@ function calcularPontosApostador(palpites, resultados, participante, especiais) 
     total_especiais: esp.total_especiais,
     especiais_detalhes: esp.detalhes,
     acertos_placar_exato: acertos_placar,
+    acertos_placar_alto: acertos_placar_alto,
     acertos_resultado,
+    acertos_bonus1,
     erros,
     sem_palpite,
     jogos_realizados,
