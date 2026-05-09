@@ -39,7 +39,8 @@ CONFIDENCE_Z  = 1.96
 MAX_GOALS     = 9       # placares 0..8
 import os
 SCRIPT_DIR    = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_DIR    = SCRIPT_DIR
+OUTPUT_DIR    = os.path.join(SCRIPT_DIR, "results")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 RHO_MAX       = 0.2
 EPS_K         = 1e-2
 
@@ -526,14 +527,14 @@ def main():
     print("=" * 60)
 
     print("[1/4] Carregando artefatos...")
-    with open(os.path.join(SCRIPT_DIR, "copa2026_state.pkl"), "rb") as f:
+    with open(os.path.join(OUTPUT_DIR, "copa2026_state.pkl"), "rb") as f:
         state = pickle.load(f)
-    with open(os.path.join(SCRIPT_DIR, "model_config.json"), "r") as f:
+    with open(os.path.join(OUTPUT_DIR, "model_config.json"), "r") as f:
         config = json.load(f)
-    with open(os.path.join(SCRIPT_DIR, "prior_params.json"), "r") as f:
+    with open(os.path.join(OUTPUT_DIR, "prior_params.json"), "r") as f:
         priors = json.load(f)
     print("    Lendo pesos do modelo (.pt)...")
-    weights = load_pt_weights(os.path.join(SCRIPT_DIR, "model_best.pt"))
+    weights = load_pt_weights(os.path.join(OUTPUT_DIR, "model_best.pt"))
     print(f"    >> {len(weights)} tensores carregados")
     print(f"    >> Priors: a={priors['a']:.4f}  b={priors['b']:.6f}  "
           f"home_adv={priors['home_adv']:.1f}")
@@ -600,7 +601,7 @@ def main():
     # 2) Heatmap de Probabilidade de Avanço
     plt.figure(figsize=(12, 14))
     phases = ['P_r32', 'P_r16', 'P_quarters', 'P_semis', 'P_final', 'P_champion']
-    phase_labels = ['16-Avos', 'Oitavas', 'Quartas', 'Semi', 'Final', 'Campeão']
+    phase_labels = ['32-Avos', 'Oitavas', 'Quartas', 'Semi', 'Final', 'Campeão']
     
     heatmap_df = df.set_index('Team')[phases].copy()
     data = heatmap_df.values

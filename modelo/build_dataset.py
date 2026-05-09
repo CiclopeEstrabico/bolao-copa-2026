@@ -28,7 +28,8 @@ import pandas as pd
 # ─────────────────────────────────────────────────────────────────────
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 INPUT_CSV   = os.path.join(SCRIPT_DIR, "results_raw.csv")
-OUTPUT_DIR  = SCRIPT_DIR
+OUTPUT_DIR  = os.path.join(SCRIPT_DIR, "results")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 ELO_START   = 1500
 ELO_HOME_ADV = 100    # usado só no update ELO (fixo, não exportado no delta_elo_raw)
@@ -312,7 +313,7 @@ def build_sequences(annotated: pd.DataFrame):
 
     print(f"    >> {len(training):,} registros de treino construídos")
     print(f"    >> FEAT_PER_GAME={FEAT_PER_GAME} (inclui decay_weight por posição)")
-    print(f"    >> Decaimento: meia-vida={DECAY_HALFLIFE_GAMES} jogos  λ={DECAY_LAMBDA:.4f}")
+    print(f"    >> Decaimento: meia-vida={DECAY_HALFLIFE_GAMES} jogos  lambda={DECAY_LAMBDA:.4f}")
     return training, forms
 
 

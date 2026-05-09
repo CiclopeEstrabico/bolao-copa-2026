@@ -37,7 +37,7 @@ EPS_K     = 1e-2
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 RESULTS_DIR = os.path.join(SCRIPT_DIR, "results")
-HEATMAP_DIR = os.path.join(SCRIPT_DIR, "heatmaps")
+HEATMAP_DIR = os.path.join(RESULTS_DIR, "heatmaps")
 os.makedirs(RESULTS_DIR, exist_ok=True)
 os.makedirs(HEATMAP_DIR, exist_ok=True)
 OFFICIAL_GROUPS = {
@@ -55,7 +55,7 @@ OFFICIAL_GROUPS = {
     'L': ['England', 'Croatia', 'Ghana', 'Panama'],
 }
 HOSTS     = ['United States', 'Mexico', 'Canada']
-HEATMAP_DIR = os.path.join(".", "heatmaps")
+# HEATMAP_DIR já definido acima
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -301,14 +301,14 @@ def main():
     print("=" * 65)
 
     print("[1/5] Carregando artefatos...")
-    with open(os.path.join(SCRIPT_DIR, "copa2026_state.pkl"), "rb") as f:
+    with open(os.path.join(RESULTS_DIR, "copa2026_state.pkl"), "rb") as f:
         state = pickle.load(f)
-    with open(os.path.join(SCRIPT_DIR, "model_config.json"), "r") as f:
+    with open(os.path.join(RESULTS_DIR, "model_config.json"), "r") as f:
         config = json.load(f)
-    with open(os.path.join(SCRIPT_DIR, "prior_params.json"), "r") as f:
+    with open(os.path.join(RESULTS_DIR, "prior_params.json"), "r") as f:
         priors = json.load(f)
     print("    Lendo pesos do modelo (.pt)...")
-    weights = load_pt_weights(os.path.join(SCRIPT_DIR, "model_best.pt"))
+    weights = load_pt_weights(os.path.join(RESULTS_DIR, "model_best.pt"))
     print(f"    >> {len(weights)} tensores carregados")
     print(f"    >> Priors: a={priors['a']:.4f}  b={priors['b']:.6f}  "
           f"home_adv={priors['home_adv']:.1f}")
@@ -422,8 +422,8 @@ def main():
                          lb_home, lb_away, delta_raw_pure)
 
             print(f"  [{game_num:>2}/72] Grupo {group}: {ta:<28} vs {tb:<28}  "
-                  f"λA={la:.2f}(base={lb_home:.2f},K={K_att_a:.2f})  "
-                  f"λB={lb:.2f}(base={lb_away:.2f},K={K_att_b:.2f})  "
+                  f"LA={la:.2f}(base={lb_home:.2f},K={K_att_a:.2f})  "
+                  f"LB={lb:.2f}(base={lb_away:.2f},K={K_att_b:.2f})  "
                   f"W={p_win_a*100:.0f}% D={p_draw*100:.0f}% L={p_win_b*100:.0f}%")
 
     print("\n[4/5] Salvando CSV...")

@@ -6,8 +6,8 @@ window.PROGNOSE = {
 
   loadData: async function() {
     try {
-      const p1 = fetch('modelo/prior_params.json').then(r => r.json());
-      const p2 = fetch('modelo/k_factors_final.json').then(r => r.json());
+      const p1 = fetch('modelo/results/prior_params.json').then(r => r.json());
+      const p2 = fetch('modelo/results/k_factors_final.json').then(r => r.json());
       const [priors, kFactors] = await Promise.all([p1, p2]);
       window.MODELO_DATA = { priors, kFactors };
     } catch (e) {

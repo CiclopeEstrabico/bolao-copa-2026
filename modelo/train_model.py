@@ -66,14 +66,15 @@ EPS_K          = 1e-2     # K nunca abaixo de EPS_K (evita lambda=0)
 
 import os
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_DIR = SCRIPT_DIR
+OUTPUT_DIR = os.path.join(SCRIPT_DIR, "results")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Parâmetros dos priors (carregados do JSON em runtime)
 _PRIORS = None
 
 
 def load_priors(path=None):
-    if path is None: path = os.path.join(SCRIPT_DIR, "prior_params.json")
+    if path is None: path = os.path.join(OUTPUT_DIR, "prior_params.json")
     global _PRIORS
     with open(path, "r") as f:
         _PRIORS = json.load(f)
@@ -324,7 +325,7 @@ def dc_nll_loss(lam_A, lam_B, rho, X, Y, weights,
 # ─────────────────────────────────────────────────────────────────────
 def load_records():
     print("[1/6] Carregando training_sequences.pkl...")
-    with open(os.path.join(SCRIPT_DIR, "training_sequences.pkl"), "rb") as f:
+    with open(os.path.join(OUTPUT_DIR, "training_sequences.pkl"), "rb") as f:
         records = pickle.load(f)
 
     filtered = [
@@ -395,7 +396,7 @@ def main():
 
     train_recs, val_recs = load_records()
 
-    state_path = os.path.join(SCRIPT_DIR, "copa2026_state.pkl")
+    state_path = os.path.join(OUTPUT_DIR, "copa2026_state.pkl")
     final_elos = {}
     seq_len_config = 25
     if os.path.exists(state_path):
@@ -539,7 +540,7 @@ def main():
     pd.DataFrame(log).to_csv(os.path.join(OUTPUT_DIR, "training_log.csv"), index=False)
 
     # K-factors por time (interpretabilidade)
-    state_path = os.path.join(SCRIPT_DIR, "copa2026_state.pkl")
+    state_path = os.path.join(OUTPUT_DIR, "copa2026_state.pkl")
     if os.path.exists(state_path):
         print("    >> Extraindo K_att / K_def por time...")
         df_k = extract_k_factors(model, state_path, device=device)

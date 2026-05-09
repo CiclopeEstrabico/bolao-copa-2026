@@ -57,7 +57,8 @@ ELO_START     = 1500
 ELO_HOME_ADV  = 100.0
 HALFLIFE_DAYS = 4*365
 MIN_YEAR      = 1990   # ELO aquece desde 1872; MLE usa a partir daqui
-OUTPUT_DIR    = SCRIPT_DIR
+OUTPUT_DIR    = os.path.join(SCRIPT_DIR, "results")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Amplitude máxima de rho (Dixon-Coles recomendam ~0.1–0.2)
 RHO_MAX = 0.2
@@ -337,7 +338,7 @@ def fit_params(df):
     print(f"    >> Convergiu: {result.success}  |  NLL: {result.fun:.4f}")
     print(f"    >> a={a:.4f}  b={b:.6f}  c={c:.2e}  home_adv={home_adv:.1f}")
     print(f"    >> rho0_raw={rho0_raw:.4f}  rho1_neg={rho1_neg:.4f}")
-    print(f"    >> rho(Δ=0)={rho_eq:.4f}  rho(Δ=400)={rho_400:.4f}")
+    print(f"    >> rho(Delta=0)={rho_eq:.4f}  rho(Delta=400)={rho_400:.4f}")
     print(f"    >> lambda base (confronto 50/50, neutro): {lam_base:.3f} gols/time")
 
     return {
