@@ -74,7 +74,7 @@ window.renderEstatisticas = function() {
       const pct = apos.length ? Math.round(ct/apos.length*100) : 0;
       const campeaoOficial = res["FNL"] && APP.bracket?.["FNL"]?.home === code;
       h += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0">';
-      h += htmlBandeira(code,18)+'<span class="stat-time-nome" style="font-size:.8rem;font-weight:600;flex:1">'+(info?.name||code)+'</span>';
+      h += htmlBandeira(code,18)+'<span class="stat-time-nome" style="font-weight:600;flex:1">'+(info?.name||code)+'</span>';
       h += '<div style="width:80px;background:var(--fundo2);border-radius:3px;height:6px"><div style="width:'+(ct/maxV*100)+'%;height:100%;background:var(--verde);border-radius:3px"></div></div>';
       h += '<span style="font-size:.72rem;color:var(--texto2);min-width:30px;text-align:right">'+ct+' ('+pct+'%)</span>';
       if (campeaoOficial) h += '<span style="color:var(--dourado)">✓</span>';
@@ -89,6 +89,7 @@ window.renderEstatisticas = function() {
   h += '<div class="compilacao-wrap"><table class="compilacao-table" style="min-width:1400px; font-size:.72rem">';
   h += '<thead><tr>';
   h += '<th class="stat-col-jogo" style="text-align:left;position:sticky;left:0;background:var(--card);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Jogo</th>';
+  h += '<th class="col-resultado">Resultado</th>';
   h += '<th>Apostas Time 1</th>';
   h += '<th>Apostas Empate</th>';
   h += '<th>Apostas Time 2</th>';
@@ -154,10 +155,18 @@ window.renderEstatisticas = function() {
     h += `<td class="stat-col-jogo" style="text-align:left;position:sticky;left:0;background:var(--card);z-index:1;border-right:1px solid var(--borda)">
             <div style="font-size:.62rem;color:var(--texto2);margin-bottom:3px">${formatarDataBRT(jogo.utc, true)}</div>
             <div style="display:flex;align-items:center;gap:4px;font-weight:700">
-              ${htmlBandeira(hC,12)} <span class="stat-time-nome" style="font-size:.7rem">${hName}</span> ${r?`<span style="color:var(--dourado);margin:0 2px">${r.homeGoals}x${r.awayGoals}</span>`:' x '} <span class="stat-time-nome" style="font-size:.7rem">${aName}</span> ${htmlBandeira(aC,12)}
+              ${htmlBandeira(hC,12)} <span class="stat-time-nome">${hName}</span> <span style="color:var(--texto2)">×</span> <span class="stat-time-nome">${aName}</span> ${htmlBandeira(aC,12)}
             </div>
           </td>`;
     
+    // New Result column
+    if (r && r.homeGoals !== undefined) {
+      const pen = r.foi_penaltis ? ' <span style="font-size:.6rem;color:var(--amber)">PEN</span>' : '';
+      h += `<td class="col-resultado" style="color:var(--verde-ok);font-weight:800">${r.homeGoals}x${r.awayGoals}${pen}</td>`;
+    } else {
+      h += `<td class="col-resultado" style="color:var(--texto2)">–</td>`;
+    }
+
     h += `<td>${formatNumPct(vH, totalBets)}</td>`;
     h += `<td>${formatNumPct(vD, totalBets)}</td>`;
     h += `<td>${formatNumPct(vA, totalBets)}</td>`;
@@ -250,9 +259,9 @@ function _dCard(icon, label, nome, sub, cor) {
 function _jogoStatRow(hC, aC, r, acertos, total, cor) {
   const pct = total ? Math.round(acertos/total*100) : 0;
   return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0">'+
-    htmlBandeira(hC,16)+' <span class="stat-time-nome" style="font-size:.75rem">'+(window.TEAMS_BY_CODE?.[hC]?.name||hC)+'</span>'+
+    htmlBandeira(hC,16)+' <span class="stat-time-nome">'+(window.TEAMS_BY_CODE?.[hC]?.name||hC)+'</span>'+
     '<span style="font-size:.72rem;color:var(--texto2);font-weight:700">'+r.homeGoals+'×'+r.awayGoals+'</span>'+
-    htmlBandeira(aC,16)+' <span class="stat-time-nome" style="font-size:.75rem">'+(window.TEAMS_BY_CODE?.[aC]?.name||aC)+'</span>'+
+    htmlBandeira(aC,16)+' <span class="stat-time-nome">'+(window.TEAMS_BY_CODE?.[aC]?.name||aC)+'</span>'+
     '<div style="flex:1;background:var(--fundo2);border-radius:3px;height:6px;margin:0 6px">'+
     '<div style="width:'+pct+'%;height:100%;background:'+cor+';border-radius:3px"></div></div>'+
     '<span style="font-size:.7rem;color:'+cor+';font-weight:700;min-width:40px;text-align:right">'+acertos+'/'+total+'</span></div>';
