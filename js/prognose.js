@@ -46,8 +46,14 @@ window.PROGNOSE = {
     const K_def_a = kf[aN]?.K_def || 1.0;
     
     let delta_eff_elo = eloH - eloA;
-    if (!isNeutral) {
+    const hosts = ['USA', 'MEX', 'CAN'];
+    
+    // A vantagem de casa (Home Advantage) só se aplica se um dos times for anfitrião (EUA, MEX, CAN)
+    if (hosts.includes(homeCode)) {
         delta_eff_elo += priors.home_adv;
+    }
+    if (hosts.includes(awayCode)) {
+        delta_eff_elo -= priors.home_adv;
     }
     
     const lam_base_h = Math.exp(priors.a + priors.b * delta_eff_elo + priors.c * Math.pow(delta_eff_elo, 2));
