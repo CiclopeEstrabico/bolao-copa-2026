@@ -198,13 +198,14 @@ function renderAposta() {
 
   let h = "";
 
-  const liberadas = window.APP?.configStatus?.apostas_liberadas !== false;
+  const status = window.APP?.configStatus || {};
+  const algumaLiberada = Object.keys(status).some(k => k.startsWith("liberado_") && status[k] === true);
   
   // Header de status
   h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">';
   h += '<div style="font-size:.78rem;color:var(--texto2)">Palpites preenchidos: <strong style="color:var(--verde-light)">' + preenchidos + '/' + totalJogos + '</strong> jogos da fase de grupos</div>';
   if (!_modoVer) {
-    if (liberadas) {
+    if (algumaLiberada) {
       h += '<button class="btn btn-primario btn-sm" style="margin-left:auto" onclick="salvarTodosPalpites()">💾 Salvar Palpites</button>';
     } else {
       h += '<button class="btn btn-perigo btn-sm" style="margin-left:auto; cursor:not-allowed;" disabled>🔒 APOSTAS TRAVADAS</button>';
@@ -243,7 +244,8 @@ function renderEspeciaisAposta(res) {
     h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">' + htmlBandeira(val, 24);
     h += '<span style="font-size:.82rem;font-weight:600">' + (info?.name || "Selecionar") + '</span></div>';
     if (!_modoVer) {
-      const disAttr = (window.APP?.configStatus?.apostas_liberadas !== false) ? '' : ' disabled style="background-color:var(--fundo2);color:var(--texto2);opacity:0.6;cursor:not-allowed;"';
+      const liberadoGeral = window.APP?.configStatus?.liberado_grupos === true;
+      const disAttr = liberadoGeral ? '' : ' disabled style="background-color:var(--fundo2);color:var(--texto2);opacity:0.6;cursor:not-allowed;"';
       h += '<select class="apt-esp" data-key="' + f.key + '" onchange="gravarEspecialAposta(this)" style="font-size:.75rem;padding:5px 8px"' + disAttr + '>';
       h += '<option value="">-- Selecionar --</option>';
       for (const c of times.sort()) {
@@ -299,7 +301,7 @@ async function salvarTodosPalpites(silencioso = false) {
   if (!_apostador?.id) return;
   const promessas = [];
   for (const [gameId, p] of Object.entries(_palpitesLocais)) {
-    if (p?.homeGoals !== undefined)
+    if (p?.homeGoals !== undefined && jogoAceita(gameId))
       promessas.push(gravarPalpite(_apostador.id, gameId, p.homeGoals, p.awayGoals));
   }
   await Promise.all(promessas);
