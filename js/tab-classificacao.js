@@ -55,7 +55,7 @@ window.renderClassificacao = function () {
   h += '</tr></thead><tbody>';
 
   const _renderCol = (val, pct, valCor) => {
-    return '<td style="text-align:center"><div style="display:inline-flex;align-items:baseline;gap:4px">' +
+    return '<td style="text-align:center"><div style="display:inline-flex;align-items:baseline;gap:7px">' +
       '<span style="font-weight:800;font-size:1.05rem;color:' + valCor + '">' + val + '</span>' +
       '<span style="font-size:.64rem;color:var(--texto2);font-weight:600">' + pct + '%</span>' +
       '</div></td>';
