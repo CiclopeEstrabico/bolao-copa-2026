@@ -140,9 +140,12 @@ def pad_sequence(seq: list) -> np.ndarray:
     return arr
 
 
+USE_FIXED_ELO = False  # Se True, usa o ELO final do time para todos os cálculos de delta no dataset alvo
+
 class FootballDataset(Dataset):
-    def __init__(self, records: list):
+    def __init__(self, records: list, final_elos: dict = None):
         self.records = records
+        self.final_elos = final_elos
 
     def __len__(self):
         return len(self.records)
@@ -153,7 +156,13 @@ class FootballDataset(Dataset):
         seq_a = pad_sequence(r['seq_away'])
 
         # delta_elo_raw SEM home_adv (compatível com v2 do build_dataset)
-        delta_raw = np.float32(r.get('delta_elo_raw', r.get('delta_elo', 0)) / NORM_DELTA_ELO)
+        if USE_FIXED_ELO and self.final_elos:
+            ht, at = r.get('home_team'), r.get('away_team')
+            h_elo = self.final_elos.get(ht, 1500)
+            a_elo = self.final_elos.get(at, 1500)
+            delta_raw = np.float32((h_elo - a_elo) / NORM_DELTA_ELO)
+        else:
+            delta_raw = np.float32(r.get('delta_elo_raw', r.get('delta_elo', 0)) / NORM_DELTA_ELO)
         is_neutral = np.float32(1.0 if r.get('is_neutral', r.get('neutral', False)) else 0.0)
         tw         = np.float32(r['tournament_weight'])
         hs         = np.int64(r['home_score'])
@@ -384,8 +393,15 @@ def main():
 
     train_recs, val_recs = load_records()
 
-    train_ds = FootballDataset(train_recs)
-    val_ds   = FootballDataset(val_recs)
+    state_path = os.path.join(SCRIPT_DIR, "copa2026_state.pkl")
+    final_elos = {}
+    if os.path.exists(state_path):
+        with open(state_path, "rb") as f:
+            st = pickle.load(f)
+            final_elos = st.get('team_elos', {})
+
+    train_ds = FootballDataset(train_recs, final_elos)
+    val_ds   = FootballDataset(val_recs, final_elos)
     # pin_memory=True acelera transferência CPU→GPU
     pin = device.type == "cuda"
     train_dl = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True,
