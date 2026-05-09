@@ -244,7 +244,12 @@ function renderJogoRow(jogo,res,ehElim,isAdm,palApo,showFullDate=false){
   h+='<div class="jogo-col-away">'+htmlBandeira(aCode,22)+'<span style="color:'+(caway||"inherit")+';font-weight:'+(caway?700:500)+'">'+aName+'</span></div>';
 
   // Col 5: acoes
-  h+='<div class="jogo-col-acoes"><button class="btn-prog" onclick="PROGNOSE.abrirModal(\''+jogo.id+'\')" title="Info e Estatísticas">📊</button></div>';
+  const isApostaPage = window.location.pathname.includes("aposta.html");
+  h += '<div class="jogo-col-acoes">';
+  if (!isApostaPage) {
+    h += '<button class="btn-prog" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" title="Info e Estatísticas">📊</button>';
+  }
+  h += '</div>';
 
-  h+='</div>'; return h;
+  h += '</div>'; return h;
 }
