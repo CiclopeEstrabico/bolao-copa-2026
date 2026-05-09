@@ -11,16 +11,19 @@ let _modoVer = false;
 
 // Sobrescrever a função do ui-jogos para a tela de apostas
 window._onInputPlacar = function(id) {
-  const hg = parseInt(document.getElementById("sim-hg-" + id)?.value);
-  const ag = parseInt(document.getElementById("sim-ag-" + id)?.value);
+  const h1 = document.getElementById("sim-hg-" + id)?.value;
+  const h2 = document.getElementById("sim-ag-" + id)?.value;
+  
+  // Se um dos dois estiver vazio, não atualizamos o palpite local "salvável"
+  if (h1 === "" || h2 === "") return;
+
+  const hg = parseInt(h1);
+  const ag = parseInt(h2);
   
   if (!isNaN(hg) && !isNaN(ag)) {
     _palpitesLocais[id] = { homeGoals: hg, awayGoals: ag };
-    
-    // Atualizar apenas as tabelas de grupos sem dar re-render na página toda (evita perder o foco)
     atualizarMiniTabelasAposta();
     
-    // Auto-save suave
     clearTimeout(window._saveTimerAposta);
     window._saveTimerAposta = setTimeout(() => salvarTodosPalpites(true), 2000);
   }
@@ -301,7 +304,8 @@ async function salvarTodosPalpites(silencioso = false) {
   if (!_apostador?.id) return;
   const promessas = [];
   for (const [gameId, p] of Object.entries(_palpitesLocais)) {
-    if (p?.homeGoals !== undefined && jogoAceita(gameId))
+    // Garantia dupla: checa se ambos os gols existem e se a fase aceita apostas
+    if (p?.homeGoals !== undefined && p?.awayGoals !== undefined && jogoAceita(gameId))
       promessas.push(gravarPalpite(_apostador.id, gameId, p.homeGoals, p.awayGoals));
   }
   await Promise.all(promessas);
