@@ -28,6 +28,8 @@ Arquivos necessários:
 import os, json, math, pickle, zipfile, io, time
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 
 # ─────────────────────────────────────────────────────────────────────
 # PARÂMETROS
@@ -290,7 +292,7 @@ class CopaSim:
               f"mean={self.K_def.mean():.3f}")
 
         # ── Lambdas para todos os pares (N×N) ──
-        print("    >> Pré-computando λ para todos os pares...")
+        print("    >> Pré-computando lambda para todos os pares...")
         self._precompute_all_lambdas()
 
         # ── Matrizes de placar ──
@@ -572,6 +574,60 @@ def main():
 
     df = pd.DataFrame(rows).sort_values('P_champion', ascending=False).reset_index(drop=True)
     df.to_csv(os.path.join(OUTPUT_DIR, "copa2026_results.csv"), index=False)
+
+    # ── Geração dos Gráficos ──
+    print("    >> Gerando gráficos...")
+    # 1) Gráfico de Barras - Probabilidade de Ganhar a Copa
+    plt.figure(figsize=(18, 8))
+    cmap = LinearSegmentedColormap.from_list("green_to_red", ["red", "yellow", "green"])
+    norm = plt.Normalize(df['P_champion'].min(), df['P_champion'].max())
+    colors = [cmap(norm(val)) for val in df['P_champion']]
+
+    # Pegamos os top 32 para não ficar tão ilegível
+    top_df = df.head(32)
+    plt.bar(top_df['Team'], top_df['P_champion'], color=colors[:32])
+    plt.xticks(rotation=90, fontsize=10)
+    plt.title("Probabilidade de Ganhar a Copa 2026 (%) - Top 32", fontsize=14, pad=15)
+    plt.ylabel("Probabilidade (%)")
+    plt.tight_layout()
+    plt.savefig(os.path.join(OUTPUT_DIR, "probabilidade_campeao.png"), dpi=150)
+    plt.close()
+
+    # 2) Heatmap de Probabilidade de Avanço
+    plt.figure(figsize=(12, 14))
+    phases = ['P_r16', 'P_quarters', 'P_semis', 'P_final', 'P_champion']
+    phase_labels = ['Oitavas', 'Quartas', 'Semi', 'Final', 'Campeão']
+    
+    heatmap_df = df.set_index('Team')[phases].copy()
+    data = heatmap_df.values
+    
+    fig, ax = plt.subplots(figsize=(10, 16))
+    cax = ax.imshow(data, cmap="RdYlGn", aspect='auto')
+    
+    # Adicionar barra de cores
+    cbar = fig.colorbar(cax, ax=ax, fraction=0.046, pad=0.04)
+    cbar.set_label('Probabilidade (%)')
+
+    # Configurar eixos
+    ax.set_xticks(np.arange(len(phase_labels)))
+    ax.set_yticks(np.arange(len(heatmap_df.index)))
+    ax.set_xticklabels(phase_labels)
+    ax.set_yticklabels(heatmap_df.index)
+
+    # Rotacionar labels
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+
+    # Adicionar anotações de texto em cada célula
+    for i in range(len(heatmap_df.index)):
+        for j in range(len(phase_labels)):
+            val = data[i, j]
+            color = "white" if (val < 20 or val > 80) else "black"
+            ax.text(j, i, f"{val:.1f}", ha="center", va="center", color=color, fontsize=8)
+
+    ax.set_title("Heatmap: Probabilidade de Avançar para cada Fase (%)", fontsize=14, pad=15)
+    fig.tight_layout()
+    plt.savefig(os.path.join(OUTPUT_DIR, "probabilidade_fases_heatmap.png"), dpi=150)
+    plt.close('all')
 
     # ── Resumo console ──
     lines = [
