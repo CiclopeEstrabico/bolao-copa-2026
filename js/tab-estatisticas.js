@@ -152,7 +152,7 @@ window.renderEstatisticas = function() {
 
     h += `<tr style="${rowBg}">`;
     h += `<td style="text-align:left;position:sticky;left:0;background:var(--card);z-index:1;border-right:1px solid var(--borda)">
-            <div style="font-size:.62rem;color:var(--texto2);margin-bottom:3px">${jogo.id} - ${formatarDataBRT(jogo.utc, true)}</div>
+            <div style="font-size:.62rem;color:var(--texto2);margin-bottom:3px">${formatarDataBRT(jogo.utc, true)}</div>
             <div style="display:flex;align-items:center;gap:4px;font-weight:700">
               ${htmlBandeira(hC,12)} <span style="font-size:.7rem">${hName}</span> ${r?`<span style="color:var(--dourado);margin:0 2px">${r.homeGoals}x${r.awayGoals}</span>`:' x '} <span style="font-size:.7rem">${aName}</span> ${htmlBandeira(aC,12)}
             </div>
