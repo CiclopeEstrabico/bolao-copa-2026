@@ -75,9 +75,17 @@ function renderCadastro() {
     '<div class="card-titulo">👤 Seu Cadastro</div>'+
     '<div class="form-group"><label>Nome completo</label>'+
     '<input type="text" id="apt-nome" placeholder="Ex: João Silva" maxlength="50"></div>'+
-    '<div class="form-group"><label>Apelido <span style="font-size:0.65rem;color:var(--dourado)">(Apenas letras, máx 10)</span></label>'+
-    '<input type="text" id="apt-apelido" placeholder="Ex: Jao" maxlength="10"></div>'+
+    '<div class="form-group"><label>Apelido <span style="font-size:0.65rem;color:var(--dourado)">(Apenas letras, máx 8)</span></label>'+
+    '<input type="text" id="apt-apelido" placeholder="Ex: Jao" maxlength="8" oninput="formatarApelido(this)"></div>'+
     '<button class="btn btn-primario" style="width:100%" onclick="salvarCadastro()">Salvar e Começar</button></div>';
+}
+
+function formatarApelido(el) {
+  let val = el.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, '');
+  if (val.length > 0) {
+    val = val.charAt(0).toUpperCase() + val.slice(1).toLowerCase();
+  }
+  el.value = val;
 }
 
 async function salvarCadastro() {
@@ -87,11 +95,14 @@ async function salvarCadastro() {
   if (apelido.length > 0) {
     apelido = apelido.charAt(0).toUpperCase() + apelido.slice(1).toLowerCase();
   }
-  apelido = apelido.substring(0, 10);
+  apelido = apelido.substring(0, 8);
   
   if (!nome) { alert("Informe seu nome."); return; }
   _apostador.nome = nome;
-  _apostador.apelido = apelido || nome.split(" ")[0].replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, '').substring(0, 10);
+  _apostador.apelido = apelido || nome.split(" ")[0].replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, '').substring(0, 8);
+  if (_apostador.apelido.length > 0) {
+    _apostador.apelido = _apostador.apelido.charAt(0).toUpperCase() + _apostador.apelido.slice(1).toLowerCase();
+  }
   _apostador.novo = false;
   _apostador.token = _apostador.token;
   if (!_apostador.id) _apostador.id = "tok_"+Date.now();
