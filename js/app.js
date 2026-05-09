@@ -136,7 +136,7 @@ function desativarSimulacao() {
 function simularResultado(gameId, hg, ag, foiPen, penVenc, ph, pa) {
   if (!APP.modoSimulacao) ativarSimulacao();
   APP.resultadosSim[gameId] = { gameId, homeGoals: hg, awayGoals: ag,
-    foi_penaltis: !!foiPen, penaltis_vencedor: penVenc||null, simulado: true, pen_hg: ph, pen_ag: pa };
+    foi_penaltis: !!foiPen, penaltis_vencedor: penVenc||null, simulado: true, penaltis_home: ph, penaltis_away: pa };
   atualizarBracket(); renderAbaAtiva();
 }
 function getResultados() {
