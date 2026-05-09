@@ -19,19 +19,19 @@ window.CONFIG = {
 
     // Multiplicadores por fase — pontos_finais = pontos_brutos × fator
     fatores_fase: {
-      grupos:   1.0,
+      grupos: 1.0,
       "32avos": 1.2,
-      oitavas:  1.4,
-      quartas:  1.6,
-      semis:    1.8,
+      oitavas: 1.4,
+      quartas: 1.6,
+      semis: 1.8,
       terceiro: 1.8,
-      final:    2.0
+      final: 2.0
     },
 
     // Palpites especiais (campeão / vice / 3.° lugar)
     extras: {
       primeiro_lugar: 7,
-      segundo_lugar:  4,
+      segundo_lugar: 4,
       terceiro_lugar: 2
     }
   },

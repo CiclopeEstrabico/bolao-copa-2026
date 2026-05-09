@@ -69,7 +69,7 @@ window.renderRegras = function () {
     h += '<div style="font-size:.63rem;color:var(--texto2)">' + nome + '</div>';
     h += '<div style="font-size:1.1rem;font-weight:900;color:var(--verde-light)">×' + f + '</div>';
     // Exemplo: placar exato alto nessa fase
-    h += '<div style="font-size:.6rem;color:var(--texto2)">Exato alto: ' + (Math.round((base + bAlto) * f * 10) / 10) + ' pts</div>';
+
     h += '</div>';
   }
   h += '</div></div></div>';
