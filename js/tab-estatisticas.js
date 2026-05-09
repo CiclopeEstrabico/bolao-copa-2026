@@ -1,4 +1,4 @@
-﻿/** tab-estatisticas.js - Dashboard completo de estatísticas */
+/** tab-estatisticas.js - Dashboard completo de estatísticas */
 window.renderEstatisticas = function() {
   const el = document.getElementById("aba-estatisticas");
   if (!el) return;
@@ -95,6 +95,105 @@ window.renderEstatisticas = function() {
     h += '</select></div>';
     h += '<div id="hth-resultado"></div></div>';
   }
+
+  // Resumo Avançado de Todos os Jogos
+  h += '<div class="card"><div class="card-titulo">📈 Estatísticas Avançadas por Jogo</div>';
+  h += '<div class="compilacao-wrap"><table class="compilacao-table" style="min-width:1400px; font-size:.72rem">';
+  h += '<thead><tr>';
+  h += '<th style="text-align:left;position:sticky;left:0;background:var(--card);z-index:1;min-width:180px;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Jogo</th>';
+  h += '<th>Apostas Time 1</th>';
+  h += '<th>Apostas Empate</th>';
+  h += '<th>Apostas Time 2</th>';
+  h += '<th>Placar Mais Chutado</th>';
+  h += '<th>Acertos Result.</th>';
+  h += '<th>Acertos Placar</th>';
+  h += '<th style="width:20px;background:var(--fundo);border-left:1px solid var(--borda);border-right:1px solid var(--borda)"></th>';
+  h += '<th title="Elo do Modelo">Elo T1</th>';
+  h += '<th title="Elo do Modelo">Elo T2</th>';
+  h += '<th title="Gols Esperados">xG T1</th>';
+  h += '<th title="Gols Esperados">xG T2</th>';
+  h += '<th>Prob T1</th>';
+  h += '<th>Prob Emp</th>';
+  h += '<th>Prob T2</th>';
+  h += '</tr></thead><tbody>';
+
+  const formatPct = (val, tot) => tot > 0 ? `<div style="font-size:.65rem;color:var(--texto2)">${((val/tot)*100).toFixed(1)}%</div>` : '';
+  const formatNumPct = (val, tot, color="var(--texto)") => `<div style="color:${color};font-weight:700">${val}</div>` + formatPct(val, tot);
+
+  for (const jogo of (window.SCHEDULE||[])) {
+    const b = APP.bracket?.[jogo.id]||{}; 
+    const hC = b.home||jogo.home; 
+    const aC = b.away||jogo.away;
+    const hName = window.TEAMS_BY_CODE?.[hC]?.name || hC;
+    const aName = window.TEAMS_BY_CODE?.[aC]?.name || aC;
+    
+    // Bets
+    let totalBets=0, vH=0, vD=0, vA=0;
+    const placares = {};
+    let aRes=0, aPlac=0;
+    const r = res[jogo.id];
+
+    for (const a of apos) {
+      const p = pals[a.id]?.[jogo.id];
+      if (!p || p.homeGoals===undefined) continue;
+      totalBets++;
+      const hg = parseInt(p.homeGoals);
+      const ag = parseInt(p.awayGoals);
+      if (hg>ag) vH++; else if(hg<ag) vA++; else vD++;
+      const pk = hg+'x'+ag;
+      placares[pk] = (placares[pk]||0)+1;
+      
+      if (r && r.homeGoals!==undefined) {
+         const br = calcularPontosBrutos(p, r);
+         if (br.acertou) aRes++;
+         if (br.bonus_tipo === "placar_exato") aPlac++;
+      }
+    }
+
+    const mChutado = Object.entries(placares).sort((a,b)=>b[1]-a[1])[0];
+    const strPlacarMais = mChutado ? `${mChutado[0]} <span style="font-size:.65rem;color:var(--texto2)">(${((mChutado[1]/totalBets)*100).toFixed(1)}%)</span>` : '—';
+    
+    // AI Prognosis
+    let prog = null;
+    if (window.PROGNOSE && typeof PROGNOSE.calcular === "function" && hC!=="TBD" && aC!=="TBD") {
+      const isNeutral = !['USA','CAN','MEX'].includes(hC) && !['USA','CAN','MEX'].includes(aC);
+      prog = PROGNOSE.calcular(hC, aC, isNeutral);
+    }
+
+    const rowBg = (r && r.homeGoals!==undefined) ? '' : ' opacity:0.65;';
+
+    h += `<tr style="${rowBg}">`;
+    h += `<td style="text-align:left;position:sticky;left:0;background:var(--card);z-index:1;border-right:1px solid var(--borda)">
+            <div style="font-size:.62rem;color:var(--texto2);margin-bottom:3px">${jogo.id} - ${formatarDataBRT(jogo.utc, true)}</div>
+            <div style="display:flex;align-items:center;gap:4px;font-weight:700">
+              ${htmlBandeira(hC,12)} <span style="font-size:.7rem">${hName}</span> ${r?`<span style="color:var(--dourado);margin:0 2px">${r.homeGoals}x${r.awayGoals}</span>`:' x '} <span style="font-size:.7rem">${aName}</span> ${htmlBandeira(aC,12)}
+            </div>
+          </td>`;
+    
+    h += `<td>${formatNumPct(vH, totalBets)}</td>`;
+    h += `<td>${formatNumPct(vD, totalBets)}</td>`;
+    h += `<td>${formatNumPct(vA, totalBets)}</td>`;
+    h += `<td><strong style="color:var(--verde-light)">${strPlacarMais}</strong></td>`;
+    h += `<td>${r?formatNumPct(aRes, totalBets, 'var(--verde-ok)'):'—'}</td>`;
+    h += `<td>${r?formatNumPct(aPlac, totalBets, '#86efac'):'—'}</td>`;
+    
+    h += `<td style="background:var(--fundo);border-left:1px solid var(--borda);border-right:1px solid var(--borda)"></td>`; // gap
+
+    if (prog) {
+       h += `<td><span style="color:var(--texto2)">${prog.eloH.toFixed(0)}</span></td>`;
+       h += `<td><span style="color:var(--texto2)">${prog.eloA.toFixed(0)}</span></td>`;
+       h += `<td><strong style="color:var(--texto)">${prog.lH.toFixed(2)}</strong></td>`;
+       h += `<td><strong style="color:var(--texto)">${prog.lA.toFixed(2)}</strong></td>`;
+       h += `<td><div style="color:var(--verde-light);font-weight:700">${(prog.home*100).toFixed(1)}%</div></td>`;
+       h += `<td><div style="color:var(--texto2);font-weight:700">${(prog.draw*100).toFixed(1)}%</div></td>`;
+       h += `<td><div style="color:var(--verde-light);font-weight:700">${(prog.away*100).toFixed(1)}%</div></td>`;
+    } else {
+       h += `<td colspan="7" style="color:var(--texto2);font-size:.65rem">Sem dados do modelo</td>`;
+    }
+
+    h += `</tr>`;
+  }
+  h += '</tbody></table></div></div>';
 
   el.innerHTML = h;
 };
