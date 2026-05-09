@@ -154,7 +154,7 @@ window.renderEstatisticas = function () {
     h += `<tr style="${rowBg}">`;
     h += `<td class="stat-col-jogo" style="text-align:left;position:sticky;left:0;background:var(--card2);padding:6px 8px;z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">
             <div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">${formatarDataBRT(jogo.utc, true)}</div>
-            <div style="display:flex;align-items:center;gap:4px;font-weight:700">
+            <div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">
               ${htmlBandeira(hC,14)} <span class="stat-time-nome">${hName}</span> <span style="color:var(--texto2)">×</span> <span class="stat-time-nome">${aName}</span> ${htmlBandeira(aC,14)}
             </div>
           </td>`;
@@ -232,7 +232,7 @@ window.renderHtH = function () {
     const cor1 = v1 > v2 ? "var(--verde-ok)" : v1 < v2 ? "#f87171" : "var(--texto2)";
     const cor2 = v2 > v1 ? "var(--verde-ok)" : v2 < v1 ? "#f87171" : "var(--texto2)";
     rows += '<tr><td class="stat-col-jogo" style="text-align:left;font-size:.73rem;position:sticky;left:0;background:var(--fundo);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">'+
-      '<span class="stat-time-nome">'+getShortName(hC)+'</span> × <span class="stat-time-nome">'+getShortName(aC)+'</span></td>'+
+      '<div style="display:flex;align-items:center;gap:4px;width:100%"><span class="stat-time-nome">'+getShortName(hC)+'</span> <span style="color:var(--texto2)">×</span> <span class="stat-time-nome">'+getShortName(aC)+'</span></div></td>'+
       '<td style="font-size:.72rem">' + r.homeGoals + '×' + r.awayGoals + '</td>' +
       '<td style="color:' + cor1 + ';font-weight:700">' + (p1 ? p1.homeGoals + '×' + p1.awayGoals + ' (' + v1 + 'pts)' : '—') + '</td>' +
       '<td style="color:' + cor2 + ';font-weight:700">' + (p2 ? p2.homeGoals + '×' + p2.awayGoals + ' (' + v2 + 'pts)' : '—') + '</td></tr>';

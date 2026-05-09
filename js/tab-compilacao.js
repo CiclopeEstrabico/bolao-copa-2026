@@ -59,7 +59,7 @@ window.renderCompilacao = function () {
     const dataHora = formatarDataBRT(jogo.utc, false);
     h += '<tr><td class="col-jogo" style="position:sticky;left:0;background:var(--card2);padding:6px 8px;z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">';
     h += '<div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">' + dataHora + '</div>';
-    h += '<div style="display:flex;align-items:center;gap:4px;font-weight:700">' + htmlBandeira(hC, 14) + ' <span class="compilacao-time-nome" title="' + hN + '">' + hN + '</span> <span style="color:var(--texto2)">×</span> <span class="compilacao-time-nome" title="' + aN + '">' + aN + '</span> ' + htmlBandeira(aC, 14) + '</div></td>';
+    h += '<div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">' + htmlBandeira(hC, 14) + ' <span class="compilacao-time-nome" title="' + hN + '">' + hN + '</span> <span style="color:var(--texto2)">×</span> <span class="compilacao-time-nome" title="' + aN + '">' + aN + '</span> ' + htmlBandeira(aC, 14) + '</div></td>';
     // Resultado oficial
     if (temRes) {
       const pen = r.foi_penaltis ? ' <span style="font-size:.6rem;color:var(--amber)">PEN</span>' : '';

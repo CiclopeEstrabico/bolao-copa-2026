@@ -254,8 +254,8 @@ select{appearance:none;cursor:pointer}
   .jogo-col-placar{min-width:0}
   .jogo-col-acoes{width:30px}
   .btn-prog{width:28px;height:28px;font-size:.72rem}
-  .compilacao-time-nome,.stat-time-nome{max-width:42px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle;font-size:.64rem}
-  .col-jogo,.stat-col-jogo{min-width:95px !important}
+  .compilacao-time-nome,.stat-time-nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.64rem}
+  .col-jogo,.stat-col-jogo{width:105px !important;min-width:105px !important;max-width:105px !important}
 }
 @media(max-width:500px){
   .td-hid{display:none}
