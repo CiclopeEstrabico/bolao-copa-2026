@@ -3,28 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
-  <title>Admin - Resultados Oficiais - Bolao Copa 2026</title>
+  <title>Admin - Bolão Copa 2026</title>
   <link rel="icon" type="image/jpeg" href="assets/logo-white.jpg">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <header class="header">
   <img src="assets/logo-white.jpg" alt="Copa 2026" class="header-logo" style="height:42px;width:auto;flex-shrink:0" onerror="this.style.display='none'">
-  <div class="header-titulo">Admin — Resultados Oficiais<small>Bolao Copa 2026</small></div>
+  <div class="header-titulo">Admin — Bolão Copa 2026<small>Painel de Controle</small></div>
   <a href="index.html" style="margin-left:auto;font-size:.75rem;color:var(--texto2);text-decoration:none;padding:4px 10px;border:1px solid var(--borda);border-radius:6px">Ver Ranking</a>
 </header>
-<main class="main" id="admin-main">
-  <div class="loading"><div class="spinner"></div>Carregando...</div>
+
+<div class="tabs-wrap">
+  <nav class="tabs" role="tablist">
+    <button class="tab-btn" data-tab="resultados" role="tab">⚽ Resultados</button>
+    <button class="tab-btn" data-tab="apostadores" role="tab">👥 Apostadores</button>
+    <button class="tab-btn" data-tab="tokens" role="tab">🔑 Tokens</button>
+  </nav>
+</div>
+
+<main class="main">
+  <div class="aba-conteudo" data-aba="resultados" id="aba-resultados">
+    <div class="loading"><div class="spinner"></div>Carregando...</div>
+  </div>
+  <div class="aba-conteudo hidden" data-aba="apostadores" id="aba-apostadores"></div>
+  <div class="aba-conteudo hidden" data-aba="tokens" id="aba-tokens"></div>
 </main>
+
 <script src="data/config.js"></script>
 <script src="data/teams.js"></script>
 <script src="data/schedule.js"></script>
-<script src="data/tokens.js"></script>
 <script src="data/venues.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="firebase-config.js"></script>
 <script src="js/scoring.js"></script>
 <script src="js/bracket.js"></script>
 <script src="js/app.js"></script>
