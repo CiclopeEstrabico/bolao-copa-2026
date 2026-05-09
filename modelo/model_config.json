@@ -1,13 +1,13 @@
 {
-  "SEQ_LEN": 25,
-  "FEAT_PER_GAME": 6,
   "GRU_HIDDEN": 48,
+  "FEAT_PER_GAME": 6,
+  "SEQ_LEN": 25,
+  "best_val_nll": 2.593106232191387,
   "DROPOUT": 0.25,
   "NORM_DELTA_ELO": 400.0,
   "NORM_GOALS": 3.0,
   "EPS_K": 0.01,
   "K_REG_WEIGHT": 0.1,
-  "best_val_nll": 2.5886060062207674,
   "architecture": "GRU_K_att_K_def_v2",
   "prior_params_file": "prior_params.json"
 }

@@ -353,9 +353,10 @@ def extract_k_factors(model, state_path=None, device="cpu"):
         state = pickle.load(f)
 
     model.eval()
+    seq_len_config = state.get('seq_len', 25)
     rows = []
     for team, form in state['team_forms'].items():
-        seq = pad_sequence(form)
+        seq = pad_sequence(form, seq_len_config)
         seq_t = torch.from_numpy(seq).unsqueeze(0).to(device)   # (1, T, F)
         K_att, K_def = model.encode_team(seq_t)
         rows.append({
