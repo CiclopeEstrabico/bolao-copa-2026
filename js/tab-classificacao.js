@@ -55,9 +55,9 @@ window.renderClassificacao = function () {
   h += '</tr></thead><tbody>';
 
   const _renderCol = (val, pct, valCor) => {
-    return '<td><div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 12px">' +
-      '<span style="font-weight:800;font-size:1rem;color:' + valCor + '">' + val + '</span>' +
-      '<span style="font-size:.68rem;color:var(--texto2);font-weight:600">' + pct + '%</span>' +
+    return '<td style="text-align:center"><div style="display:inline-flex;align-items:baseline;gap:4px">' +
+      '<span style="font-weight:800;font-size:1.05rem;color:' + valCor + '">' + val + '</span>' +
+      '<span style="font-size:.64rem;color:var(--texto2);font-weight:600">' + pct + '%</span>' +
       '</div></td>';
   };
 
