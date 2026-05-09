@@ -254,7 +254,8 @@ select{appearance:none;cursor:pointer}
   .jogo-col-placar{min-width:0}
   .jogo-col-acoes{width:30px}
   .btn-prog{width:28px;height:28px;font-size:.72rem}
-  .compilacao-time-nome{max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
+  .compilacao-time-nome,.stat-time-nome{max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
+  .stat-col-jogo{min-width:115px !important}
 }
 @media(max-width:500px){
   .td-hid{display:none}
