@@ -207,8 +207,8 @@ function renderJogoRow(jogo,res,ehElim,isAdm,palApo,showFullDate=false){
   if(temRes&&!isAdm){
     h+='<div class="placar-display"><span class="placar-num" style="color:'+(chome||"var(--texto)")+'">'+r.homeGoals+'</span><span class="placar-sep">x</span><span class="placar-num" style="color:'+(caway||"var(--texto)")+'">'+r.awayGoals+'</span></div>';
     if(r.foi_penaltis){
-      let pScore = (r.pen_hg !== undefined && r.pen_ag !== undefined) ? ` (${r.pen_hg}-${r.pen_ag})` : "";
-      h+='<div style="font-size:.65rem;color:var(--amber);margin-top:2px;font-weight:700">PEN'+pScore+' '+(r.penaltis_vencedor==="home"?hName:aName)+'</div>';
+      const ph = r.penaltis_home ?? 0; const pa = r.penaltis_away ?? 0;
+      h+='<div style="font-size:.65rem;color:var(--amber);margin-top:2px;font-weight:700;text-align:center">PEN '+ph+'x'+pa+'</div>';
     }
     if(pal?.homeGoals!==undefined){
       const br=calcularPontosBrutos(pal,r); const pts=aplicarFator(br.total_bruto,jogo.fase);

@@ -62,8 +62,12 @@ window.renderCompilacao = function () {
     h += '<div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">' + htmlBandeira(hC, 14) + ' <span class="compilacao-time-nome" title="' + hN + '">' + hN + '</span> <span style="color:var(--texto2)">×</span> <span class="compilacao-time-nome" title="' + aN + '">' + aN + '</span> ' + htmlBandeira(aC, 14) + '</div></td>';
     // Resultado oficial
     if (temRes) {
-      const pen = r.foi_penaltis ? ' <span style="font-size:.6rem;color:var(--amber)">PEN</span>' : '';
-      h += '<td class="col-resultado" style="color:var(--verde-ok)">' + r.homeGoals + 'x' + r.awayGoals + pen + '</td>';
+      let resHtml = r.homeGoals + 'x' + r.awayGoals;
+      if (r.foi_penaltis) {
+        const ph = r.penaltis_home ?? 0; const pa = r.penaltis_away ?? 0;
+        resHtml += '<div style="font-size:.58rem;color:var(--amber);margin-top:1px;font-weight:700">PEN ' + ph + 'x' + pa + '</div>';
+      }
+      h += '<td class="col-resultado" style="color:var(--verde-ok);vertical-align:middle">' + resHtml + '</td>';
     } else {
       h += '<td class="col-resultado" style="color:var(--texto2)">–</td>';
     }

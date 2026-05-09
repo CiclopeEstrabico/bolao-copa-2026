@@ -161,8 +161,12 @@ window.renderEstatisticas = function () {
 
     // New Result column
     if (r && r.homeGoals !== undefined) {
-      const pen = r.foi_penaltis ? ' <span style="font-size:.6rem;color:var(--amber)">PEN</span>' : '';
-      h += `<td class="col-resultado" style="color:var(--verde-ok);font-weight:800">${r.homeGoals}x${r.awayGoals}${pen}</td>`;
+      let resHtml = `${r.homeGoals}x${r.awayGoals}`;
+      if (r.foi_penaltis) {
+        const ph = r.penaltis_home ?? 0; const pa = r.penaltis_away ?? 0;
+        resHtml += `<div style="font-size:.58rem;color:var(--amber);margin-top:1px;font-weight:700">PEN ${ph}x${pa}</div>`;
+      }
+      h += `<td class="col-resultado" style="color:var(--verde-ok);font-weight:800;vertical-align:middle">${resHtml}</td>`;
     } else {
       h += `<td class="col-resultado" style="color:var(--texto2)">–</td>`;
     }
