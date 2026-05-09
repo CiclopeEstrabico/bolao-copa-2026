@@ -180,8 +180,8 @@ window.renderEstatisticas = function() {
     h += `<td style="background:var(--fundo);border-left:1px solid var(--borda);border-right:1px solid var(--borda)"></td>`; // gap
 
     if (prog) {
-       h += `<td><span style="color:var(--texto2)">${prog.eloH.toFixed(0)}</span></td>`;
-       h += `<td><span style="color:var(--texto2)">${prog.eloA.toFixed(0)}</span></td>`;
+       h += `<td><span style="color:var(--texto2)">${Math.round(prog.eloH)}</span></td>`;
+       h += `<td><span style="color:var(--texto2)">${Math.round(prog.eloA)}</span></td>`;
        h += `<td><strong style="color:var(--texto)">${prog.lH.toFixed(2)}</strong></td>`;
        h += `<td><strong style="color:var(--texto)">${prog.lA.toFixed(2)}</strong></td>`;
        h += `<td><div style="color:var(--verde-light);font-weight:700">${(prog.home*100).toFixed(1)}%</div></td>`;

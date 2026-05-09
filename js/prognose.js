@@ -209,9 +209,10 @@ window.PROGNOSE = {
     let h = '';
     // ELO
     h += '<div class="elo-box">';
-    h += '<div class="elo-time">'+htmlBandeira(hC,28)+'<div class="elo-valor">'+c.eloH+'</div><div class="elo-nome">'+hName+'</div></div>';
-    h += '<div class="elo-delta">Δ '+(c.eloH-c.eloA>0?"+":"")+(c.eloH-c.eloA)+'</div>';
-    h += '<div class="elo-time">'+htmlBandeira(aC,28)+'<div class="elo-valor">'+c.eloA+'</div><div class="elo-nome">'+aName+'</div></div>';
+    h += '<div class="elo-time">'+htmlBandeira(hC,28)+'<div class="elo-valor">'+Math.round(c.eloH)+'</div><div class="elo-nome">'+hName+'</div></div>';
+    const deltaElo = Math.round(c.eloH) - Math.round(c.eloA);
+    h += '<div class="elo-delta">Δ '+(deltaElo>0?"+":"")+deltaElo+'</div>';
+    h += '<div class="elo-time">'+htmlBandeira(aC,28)+'<div class="elo-valor">'+Math.round(c.eloA)+'</div><div class="elo-nome">'+aName+'</div></div>';
     h += '</div>';
     // Probs
     h += '<div class="prob-barras">';
