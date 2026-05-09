@@ -153,7 +153,7 @@ window.renderEstatisticas = function () {
 
     h += `<tr style="${rowBg}">`;
     h += `<td class="stat-col-jogo" style="text-align:left;position:sticky;left:0;background:var(--card2);padding:6px 8px;z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">
-            <div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">${formatarDataBRT(jogo.utc, true)}</div>
+            <div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">${formatarDataBRT(jogo.utc, false)}</div>
             <div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">
               ${htmlBandeira(hC,14)} <span class="stat-time-nome">${hName}</span> <span style="color:var(--texto2)">×</span> <span class="stat-time-nome">${aName}</span> ${htmlBandeira(aC,14)}
             </div>
