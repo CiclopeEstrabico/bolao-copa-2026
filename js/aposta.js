@@ -245,7 +245,7 @@ function renderEspeciaisAposta(res) {
     h += '<span style="font-size:.82rem;font-weight:600">' + (info?.name || "Selecionar") + '</span></div>';
     if (!_modoVer) {
       const liberadoGeral = window.APP?.configStatus?.liberado_grupos === true;
-      const disAttr = liberadoGeral ? '' : ' disabled style="background-color:var(--fundo2);color:var(--texto2);opacity:0.6;cursor:not-allowed;"';
+      const disAttr = liberadoGeral ? '' : ' disabled style="background-color:#30363d;color:var(--texto2);opacity:1;cursor:not-allowed;border-color:var(--borda)"';
       h += '<select class="apt-esp" data-key="' + f.key + '" onchange="gravarEspecialAposta(this)" style="font-size:.75rem;padding:5px 8px"' + disAttr + '>';
       h += '<option value="">-- Selecionar --</option>';
       for (const c of times.sort()) {
