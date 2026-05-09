@@ -2,6 +2,7 @@
  * aposta.js - Palpites do apostador
  * Layout idêntico ao de resultados, usando ui-jogos.js
  * Palpites calculados on-demand, standings projetados dos próprios palpites
+ * Tokens validados no Firestore (não mais no tokens.js local)
  */
 
 let _apostador = null;
@@ -37,20 +38,40 @@ async function iniciarAposta() {
   await new Promise(r => setTimeout(r, 1000));
   atualizarBracket();
 
+  // Primeiro tenta encontrar nos apostadores já carregados (já cadastrado antes)
   _apostador = APP.apostadores.find(a => a.token === token);
-  if (!_apostador && window.TOKENS_BY_TOKEN?.[token]) {
-    const info = window.TOKENS_BY_TOKEN[token];
-    const salvo = JSON.parse(localStorage.getItem("bolao_apt")||"[]").find(a => a.token === token);
-    _apostador = salvo || { ...info, nome:"", apelido:"", novo:true };
-    if (!APP.apostadores.find(a => a.token === token)) APP.apostadores.push(_apostador);
-  }
-  if (!_apostador && APP.modoOffline) {
-    _apostador = { id:"local_"+token, token, nome:"", apelido:"", ativo:true, novo:true };
-    APP.apostadores.push(_apostador);
-  }
-  if (!_apostador) { mostrarErroAposta("Token inválido ou expirado."); return; }
 
-  _palpitesLocais = JSON.parse(JSON.stringify(APP.palpites[_apostador.id]||{}));
+  // Se não encontrou, valida o token no Firestore
+  if (!_apostador) {
+    if (APP.modoOffline) {
+      // Fallback offline
+      _apostador = { id: "local_" + token, token, nome: "", apelido: "", ativo: true, novo: true };
+      APP.apostadores.push(_apostador);
+    } else {
+      try {
+        const snap = await APP.db.collection("tokens")
+          .where("token", "==", token)
+          .where("ativo", "==", true)
+          .limit(1)
+          .get();
+
+        if (snap.empty) {
+          mostrarErroAposta("Token inválido ou expirado. Solicite seu link ao organizador.");
+          return;
+        }
+
+        const info = snap.docs[0].data();
+        _apostador = { ...info, nome: "", apelido: "", novo: true };
+        APP.apostadores.push(_apostador);
+      } catch (e) {
+        console.error("Erro ao validar token:", e);
+        mostrarErroAposta("Erro ao verificar seu token. Tente novamente.");
+        return;
+      }
+    }
+  }
+
+  _palpitesLocais = JSON.parse(JSON.stringify(APP.palpites[_apostador.id] || {}));
 
   // Cadastro se novo
   if (_apostador.novo && !_modoVer) {
@@ -105,7 +126,7 @@ async function salvarCadastro() {
   }
   _apostador.novo = false;
   _apostador.token = _apostador.token;
-  if (!_apostador.id) _apostador.id = "tok_"+Date.now();
+  if (!_apostador.id) _apostador.id = "tok_" + Date.now();
   await gravarApostador(_apostador);
   renderAposta();
 }
@@ -115,9 +136,9 @@ function calcularProjecao() {
   const res = Object.assign({}, APP.resultados);
   for (const [id, p] of Object.entries(_palpitesLocais)) {
     if (!res[id]?.homeGoals !== undefined && p?.homeGoals !== undefined)
-      res[id] = { gameId:id, homeGoals:p.homeGoals, awayGoals:p.awayGoals, foi_penaltis:false };
+      res[id] = { gameId: id, homeGoals: p.homeGoals, awayGoals: p.awayGoals, foi_penaltis: false };
     else if (!res[id] && p?.homeGoals !== undefined)
-      res[id] = { gameId:id, homeGoals:p.homeGoals, awayGoals:p.awayGoals, foi_penaltis:false };
+      res[id] = { gameId: id, homeGoals: p.homeGoals, awayGoals: p.awayGoals, foi_penaltis: false };
   }
   return window.BRACKET.calcularTodosOsGrupos(res);
 }
@@ -130,14 +151,14 @@ function renderAposta() {
 
   // Header com nome
   const hn = document.getElementById("header-nome");
-  if (hn) hn.innerHTML = (_modoVer?"Palpites de ":"Olá, ")+"<strong>"+displayName+"</strong><small>Bolão Copa 2026</small>";
+  if (hn) hn.innerHTML = (_modoVer ? "Palpites de " : "Olá, ") + "<strong>" + displayName + "</strong><small>Bolão Copa 2026</small>";
 
   const resOficiais = getResultados();
   const tg = calcularProjecao();
 
   // Contagem palpites preenchidos
-  const totalJogos = (window.SCHEDULE||[]).filter(j=>j.fase==="grupos").length;
-  const preenchidos = Object.values(_palpitesLocais).filter(p=>p?.homeGoals!==undefined).length;
+  const totalJogos = (window.SCHEDULE || []).filter(j => j.fase === "grupos").length;
+  const preenchidos = Object.values(_palpitesLocais).filter(p => p?.homeGoals !== undefined).length;
 
   let h = "";
 
@@ -145,7 +166,7 @@ function renderAposta() {
   
   // Header de status
   h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">';
-  h += '<div style="font-size:.78rem;color:var(--texto2)">Palpites preenchidos: <strong style="color:var(--verde-light)">'+preenchidos+'/'+totalJogos+'</strong> jogos da fase de grupos</div>';
+  h += '<div style="font-size:.78rem;color:var(--texto2)">Palpites preenchidos: <strong style="color:var(--verde-light)">' + preenchidos + '/' + totalJogos + '</strong> jogos da fase de grupos</div>';
   if (!_modoVer) {
     if (liberadas) {
       h += '<button class="btn btn-primario btn-sm" style="margin-left:auto" onclick="salvarTodosPalpites()">💾 Salvar Palpites</button>';
@@ -170,31 +191,28 @@ function renderAposta() {
 function renderEspeciaisAposta(res) {
   const esp = _apostador.especiais || {};
   const fases = [
-    { key:"campeao", label:"🏆 Campeão", pts:"15pts" },
-    { key:"vice",    label:"🥈 Vice",    pts:"10pts" },
-    { key:"terceiro",label:"🥉 3° Lugar",pts:"5pts" },
+    { key: "campeao",  label: "🏆 Campeão",  pts: "15pts" },
+    { key: "vice",     label: "🥈 Vice",      pts: "10pts" },
+    { key: "terceiro", label: "🥉 3° Lugar",  pts: "5pts" },
   ];
-  const grupos = Object.values(window.SCHEDULE_BY_GROUP||{});
-  const todos = (window.TEAMS||window.SCHEDULE||[]).map(j=>[j.home,j.away]).flat()
-    .filter((v,i,a)=>a.indexOf(v)===i).filter(c=>c&&c!=="TBD");
-  const times = [...new Set((window.SCHEDULE||[]).filter(j=>j.grupo).map(j=>[j.home,j.away]).flat())];
+  const times = [...new Set((window.SCHEDULE || []).filter(j => j.grupo).map(j => [j.home, j.away]).flat())];
 
   let h = '<div class="card" style="max-width:860px;margin:0 auto 20px"><div class="card-titulo">⭐ Palpites Especiais</div>';
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;justify-content:center">';
   for (const f of fases) {
-    const val = esp[f.key]||"";
+    const val = esp[f.key] || "";
     const info = window.TEAMS_BY_CODE?.[val];
     h += '<div style="background:var(--fundo2);border-radius:var(--radius-sm);padding:10px">';
-    h += '<div style="font-size:.78rem;font-weight:700;margin-bottom:6px">'+f.label+' <span style="color:var(--dourado);font-size:.65rem">'+f.pts+'</span></div>';
-    h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'+htmlBandeira(val,24);
-    h += '<span style="font-size:.82rem;font-weight:600">'+(info?.name||"Selecionar")+'</span></div>';
+    h += '<div style="font-size:.78rem;font-weight:700;margin-bottom:6px">' + f.label + ' <span style="color:var(--dourado);font-size:.65rem">' + f.pts + '</span></div>';
+    h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">' + htmlBandeira(val, 24);
+    h += '<span style="font-size:.82rem;font-weight:600">' + (info?.name || "Selecionar") + '</span></div>';
     if (!_modoVer) {
       const disAttr = (window.APP?.configStatus?.apostas_liberadas !== false) ? '' : ' disabled style="background-color:var(--fundo2);color:var(--texto2);opacity:0.6;cursor:not-allowed;"';
-      h += '<select class="apt-esp" data-key="'+f.key+'" onchange="gravarEspecialAposta(this)" style="font-size:.75rem;padding:5px 8px"'+disAttr+'>';
+      h += '<select class="apt-esp" data-key="' + f.key + '" onchange="gravarEspecialAposta(this)" style="font-size:.75rem;padding:5px 8px"' + disAttr + '>';
       h += '<option value="">-- Selecionar --</option>';
       for (const c of times.sort()) {
         const t = window.TEAMS_BY_CODE?.[c];
-        h += '<option value="'+c+'"'+(val===c?" selected":"")+'>'+(t?.name||c)+'</option>';
+        h += '<option value="' + c + '"' + (val === c ? " selected" : "") + '>' + (t?.name || c) + '</option>';
       }
       h += '</select>';
     }
@@ -204,18 +222,19 @@ function renderEspeciaisAposta(res) {
   return h;
 }
 
-function gravarEspecialAposta(sel) {
+async function gravarEspecialAposta(sel) {
   const key = sel.dataset.key;
   if (!_apostador.especiais) _apostador.especiais = {};
   _apostador.especiais[key] = sel.value;
-  gravarApostador(_apostador);
-  
+
   // Atualiza a bandeira e nome imediatamente acima do select
   const divHeader = sel.previousElementSibling;
   const info = window.TEAMS_BY_CODE?.[sel.value];
   if (divHeader) {
     divHeader.innerHTML = htmlBandeira(sel.value, 24) + '<span style="font-size:.82rem;font-weight:600">' + (info?.name || "Selecionar") + '</span>';
   }
+
+  await gravarApostador(_apostador);
 }
 
 function atualizarMiniTabelasAposta() {
@@ -236,13 +255,12 @@ function atualizarMiniTabelasAposta() {
 }
 
 function _registrarInputsAposta() {
-    // A lógica agora é tratada pelo window._onInputPlacar sobrescrito
+  // A lógica é tratada pelo window._onInputPlacar sobrescrito acima
 }
 
 async function salvarTodosPalpites(silencioso = false) {
   if (_modoVer) return;
   if (!_apostador?.id) return;
-    // Gravar todos os palpites modificados
   const promessas = [];
   for (const [gameId, p] of Object.entries(_palpitesLocais)) {
     if (p?.homeGoals !== undefined)
@@ -251,13 +269,6 @@ async function salvarTodosPalpites(silencioso = false) {
   await Promise.all(promessas);
   if (!silencioso) {
     const btn = document.querySelector(".btn-primario");
-    if (btn) { const t=btn.textContent; btn.textContent="✓ Salvo!"; setTimeout(()=>btn.textContent=t,1500); }
+    if (btn) { const t = btn.textContent; btn.textContent = "✓ Salvo!"; setTimeout(() => btn.textContent = t, 1500); }
   }
-}
-async function gravarEspecialAposta(sel) {
-  const key = sel.dataset.key;
-  if (!_apostador.especiais) _apostador.especiais = {};
-  _apostador.especiais[key] = sel.value;
-  // Salvar em apostador
-  await gravarApostador(_apostador);
 }
