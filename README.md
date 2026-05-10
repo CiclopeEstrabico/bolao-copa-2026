@@ -57,7 +57,7 @@ Plataforma profissional para gerenciamento de bolão da Copa do Mundo 2026, com 
 - `fit_priors.py`: Otimiza parâmetros globais Dixon-Coles via MLE.
 - `train_model.py`: Treina rede GRU para fatores K-att/K-def por time.
 - `analyze_groups.py`: Gera heatmaps e CSV analítico da fase de grupos.
-- `simulate_copa.py`: Simulação Monte Carlo (10k+) de todo o torneio.
+- `simulate_copa.py`: Simulação Monte Carlo de todo o torneio.
 - `/results`: Artefatos (JSON/CSV) gerados pelas simulações que alimentam a UI.
 
 ### `css/`
@@ -112,13 +112,13 @@ O sistema utiliza uma lógica de **pontos brutos** que são posteriormente multi
 
 ### 1. Pontuação por Jogo (Fase de Grupos)
 
-|   Pontos   | Critério de Acerto          | Descrição Detalhada                                                                                                                    |
-| :---------: | :--------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
-| **8** | **Placar Exato Alto**  | Acerto do placar exato em jogos com 4 ou mais gols (ex: 2x2, 3x1, 4x0).                                                                  |
-| **6** | **Placar Exato Baixo** | Acerto do placar exato em jogos com menos de 4 gols (ex: 1x0, 2x1, 0x0).                                                                 |
-| **4** | **Resultado + Bônus** | Acertou o vencedor ou empate, errou o placar, mas acertou a **Diferença de Gols** OU acertou os **Gols de um dos times**. |
-| **3** | **Apenas Resultado**   | Acertou apenas o vencedor ou que seria empate, errando o placar e os bônus acima.                                                       |
-| **0** | **Erro Total**         | Errou o vencedor ou o fato de ser empate.                                                                                                |
+|   Pontos   | Critério de Acerto          | Descrição Detalhada                                                                                                                  |
+| :---------: | :--------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
+| **8** | **Placar Exato Alto**  | Acerto do placar exato em jogos com 4 ou mais gols (ex: 2x2, 3x1, 4x0).                                                                |
+| **6** | **Placar Exato Baixo** | Acerto do placar exato em jogos com menos de 4 gols (ex: 1x0, 2x1, 0x0).                                                               |
+| **4** | **Resultado + Bônus** | Acertou o vencedor ou empate, errou o placar, mas acertou a**Diferença de Gols** OU acertou os **Gols de um dos times**. |
+| **3** | **Apenas Resultado**   | Acertou apenas o vencedor ou que seria empate, errando o placar e os bônus acima.                                                     |
+| **0** | **Erro Total**         | Errou o vencedor ou o fato de ser empate.                                                                                              |
 
 ### 2. Multiplicadores de Fase
 

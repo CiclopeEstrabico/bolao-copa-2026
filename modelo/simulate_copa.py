@@ -34,7 +34,7 @@ from matplotlib.colors import LinearSegmentedColormap
 # ─────────────────────────────────────────────────────────────────────
 # PARÂMETROS
 # ─────────────────────────────────────────────────────────────────────
-N_SIMULATIONS = 10_000
+N_SIMULATIONS = 1_000_000
 CONFIDENCE_Z  = 1.96
 MAX_GOALS     = 9       # placares 0..8
 import os

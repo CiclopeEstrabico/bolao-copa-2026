@@ -46,7 +46,7 @@
   - `fit_priors.py`: Otimiza parâmetros globais Dixon-Coles via MLE.
   - `train_model.py`: Treina rede GRU para fatores K-att/K-def por time.
   - `analyze_groups.py`: Gera heatmaps e CSV analítico da fase de grupos.
-  - `simulate_copa.py`: Simulação Monte Carlo (10k+) de todo o torneio.
+  - `simulate_copa.py`: Simulação Monte Carlo de todo o torneio.
 - `css/`:
   - `style.css`: Design System completo, tokens e layout Mobile-First.
 
