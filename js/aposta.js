@@ -241,6 +241,11 @@ function renderAposta() {
   _registrarInputsAposta();
 }
 
+// Sobrescreve a função global para que os toggles de ui-jogos.js funcionem aqui
+window.renderAbaAtiva = function() {
+  renderAposta();
+};
+
 function renderEspeciaisAposta(res) {
   const esp = _apostador.especiais || {};
   const fases = [

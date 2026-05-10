@@ -88,9 +88,46 @@ window.renderCompilacao = function () {
       const br = calcularPontosBrutos(p, r);
       const pts = aplicarFator(br.total_bruto, jogo.fase);
       let cls = "celula-erro";
-      if (br.bonus_tipo === "placar_exato") cls = "celula-placar";
-      else if (br.acertou) cls = "celula-res";
+      if (br.acertou) {
+        const b = br.total_bruto;
+        if (b >= 8) cls = "celula-pts-8";
+        else if (b >= 6) cls = "celula-pts-6"; // Para o Placar Baixo (6 pts)
+        else if (b >= 4) cls = "celula-pts-4";
+        else cls = "celula-pts-3";
+      }
       h += '<td class="' + cls + '" title="' + pts + 'pts">' + p.homeGoals + 'x' + p.awayGoals + '</td>';
+    }
+    h += '</tr>';
+  }
+
+  // --- Linhas de Especiais (Campeão, Vice, 3º) ---
+  const brk = APP.bracket || {};
+  const resOficialEsp = {
+    campeao: brk.campeao || "",
+    vice: brk.vice || "",
+    terceiro: brk.terceiro || ""
+  };
+
+  const rowsEsp = [
+    { label: "🏆 Campeão", key: "campeao" },
+    { label: "🥈 Vice", key: "vice" },
+    { label: "🥉 3º Lugar", key: "terceiro" }
+  ];
+
+  for (const rowE of rowsEsp) {
+    h += '<tr style="background:rgba(234,179,8,0.05)"><td class="col-jogo" style="position:sticky;left:0;background:var(--card2);z-index:1;font-weight:700;font-size:.68rem">' + rowE.label + '</td>';
+    
+    // Resultado Oficial do Especial
+    const escOf = resOficialEsp[rowE.key];
+    const nomeOf = window.TEAMS_BY_CODE[escOf]?.name || "—";
+    h += '<td class="col-resultado" style="font-weight:700;font-size:.65rem;color:var(--dourado)">' + nomeOf + '</td>';
+
+    for (const a of ranking) {
+      const palE = (a.especiais && a.especiais[rowE.key]) || "";
+      const nomePal = window.TEAMS_BY_CODE[palE]?.name || "—";
+      const acertou = escOf && palE === escOf;
+      const cor = acertou ? "var(--verde-ok)" : (escOf ? "var(--texto2)" : "var(--texto)");
+      h += '<td style="font-size:.62rem;text-align:center;color:' + cor + ';font-weight:' + (acertou ? 700 : 400) + '">' + nomePal + '</td>';
     }
     h += '</tr>';
   }
@@ -166,14 +203,21 @@ window.exportarCompilacaoJson = function () {
       pts: st.total,
       placar_exato: st.acertos_placar_exato,
       resultado_correto: st.acertos_resultado,
-      palpites: palpitesFiltrados
+      palpites: palpitesFiltrados,
+      especiais: a.especiais || {}
     };
   }).sort((a, b) => b.pts - a.pts);
 
+  const brk = APP.bracket || {};
   const exportData = {
     timestamp: new Date().toISOString(),
     status_apostas: APP.configStatus?.apostas_liberadas ? "LIBERADAS" : "TRAVADAS",
     resultados_oficiais: res,
+    especiais_oficiais: {
+      campeao: brk.campeao || "",
+      vice: brk.vice || "",
+      terceiro: brk.terceiro || ""
+    },
     ranking_e_palpites: ranking
   };
 
@@ -241,6 +285,24 @@ window.exportarCompilacaoCsv = function () {
       }
     }
 
+    csvContent += row.join(";") + "\r\n";
+  }
+
+  // --- Linhas de Especiais no CSV ---
+  const brk = APP.bracket || {};
+  const espOf = { campeao: brk.campeao, vice: brk.vice, terceiro: brk.terceiro };
+  const labelsEsp = { campeao: "🏆 Campeão", vice: "🥈 Vice", terceiro: "🥉 3º Lugar" };
+
+  for (const key of ["campeao", "vice", "terceiro"]) {
+    const nomeOf = window.TEAMS_BY_CODE[espOf[key]]?.name || "";
+    const row = [ "ESP", "especial", "", `"${labelsEsp[key]}"`, "", `"${nomeOf}"` ];
+    for (const a of ranking) {
+      const palE = (a.especiais && a.especiais[key]) || "";
+      const nomePal = window.TEAMS_BY_CODE[palE]?.name || "";
+      // Visibilidade: se tem resultado oficial OU se as apostas finais travaram
+      const podeVer = espOf[key] || !jogoAceita("final");
+      row.push(podeVer ? `"${nomePal}"` : "🔒");
+    }
     csvContent += row.join(";") + "\r\n";
   }
 

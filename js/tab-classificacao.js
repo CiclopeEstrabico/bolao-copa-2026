@@ -113,13 +113,13 @@ window.renderClassificacao = function () {
     h += '<td style="letter-spacing:1px;vertical-align:middle;text-align:center">' + spark + '</td></tr>';
 
     // Linha de detalhe expansível
-    h += '<tr id="rd-' + i + '" style="display:none"><td colspan="6" style="padding:0">';
+    h += '<tr id="rd-' + i + '" style="display:none"><td colspan="8" style="padding:0">';
     h += '<div style="background:var(--fundo2);padding:10px 14px;font-size:.76rem">';
     h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">';
+    h += '<div><div style="color:var(--texto2)">Nome Completo</div><div style="font-weight:700">' + (p.nome || "—") + '</div></div>';
     h += '<div><div style="color:var(--texto2)">Grupos</div><div style="font-weight:700">' + st.total_grupos.toFixed(1) + ' pts</div></div>';
     h += '<div><div style="color:var(--texto2)">Eliminatórias</div><div style="font-weight:700">' + st.total_eliminatorias.toFixed(1) + ' pts</div></div>';
     h += '<div><div style="color:var(--texto2)">Especiais</div><div style="font-weight:700">' + st.total_especiais + ' pts</div></div>';
-    h += '<div><div style="color:var(--texto2)">Erros</div><div style="font-weight:700;color:#f87171">' + st.erros + '</div></div>';
     h += '<div><div style="color:var(--texto2)">Sem palpite</div><div style="font-weight:700;color:var(--texto2)">' + st.sem_palpite + '</div></div>';
     h += '</div></div></td></tr>';
   });
@@ -132,10 +132,10 @@ window.renderClassificacao = function () {
   el.innerHTML = h;
 };
 
-function _toggleRankingDetalhe(id) {
+window._toggleRankingDetalhe = function (id) {
   const el = document.getElementById(id);
   if (el) el.style.display = el.style.display === 'none' ? '' : 'none';
-}
+};
 
 function _statCard(label, valor, icon) {
   return '<div style="background:var(--card);border:1px solid var(--borda);border-radius:var(--radius-sm);padding:12px;text-align:center">' +

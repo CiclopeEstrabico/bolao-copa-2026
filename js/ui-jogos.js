@@ -208,8 +208,12 @@ function renderJogoRow(jogo,res,ehElim,isAdm,palApo,showFullDate=false){
 
   let h='<div class="'+rowCls+'">';
   // Col 1: meta — horário + cidade (estádio fica no modal 📊)
-  h+='<div class="jogo-col-meta"><div>'+formatarDataBRT(jogo.utc,!showFullDate)+'</div>';
-  if(jogo.cidade) h+='<div class="jogo-local">'+jogo.cidade+'</div>';
+  let metaHora = formatarDataBRT(jogo.utc, !showFullDate);
+  if (_ordemJogos === "dias" && jogo.grupo) {
+    metaHora += ', GRUPO ' + jogo.grupo;
+  }
+  h += '<div class="jogo-col-meta"><div>' + metaHora + '</div>';
+  if (jogo.cidade) h += '<div class="jogo-local">' + jogo.cidade + '</div>';
   if(isSim) h+='<div><span class="badge-sim">simulado</span></div>';
   h+='</div>';
 
