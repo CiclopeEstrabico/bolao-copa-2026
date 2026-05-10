@@ -221,13 +221,13 @@ function renderAposta() {
   const status = window.APP?.configStatus || {};
   const algumaLiberada = Object.keys(status).some(k => k.startsWith("liberado_") && status[k] === true);
 
-  // Botão Salvar Proeminente (Mobile: Topo / Desktop: Direita)
+  // Botão Salvar Discreto
   if (!_modoVer) {
     h += '<div style="display:flex; justify-content:flex-end; margin-bottom:15px">';
     if (algumaLiberada) {
-      h += '<button class="btn btn-primario btn-lg" onclick="salvarTodosPalpites()" style="width:100%; max-width:400px; justify-content:center; font-size:1.1rem; font-weight:800; padding:16px; box-shadow:0 4px 15px rgba(0,135,90,0.3)">💾 SALVAR MEUS PALPITES</button>';
+      h += '<button class="btn btn-primario btn-sm" onclick="salvarTodosPalpites()" style="font-weight:800">💾 SALVAR PALPITES</button>';
     } else {
-      h += '<button class="btn btn-perigo btn-lg" disabled style="width:100%; max-width:400px; justify-content:center; opacity:0.7">🔒 APOSTAS TRAVADAS</button>';
+      h += '<button class="btn btn-perigo btn-sm" disabled style="opacity:0.7">🔒 APOSTAS TRAVADAS</button>';
     }
     h += '</div>';
   }
