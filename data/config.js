@@ -51,8 +51,8 @@ window.CONFIG = {
     {
       id: "32avos",
       nome: "32 Avos de Final",
-      descricao: "Palpites para os 16 jogos das oitavas (fase de 32 avos)",
-      deadline_utc: "2026-06-28T15:30:00Z",  // 30 min antes do jogo 73
+      descricao: "Palpites para os 16 jogos dos 32 avos de final",
+      deadline_utc: "2026-06-28T18:30:00Z",  // 30 min antes do jogo 73
       fases_cobertas: ["32avos"],
       inclui_especiais: false
     },
