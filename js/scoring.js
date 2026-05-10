@@ -67,8 +67,8 @@ function calcularPontosBrutos(palpite, resultado) {
   if (!resultado.foi_penaltis) {
     const acertou_diff = Math.abs(Hp - Ap) === Math.abs(Hr - Ar);
     const acertou_gols = Hp === Hr || Ap === Ar;
-    if (acertou_diff) { bonus += cfg.bonus_diferenca_gols; tipos.push("diferenca"); }
-    if (acertou_gols) { bonus += cfg.bonus_gols_um_time; tipos.push("gols"); }
+    if (acertou_diff) { bonus = cfg.bonus_diferenca_gols; tipos.push("diferenca"); }
+    else if (acertou_gols) { bonus = cfg.bonus_gols_um_time; tipos.push("gols"); }
   }
 
   return {
