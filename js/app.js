@@ -110,11 +110,14 @@ async function gravarApostador(apostador) {
   await APP.db.collection("apostadores").doc(apostador.id).set(apostador, {merge: true});
 }
 
-async function gravarPalpite(apostadorId, gameId, homeGoals, awayGoals) {
+async function gravarPalpite(apostadorId, gameId, homeGoals, awayGoals, token) {
   const jogo = window.SCHEDULE_BY_ID[gameId];
   const fase = (jogo.fase === "final" || jogo.fase === "terceiro") ? "finais" : jogo.fase;
-  const data = { apostadorId, gameId, homeGoals, awayGoals, fase,
-    atualizado_em: new Date().toISOString() };
+  const data = { 
+    apostadorId, gameId, homeGoals, awayGoals, fase,
+    token: token || null, // Token para validação de segurança no Firestore
+    atualizado_em: new Date().toISOString() 
+  };
   if (APP.modoOffline) {
     if (!APP.palpites[apostadorId]) APP.palpites[apostadorId] = {};
     APP.palpites[apostadorId][gameId] = data; _persistirLocal();

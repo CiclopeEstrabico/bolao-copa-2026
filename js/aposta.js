@@ -324,7 +324,7 @@ async function salvarTodosPalpites(silencioso = false) {
   for (const [gameId, p] of Object.entries(_palpitesLocais)) {
     // Garantia dupla: checa se ambos os gols existem e se a fase aceita apostas
     if (p?.homeGoals !== undefined && p?.awayGoals !== undefined && jogoAceita(gameId))
-      promessas.push(gravarPalpite(_apostador.id, gameId, p.homeGoals, p.awayGoals));
+      promessas.push(gravarPalpite(_apostador.id, gameId, p.homeGoals, p.awayGoals, _apostador.token));
   }
   await Promise.all(promessas);
   if (!silencioso) {
