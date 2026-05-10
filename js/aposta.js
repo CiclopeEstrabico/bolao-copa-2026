@@ -135,15 +135,20 @@ function renderCadastro() {
     '<div class="card-titulo">👤 Seu Cadastro</div>'+
     '<div class="form-group"><label>Nome completo</label>'+
     '<input type="text" id="apt-nome" placeholder="Ex: João Silva" maxlength="50"></div>'+
-    '<div class="form-group"><label>Apelido <span style="font-size:0.65rem;color:var(--dourado)">(Apenas letras, máx 8)</span></label>'+
-    '<input type="text" id="apt-apelido" placeholder="Ex: Jao" maxlength="8" oninput="formatarApelido(this)"></div>'+
+    '<div class="form-group"><label>Apelido <span style="font-size:0.65rem;color:var(--dourado)">(Letras e ponto ".", máx 10)</span></label>'+
+    '<input type="text" id="apt-apelido" placeholder="Nome que os outros apostadores verão." maxlength="10" oninput="formatarApelido(this)"></div>'+
     '<button class="btn btn-primario" style="width:100%" onclick="salvarCadastro()">Salvar e Começar</button></div>';
 }
 
 function formatarApelido(el) {
-  let val = el.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, '');
+  let val = el.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ. ]/g, '');
   if (val.length > 0) {
-    val = val.charAt(0).toUpperCase() + val.slice(1).toLowerCase();
+    // Capitaliza primeira letra e letras após ponto ou espaço
+    val = val.split(/([. ])/).map(part => {
+      if (part.length === 0) return "";
+      if (part === "." || part === " ") return part;
+      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+    }).join('');
   }
   el.value = val;
 }
@@ -151,17 +156,25 @@ function formatarApelido(el) {
 async function salvarCadastro() {
   const nome = document.getElementById("apt-nome")?.value.trim();
   let apelido = document.getElementById("apt-apelido")?.value.trim() || "";
-  apelido = apelido.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, '');
+  apelido = apelido.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ. ]/g, '');
   if (apelido.length > 0) {
-    apelido = apelido.charAt(0).toUpperCase() + apelido.slice(1).toLowerCase();
+    apelido = apelido.split(/([. ])/).map(part => {
+      if (part.length === 0) return "";
+      if (part === "." || part === " ") return part;
+      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+    }).join('');
   }
-  apelido = apelido.substring(0, 8);
+  apelido = apelido.substring(0, 10);
   
   if (!nome) { alert("Informe seu nome."); return; }
   _apostador.nome = nome;
-  _apostador.apelido = apelido || nome.split(" ")[0].replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, '').substring(0, 8);
+  _apostador.apelido = apelido || nome.split(" ")[0].replace(/[^A-Za-zÀ-ÖØ-öø-ÿ. ]/g, '').substring(0, 10);
   if (_apostador.apelido.length > 0) {
-    _apostador.apelido = _apostador.apelido.charAt(0).toUpperCase() + _apostador.apelido.slice(1).toLowerCase();
+    _apostador.apelido = _apostador.apelido.split(/([. ])/).map(part => {
+      if (part.length === 0) return "";
+      if (part === "." || part === " ") return part;
+      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+    }).join('');
   }
   _apostador.novo = false;
   _apostador.token = _apostador.token;

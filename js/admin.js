@@ -336,10 +336,12 @@ function renderApostadores() {
     h += '<div style="color:var(--texto2);font-size:.65rem;margin-top:1px">' + _esc(a.nome || "sem nome") + '</div>';
     h += '</td>';
 
-    // Token
+    // Token (com link para aposta.html)
+    const baseUrl = location.origin + location.pathname.replace(/admin\.html.*/, "") + "aposta.html?token=";
+    const link = baseUrl + (a.token || "");
     h += '<td style="' + _tdS() + '">';
-    h += '<code style="font-size:.66rem;background:var(--fundo);padding:2px 5px;border-radius:3px;color:var(--dourado)">';
-    h += _esc(a.token || "—") + '</code></td>';
+    h += '<a href="' + link + '" target="_blank" style="color:var(--dourado);text-decoration:underline;font-size:.66rem;font-family:monospace">';
+    h += _esc(a.token || "—") + '</a></td>';
 
     // Fases
     for (const f of FASES_CONFIG) {
@@ -399,7 +401,10 @@ function _htmlEditApostador(a) {
   h += '<input id="edit-nome-' + a.id + '" type="text" class="form-input" value="' + _esc(a.nome || "") + '" style="padding:4px 8px;font-size:.74rem;width:160px"></div>';
 
   h += '<div><label style="font-size:.67rem;color:var(--texto2);display:block;margin-bottom:3px">Apelido</label>';
-  h += '<input id="edit-apelido-' + a.id + '" type="text" class="form-input" maxlength="8" value="' + _esc(a.apelido || "") + '" style="padding:4px 8px;font-size:.74rem;width:90px"></div>';
+  h += '<input id="edit-apelido-' + a.id + '" type="text" class="form-input" maxlength="10" value="' + _esc(a.apelido || "") + '" style="padding:4px 8px;font-size:.74rem;width:90px"></div>';
+
+  h += '<div><label style="font-size:.67rem;color:var(--texto2);display:block;margin-bottom:3px">Token</label>';
+  h += '<input id="edit-token-' + a.id + '" type="text" class="form-input" value="' + _esc(a.token || "") + '" style="padding:4px 8px;font-size:.74rem;width:110px"></div>';
 
   h += '<div><label style="font-size:.67rem;color:var(--texto2);display:block;margin-bottom:3px">Limpar apostas de</label>';
   h += '<select id="edit-fase-' + a.id + '" class="form-input" style="padding:4px 8px;font-size:.72rem;height:28px">';
@@ -432,14 +437,14 @@ async function salvarEdicaoApostador(id) {
   if (!a) return;
 
   const novoNome = document.getElementById("edit-nome-" + id)?.value.trim();
-  let novoApelido = (document.getElementById("edit-apelido-" + id)?.value.trim() || "")
-    .replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, "");
-  if (novoApelido)
-    novoApelido = novoApelido[0].toUpperCase() + novoApelido.slice(1).toLowerCase();
+  const novoApelido = document.getElementById("edit-apelido-" + id)?.value.trim();
+  const novoToken = document.getElementById("edit-token-" + id)?.value.trim();
 
   if (!novoNome) return alert("Nome não pode ser vazio.");
   a.nome = novoNome;
   a.apelido = novoApelido;
+  if (novoToken !== undefined) a.token = novoToken;
+
   await gravarApostador(a);
   toggleEditApostador(id);
   renderApostadores();
