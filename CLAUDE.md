@@ -76,20 +76,23 @@ APP.configStatus    // { liberado_grupos: true, ... }
 
 ## Funções Críticas
 
-### 🧠 Lógica e Cálculos
+### Lógica e Cálculos
+
 - `gerarRanking(todosOsPalpites, resultados, participantes, especiais)`: Gera o leaderboard ordenado com critérios de desempate.
 - `calcularTodosOsGrupos(resultados)`: Calcula classificação de todos os grupos e define os melhores 3ºs colocados.
 - `preencherBracket(resultados)`: Resolve todos os confrontos do mata-mata com base nos resultados inseridos.
 - `calcularPontosBrutos(palpite, resultado)`: Retorna `{total_bruto, bonus_pts, bonus_tipo}`.
 - `aplicarFator(pontos, fase)`: Multiplica pontos pelo peso da fase (ex: final x2.0).
 
-### 📝 Persistência e Estado
+### Persistência e Estado
+
 - `gravarPalpite(apostadorId, gameId, homeGoals, awayGoals)`: Salva aposta no Firestore ou localStorage.
 - `gravarResultadoOficial(gameId, ...)` / `gravarTudoAdmin()`: Persiste resultados oficiais (Admin).
 - `simularResultado(gameId, hg, ag, ...)`: Ativa modo de simulação e atualiza o estado visual sem persistir.
 - `jogoAceita(jogoId)`: Verifica se a janela de apostas para o jogo está aberta via `APP.configStatus`.
 
-### 🎨 Renderização e UI
+### Renderização e UI
+
 - `window.renderAbaAtiva(resetScroll)`: Re-renderiza a aba atual com os dados mais recentes, preservando scroll/foco.
 - `renderJogosComToggle(res, tg, isAdm, palApo)`: Componente mestre que renderiza a lista de jogos com filtros e mini-tabelas.
 - `PROGNOSE.calcular(hCode, aCode)`: Motor estatístico Poisson/Dixon-Coles para probabilidades de placar.

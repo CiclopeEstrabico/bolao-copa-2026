@@ -10,11 +10,13 @@
  * Depende de: data/schedule.js, data/teams.js
  *
  * ─── Regras de classificação da fase de grupos (FIFA 2026) ────────────────
- *   1. Pontos (V=3, E=1, D=0)
- *   2. Saldo de gols
- *   3. Gols marcados
- *   4. Confronto direto (pontos → saldo → gols pró)
- *   5. Fair play (não implementado — critério manual)
+ *   1. Pontos Totais (Pts)
+ *   2. Pontos no Confronto Direto (Pts_CD): Calculado apenas entre os times empatados em pontos (mini-liga).
+ *   3. Saldo de Gols no Confronto Direto (SG_CD)
+ *   4. Gols Pró no Confronto Direto (GP_CD)
+ *   5. Saldo de Gols Global (SG)
+ *   6. Gols Pró Global (GP)
+ *   7. Fair play (não implementado — critério manual)
  *
  * ─── Bracket dos 32 avos (template FIFA 2026) ────────────────────────────
  *   O bracket abaixo é baseado na estrutura oficial divulgada pela FIFA.
@@ -31,31 +33,31 @@ window.BRACKET = (() => {
   // Será atualizado com o bracket oficial da FIFA quando publicado.
   // ══════════════════════════════════════════════════════════════════════════
   const BRACKET_TEMPLATE_R32 = {
-    R32_1:  { home: "2A", away: "2B"  }, // Jogo 73
-    R32_2:  { home: "1E", away: "3X1" }, // Jogo 74
-    R32_3:  { home: "1F", away: "2C"  }, // Jogo 75
-    R32_4:  { home: "1C", away: "2F"  }, // Jogo 76
-    R32_5:  { home: "1I", away: "3X2" }, // Jogo 77
-    R32_6:  { home: "2E", away: "2I"  }, // Jogo 78
-    R32_7:  { home: "1A", away: "3X3" }, // Jogo 79
-    R32_8:  { home: "1L", away: "3X4" }, // Jogo 80
-    R32_9:  { home: "1D", away: "3X5" }, // Jogo 81
+    R32_1: { home: "2A", away: "2B" }, // Jogo 73
+    R32_2: { home: "1E", away: "3X1" }, // Jogo 74
+    R32_3: { home: "1F", away: "2C" }, // Jogo 75
+    R32_4: { home: "1C", away: "2F" }, // Jogo 76
+    R32_5: { home: "1I", away: "3X2" }, // Jogo 77
+    R32_6: { home: "2E", away: "2I" }, // Jogo 78
+    R32_7: { home: "1A", away: "3X3" }, // Jogo 79
+    R32_8: { home: "1L", away: "3X4" }, // Jogo 80
+    R32_9: { home: "1D", away: "3X5" }, // Jogo 81
     R32_10: { home: "1G", away: "3X6" }, // Jogo 82
-    R32_11: { home: "2K", away: "2L"  }, // Jogo 83
-    R32_12: { home: "1H", away: "2J"  }, // Jogo 84
+    R32_11: { home: "2K", away: "2L" }, // Jogo 83
+    R32_12: { home: "1H", away: "2J" }, // Jogo 84
     R32_13: { home: "1B", away: "3X7" }, // Jogo 85
-    R32_14: { home: "1J", away: "2H"  }, // Jogo 86
+    R32_14: { home: "1J", away: "2H" }, // Jogo 86
     R32_15: { home: "1K", away: "3X8" }, // Jogo 87
-    R32_16: { home: "2D", away: "2G"  }, // Jogo 88
+    R32_16: { home: "2D", away: "2G" }, // Jogo 88
   };
 
   const BRACKET_TEMPLATE_R16 = {
-    R16_1: { home: "WR32_2",  away: "WR32_5"  }, // Jogo 89
-    R16_2: { home: "WR32_1",  away: "WR32_3"  }, // Jogo 90
-    R16_3: { home: "WR32_4",  away: "WR32_6"  }, // Jogo 91
-    R16_4: { home: "WR32_7",  away: "WR32_8"  }, // Jogo 92
+    R16_1: { home: "WR32_2", away: "WR32_5" }, // Jogo 89
+    R16_2: { home: "WR32_1", away: "WR32_3" }, // Jogo 90
+    R16_3: { home: "WR32_4", away: "WR32_6" }, // Jogo 91
+    R16_4: { home: "WR32_7", away: "WR32_8" }, // Jogo 92
     R16_5: { home: "WR32_11", away: "WR32_12" }, // Jogo 93
-    R16_6: { home: "WR32_9",  away: "WR32_10" }, // Jogo 94
+    R16_6: { home: "WR32_9", away: "WR32_10" }, // Jogo 94
     R16_7: { home: "WR32_14", away: "WR32_16" }, // Jogo 95
     R16_8: { home: "WR32_13", away: "WR32_15" }, // Jogo 96
   };
@@ -108,38 +110,38 @@ window.BRACKET = (() => {
       hStats.GP += hg; hStats.GC += ag; hStats.SG += (hg - ag);
       aStats.GP += ag; aStats.GC += hg; aStats.SG += (ag - hg);
 
-      if (hg > ag)      { hStats.V++; hStats.Pts += 3; aStats.D++; }
+      if (hg > ag) { hStats.V++; hStats.Pts += 3; aStats.D++; }
       else if (hg < ag) { aStats.V++; aStats.Pts += 3; hStats.D++; }
-      else              { hStats.E++; hStats.Pts += 1; aStats.E++; aStats.Pts += 1; }
+      else { hStats.E++; hStats.Pts += 1; aStats.E++; aStats.Pts += 1; }
     }
 
     // Passo 1: Separar em grupos por pontos para aplicar o confronto direto
     const timesByPts = {};
     for (const t of times) {
-       if (!timesByPts[t.Pts]) timesByPts[t.Pts] = [];
-       timesByPts[t.Pts].push(t);
+      if (!timesByPts[t.Pts]) timesByPts[t.Pts] = [];
+      timesByPts[t.Pts].push(t);
     }
 
     // Calcular estatísticas da mini-liga (confronto direto) para times empatados em pontos
     for (const pts of Object.keys(timesByPts)) {
-       const tied = timesByPts[pts];
-       for (const t of tied) { t.Pts_CD = 0; t.SG_CD = 0; t.GP_CD = 0; }
-       if (tied.length > 1) {
-          const tiedCodes = tied.map(t => t.code);
-          const jogosMini = jogos.filter(j => tiedCodes.includes(j.home) && tiedCodes.includes(j.away));
-          for (const jogo of jogosMini) {
-             const res = resultados[jogo.id];
-             if (!res || res.homeGoals === undefined) continue;
-             const hg = res.homeGoals, ag = res.awayGoals;
-             const hT = tied.find(x => x.code === jogo.home);
-             const aT = tied.find(x => x.code === jogo.away);
-             hT.GP_CD += hg; hT.SG_CD += (hg - ag);
-             aT.GP_CD += ag; aT.SG_CD += (ag - hg);
-             if (hg > ag) { hT.Pts_CD += 3; }
-             else if (hg < ag) { aT.Pts_CD += 3; }
-             else { hT.Pts_CD += 1; aT.Pts_CD += 1; }
-          }
-       }
+      const tied = timesByPts[pts];
+      for (const t of tied) { t.Pts_CD = 0; t.SG_CD = 0; t.GP_CD = 0; }
+      if (tied.length > 1) {
+        const tiedCodes = tied.map(t => t.code);
+        const jogosMini = jogos.filter(j => tiedCodes.includes(j.home) && tiedCodes.includes(j.away));
+        for (const jogo of jogosMini) {
+          const res = resultados[jogo.id];
+          if (!res || res.homeGoals === undefined) continue;
+          const hg = res.homeGoals, ag = res.awayGoals;
+          const hT = tied.find(x => x.code === jogo.home);
+          const aT = tied.find(x => x.code === jogo.away);
+          hT.GP_CD += hg; hT.SG_CD += (hg - ag);
+          aT.GP_CD += ag; aT.SG_CD += (ag - hg);
+          if (hg > ag) { hT.Pts_CD += 3; }
+          else if (hg < ag) { aT.Pts_CD += 3; }
+          else { hT.Pts_CD += 1; aT.Pts_CD += 1; }
+        }
+      }
     }
 
     // Ordenar: Pts → Confronto Direto (Pts, SG, GP) → Global (SG, GP)
@@ -148,8 +150,8 @@ window.BRACKET = (() => {
       if (b.Pts_CD !== a.Pts_CD) return b.Pts_CD - a.Pts_CD;
       if (b.SG_CD !== a.SG_CD) return b.SG_CD - a.SG_CD;
       if (b.GP_CD !== a.GP_CD) return b.GP_CD - a.GP_CD;
-      if (b.SG  !== a.SG)  return b.SG  - a.SG;
-      if (b.GP  !== a.GP)  return b.GP  - a.GP;
+      if (b.SG !== a.SG) return b.SG - a.SG;
+      if (b.GP !== a.GP) return b.GP - a.GP;
       return 0;
     });
 
@@ -193,7 +195,7 @@ window.BRACKET = (() => {
     // Ordenar terceiros: Pts → SG → GP
     terceiros.sort((a, b) => {
       if (b.Pts !== a.Pts) return b.Pts - a.Pts;
-      if (b.SG  !== a.SG)  return b.SG  - a.SG;
+      if (b.SG !== a.SG) return b.SG - a.SG;
       return b.GP - a.GP;
     });
 
@@ -239,10 +241,10 @@ window.BRACKET = (() => {
           let winner, loser;
           if (res.foi_penaltis) {
             winner = res.penaltis_vencedor === "home" ? jogoRef.home : jogoRef.away;
-            loser  = res.penaltis_vencedor === "home" ? jogoRef.away : jogoRef.home;
+            loser = res.penaltis_vencedor === "home" ? jogoRef.away : jogoRef.home;
           } else {
             winner = hg >= ag ? jogoRef.home : jogoRef.away;
-            loser  = hg >= ag ? jogoRef.away : jogoRef.home;
+            loser = hg >= ag ? jogoRef.away : jogoRef.home;
           }
           return { code: prefix === "W" ? winner : loser, resolved: true };
         }
@@ -253,11 +255,11 @@ window.BRACKET = (() => {
 
     // Processar cada fase em ordem
     const templates = [
-      { template: BRACKET_TEMPLATE_R32,   fase: "32avos"   },
-      { template: BRACKET_TEMPLATE_R16,   fase: "oitavas"  },
-      { template: BRACKET_TEMPLATE_QF,    fase: "quartas"  },
-      { template: BRACKET_TEMPLATE_SF,    fase: "semis"    },
-      { template: BRACKET_TEMPLATE_FINAL, fase: "final"    },
+      { template: BRACKET_TEMPLATE_R32, fase: "32avos" },
+      { template: BRACKET_TEMPLATE_R16, fase: "oitavas" },
+      { template: BRACKET_TEMPLATE_QF, fase: "quartas" },
+      { template: BRACKET_TEMPLATE_SF, fase: "semis" },
+      { template: BRACKET_TEMPLATE_FINAL, fase: "final" },
     ];
 
     for (const { template } of templates) {
