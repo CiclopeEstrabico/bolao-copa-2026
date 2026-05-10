@@ -25,7 +25,7 @@
     - `bracket.js`: Lógica de chaveamento e standings.
     - `prognose.js`: Probabilidades Dixon-Coles.
 - `data/`:
-    - `config.js`: Regras de bônus, multiplicadores, prazos e senha admin.
+    - `config.js`: Regras de bônus, multiplicadores e prazos.
     - `teams.js`: Dados das seleções e bandeiras.
     - `schedule.js`: Calendário oficial (104 jogos).
 - `modelo/`: Artefatos da simulação estatística (Dixon-Coles).
