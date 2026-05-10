@@ -107,7 +107,9 @@ function renderToggles(){
   h+='<div class="toggle-sep"></div>';
   h+='<span class="toggle-label">Grupos:</span>';
   h+='<button class="btn-toggle'+(_modoGrupos==="topo"?" ativo":"")+'" onclick="setModoGrupos(\'topo\')">No Topo</button>';
-  h+='<button class="btn-toggle'+(_modoGrupos==="jogos"?" ativo":"")+'" onclick="setModoGrupos(\'jogos\')">Com Jogos</button>';
+  h+='<button class="btn-toggle'+(_modoGrupos==="baixo"?" ativo":"")+'" onclick="setModoGrupos(\'baixo\')">No Fim</button>';
+  const hideComJogos = _ordemJogos === "dias" ? ' style="display:none"' : '';
+  h+='<button class="btn-toggle'+(_modoGrupos==="jogos"?" ativo":"")+'" onclick="setModoGrupos(\'jogos\')"' + hideComJogos + '>Com Jogos</button>';
   return h+'</div>';
 }
 
@@ -125,6 +127,8 @@ function renderJogosComToggle(res,tg,isAdm,palApo){
     for(const j of jogos) h+=renderJogoRow(j,res,true,isAdm,palApo,true);
     h+='</div>';
   }
+  // Grupos NO FIM
+  if(_modoGrupos==="baixo") h+='<div class="card" style="padding:10px;margin-top:20px">'+renderGruposGrid(tg,res)+'</div>';
   return h;
 }
 
