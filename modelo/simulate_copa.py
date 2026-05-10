@@ -358,6 +358,8 @@ class CopaSim:
     def _sim_groups_vectorized(self, n):
         group_rank = []
         group_pts  = []
+        group_gd   = []
+        group_gf   = []
         pairs_6    = [(0,1),(0,2),(0,3),(1,2),(1,3),(2,3)]
 
         for gidx in self.group_idx:
@@ -395,8 +397,10 @@ class CopaSim:
             rank = np.argsort(-score, axis=1)
             group_rank.append(rank)
             group_pts.append(pts)
+            group_gd.append(gd)
+            group_gf.append(gf)
 
-        return group_rank, group_pts
+        return group_rank, group_pts, group_gd, group_gf
 
     def _play_round(self, pairs_arr):
         n_, K, _ = pairs_arr.shape
@@ -425,7 +429,7 @@ class CopaSim:
         print(f"[3/4] Simulando {n:,} Copas (vetorizado)...")
         t0 = time.time()
 
-        group_rank, group_pts = self._sim_groups_vectorized(n)
+        group_rank, group_pts, group_gd, group_gf = self._sim_groups_vectorized(n)
 
         group_global = []
         for rank, gidx in zip(group_rank, self.group_idx):
@@ -435,12 +439,17 @@ class CopaSim:
             for pos in range(3):
                 np.add.at(C['groups'], group_global[g_i][:, pos], 1)
 
+        # Ranking melhores 3.ºs colocados (FIFA: Pts -> SG -> GP)
         thirds_team  = np.stack([group_global[g][:, 2] for g in range(12)], axis=1)
-        thirds_pts   = np.stack([
-            group_pts[g][np.arange(n), group_rank[g][:, 2]] for g in range(12)
-        ], axis=1)
+        thirds_pts   = np.stack([group_pts[g][np.arange(n), group_rank[g][:, 2]] for g in range(12)], axis=1)
+        thirds_gd    = np.stack([group_gd[g][np.arange(n), group_rank[g][:, 2]] for g in range(12)], axis=1)
+        thirds_gf    = np.stack([group_gf[g][np.arange(n), group_rank[g][:, 2]] for g in range(12)], axis=1)
+        
+        # Criar score para ordenação: Pts (10^6) + GD (10^3) + GF (1)
+        thirds_score = (thirds_pts * 1e6) + (thirds_gd * 1e3) + thirds_gf
         thirds_noise = np.random.random((n, 12)) * 1e-4
-        thirds_order = np.argsort(-(thirds_pts + thirds_noise), axis=1)[:, :8]
+        
+        thirds_order = np.argsort(-(thirds_score + thirds_noise), axis=1)[:, :8]
         best8        = thirds_team[np.arange(n)[:, None], thirds_order]
 
         def first(g):  return group_global[g][:, 0]
