@@ -1,112 +1,66 @@
 # CLAUDE.md - Instruções para a IA neste Projeto
 
 ## REGRA CRÍTICA: SEJA SUCINTO
-
 - **Não gere explicações longas antes de agir** - escreva o código diretamente.
-- **Use as ferramentas apropriadas** para edição (replace_file_content, multi_replace_file_content).
-- **1 tool call por arquivo** - não paralelize modificações em arquivos interdependentes.
+- **Use as ferramentas apropriadas** para edição (`replace_file_content`, `multi_replace_file_content`).
 - **Não re-explique** o que o código faz após escrever.
+- Mantenha o padrão **Premium & Mobile-First**.
 
-## Mobile-first
-
-- O front-end deve ser otimizado para ser mostrado em celulares
-- Tudo deve funcionar em browser do Android, Iphone e **Desktop também.**
-
-## Stack e Restrições
-
-- HTML + CSS + JS puro, sem npm/bundler/TypeScript.
-- **Sem import/export** - tudo em `window.NOME` ou funções globais.
-- Firebase incorporado nativamente.
-- Modo offline obrigatório via `localStorage` - toda função que toca o Firebase deve checar `APP.modoOffline`.
+## Stack e Arquitetura
+- **Core**: HTML5 + Vanilla CSS + Vanilla JS (ES6).
+- **Sem Bundlers**: Não use `import/export`. Tudo é global via `window` ou funções declaradas no escopo global.
+- **Firebase**: Uso nativo do Firebase SDK (v8). Firestore como banco principal.
+- **Modo Offline**: Sincronização automática com `localStorage` via `carregarDadosLocais()` e `_persistirLocal()` em `app.js`.
 
 ## Estrutura de Arquivos
-
-```text
-data/          Estáticos: config.js, teams.js, schedule.js, tokens.js, elo.js
-css/           style.css (dark theme, mobile-first, --roxo, --dourado)
-js/
-  app.js       NÚCLEO: Configuração do Firebase, APP global, roteador, utilitários
-  scoring.js   Motor de pontos (funções puras sem DOM)
-  bracket.js   Progressão do torneio (BRACKET.*)
-  prognose.js  Poisson ELO e Estatísticas Específicas (PROGNOSE.*)
-  tab-*.js     Renderização específica de cada aba (Aproveitamento fundido com Compilação)
-  admin.js     Lógica de admin.html
-  aposta.js    Lógica de aposta.html
-assets/        favicon.svg, logo_verde.avif (Padrão de logo), mascote.svg, trofeu.svg
-tests/         scoring.test.html
-modelo/
-  results/     Artefatos da simulação (CSV, JSON, PNG, PKL)
-  *.py         Scripts de treinamento e simulação (Dixon-Coles, GRU)
-```
+- `index.html`: Dashboard principal (Roteador de abas: Resultados, Classificação, Gráfico, Tabela, Compilação, Estatísticas, Regras).
+- `aposta.html`: Área do apostador (Acesso via `?token=XXXX`).
+- `admin.html`: Painel administrativo (Gestão de resultados e usuários).
+- `js/`:
+    - `app.js`: Núcleo, listeners Firestore, estado global `APP`.
+    - `scoring.js`: Motor de pontos. Funções puras (`calcularPontosBrutos`).
+    - `ui-jogos.js`: Componente mestre de renderização de jogos e filtros.
+    - `tab-compilacao.js`: Grade comparativa + exportação JSON/CSV.
+    - `tab-classificacao.js`: Ranking e detalhes do apostador.
+    - `bracket.js`: Lógica de chaveamento e standings.
+    - `prognose.js`: Probabilidades Dixon-Coles.
+- `data/`:
+    - `config.js`: Regras de bônus, multiplicadores, prazos e senha admin.
+    - `teams.js`: Dados das seleções e bandeiras.
+    - `schedule.js`: Calendário oficial (104 jogos).
+- `modelo/`: Artefatos da simulação estatística (Dixon-Coles).
 
 ## Estado Global (APP)
-
 ```javascript
-APP.db              // Objeto Firestore | null (offline)
-APP.modoOffline     // booleano
-APP.modoSimulacao   // booleano
-APP.resultados      // { gameId: {homeGoals, awayGoals, foi_penaltis, ...} }
-APP.resultadosSim   // cópia temporária para cálculos de simulação
+APP.db              // Instância Firestore
+APP.modoOffline     // boolean
+APP.resultados      // { gameId: {homeGoals, awayGoals, foi_penaltis...} }
 APP.palpites        // { apostadorId: { gameId: {homeGoals, awayGoals} } }
-APP.apostadores     // array
-APP.bracket         // resultado de BRACKET.preencherBracket()
+APP.apostadores     // array [{id, nome, apelido, token, especiais...}]
+APP.configStatus    // { liberado_grupos: true, ... }
 ```
 
-## Funções Globais Críticas
+## Pontuação e Bônus (NÃO CUMULATIVOS)
+O cálculo segue uma escala rígida de pontos brutos multiplicada pelo fator da fase:
+- **8 pts**: Placar Exato Alto (Total gols ≥ 4).
+- **6 pts**: Placar Exato Baixo (Total gols < 4).
+- **4 pts**: Acerto de Resultado + 1 Bônus (Diferença de Gols OU Gols de um time).
+- **3 pts**: Apenas Resultado (Vitória/Empate).
+- **0 pts**: Erro.
 
-```javascript
-getResultados()                    // -> resultados efetivos (simulados ou oficiais)
-gravarResultadoOficial(id,hg,ag)   // (obsoleta na nova estrutura - usar lógica de admin.js)
-gravarPalpite(apoId,gameId,hg,ag)
-gravarApostador(apostador)
-simularResultado(id,hg,ag,foiPen,penVenc)
-atualizarBracket()
-renderAbaAtiva()
-formatarDataBRT(utcStr, soHora)    // -> string de Data BRT
-htmlBandeira(code, size)           // -> HTML da imagem/svg da bandeira
-jogoAceita(jogoId)                 // -> booleano (prazo em aberto)
-adminAutenticado()                 // -> booleano
-PROGNOSE.abrirModal(gameId)
-PROGNOSE.fecharModal()
-BRACKET.preencherBracket(res)      // -> {gameId: {home, away, ...}}
-BRACKET.calcularTodosOsGrupos(res) // -> {grupos, classificados, terceiros}
-```
+**Regra de Bônus**: Se o apostador acerta a diferença de gols, o bônus de "gols de um time" é ignorado (não acumula). Placar exato mata todos os bônus anteriores e entrega os 6 ou 8 pontos diretamente.
 
-## IDs dos Jogos
+## UI & Design
+- **Paleta de Cores (Compilação)**:
+    - 8 pts: Indigo Profundo (`rgba(49, 46, 129, 0.4)`)
+    - 6 pts: Sky Blue Suave (`rgba(186, 230, 253, 0.12)`)
+    - 4 pts: Teal / Verde-Água (`rgba(20, 184, 166, 0.18)`)
+    - 3 pts: Verde Sóbrio (`rgba(21, 128, 61, 0.12)`)
+    - Erro: Vermelho Suave (`rgba(239, 68, 68, 0.06)`)
+- **Privacidade**: Palpites de terceiros são exibidos como cadeado `🔒` se o jogo ainda não teve resultado oficial.
 
-- Grupos: `C_R1_BRA_MAR` (grupo_rodada_home_away)
-- 32 Avos: `R32_1` a `R32_16`
-- Oitavas: `R16_1` a `R16_8`
-- Quartas: `QF_1` a `QF_4`
-- Semis: `SF_1`, `SF_2`
-- 3º Lugar: `TPL` | Final: `FNL`
-
-## Pontuação
-
-| Situação                | Pts brutos |
-| ------------------------- | ---------- |
-| Errou                     | 0          |
-| Resultado Correto         | 3          |
-| + diferença de gols      | 3+1=4      |
-| + gols de um time         | 3+1=4      |
-| Placar exato (total < 4)  | 3+3=6      |
-| Placar exato (total >= 4) | 3+5=8      |
-
-Fatores de Fase: Grupos (×1.0), 32 Avos (×1.2), Oitavas (×1.4), Quartas (×1.6), Semis (×1.8), 3º/Final (×2.0)
-Bônus Especiais: Campeão (+7), Vice (+4), 3º (+2)
-
-## Pênaltis
-
-- Apenas fases eliminatórias (32 Avos em diante).
-- Se Placar 90min + Prorrogação termina empatado, quem apostou empate no bolão ganha os pontos de acerto de resultado, ou seja, os pênaltis não contam para o bolão.
-- Dados armazenados: `penaltis_home`, `penaltis_away` (empate não é permitido nos pênaltis).
-- Extração automática de `penaltis_vencedor` dos placares.
-
-## Firestore
-
-```text
-/config/global
-/apostadores/{id}
-/apostadores/{id}/palpites_jogos/{gameId}
-/resultados_oficiais/{gameId}
-```
+## Funções Críticas
+- `window.renderAbaAtiva()`: Re-renderiza a aba atual com os dados mais recentes.
+- `calcularPontosBrutos(palpite, resultado)`: Retorna `{total_bruto, bonus_pts, bonus_tipo}`.
+- `aplicarFator(pontos, fase)`: Multiplica pontos pelo peso da fase (ex: final x2.0).
+- `jogoAceita(jogoId)`: Verifica se o prazo de aposta para o jogo está aberto.
