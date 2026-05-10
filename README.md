@@ -25,7 +25,6 @@ Plataforma profissional para gerenciamento de bolão da Copa do Mundo 2026, com 
 - `aposta.html`: Interface para usuários logados via Token. Permite salvar palpites de jogos e especiais.
 - `admin.html`: Painel restrito para entrada de placares oficiais e gestão de usuários.
 - `firebase-config.js`: Configurações de conexão com o Google Firebase.
-- `firestore.rules`: Definições de segurança do banco de dados.
 
 ### `js/` (Lógica do Sistema)
 - `app.js`: Inicialização, sincronização Firestore, roteador de abas e estado global.
@@ -40,7 +39,10 @@ Plataforma profissional para gerenciamento de bolão da Copa do Mundo 2026, com 
 - `config.js`: **Única fonte de verdade** para bônus, multiplicadores de fase e prazos.
 - `teams.js`: Dados das 48 seleções, grupos, bandeiras e ratings ELO iniciais.
 - `schedule.js`: Calendário completo dos 104 jogos da Copa.
-- `tokens.js`: Lista de identificadores únicos para acesso dos apostadores.
+
+### `modelo/` (Estatística e Simulação)
+- `/results`: Contém os artefatos (JSON/CSV) gerados pelas simulações de Monte Carlo (Dixon-Coles).
+- **Utilidade**: Esses dados alimentam o motor de prognósticos na interface, permitindo que os apostadores vejam as probabilidades de vitória/empate para cada jogo baseadas em modelos matemáticos.
 
 ### `css/`
 - `style.css`: Design system premium, dark mode, variáveis CSS e responsividade mobile-first.
@@ -73,14 +75,30 @@ Documentos identificados pelo ID do apostador.
 
 ---
 
-## 📊 Regras de Pontuação
+## 📊 Regras Detalhadas de Pontuação
 
-| Situação | Pontos Brutos |
-| :--- | :---: |
-| **Placar Exato Alto** (Total gols ≥ 4) | **8** |
-| **Placar Exato Baixo** (Total gols < 4) | **6** |
-| **Resultado + 1 Bônus** (Diferença ou Gols) | **4** |
-| **Apenas Resultado** (Vitória/Empate) | **3** |
-| **Erro** | **0** |
+O sistema utiliza uma lógica de **pontos brutos** que são posteriormente multiplicados pelo peso da fase. Os bônus **não são cumulativos** entre si (aplica-se apenas o maior bônus alcançado).
 
-*Os pontos brutos são multiplicados pelo fator da fase (ex: Final vale x2.0).*
+### 1. Pontuação por Jogo (Fase de Grupos)
+| Pontos | Critério de Acerto | Descrição Detalhada |
+| :---: | :--- | :--- |
+| **8** | **Placar Exato Alto** | Acerto do placar exato em jogos com 4 ou mais gols (ex: 2x2, 3x1, 4x0). |
+| **6** | **Placar Exato Baixo** | Acerto do placar exato em jogos com menos de 4 gols (ex: 1x0, 2x1, 0x0). |
+| **4** | **Resultado + Bônus** | Acertou o vencedor ou empate, errou o placar, mas acertou a **Diferença de Gols** (ex: apostou 2x0, foi 3x1) OU acertou os **Gols de um dos times**. |
+| **3** | **Apenas Resultado** | Acertou apenas o vencedor ou que seria empate, errando o placar e os bônus acima. |
+| **0** | **Erro Total** | Errou o vencedor ou o fato de ser empate. |
+
+### 2. Multiplicadores de Fase
+Os pontos acima são multiplicados conforme a importância da fase:
+- **Grupos**: x1.0
+- **32-avos**: x1.2
+- **Oitavas**: x1.4
+- **Quartas**: x1.6
+- **Semis / 3º Lugar**: x1.8
+- **Final**: x2.0
+
+### 3. Palpites Especiais
+Pontuação fixa (não multiplicada) para palpites realizados antes do início da Copa:
+- **Campeão**: +7 pontos
+- **Vice-Campeão**: +4 pontos
+- **3º Lugar**: +2 pontos
