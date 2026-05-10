@@ -60,7 +60,7 @@ window.CONFIG = {
       id: "oitavas",
       nome: "Oitavas de Final",
       descricao: "Palpites para os 8 jogos das oitavas de final",
-      deadline_utc: "2026-07-04T13:30:00Z",  // 30 min antes do jogo 89
+      deadline_utc: "2026-07-04T16:30:00Z",  // 30 min antes do jogo 90 (o mais cedo das oitavas)
       fases_cobertas: ["oitavas"],
       inclui_especiais: false
     },
@@ -68,7 +68,7 @@ window.CONFIG = {
       id: "quartas",
       nome: "Quartas de Final",
       descricao: "Palpites para os 4 jogos das quartas de final",
-      deadline_utc: "2026-07-09T16:30:00Z",  // 30 min antes do jogo 97
+      deadline_utc: "2026-07-09T19:30:00Z",  // 30 min antes do jogo 97
       fases_cobertas: ["quartas"],
       inclui_especiais: false
     },
@@ -76,7 +76,7 @@ window.CONFIG = {
       id: "semis",
       nome: "Semifinais",
       descricao: "Palpites para os 2 jogos das semifinais",
-      deadline_utc: "2026-07-14T15:30:00Z",  // 30 min antes do jogo 101
+      deadline_utc: "2026-07-14T18:30:00Z",  // 30 min antes do jogo 101
       fases_cobertas: ["semis"],
       inclui_especiais: false
     },
@@ -84,7 +84,7 @@ window.CONFIG = {
       id: "final",
       nome: "Disputa de 3.° Lugar e Grande Final",
       descricao: "Palpites para a disputa do 3.° lugar e para a final",
-      deadline_utc: "2026-07-18T17:30:00Z",  // 30 min antes do jogo 103
+      deadline_utc: "2026-07-18T20:30:00Z",  // 30 min antes do jogo 103
       fases_cobertas: ["terceiro", "final"],
       inclui_especiais: false
     }
