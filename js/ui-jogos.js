@@ -40,12 +40,22 @@ function _onBlurPen(id) {
 }
 function limparSimulacao(id){ delete APP.resultadosSim[id]; atualizarBracket(); renderAbaAtiva(); }
 function limparResultadoAdmin(id){
-  if(!confirm("Limpar resultado de "+id+"?")) return;
-  delete APP.resultados[id]; delete APP.resultadosSim[id]; _persistirLocal();
-  const hg=document.getElementById("sim-hg-"+id), ag=document.getElementById("sim-ag-"+id);
-  if(hg) hg.value=""; if(ag) ag.value="";
-  if(APP.db&&!APP.modoOffline) APP.db.collection("resultados_oficiais").doc(id).delete();
-  atualizarBracket(); renderAbaAtiva();
+  // Removemos o confirm para ser "imediato" conforme solicitado
+  delete APP.resultados[id]; 
+  if (APP.resultadosSim) delete APP.resultadosSim[id]; 
+  _persistirLocal();
+  
+  const hg = document.getElementById("sim-hg-" + id);
+  const ag = document.getElementById("sim-ag-" + id);
+  if (hg) hg.value = "";
+  if (ag) ag.value = "";
+  
+  if (APP.db && !APP.modoOffline) {
+    APP.db.collection("resultados_oficiais").doc(id).delete();
+  }
+  
+  atualizarBracket(); 
+  renderAbaAtiva();
 }
 function confirmarAdmin(id,ehElim){
   const hg=parseInt(document.getElementById("sim-hg-"+id)?.value);

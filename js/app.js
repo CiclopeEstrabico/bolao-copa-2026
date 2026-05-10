@@ -50,6 +50,8 @@ function _persistirLocal() {
 // ---- Firestore listeners ----------------------------------------------------
 function listenResultados() {
   const u = APP.db.collection("resultados_oficiais").onSnapshot(snap => {
+    // Limpa para garantir que deletados sumam
+    APP.resultados = {};
     snap.forEach(d => { APP.resultados[d.id] = d.data(); });
     atualizarBracket(); renderAbaAtiva();
   });
@@ -66,6 +68,8 @@ function listenApostadores() {
 }
 function listenPalpites() {
   const u = APP.db.collectionGroup("palpites_jogos").onSnapshot(snap => {
+    // Limpa para garantir que deletados sumam
+    APP.palpites = {};
     snap.forEach(d => {
       const data = d.data();
       if (!APP.palpites[data.apostadorId]) APP.palpites[data.apostadorId] = {};

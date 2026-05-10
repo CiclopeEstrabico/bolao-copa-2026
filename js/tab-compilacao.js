@@ -75,6 +75,15 @@ window.renderCompilacao = function () {
     for (const a of ranking) {
       const p = pals[a.id]?.[jogo.id];
       if (!p || p.homeGoals === undefined) { h += '<td class="celula-sem">·</td>'; continue; }
+      
+      // REGRA DE VISIBILIDADE: só mostra se tem resultado OU se a fase está travada (não aceita mais apostas)
+      const podeVer = temRes || !jogoAceita(jogo.id);
+      
+      if (!podeVer) {
+        h += '<td class="celula-futuro" style="color:var(--texto2);opacity:0.3" title="Palpite oculto até o fechamento das apostas">🔒</td>';
+        continue;
+      }
+
       if (!temRes) { h += '<td class="celula-futuro">' + p.homeGoals + 'x' + p.awayGoals + '</td>'; continue; }
       const br = calcularPontosBrutos(p, r);
       const pts = aplicarFator(br.total_bruto, jogo.fase);
@@ -139,6 +148,17 @@ window.exportarCompilacaoJson = function () {
 
   const ranking = apos.map(a => {
     const st = window.calcularPontosApostador(pals[a.id] || {}, res, a, {});
+    
+    // Filtra palpites para não vazar no JSON se a fase ainda estiver aberta e sem resultado
+    const palpitesFiltrados = {};
+    const meusPals = pals[a.id] || {};
+    for (const jId of Object.keys(meusPals)) {
+      const temRes = res[jId] && res[jId].homeGoals !== undefined;
+      if (temRes || !jogoAceita(jId)) {
+        palpitesFiltrados[jId] = meusPals[jId];
+      }
+    }
+
     return {
       id: a.id,
       nome: a.nome,
@@ -146,7 +166,7 @@ window.exportarCompilacaoJson = function () {
       pts: st.total,
       placar_exato: st.acertos_placar_exato,
       resultado_correto: st.acertos_resultado,
-      palpites: pals[a.id] || {}
+      palpites: palpitesFiltrados
     };
   }).sort((a, b) => b.pts - a.pts);
 
@@ -213,7 +233,9 @@ window.exportarCompilacaoCsv = function () {
     for (const a of ranking) {
       const p = pals[a.id]?.[jogo.id];
       if (p && p.homeGoals !== undefined) {
-        row.push(`${p.homeGoals}x${p.awayGoals}`);
+        // Regra de visibilidade no CSV
+        const podeVer = temRes || !jogoAceita(jogo.id);
+        row.push(podeVer ? `${p.homeGoals}x${p.awayGoals}` : "🔒");
       } else {
         row.push("");
       }
