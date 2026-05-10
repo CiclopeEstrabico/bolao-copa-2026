@@ -31,50 +31,50 @@ window.BRACKET = (() => {
   // Será atualizado com o bracket oficial da FIFA quando publicado.
   // ══════════════════════════════════════════════════════════════════════════
   const BRACKET_TEMPLATE_R32 = {
-    R32_1:  { home: "1A", away: "2B" },
-    R32_2:  { home: "1C", away: "2D" },
-    R32_3:  { home: "1B", away: "2A" },
-    R32_4:  { home: "1D", away: "2C" },
-    R32_5:  { home: "1E", away: "2F" },
-    R32_6:  { home: "1G", away: "2H" },
-    R32_7:  { home: "1F", away: "2E" },
-    R32_8:  { home: "1H", away: "2G" },
-    R32_9:  { home: "1I", away: "2J" },
-    R32_10: { home: "1K", away: "2L" },
-    R32_11: { home: "1J", away: "2I" },
-    R32_12: { home: "1L", away: "2K" },
-    // Os 8 melhores 3.°s preenchem R32_13 a R32_16
-    // A distribuição exata depende de quais grupos geraram 3.°s — será calculada dinamicamente
-    R32_13: { home: "3X1", away: "3X2" },
-    R32_14: { home: "3X3", away: "3X4" },
-    R32_15: { home: "3X5", away: "3X6" },
-    R32_16: { home: "3X7", away: "3X8" },
+    R32_1:  { home: "2A", away: "2B"  }, // Jogo 73
+    R32_2:  { home: "1E", away: "3X1" }, // Jogo 74
+    R32_3:  { home: "1F", away: "2C"  }, // Jogo 75
+    R32_4:  { home: "1C", away: "2F"  }, // Jogo 76
+    R32_5:  { home: "1I", away: "3X2" }, // Jogo 77
+    R32_6:  { home: "2E", away: "2I"  }, // Jogo 78
+    R32_7:  { home: "1A", away: "3X3" }, // Jogo 79
+    R32_8:  { home: "1L", away: "3X4" }, // Jogo 80
+    R32_9:  { home: "1D", away: "3X5" }, // Jogo 81
+    R32_10: { home: "1G", away: "3X6" }, // Jogo 82
+    R32_11: { home: "2K", away: "2L"  }, // Jogo 83
+    R32_12: { home: "1H", away: "2J"  }, // Jogo 84
+    R32_13: { home: "1B", away: "3X7" }, // Jogo 85
+    R32_14: { home: "1J", away: "2H"  }, // Jogo 86
+    R32_15: { home: "1K", away: "3X8" }, // Jogo 87
+    R32_16: { home: "2D", away: "2G"  }, // Jogo 88
   };
 
-  // Template simplificado R16, QF, SF (vencedor do jogo N vs vencedor do jogo M)
   const BRACKET_TEMPLATE_R16 = {
-    R16_1: { home: "WR32_1",  away: "WR32_2"  },
-    R16_2: { home: "WR32_3",  away: "WR32_4"  },
-    R16_3: { home: "WR32_5",  away: "WR32_6"  },
-    R16_4: { home: "WR32_7",  away: "WR32_8"  },
-    R16_5: { home: "WR32_9",  away: "WR32_10" },
-    R16_6: { home: "WR32_11", away: "WR32_12" },
-    R16_7: { home: "WR32_13", away: "WR32_14" },
-    R16_8: { home: "WR32_15", away: "WR32_16" },
+    R16_1: { home: "WR32_2",  away: "WR32_5"  }, // Jogo 89
+    R16_2: { home: "WR32_1",  away: "WR32_3"  }, // Jogo 90
+    R16_3: { home: "WR32_4",  away: "WR32_6"  }, // Jogo 91
+    R16_4: { home: "WR32_7",  away: "WR32_8"  }, // Jogo 92
+    R16_5: { home: "WR32_11", away: "WR32_12" }, // Jogo 93
+    R16_6: { home: "WR32_9",  away: "WR32_10" }, // Jogo 94
+    R16_7: { home: "WR32_14", away: "WR32_16" }, // Jogo 95
+    R16_8: { home: "WR32_13", away: "WR32_15" }, // Jogo 96
   };
+
   const BRACKET_TEMPLATE_QF = {
-    QF_1: { home: "WR16_1", away: "WR16_2" },
-    QF_2: { home: "WR16_3", away: "WR16_4" },
-    QF_3: { home: "WR16_5", away: "WR16_6" },
-    QF_4: { home: "WR16_7", away: "WR16_8" },
+    QF_1: { home: "WR16_1", away: "WR16_2" }, // Jogo 97
+    QF_2: { home: "WR16_5", away: "WR16_6" }, // Jogo 98
+    QF_3: { home: "WR16_3", away: "WR16_4" }, // Jogo 99
+    QF_4: { home: "WR16_7", away: "WR16_8" }, // Jogo 100
   };
+
   const BRACKET_TEMPLATE_SF = {
-    SF_1: { home: "WQF_1", away: "WQF_2" },
-    SF_2: { home: "WQF_3", away: "WQF_4" },
+    SF_1: { home: "WQF_1", away: "WQF_2" }, // Jogo 101
+    SF_2: { home: "WQF_3", away: "WQF_4" }, // Jogo 102
   };
+
   const BRACKET_TEMPLATE_FINAL = {
-    TPL: { home: "LSF_1", away: "LSF_2" }, // perdedores das semis
-    FNL: { home: "WSF_1", away: "WSF_2" },
+    TPL: { home: "LSF_1", away: "LSF_2" }, // Jogo 103
+    FNL: { home: "WSF_1", away: "WSF_2" }, // Jogo 104
   };
 
   // ══════════════════════════════════════════════════════════════════════════

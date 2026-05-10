@@ -111,56 +111,57 @@ window.SCHEDULE = [
   { id:"L_R3_CRO_GHA", fase:"grupos", grupo:"L", rodada:3, home:"CRO", away:"GHA", utc:"2026-06-27T21:00:00Z", cidade:"Filadélfia",      pais:"USA" },
 
   // ══════════════════════════════════════════════════════════
-  // 32 AVOS DE FINAL — 16 jogos (TBD)
   // ══════════════════════════════════════════════════════════
-  { id:"R32_1",  fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-06-28T19:00:00Z", cidade:"Los Angeles",    pais:"USA" },
-  { id:"R32_2",  fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-06-29T17:00:00Z", cidade:"Houston",        pais:"USA" },
-  { id:"R32_3",  fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-06-29T20:30:00Z", cidade:"Boston",         pais:"USA" },
-  { id:"R32_4",  fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-06-30T01:00:00Z", cidade:"Monterrey",      pais:"MEX" },
-  { id:"R32_5",  fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-06-30T17:00:00Z", cidade:"Dallas",         pais:"USA" },
-  { id:"R32_6",  fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-06-30T21:00:00Z", cidade:"Nova York",      pais:"USA" },
-  { id:"R32_7",  fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-01T01:00:00Z", cidade:"Cidade do México",pais:"MEX" },
-  { id:"R32_8",  fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-01T16:00:00Z", cidade:"Atlanta",        pais:"USA" },
-  { id:"R32_9",  fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-01T20:00:00Z", cidade:"Seattle",        pais:"USA" },
-  { id:"R32_10", fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-02T00:00:00Z", cidade:"San Francisco",  pais:"USA" },
-  { id:"R32_11", fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-02T19:00:00Z", cidade:"Los Angeles",    pais:"USA" },
-  { id:"R32_12", fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-02T23:00:00Z", cidade:"Toronto",        pais:"CAN" },
-  { id:"R32_13", fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-03T03:00:00Z", cidade:"Vancouver",      pais:"CAN" },
-  { id:"R32_14", fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-03T18:00:00Z", cidade:"Dallas",         pais:"USA" },
-  { id:"R32_15", fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-03T22:00:00Z", cidade:"Miami",          pais:"USA" },
-  { id:"R32_16", fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-04T01:30:00Z", cidade:"Kansas City",    pais:"USA" },
+  // 32 AVOS DE FINAL — 16 jogos (73 a 88)
+  // ══════════════════════════════════════════════════════════
+  { id:"R32_1",  fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-06-28T19:00:00Z", cidade:"Los Angeles",    pais:"USA" }, // 73
+  { id:"R32_2",  fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-06-29T20:30:00Z", cidade:"Boston",         pais:"USA" }, // 74
+  { id:"R32_3",  fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-06-30T01:00:00Z", cidade:"Monterrey",      pais:"MEX" }, // 75
+  { id:"R32_4",  fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-06-29T17:00:00Z", cidade:"Houston",        pais:"USA" }, // 76
+  { id:"R32_5",  fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-06-30T21:00:00Z", cidade:"Nova York",      pais:"USA" }, // 77
+  { id:"R32_6",  fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-06-30T17:00:00Z", cidade:"Dallas",         pais:"USA" }, // 78
+  { id:"R32_7",  fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-01T01:00:00Z", cidade:"Cidade do México",pais:"MEX" }, // 79
+  { id:"R32_8",  fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-01T16:00:00Z", cidade:"Atlanta",        pais:"USA" }, // 80
+  { id:"R32_9",  fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-02T00:00:00Z", cidade:"Santa Clara",     pais:"USA" }, // 81
+  { id:"R32_10", fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-01T20:00:00Z", cidade:"Seattle",        pais:"USA" }, // 82
+  { id:"R32_11", fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-02T23:00:00Z", cidade:"Toronto",        pais:"CAN" }, // 83
+  { id:"R32_12", fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-02T19:00:00Z", cidade:"Los Angeles",    pais:"USA" }, // 84
+  { id:"R32_13", fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-03T03:00:00Z", cidade:"Vancouver",      pais:"CAN" }, // 85
+  { id:"R32_14", fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-03T22:00:00Z", cidade:"Miami",          pais:"USA" }, // 86
+  { id:"R32_15", fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-04T01:30:00Z", cidade:"Kansas City",    pais:"USA" }, // 87
+  { id:"R32_16", fase:"32avos", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-03T18:00:00Z", cidade:"Dallas",         pais:"USA" }, // 88
 
   // ══════════════════════════════════════════════════════════
-  // OITAVAS DE FINAL — 8 jogos (TBD)
+  // OITAVAS DE FINAL — 8 jogos (89 a 96)
   // ══════════════════════════════════════════════════════════
-  { id:"R16_1", fase:"oitavas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-04T17:00:00Z", cidade:"Houston",        pais:"USA" },
-  { id:"R16_2", fase:"oitavas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-04T21:00:00Z", cidade:"Filadélfia",     pais:"USA" },
-  { id:"R16_3", fase:"oitavas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-05T20:00:00Z", cidade:"Nova York",      pais:"USA" },
-  { id:"R16_4", fase:"oitavas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-06T00:00:00Z", cidade:"Cidade do México",pais:"MEX" },
-  { id:"R16_5", fase:"oitavas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-06T19:00:00Z", cidade:"Dallas",         pais:"USA" },
-  { id:"R16_6", fase:"oitavas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-07T00:00:00Z", cidade:"Seattle",        pais:"USA" },
-  { id:"R16_7", fase:"oitavas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-07T16:00:00Z", cidade:"Atlanta",        pais:"USA" },
-  { id:"R16_8", fase:"oitavas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-07T20:00:00Z", cidade:"Vancouver",      pais:"CAN" },
+  { id:"R16_1", fase:"oitavas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-04T21:00:00Z", cidade:"Filadélfia",     pais:"USA" }, // 89
+  { id:"R16_2", fase:"oitavas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-04T17:00:00Z", cidade:"Houston",        pais:"USA" }, // 90
+  { id:"R16_3", fase:"oitavas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-05T20:00:00Z", cidade:"Nova York",      pais:"USA" }, // 91
+  { id:"R16_4", fase:"oitavas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-06T00:00:00Z", cidade:"Cidade do México",pais:"MEX" }, // 92
+  { id:"R16_5", fase:"oitavas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-06T19:00:00Z", cidade:"Dallas",         pais:"USA" }, // 93
+  { id:"R16_6", fase:"oitavas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-07T00:00:00Z", cidade:"Seattle",        pais:"USA" }, // 94
+  { id:"R16_7", fase:"oitavas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-07T16:00:00Z", cidade:"Atlanta",        pais:"USA" }, // 95
+  { id:"R16_8", fase:"oitavas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-07T20:00:00Z", cidade:"Vancouver",      pais:"CAN" }, // 96
 
   // ══════════════════════════════════════════════════════════
-  // QUARTAS DE FINAL — 4 jogos (TBD)
+  // QUARTAS DE FINAL — 4 jogos (97 a 100)
   // ══════════════════════════════════════════════════════════
-  { id:"QF_1", fase:"quartas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-09T20:00:00Z", cidade:"Boston",          pais:"USA" },
-  { id:"QF_2", fase:"quartas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-10T19:00:00Z", cidade:"Los Angeles",     pais:"USA" },
-  { id:"QF_3", fase:"quartas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-11T21:00:00Z", cidade:"Miami",           pais:"USA" },
-  { id:"QF_4", fase:"quartas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-12T01:00:00Z", cidade:"Kansas City",     pais:"USA" },
+  { id:"QF_1", fase:"quartas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-09T20:00:00Z", cidade:"Boston",          pais:"USA" }, // 97
+  { id:"QF_2", fase:"quartas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-10T19:00:00Z", cidade:"Los Angeles",     pais:"USA" }, // 98
+  { id:"QF_3", fase:"quartas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-11T21:00:00Z", cidade:"Miami",           pais:"USA" }, // 99
+  { id:"QF_4", fase:"quartas", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-12T01:00:00Z", cidade:"Kansas City",     pais:"USA" }, // 100
 
   // ══════════════════════════════════════════════════════════
-  // SEMIFINAIS — 2 jogos (TBD)
+  // SEMIFINAIS — 2 jogos (101 e 102)
   // ══════════════════════════════════════════════════════════
-  { id:"SF_1", fase:"semis",   grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-14T19:00:00Z", cidade:"Dallas",          pais:"USA" },
-  { id:"SF_2", fase:"semis",   grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-15T19:00:00Z", cidade:"Atlanta",         pais:"USA" },
+  { id:"SF_1", fase:"semis",   grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-14T19:00:00Z", cidade:"Dallas",          pais:"USA" }, // 101
+  { id:"SF_2", fase:"semis",   grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-15T19:00:00Z", cidade:"Atlanta",         pais:"USA" }, // 102
 
   // ══════════════════════════════════════════════════════════
-  // DISPUTA DE 3.° LUGAR + FINAL
+  // DISPUTA DE 3.° LUGAR + FINAL (103 e 104)
   // ══════════════════════════════════════════════════════════
-  { id:"TPL", fase:"terceiro", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-18T21:00:00Z", cidade:"Miami",           pais:"USA" },
-  { id:"FNL", fase:"final",    grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-19T19:00:00Z", cidade:"Nova York",       pais:"USA" }
+  { id:"TPL", fase:"terceiro", grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-18T21:00:00Z", cidade:"Miami",           pais:"USA" }, // 103
+  { id:"FNL", fase:"final",    grupo:null, rodada:null, home:"TBD", away:"TBD", utc:"2026-07-19T19:00:00Z", cidade:"Nova York",       pais:"USA" }  // 104
 ];
 
 // Lookup por id

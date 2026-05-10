@@ -447,22 +447,22 @@ class CopaSim:
         def second(g): return group_global[g][:, 1]
 
         bracket_pairs = np.stack([
-            np.stack([first(0),  best8[:,0]],  axis=1),
-            np.stack([first(1),  best8[:,1]],  axis=1),
-            np.stack([first(2),  best8[:,2]],  axis=1),
-            np.stack([first(3),  best8[:,3]],  axis=1),
-            np.stack([first(4),  best8[:,4]],  axis=1),
-            np.stack([first(5),  best8[:,5]],  axis=1),
-            np.stack([first(6),  best8[:,6]],  axis=1),
-            np.stack([first(7),  best8[:,7]],  axis=1),
-            np.stack([first(8),  second(0)],   axis=1),
-            np.stack([first(9),  second(1)],   axis=1),
-            np.stack([first(10), second(2)],   axis=1),
-            np.stack([first(11), second(3)],   axis=1),
-            np.stack([second(4), second(8)],   axis=1),
-            np.stack([second(5), second(9)],   axis=1),
-            np.stack([second(6), second(10)],  axis=1),
-            np.stack([second(7), second(11)],  axis=1),
+            np.stack([second(0), second(1)],  axis=1), # Jogo 73: 2A x 2B
+            np.stack([first(4),  best8[:,0]], axis=1), # Jogo 74: 1E x 3X1
+            np.stack([first(5),  second(2)],  axis=1), # Jogo 75: 1F x 2C
+            np.stack([first(2),  second(5)],  axis=1), # Jogo 76: 1C x 2F
+            np.stack([first(8),  best8[:,1]], axis=1), # Jogo 77: 1I x 3X2
+            np.stack([second(4), second(8)],  axis=1), # Jogo 78: 2E x 2I
+            np.stack([first(0),  best8[:,2]], axis=1), # Jogo 79: 1A x 3X3
+            np.stack([first(11), best8[:,3]], axis=1), # Jogo 80: 1L x 3X4
+            np.stack([first(3),  best8[:,4]], axis=1), # Jogo 81: 1D x 3X5
+            np.stack([first(6),  best8[:,5]], axis=1), # Jogo 82: 1G x 3X6
+            np.stack([second(10),second(11)], axis=1), # Jogo 83: 2K x 2L
+            np.stack([first(7),  second(9)],  axis=1), # Jogo 84: 1H x 2J
+            np.stack([first(1),  best8[:,6]], axis=1), # Jogo 85: 1B x 3X7
+            np.stack([first(9),  second(7)],  axis=1), # Jogo 86: 1J x 2H
+            np.stack([first(10), best8[:,7]], axis=1), # Jogo 87: 1K x 3X8
+            np.stack([second(3), second(6)],  axis=1), # Jogo 88: 2D x 2G
         ], axis=1)
 
         for k in range(16):
@@ -472,19 +472,43 @@ class CopaSim:
         r16 = self._play_round(bracket_pairs)
         for k in range(16): np.add.at(C['r16'], r16[:, k], 1)
 
-        qf_pairs = np.stack([r16[:, k:k+2] for k in range(0, 16, 2)], axis=1)
-        qf = self._play_round(qf_pairs)
+        r16_pairs = np.stack([
+            np.stack([r16[:, 1], r16[:, 4]], axis=1), # Jogo 89: W74 x W77
+            np.stack([r16[:, 0], r16[:, 2]], axis=1), # Jogo 90: W73 x W75
+            np.stack([r16[:, 3], r16[:, 5]], axis=1), # Jogo 91: W76 x W78
+            np.stack([r16[:, 6], r16[:, 7]], axis=1), # Jogo 92: W79 x W80
+            np.stack([r16[:, 10],r16[:, 11]],axis=1), # Jogo 93: W83 x W84
+            np.stack([r16[:, 8], r16[:, 9]], axis=1), # Jogo 94: W81 x W82
+            np.stack([r16[:, 13],r16[:, 15]],axis=1), # Jogo 95: W86 x W88
+            np.stack([r16[:, 12],r16[:, 14]],axis=1), # Jogo 96: W85 x W87
+        ], axis=1)
+
+        qf = self._play_round(r16_pairs)
         for k in range(8): np.add.at(C['qf'], qf[:, k], 1)
 
-        sf_pairs = np.stack([qf[:, k:k+2] for k in range(0, 8, 2)], axis=1)
-        sf = self._play_round(sf_pairs)
+        qf_pairs = np.stack([
+            np.stack([qf[:, 0], qf[:, 1]], axis=1), # Jogo 97: W89 x W90
+            np.stack([qf[:, 4], qf[:, 5]], axis=1), # Jogo 98: W93 x W94
+            np.stack([qf[:, 2], qf[:, 3]], axis=1), # Jogo 99: W91 x W92
+            np.stack([qf[:, 6], qf[:, 7]], axis=1), # Jogo 100:W95 x W96
+        ], axis=1)
+
+        sf = self._play_round(qf_pairs)
         for k in range(4): np.add.at(C['sf'], sf[:, k], 1)
 
-        final_pairs = np.stack([sf[:, k:k+2] for k in range(0, 4, 2)], axis=1)
-        final = self._play_round(final_pairs)
+        sf_pairs = np.stack([
+            np.stack([sf[:, 0], sf[:, 1]], axis=1), # Jogo 101: W97 x W98
+            np.stack([sf[:, 2], sf[:, 3]], axis=1), # Jogo 102: W99 x W100
+        ], axis=1)
+
+        final = self._play_round(sf_pairs)
         for k in range(2): np.add.at(C['final'], final[:, k], 1)
 
-        champ = self._play_round(final[:, :, None].reshape(n, 1, 2))[:, 0]
+        final_pairs = np.stack([
+            np.stack([final[:, 0], final[:, 1]], axis=1) # Jogo 104
+        ], axis=1)
+
+        champ = self._play_round(final_pairs)[:, 0]
         np.add.at(C['title'], champ, 1)
 
         elapsed = time.time() - t0

@@ -90,11 +90,6 @@ window.CONFIG = {
     }
   ],
 
-  // ─── Admin ────────────────────────────────────────────────────────────────
-  // Senha usada por ~3 admins para inserir/corrigir resultados oficiais.
-  // Também gravada em /config/global no Firestore para validação nas Security Rules.
-  admin_senha: "#bolao2026#",
-
   // ─── Comportamento ────────────────────────────────────────────────────────
   // Timezone de exibição (todos os horários UTC são convertidos para este fuso na UI)
   display_timezone: "America/Sao_Paulo",  // BRT = UTC-3

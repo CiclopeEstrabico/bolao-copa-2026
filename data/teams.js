@@ -70,7 +70,7 @@ window.TEAMS = [
 
   // ── GRUPO K ──────────────────────────────────────────────────────────────
   { code: "POR", name: "Portugal", flag: _flag("pt"), group: "K", confederation: "UEFA" },
-  { code: "COD", name: "RD Congo", flag: _flag("cd"), group: "K", confederation: "CAF" },
+  { code: "COD", name: "R. Congo", flag: _flag("cd"), group: "K", confederation: "CAF" },
   { code: "UZB", name: "Uzbequistão", flag: _flag("uz"), group: "K", confederation: "AFC" },
   { code: "COL", name: "Colômbia", flag: _flag("co"), group: "K", confederation: "CONMEBOL" },
 
@@ -93,7 +93,7 @@ window.TEAM_ALIASES = {
   "Uzbequistão": "Uzbequist."
 };
 
-window.getShortName = function(code) {
+window.getShortName = function (code) {
   const team = window.TEAMS_BY_CODE[code];
   if (!team) return code;
   // Se for desktop, retorna o nome completo
