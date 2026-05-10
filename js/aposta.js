@@ -221,17 +221,8 @@ function renderAposta() {
   const status = window.APP?.configStatus || {};
   const algumaLiberada = Object.keys(status).some(k => k.startsWith("liberado_") && status[k] === true);
   
-  // Header de status
-  h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">';
-  h += '<div style="font-size:.78rem;color:var(--texto2)">Palpites preenchidos: <strong style="color:var(--verde-light)">' + preenchidos + '/' + totalJogos + '</strong> jogos da fase de grupos</div>';
-  if (!_modoVer) {
-    if (algumaLiberada) {
-      h += '<button class="btn btn-primario btn-sm" style="margin-left:auto" onclick="salvarTodosPalpites()">💾 Salvar Palpites</button>';
-    } else {
-      h += '<button class="btn btn-perigo btn-sm" style="margin-left:auto; cursor:not-allowed;" disabled>🔒 APOSTAS TRAVADAS</button>';
-    }
-  }
-  h += '</div>';
+  // Mini-tabela de progresso por fase
+  h += '<div id="progresso-container" style="margin-bottom:15px">' + renderProgressoAposta() + '</div>';
 
   // Palpites especiais (campeão, vice, 3o)
   if (!_modoVer) h += renderEspeciaisAposta(resOficiais);
@@ -310,11 +301,73 @@ function atualizarMiniTabelasAposta() {
     gridContainer.innerHTML = renderGruposGrid(tg, resOficiais);
   }
   
-  // Atualizar contagem no header
-  const totalJogos = (window.SCHEDULE || []).filter(j => j.fase === "grupos").length;
-  const preenchidos = Object.values(_palpitesLocais).filter(p => p?.homeGoals !== undefined).length;
-  const contador = document.querySelector("strong[style*='verde-light']");
-  if (contador) contador.textContent = preenchidos + "/" + totalJogos;
+  // Atualizar a tabela de progresso
+  const progContainer = document.getElementById("progresso-container");
+  if (progContainer) progContainer.innerHTML = renderProgressoAposta();
+}
+
+function renderProgressoAposta() {
+  const fases = [
+    { key: "grupos",  label: "Grupos",  total: 72 },
+    { key: "32avos",  label: "32avos",  total: 16 },
+    { key: "oitavas", label: "Oitavas", total: 8 },
+    { key: "quartas", label: "Quartas", total: 4 },
+    { key: "semis",   label: "Semis",   total: 2 },
+    { key: "finais",  label: "Finais",  total: 2 },
+    { key: "especiais", label: "Especiais", total: 3 }
+  ];
+
+  const pals = _palpitesLocais || {};
+  const counts = {};
+  
+  // Contar palpites por fase
+  fases.forEach(f => {
+    if (f.key === "especiais") {
+      const esp = _apostador?.especiais || {};
+      counts[f.key] = ["campeao", "vice", "terceiro"].filter(k => esp[k]).length;
+    } else {
+      const faseKeys = f.key === "finais" ? ["final", "terceiro"] : [f.key];
+      counts[f.key] = (window.SCHEDULE || []).filter(j => faseKeys.includes(j.fase)).filter(j => {
+        const p = pals[j.id];
+        return p && p.homeGoals !== undefined && p.awayGoals !== undefined;
+      }).length;
+    }
+  });
+
+  const algumaLiberada = Object.keys(window.APP?.configStatus || {}).some(k => k.startsWith("liberado_") && window.APP.configStatus[k] === true);
+
+  let h = '<div class="card" style="padding:10px;margin-bottom:0">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:10px">';
+  h += '<div style="font-size:.72rem;font-weight:700;color:var(--texto2);text-transform:uppercase;letter-spacing:1px">📊 Progresso dos Palpites</div>';
+  if (!_modoVer) {
+    if (algumaLiberada) {
+      h += '<button class="btn btn-primario btn-sm" onclick="salvarTodosPalpites()" style="font-size:.65rem;padding:4px 10px">💾 Salvar</button>';
+    } else {
+      h += '<button class="btn btn-perigo btn-sm" disabled style="font-size:.65rem;padding:4px 10px;cursor:not-allowed">🔒 Travado</button>';
+    }
+  }
+  h += '</div>';
+
+  h += '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;scrollbar-width:none">';
+  h += '<table style="width:100%;border-collapse:collapse;font-size:.7rem;text-align:center;min-width:480px">';
+  h += '<thead><tr style="color:var(--texto2);border-bottom:1px solid var(--borda)">';
+  fases.forEach(f => h += '<th style="padding:4px 2px;font-weight:500">' + f.label + '</th>');
+  h += '</tr></thead>';
+  h += '<tbody><tr>';
+  fases.forEach(f => {
+    const total = f.total;
+    const feitos = counts[f.key] || 0;
+    let cor = "var(--texto2)";
+    if (total > 0 && feitos === total) cor = "var(--verde-light)";
+    else if (feitos > 0) cor = "var(--dourado)";
+    
+    h += '<td style="padding:8px 2px;font-weight:700;color:' + cor + '">';
+    h += feitos + '<span style="opacity:.4;font-weight:400;font-size:.62rem">/' + total + '</span>';
+    h += '</td>';
+  });
+  h += '</tr></tbody></table></div></div>';
+  
+  return h;
 }
 
 function _registrarInputsAposta() {
