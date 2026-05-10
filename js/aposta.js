@@ -216,7 +216,7 @@ function renderAposta() {
   const totalJogos = (window.SCHEDULE || []).filter(j => j.fase === "grupos").length;
   const preenchidos = Object.values(_palpitesLocais).filter(p => p?.homeGoals !== undefined).length;
 
-  let h = '<div style="max-width:860px; margin:0 auto">';
+  let h = "";
 
   const status = window.APP?.configStatus || {};
   const algumaLiberada = Object.keys(status).some(k => k.startsWith("liberado_") && status[k] === true);
@@ -240,8 +240,6 @@ function renderAposta() {
 
   // Mesmo layout do resultados: grupos + toggle + jogos
   h += renderJogosComToggle(resOficiais, tg, false, _palpitesLocais);
-
-  h += '</div>'; // Fecha o container de 860px
 
   el.innerHTML = h;
 
