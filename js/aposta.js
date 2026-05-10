@@ -216,11 +216,22 @@ function renderAposta() {
   const totalJogos = (window.SCHEDULE || []).filter(j => j.fase === "grupos").length;
   const preenchidos = Object.values(_palpitesLocais).filter(p => p?.homeGoals !== undefined).length;
 
-  let h = "";
+  let h = '<div style="max-width:860px; margin:0 auto">';
 
   const status = window.APP?.configStatus || {};
   const algumaLiberada = Object.keys(status).some(k => k.startsWith("liberado_") && status[k] === true);
-  
+
+  // Botão Salvar Proeminente (Mobile: Topo / Desktop: Direita)
+  if (!_modoVer) {
+    h += '<div style="display:flex; justify-content:flex-end; margin-bottom:15px">';
+    if (algumaLiberada) {
+      h += '<button class="btn btn-primario btn-lg" onclick="salvarTodosPalpites()" style="width:100%; max-width:400px; justify-content:center; font-size:1.1rem; font-weight:800; padding:16px; box-shadow:0 4px 15px rgba(0,135,90,0.3)">💾 SALVAR MEUS PALPITES</button>';
+    } else {
+      h += '<button class="btn btn-perigo btn-lg" disabled style="width:100%; max-width:400px; justify-content:center; opacity:0.7">🔒 APOSTAS TRAVADAS</button>';
+    }
+    h += '</div>';
+  }
+
   // Mini-tabela de progresso por fase
   h += '<div id="progresso-container" style="margin-bottom:15px">' + renderProgressoAposta() + '</div>';
 
@@ -229,6 +240,8 @@ function renderAposta() {
 
   // Mesmo layout do resultados: grupos + toggle + jogos
   h += renderJogosComToggle(resOficiais, tg, false, _palpitesLocais);
+
+  h += '</div>'; // Fecha o container de 860px
 
   el.innerHTML = h;
 
@@ -250,7 +263,7 @@ function renderEspeciaisAposta(res) {
   ];
   const times = [...new Set((window.SCHEDULE || []).filter(j => j.grupo).map(j => [j.home, j.away]).flat())];
 
-  let h = '<div class="card" style="max-width:860px;margin:0 auto 20px"><div class="card-titulo">⭐ Palpites Especiais</div>';
+  let h = '<div class="card" style="margin-bottom:20px"><div class="card-titulo">⭐ Palpites Especiais</div>';
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;justify-content:center">';
   for (const f of fases) {
     const val = esp[f.key] || "";
@@ -314,7 +327,7 @@ function renderProgressoAposta() {
     { key: "quartas", label: "Quartas", total: 4 },
     { key: "semis",   label: "Semis",   total: 2 },
     { key: "finais",  label: "Finais",  total: 2 },
-    { key: "especiais", label: "Especiais", total: 3 }
+    { key: "especiais", label: "Extra", total: 3 }
   ];
 
   const pals = _palpitesLocais || {};
@@ -334,24 +347,13 @@ function renderProgressoAposta() {
     }
   });
 
-  const algumaLiberada = Object.keys(window.APP?.configStatus || {}).some(k => k.startsWith("liberado_") && window.APP.configStatus[k] === true);
+  let h = '<div class="card" style="padding:8px 10px; margin-bottom:0">';
+  h += '<div style="font-size:.62rem; font-weight:700; color:var(--texto2); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px">📊 Resumo do Preenchimento</div>';
 
-  let h = '<div class="card" style="padding:10px;margin-bottom:0">';
-  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:10px">';
-  h += '<div style="font-size:.72rem;font-weight:700;color:var(--texto2);text-transform:uppercase;letter-spacing:1px">📊 Progresso dos Palpites</div>';
-  if (!_modoVer) {
-    if (algumaLiberada) {
-      h += '<button class="btn btn-primario btn-sm" onclick="salvarTodosPalpites()" style="font-size:.65rem;padding:4px 10px">💾 Salvar</button>';
-    } else {
-      h += '<button class="btn btn-perigo btn-sm" disabled style="font-size:.65rem;padding:4px 10px;cursor:not-allowed">🔒 Travado</button>';
-    }
-  }
-  h += '</div>';
-
-  h += '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;scrollbar-width:none">';
-  h += '<table style="width:100%;border-collapse:collapse;font-size:.7rem;text-align:center;min-width:480px">';
-  h += '<thead><tr style="color:var(--texto2);border-bottom:1px solid var(--borda)">';
-  fases.forEach(f => h += '<th style="padding:4px 2px;font-weight:500">' + f.label + '</th>');
+  h += '<div style="overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none">';
+  h += '<table style="width:100%; border-collapse:collapse; text-align:center; min-width:320px">';
+  h += '<thead><tr style="color:var(--texto2); border-bottom:1px solid var(--borda)">';
+  fases.forEach(f => h += '<th style="padding:2px; font-weight:500; font-size:.6rem">' + f.label + '</th>');
   h += '</tr></thead>';
   h += '<tbody><tr>';
   fases.forEach(f => {
@@ -361,8 +363,8 @@ function renderProgressoAposta() {
     if (total > 0 && feitos === total) cor = "var(--verde-light)";
     else if (feitos > 0) cor = "var(--dourado)";
     
-    h += '<td style="padding:8px 2px;font-weight:700;color:' + cor + '">';
-    h += feitos + '<span style="opacity:.4;font-weight:400;font-size:.62rem">/' + total + '</span>';
+    h += '<td style="padding:6px 2px; font-weight:800; color:' + cor + '; font-size:1rem">';
+    h += feitos + '<span style="opacity:.4; font-weight:400; font-size:.62rem">/' + total + '</span>';
     h += '</td>';
   });
   h += '</tr></tbody></table></div></div>';
