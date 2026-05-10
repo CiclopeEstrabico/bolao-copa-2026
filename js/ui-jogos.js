@@ -248,12 +248,10 @@ function renderJogoRow(jogo, res, ehElim, isAdm, palApo, showFullDate = false) {
       h += '<span class="vs">x</span>';
       h += '<input type="number" class="pen-input" id="pen-ag-' + jogo.id + '" value="' + pa + '" min="0" placeholder="0" oninput="_onInputPen(\'' + jogo.id + '\')" onblur="_onBlurPen(\'' + jogo.id + '\')"' + disAttr + '></div></div>';
     }
-    if (isAdm) {
-      h += '<div class="toggle-bar jogos-toggle" style="margin-bottom:15px">';
-      if (temRes) h += '<button class="btn-limpar" onclick="limparResultadoAdmin(\'' + jogo.id + '\')">✕ Deletar</button>';
-      h += '</div>';
+    if (isAdm && temRes) {
+      h += '<div style="margin-top:2px"><button class="btn-limpar" onclick="limparResultadoAdmin(\'' + jogo.id + '\')">✕ Deletar</button></div>';
     } else if (isSim) {
-      h += '<div style="margin-top:4px;text-align:center"><button class="btn-limpar" onclick="limparSimulacao(\'' + jogo.id + '\')">✕ Reset</button></div>';
+      h += '<div style="margin-top:2px;text-align:center"><button class="btn-limpar" onclick="limparSimulacao(\'' + jogo.id + '\')">✕ Reset</button></div>';
     }
   }
   h += '</div>';
