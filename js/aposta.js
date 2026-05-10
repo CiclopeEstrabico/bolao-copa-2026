@@ -29,6 +29,10 @@ window._onInputPlacar = function(id) {
   }
 };
 
+// Impedir que o modo simulação seja ativado ao editar apostas
+window._onBlurPlacar = function(id) { /* No-op na tela de apostas */ };
+window._onBlurPen = function(id) { /* No-op na tela de apostas */ };
+
 document.addEventListener("DOMContentLoaded", iniciarAposta);
 
 async function iniciarAposta() {
