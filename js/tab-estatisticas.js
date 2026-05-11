@@ -91,18 +91,48 @@ window.renderEstatisticas = function () {
   let h = "";
 
   // Cards de destaque
-  h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:12px">';
+  h += `<style>
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    @media (min-width: 600px) {
+      .stats-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 8px;
+      }
+    }
+    .stat-d-card {
+      background: var(--card2);
+      border: 1px solid var(--borda);
+      border-radius: var(--radius-sm);
+      padding: 10px 4px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 90px;
+    }
+    .stat-d-icon { font-size: 1.2rem; margin-bottom: 2px; }
+    .stat-d-label { font-size: 0.58rem; color: var(--texto2); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 2px; line-height: 1.1; }
+    .stat-d-nome { font-size: 0.8rem; font-weight: 800; color: var(--cor-destaque); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
+    .stat-d-sub { font-size: 0.62rem; color: var(--texto2); margin-top: 2px; }
+  </style>`;
+
+  h += '<div class="stats-grid">';
   h += _dCard("🏆", "Líder", melhorPts?.participante.apelido || melhorPts?.participante.nome || "—", melhorPts?.stats.total.toFixed(1) + " pts", "var(--dourado)");
-  h += _dCard("✓", "Mais Acertos", melhorRes?.participante.apelido || melhorRes?.participante.nome || "—", melhorRes?.stats.acertos_resultado + " acertos", "#86efac");
+  h += _dCard("🔮", "Vidente", melhorRes?.participante.apelido || melhorRes?.participante.nome || "—", melhorRes?.stats.acertos_resultado + " acertos de resultados", "#86efac");
+  h += _dCard("🎯", "Atirador de Elite", melhorExato?.participante.apelido || melhorExato?.participante.nome || "—", melhorExato?.stats.acertos_placar_exato + " acertos de placar", "var(--verde-ok)");
+  
   h += _dCard("📈", "Pontos Possíveis", `${maxPtsRealizado}/${maxPtsTotal}`, pctRealizado + "% da Copa", "#60a5fa");
   h += _dCard("⚽", "Jogos Feitos", jogosFeitos.length + "/" + ((window.SCHEDULE || []).length), ((jogosFeitos.length / (window.SCHEDULE || [{ id: 1 }]).length * 100).toFixed(0) + "%"), "var(--texto2)");
-  
-  // Novos Cards
   h += _dCard("🦓", "Zebra de Ouro", melhorZebra?.apelido || melhorZebra?.nome || "—", zebraCount + " zebras domadas", "#fcd34d");
-  h += _dCard("💎", "Mestre dos Bônus", mestreBonus?.participante.apelido || mestreBonus?.participante.nome || "—", mestreBonus?.ptsBonus + " pts extras", "#c084fc");
-  h += _dCard("🧗", "Escalando", escalandoApo?.apelido || escalandoApo?.nome || "—", (maiorSalto > 0 ? "+" + maiorSalto : maiorSalto) + " posições", "#fb7185");
-  h += _dCard("🕯️", "Lanterninha", lanterninha?.participante.apelido || lanterninha?.participante.nome || "—", lanterninha?.stats.total.toFixed(1) + " pts", "#94a3b8");
   
+  h += _dCard("💎", "Mestre dos Bônus", mestreBonus?.participante.apelido || mestreBonus?.participante.nome || "—", mestreBonus?.ptsBonus + " pts extras", "#c084fc");
+  h += _dCard("🧗", "Escalando", escalandoApo?.apelido || escalandoApo?.nome || "—", (maiorSalto > 0 ? "+" + maiorSalto : (maiorSalto === -999 ? "—" : maiorSalto)) + " posições", "#fb7185");
+  h += _dCard("🕯️", "Lanterninha", lanterninha?.participante.apelido || lanterninha?.participante.nome || "—", lanterninha?.stats.total.toFixed(1) + " pts", "#94a3b8");
   h += '</div>';
 
   // Jogo mais e menos acertado
@@ -341,11 +371,12 @@ window.renderHtH = function () {
 };
 
 function _dCard(icon, label, nome, sub, cor) {
-  return '<div style="background:var(--card2);border:1px solid var(--borda);border-radius:var(--radius-sm);padding:12px;text-align:center">' +
-    '<div style="font-size:1.4rem">' + icon + '</div>' +
-    '<div style="font-size:.65rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.04em;margin:4px 0 2px">' + label + '</div>' +
-    '<div style="font-size:.88rem;font-weight:800;color:' + cor + '">' + nome + '</div>' +
-    '<div style="font-size:.7rem;color:var(--texto2);margin-top:2px">' + sub + '</div></div>';
+  return `<div class="stat-d-card">
+    <div class="stat-d-icon">${icon}</div>
+    <div class="stat-d-label">${label}</div>
+    <div class="stat-d-nome" style="--cor-destaque: ${cor}">${nome}</div>
+    <div class="stat-d-sub">${sub}</div>
+  </div>`;
 }
 
 function _jogoStatRow(hC, aC, r, acertos, total, cor) {
