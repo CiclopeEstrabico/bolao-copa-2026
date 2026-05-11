@@ -188,8 +188,7 @@ window.renderEstatisticas = function () {
 
 
   // Resumo Avançado de Todos os Jogos
-  h += '<div class="card"><div class="card-titulo">📈 Estatísticas Avançadas por Jogo</div>';
-  h += '<div class="compilacao-wrap"><table class="compilacao-table" style="min-width:1000px; font-size:.7rem">';
+  h += '<div class="card" style="padding:0;overflow:hidden"><div class="card-titulo" style="padding:16px 16px 0">📈 Estatísticas Avançadas por Jogo</div><div class="compilacao-wrap"><table class="compilacao-table stat-full-table" style="font-size:.7rem">';
   h += '<thead><tr>';
   h += '<th class="stat-col-jogo" style="text-align:left;position:sticky;left:0;background:var(--fundo2);z-index:2;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Jogo</th>';
   h += '<th class="col-resultado">Resultado</th>';
