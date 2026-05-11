@@ -241,14 +241,19 @@ window.exportarCompilacaoJson = function () {
     };
   }
 
+  // ⑤ Resultado oficial dos especiais derivado automaticamente do bracket
+  const espOficiais = typeof _extrairEspeciaisOficiais === 'function'
+    ? _extrairEspeciaisOficiais(res, brk)
+    : { campeao: null, vice: null, terceiro: null };
+
   const exportData = {
     timestamp: new Date().toISOString(),
     status_apostas: APP.configStatus?.apostas_liberadas ? "LIBERADAS" : "TRAVADAS",
     resultados_oficiais: resultadosExport,
     especiais_oficiais: {
-      campeao: brk.campeao || "",
-      vice: brk.vice || "",
-      terceiro: brk.terceiro || ""
+      campeao: espOficiais.campeao ? (window.TEAMS_BY_CODE?.[espOficiais.campeao]?.name || espOficiais.campeao) : "",
+      vice:    espOficiais.vice    ? (window.TEAMS_BY_CODE?.[espOficiais.vice]?.name    || espOficiais.vice)    : "",
+      terceiro: espOficiais.terceiro ? (window.TEAMS_BY_CODE?.[espOficiais.terceiro]?.name || espOficiais.terceiro) : ""
     },
     ranking_e_palpites: ranking
   };
@@ -338,16 +343,20 @@ window.exportarCompilacaoCsv = function () {
   }
 
   // --- Linhas de Especiais no CSV ---
-  const espOf = { campeao: brk.campeao, vice: brk.vice, terceiro: brk.terceiro };
+  // Resultado oficial derivado automaticamente (igual à aba de classificação)
+  const espOficiais = typeof _extrairEspeciaisOficiais === 'function'
+    ? _extrairEspeciaisOficiais(res, brk)
+    : { campeao: null, vice: null, terceiro: null };
   const labelsEsp = { campeao: "🏆 Campeão", vice: "🥈 Vice", terceiro: "🥉 3º Lugar" };
 
   for (const key of ["campeao", "vice", "terceiro"]) {
-    const nomeOf = window.TEAMS_BY_CODE?.[espOf[key]]?.name || "";
+    const ofCode = espOficiais[key] || "";
+    const nomeOf = window.TEAMS_BY_CODE?.[ofCode]?.name || (ofCode || "");
     const row = [ "ESP", "especial", "", `"${labelsEsp[key]}"`, "", `"${nomeOf}"` ];
     for (const a of ranking) {
       const palE = (a.especiais && a.especiais[key]) || "";
       const nomePal = window.TEAMS_BY_CODE?.[palE]?.name || "";
-      const podeVer = espOf[key] || !jogoAceita("final");
+      const podeVer = ofCode || !jogoAceita("final");
       row.push(podeVer ? `"${nomePal}"` : "🔒");
     }
     csvContent += row.join(";") + "\r\n";
