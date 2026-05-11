@@ -218,9 +218,8 @@ function renderJogoRow(jogo, res, ehElim, isAdm, palApo, showFullDate = false) {
   h += '</div>';
 
   // Col 2: home
-  h += '<div class="jogo-col-home"><span style="color:' + (chome || "inherit") + ';font-weight:' + (chome ? 700 : 500) + '">' + hName + '</span>' + htmlBandeira(hCode, 22) + '</div>';
+  h += '<div class="jogo-col-home" onclick="if(!window.location.pathname.includes(\'aposta.html\')) PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="cursor:pointer"><span style="color:' + (chome || "inherit") + ';font-weight:' + (chome ? 700 : 500) + '">' + hName + '</span>' + htmlBandeira(hCode, 22) + '</div>';
 
-  // Col 3: placar
   h += '<div class="jogo-col-placar">';
   if (temRes && !isAdm) {
     h += '<div class="placar-display"><span class="placar-num" style="color:' + (chome || "var(--texto)") + '">' + r.homeGoals + '</span><span class="placar-sep">x</span><span class="placar-num" style="color:' + (caway || "var(--texto)") + '">' + r.awayGoals + '</span></div>';
@@ -255,9 +254,8 @@ function renderJogoRow(jogo, res, ehElim, isAdm, palApo, showFullDate = false) {
     }
   }
   h += '</div>';
-
   // Col 4: away
-  h += '<div class="jogo-col-away">' + htmlBandeira(aCode, 22) + '<span style="color:' + (caway || "inherit") + ';font-weight:' + (caway ? 700 : 500) + '">' + aName + '</span></div>';
+  h += '<div class="jogo-col-away" onclick="if(!window.location.pathname.includes(\'aposta.html\')) PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="cursor:pointer">' + htmlBandeira(aCode, 22) + '<span style="color:' + (caway || "inherit") + ';font-weight:' + (caway ? 700 : 500) + '">' + aName + '</span></div>';
 
   // Col 5: acoes
   const isApostaPage = window.location.pathname.includes("aposta.html");

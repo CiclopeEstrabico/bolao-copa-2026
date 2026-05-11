@@ -173,41 +173,48 @@ window.PROGNOSE = {
   },
 
   abrirModal: function (gameId) {
-    let ov = document.getElementById("prognose-overlay");
-    if (!ov) {
-      ov = document.createElement("div");
-      ov.id = "prognose-overlay";
-      ov.className = "modal-overlay";
-      ov.innerHTML = '<div class="modal-box" id="prognose-box"></div>';
+    let ov = document.getElementById("modal-prog");
+    let box = document.getElementById("modal-prog-body");
+    
+    if (!ov || !box) {
+      // Fallback se o HTML não tiver os IDs (embora index.html tenha)
+      ov = document.getElementById("prognose-overlay");
+      if (!ov) {
+        ov = document.createElement("div");
+        ov.id = "prognose-overlay";
+        ov.className = "modal-overlay";
+        ov.innerHTML = '<div class="modal-box" id="prognose-box"></div>';
+        document.body.appendChild(ov);
+      }
+      box = ov.querySelector(".modal-box");
+    }
+
+    // Configura eventos de fechar se ainda não configurados
+    if (!ov._clickEv) {
       ov.addEventListener("click", e => { if (e.target === ov) this.fecharModal(); });
-      document.body.appendChild(ov);
+      ov._clickEv = true;
 
       // Swipe down para fechar (mobile)
-      const box = () => document.getElementById("prognose-box");
       let startY = 0, startScroll = 0;
       ov.addEventListener("touchstart", e => {
-        if (!box()) return;
         startY = e.touches[0].clientY;
-        startScroll = box().scrollTop;
+        startScroll = box.scrollTop;
       }, { passive: true });
       ov.addEventListener("touchmove", e => {
-        if (!box()) return;
         const dy = e.touches[0].clientY - startY;
-        // Só faz swipe se o box estiver no topo do scroll
         if (dy > 0 && startScroll <= 0) {
-          box().style.transform = `translateY(${Math.min(dy * 0.6, 160)}px)`;
-          box().style.transition = "none";
+          box.style.transform = `translateY(${Math.min(dy * 0.6, 160)}px)`;
+          box.style.transition = "none";
         }
       }, { passive: true });
       ov.addEventListener("touchend", e => {
-        if (!box()) return;
         const dy = e.changedTouches[0].clientY - startY;
-        box().style.transition = "";
-        box().style.transform = "";
+        box.style.transition = "";
+        box.style.transform = "";
         if (dy > 80 && startScroll <= 0) this.fecharModal();
       }, { passive: true });
     }
-    const box = document.getElementById("prognose-box");
+
     box.innerHTML = '<button class="modal-close" onclick="PROGNOSE.fecharModal()">✕</button>' + this.renderModal(gameId);
     ov.classList.add("aberto");
     document.body.style.overflow = "hidden";
@@ -254,20 +261,22 @@ window.PROGNOSE = {
     if (!window.ELO_RATINGS?.[hC] || !window.ELO_RATINGS?.[aC]) {
       return '<p style="text-align:center;padding:30px;color:var(--texto2)">Dados não disponíveis.</p>';
     }
+    const res = getResultados();
     const jogoInfo = window.SCHEDULE_BY_ID?.[gameId];
     const isNeutral = jogoInfo ? (jogoInfo.pais !== hC && jogoInfo.pais !== aC) : true;
     const c = this.calcular(hC, aC, isNeutral);
     const temRes = res[gameId] && res[gameId].homeGoals !== undefined;
     const podeVer = temRes || !jogoAceita(gameId);
 
+    const fmt = (v) => (v * 100).toFixed(1) + "%";
+    let h = "";
+
     if (!podeVer) {
-      h += '<div style="text-align:center;padding:20px;background:rgba(0,0,0,0.2);border-radius:10px;margin-bottom:15px;border:1px dashed var(--borda)">';
-      h += '<div style="font-size:1.5rem;margin-bottom:8px">🔒</div>';
-      h += '<div style="font-size:.85rem;font-weight:700">Previsão Bloqueada</div>';
-      h += '<div style="font-size:.7rem;color:var(--texto2);margin-top:4px">Os dados do modelo e as estatísticas coletivas ficam ocultos até o fechamento das apostas para este jogo.</div>';
+      h += '<div style="text-align:center;padding:30px 20px;background:rgba(0,0,0,0.2);border-radius:10px;margin-bottom:15px;border:1px dashed var(--borda)">';
+      h += '<div style="font-size:2rem;margin-bottom:12px">🔒</div>';
+      h += '<div style="font-size:.9rem;font-weight:700">Previsão Bloqueada</div>';
+      h += '<div style="font-size:.75rem;color:var(--texto2);margin-top:6px;max-width:260px;margin-left:auto;margin-right:auto">Os dados do modelo e as tendências coletivas ficam ocultos até o fechamento das apostas para este jogo.</div>';
       h += '</div>';
-      // Renderizamos apenas as probabilidades básicas se quiser, ou nada. O usuário pediu para esconder ELO, xG e Matriz.
-      // Vou esconder tudo o que foi pedido.
       return h;
     }
 
@@ -340,7 +349,7 @@ window.PROGNOSE = {
     if (s.topPlacares.length) {
       h += '<div style="font-size:.72rem;font-weight:700;color:var(--texto2);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px">Top placares apostados</div>';
       const maxCt = s.topPlacares[0][1];
-      const r = APP.resultados?.[gameId];
+      const r = res[gameId];
       s.topPlacares.forEach(([placar, ct]) => {
         const acertou = r && r.homeGoals !== undefined && placar === r.homeGoals + "x" + r.awayGoals;
         h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--fundo2);border-radius:6px;margin-bottom:4px' + (acertou ? ";border:1px solid var(--verde-ok)" : "") + '">';
