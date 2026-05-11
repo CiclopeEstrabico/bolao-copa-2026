@@ -23,12 +23,17 @@ window._onInputPlacar = function(id) {
   if (!isNaN(hg) && !isNaN(ag)) {
     _palpitesLocais[id] = { homeGoals: hg, awayGoals: ag };
 
-    // Debounce para o re-render visual — não bloqueia o foco do teclado
-    clearTimeout(window._miniUpdateTimer);
-    window._miniUpdateTimer = setTimeout(() => atualizarMiniTabelasAposta(), 400);
-    
+    // Marca que o usuário está digitando — suprime re-renders do Firebase por 3s
+    window._digitandoTimer && clearTimeout(window._digitandoTimer);
+    window._estaDigitando = true;
+    window._digitandoTimer = setTimeout(() => {
+      window._estaDigitando = false;
+      // Atualiza progresso só depois que parou de digitar
+      atualizarMiniTabelasAposta();
+    }, 1500);
+
     clearTimeout(window._saveTimerAposta);
-    window._saveTimerAposta = setTimeout(() => salvarTodosPalpites(true), 2000);
+    window._saveTimerAposta = setTimeout(() => salvarTodosPalpites(true), 2500);
   }
 };
 
@@ -278,6 +283,8 @@ function renderAposta() {
 
 // Sobrescreve a função global para que os toggles de ui-jogos.js funcionem aqui
 window.renderAbaAtiva = function() {
+  // Suprime re-render completo enquanto usuário está digitando (evita flickering)
+  if (window._estaDigitando) return;
   renderAposta();
 };
 
