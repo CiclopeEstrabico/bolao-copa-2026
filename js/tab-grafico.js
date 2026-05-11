@@ -239,14 +239,16 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
     const cor = _EVOLUCAO_CORES[idxGlobal % _EVOLUCAO_CORES.length];
     const pal = pals[a.id] || {};
     let acumulado = 0;
-    const pontos = jogosComRes.map(j => {
+    // Iniciamos com 0 para que todos comecem no ponto (0,0)
+    const pontos = [0]; 
+    jogosComRes.forEach(j => {
       const p = pal[j.id];
       const r = res[j.id];
       if (p && r && p.homeGoals !== undefined) {
         const br = calcularPontosBrutos(p, r);
         acumulado += aplicarFator(br.total_bruto, j.fase);
       }
-      return parseFloat(acumulado.toFixed(1));
+      pontos.push(parseFloat(acumulado.toFixed(1)));
     });
     return { nome: (a.apelido || a.nome || "?").substring(0, 14), cor, pontos };
   });
@@ -255,10 +257,12 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
   const PAD = { top: 20, right: 100, bottom: 40, left: 48 };
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
-  const nJogos = jogosComRes.length;
+  const nMatches = jogosComRes.length;
+  const nPoints = nMatches + 1; // Ponto zero + todos os jogos concluídos
   const maxPts = Math.max(1, ...series.map(s => Math.max(...s.pontos, 0)));
 
-  function xPos(i) { return PAD.left + (nJogos <= 1 ? chartW / 2 : (i / (nJogos - 1)) * chartW); }
+  // i vai de 0 a nMatches
+  function xPos(i) { return PAD.left + (i / (nPoints - 1)) * chartW; }
   function yPos(v) { return PAD.top + chartH - (v / maxPts) * chartH; }
 
   let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;display:block;margin:0 auto;overflow:visible">`;
@@ -270,15 +274,18 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
     svg += `<text x="${PAD.left-6}" y="${(y+4).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--texto2)">${v.toFixed(0)}</text>`;
   }
 
-  const step = Math.max(1, Math.floor(nJogos / 8));
-  for (let i = 0; i < nJogos; i += step) {
+  const step = Math.max(1, Math.floor(nMatches / 8));
+  // Começamos em i=1 para pular o rótulo do ponto zero e mostrar J1, J2...
+  for (let i = 1; i < nPoints; i += step) {
     const x = xPos(i).toFixed(1);
     svg += `<line x1="${x}" y1="${PAD.top}" x2="${x}" y2="${PAD.top+chartH}" stroke="var(--borda)" stroke-width="1" opacity="0.4"/>`;
-    svg += `<text x="${x}" y="${PAD.top+chartH+14}" text-anchor="middle" font-size="10" fill="var(--texto2)">J${i+1}</text>`;
+    svg += `<text x="${x}" y="${PAD.top+chartH+14}" text-anchor="middle" font-size="10" fill="var(--texto2)">J${i}</text>`;
   }
-  if ((nJogos-1) % step !== 0 && nJogos > 1) {
-    const x = xPos(nJogos-1).toFixed(1);
-    svg += `<text x="${x}" y="${PAD.top+chartH+14}" text-anchor="middle" font-size="10" fill="var(--texto2)">J${nJogos}</text>`;
+  // Garantir que o último rótulo apareça se o step pulá-lo
+  const lastIdx = nPoints - 1;
+  if (lastIdx > 0 && (lastIdx - 1) % step !== 0) {
+    const x = xPos(lastIdx).toFixed(1);
+    svg += `<text x="${x}" y="${PAD.top+chartH+14}" text-anchor="middle" font-size="10" fill="var(--texto2)">J${nMatches}</text>`;
   }
 
   for (const s of series) {
