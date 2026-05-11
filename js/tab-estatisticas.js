@@ -16,6 +16,74 @@ window.renderEstatisticas = function () {
   const melhorRes = [...ranking].sort((a, b) => b.stats.acertos_resultado - a.stats.acertos_resultado)[0];
   const melhorExato = [...ranking].sort((a, b) => b.stats.acertos_placar_exato - a.stats.acertos_placar_exato)[0];
 
+  // --- Zebra de Ouro ---
+  const zebraScores = {};
+  for (const jogo of jogosFeitos) {
+    const r = res[jogo.id];
+    let vH=0, vD=0, vA=0, total=0;
+    for (const aId of Object.keys(pals)) {
+      const p = pals[aId]?.[jogo.id];
+      if (!p || p.homeGoals === undefined) continue;
+      total++;
+      const hg=parseInt(p.homeGoals), ag=parseInt(p.awayGoals);
+      if (hg > ag) vH++; else if (hg < ag) vA++; else vD++;
+    }
+    if (total === 0) continue;
+    const resReal = r.homeGoals > r.awayGoals ? "H" : (r.homeGoals < r.awayGoals ? "A" : "D");
+    const pctGanha = (resReal === "H" ? vH : (resReal === "A" ? vA : vD)) / total;
+    
+    if (pctGanha < 0.20) { // Zebra!
+      for (const a of apos) {
+        const p = pals[a.id]?.[jogo.id];
+        if (!p) continue;
+        const br = calcularPontosBrutos(p, r);
+        if (br.acertou) zebraScores[a.id] = (zebraScores[a.id] || 0) + 1;
+      }
+    }
+  }
+  const melhorZebraId = Object.entries(zebraScores).sort((a,b) => b[1] - a[1])[0]?.[0];
+  const melhorZebra = apos.find(a => a.id === melhorZebraId);
+  const zebraCount = zebraScores[melhorZebraId] || 0;
+
+  // --- Mestre dos Bônus ---
+  const bonusRanking = ranking.map(r => {
+    const s = r.stats;
+    const cfg = window.CONFIG?.pontuacao || {};
+    // Calculamos apenas os pontos vindos de bônus
+    const ptsBonus = (s.acertos_placar_exato * (cfg.bonus_placar_exato_baixo || 3)) +
+                     (s.acertos_placar_alto * (cfg.bonus_placar_exato_alto || 5)) +
+                     (s.acertos_bonus1 * (cfg.bonus_1_gol_diferenca || 1));
+    return { ...r, ptsBonus };
+  }).sort((a,b) => b.ptsBonus - a.ptsBonus);
+  const mestreBonus = bonusRanking[0];
+
+  // --- Escalando (Últimos 5 jogos) ---
+  const totalJogos = jogosFeitos.length;
+  let escalandoApo = null, maiorSalto = -999;
+  if (totalJogos >= 5) {
+    const jogosOrdenados = [...jogosFeitos].sort((a,b) => new Date(a.utc) - new Date(b.utc));
+    const ultimos5Ids = jogosOrdenados.slice(-5).map(j => j.id);
+    const resAnterior = {};
+    for (const [id, val] of Object.entries(res)) {
+      if (!ultimos5Ids.includes(id)) resAnterior[id] = val;
+    }
+    const rankingAnterior = gerarRanking(pals, resAnterior, apos, esp);
+    
+    for (let i = 0; i < ranking.length; i++) {
+      const aId = ranking[i].participante.id;
+      const posAtual = i + 1;
+      const posAnt = rankingAnterior.findIndex(x => x.participante.id === aId) + 1;
+      const salto = posAnt - posAtual;
+      if (salto > maiorSalto) {
+        maiorSalto = salto;
+        escalandoApo = ranking[i].participante;
+      }
+    }
+  }
+
+  // --- Lanterninha ---
+  const lanterninha = ranking[ranking.length - 1];
+
   const maxPtsRealizado = calcularMaxPontosPossiveis(res);
   const maxPtsTotal = calcularMaxPontosTotais();
   const pctRealizado = maxPtsTotal > 0 ? ((maxPtsRealizado / maxPtsTotal) * 100).toFixed(1) : 0;
@@ -23,12 +91,18 @@ window.renderEstatisticas = function () {
   let h = "";
 
   // Cards de destaque
-  h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:12px">';
+  h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:12px">';
   h += _dCard("🏆", "Líder", melhorPts?.participante.apelido || melhorPts?.participante.nome || "—", melhorPts?.stats.total.toFixed(1) + " pts", "var(--dourado)");
-  h += _dCard("✓", "Mais Acertos de Resultados", melhorRes?.participante.apelido || melhorRes?.participante.nome || "—", melhorRes?.stats.acertos_resultado + " acertos", "#86efac");
-  h += _dCard("🎯", "Mais Placares Exatos", melhorExato?.participante.apelido || melhorExato?.participante.nome || "—", melhorExato?.stats.acertos_placar_exato + " exatos", "var(--verde-ok)");
+  h += _dCard("✓", "Mais Acertos", melhorRes?.participante.apelido || melhorRes?.participante.nome || "—", melhorRes?.stats.acertos_resultado + " acertos", "#86efac");
   h += _dCard("📈", "Pontos Possíveis", `${maxPtsRealizado}/${maxPtsTotal}`, pctRealizado + "% da Copa", "#60a5fa");
-  h += _dCard("⚽", "Jogos Realizados", jogosFeitos.length + "/" + ((window.SCHEDULE || []).length), ((jogosFeitos.length / (window.SCHEDULE || [{ id: 1 }]).length * 100).toFixed(0) + "% da Copa"), "var(--texto2)");
+  h += _dCard("⚽", "Jogos Feitos", jogosFeitos.length + "/" + ((window.SCHEDULE || []).length), ((jogosFeitos.length / (window.SCHEDULE || [{ id: 1 }]).length * 100).toFixed(0) + "%"), "var(--texto2)");
+  
+  // Novos Cards
+  h += _dCard("🦓", "Zebra de Ouro", melhorZebra?.apelido || melhorZebra?.nome || "—", zebraCount + " zebras domadas", "#fcd34d");
+  h += _dCard("💎", "Mestre dos Bônus", mestreBonus?.participante.apelido || mestreBonus?.participante.nome || "—", mestreBonus?.ptsBonus + " pts extras", "#c084fc");
+  h += _dCard("🧗", "Escalando", escalandoApo?.apelido || escalandoApo?.nome || "—", (maiorSalto > 0 ? "+" + maiorSalto : maiorSalto) + " posições", "#fb7185");
+  h += _dCard("🕯️", "Lanterninha", lanterninha?.participante.apelido || lanterninha?.participante.nome || "—", lanterninha?.stats.total.toFixed(1) + " pts", "#94a3b8");
+  
   h += '</div>';
 
   // Jogo mais e menos acertado
