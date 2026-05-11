@@ -162,6 +162,9 @@ function renderAdmin() {
 
   h += renderJogosComToggle(res, tg, true, null);
 
+  // Pódio automático (visível assim que FNL ou TPL tiverem resultado)
+  h += renderTabelaPodio(res, APP.bracket || {});
+
   // Log compacto
   const log = JSON.parse(localStorage.getItem("bolao_admin_log") || "[]");
   if (log.length) {

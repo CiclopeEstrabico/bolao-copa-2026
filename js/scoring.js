@@ -139,11 +139,11 @@ function calcularMaxPontosPossiveis(resultados, bracket) {
   const resT = resultados["TPL"];
   if (resF && resF.homeGoals !== undefined) {
     // Final já jogada: campeão e vice já podem ser acertados
-    max += (esp.primeiro_lugar || 15) + (esp.segundo_lugar || 10);
+    max += (esp.primeiro_lugar || 7) + (esp.segundo_lugar || 4);
   }
   if (resT && resT.homeGoals !== undefined) {
     // Disputa de 3º lugar já jogada
-    max += (esp.terceiro_lugar || 5);
+    max += (esp.terceiro_lugar || 2);
   }
 
   return Math.round(max * 10) / 10;
