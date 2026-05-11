@@ -234,7 +234,10 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
     .filter(j => res[j.id] && res[j.id].homeGoals !== undefined)
     .sort((a, b) => new Date(a.utc) - new Date(b.utc));
 
-  if (!jogosComRes.length)
+  const espOficiais = _extrairEspeciaisOficiais(res, APP.bracket || {});
+  const temEspeciais = !!(espOficiais.campeao || espOficiais.vice || espOficiais.terceiro);
+
+  if (!jogosComRes.length && !temEspeciais)
     return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum resultado oficial ainda.</div>';
 
   const series = aposFiltrados.map(a => {
@@ -253,6 +256,13 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
       }
       pontos.push(parseFloat(acumulado.toFixed(1)));
     });
+
+    if (temEspeciais) {
+      const { total_especiais } = calcularPontosEspeciais(a, espOficiais.campeao, espOficiais.vice, espOficiais.terceiro);
+      acumulado += total_especiais;
+      pontos.push(parseFloat(acumulado.toFixed(1)));
+    }
+
     return { nome: (a.apelido || a.nome || "?").substring(0, 14), cor, pontos };
   });
 
@@ -261,10 +271,10 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
   const nMatches = jogosComRes.length;
-  const nPoints = nMatches + 1; // Ponto zero + todos os jogos concluídos
+  const nPoints = series[0].pontos.length; 
   const maxPts = Math.max(1, ...series.map(s => Math.max(...s.pontos, 0)));
 
-  // i vai de 0 a nMatches
+  // i vai de 0 a nMatches (ou mais, caso existam especiais)
   function xPos(i) { return PAD.left + (i / (nPoints - 1)) * chartW; }
   function yPos(v) { return PAD.top + chartH - (v / maxPts) * chartH; }
 
@@ -279,15 +289,14 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
 
   const step = Math.max(1, Math.floor(nMatches / 8));
   // Começamos em i=1 para pular o rótulo do ponto zero e mostrar J1, J2...
-  for (let i = 1; i < nPoints; i += step) {
+  for (let i = 1; i <= nMatches; i += step) {
     const x = xPos(i).toFixed(1);
     svg += `<line x1="${x}" y1="${PAD.top}" x2="${x}" y2="${PAD.top+chartH}" stroke="var(--borda)" stroke-width="1" opacity="0.4"/>`;
     svg += `<text x="${x}" y="${PAD.top+chartH+14}" text-anchor="middle" font-size="10" fill="var(--texto2)">J${i}</text>`;
   }
-  // Garantir que o último rótulo apareça se o step pulá-lo
-  const lastIdx = nPoints - 1;
-  if (lastIdx > 0 && (lastIdx - 1) % step !== 0) {
-    const x = xPos(lastIdx).toFixed(1);
+  // Garantir que o último rótulo do jogo apareça se o step pulá-lo
+  if (nMatches > 0 && nMatches % step !== 0) {
+    const x = xPos(nMatches).toFixed(1);
     svg += `<text x="${x}" y="${PAD.top+chartH+14}" text-anchor="middle" font-size="10" fill="var(--texto2)">J${nMatches}</text>`;
   }
 
@@ -295,8 +304,9 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
     if (!s.pontos.length) continue;
     const pts = s.pontos.map((v, i) => `${xPos(i).toFixed(1)},${yPos(v).toFixed(1)}`).join(' ');
     svg += `<polyline points="${pts}" fill="none" stroke="${s.cor}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
-    const lastX = xPos(s.pontos.length-1);
-    const lastY = yPos(s.pontos[s.pontos.length-1]);
+    const lastIdx = s.pontos.length - 1;
+    const lastX = xPos(lastIdx);
+    const lastY = yPos(s.pontos[lastIdx]);
     svg += `<circle cx="${lastX.toFixed(1)}" cy="${lastY.toFixed(1)}" r="4" fill="${s.cor}" stroke="var(--fundo)" stroke-width="1.5"/>`;
     svg += `<text x="${(lastX+8).toFixed(1)}" y="${(lastY+4).toFixed(1)}" font-size="10" font-weight="700" fill="${s.cor}">${s.nome}</text>`;
   }
