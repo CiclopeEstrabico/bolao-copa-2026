@@ -104,6 +104,11 @@ window.renderRegras = function () {
       "Na Copa 2026 com 12 grupos, os 8 melhores 3ºs colocados avançam. O critério é: pontos → saldo de gols → gols marcados."],
     ["Todos veem os palpites dos outros?",
       "Sim! Na aba Compilação você vê os palpites de todos. Faz parte da diversão! 😄"],
+    ["Quais os critérios de DESEMPATE?",
+      "Caso dois ou mais apostadores terminem com a mesma pontuação, os critérios de desempate são:<br><br>" +
+      "1. <strong>Total de Placares Exatos</strong> (soma de acertos com bônus +3 e +5).<br>" +
+      "2. <strong>Total de Resultados Corretos</strong> (vitória/empate acertados).<br><br>" +
+      "Se o empate persistir após esses critérios, os apostadores dividem a mesma posição."],
   ];
   for (const [q, a] of faqs) {
     h += '<details style="background:var(--fundo2);border-radius:var(--radius-sm);overflow:hidden">';
