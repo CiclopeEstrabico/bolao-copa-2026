@@ -222,7 +222,7 @@ window.PROGNOSE = {
   },
 
   fecharModal: function () {
-    const ov = document.getElementById("prognose-overlay");
+    const ov = document.getElementById("modal-prog") || document.getElementById("prognose-overlay");
     if (ov) ov.classList.remove("aberto");
     document.body.style.overflow = "";
   },
