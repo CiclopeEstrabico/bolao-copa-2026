@@ -183,13 +183,23 @@ window.renderCompilacao = function () {
 };
 
 window.exportarCompilacaoJson = function () {
+  // ① Bloqueia exportação em modo simulação
+  if (APP.modoSimulacao) {
+    alert('⚠️ Você está em modo de simulação. Saia da simulação antes de exportar para não misturar dados simulados com resultados reais.');
+    return;
+  }
+
   const res = getResultados();
   const apos = APP.apostadores || [];
   const pals = APP.palpites || {};
+  const brk = APP.bracket || {};
+
+  // ② Jogos em ordem cronológica
+  const jogosOrdenados = (window.SCHEDULE || []).sort((a, b) => new Date(a.utc) - new Date(b.utc));
 
   const ranking = apos.map(a => {
     const st = window.calcularPontosApostador(pals[a.id] || {}, res, a, {});
-    
+
     // Filtra palpites para não vazar no JSON se a fase ainda estiver aberta e sem resultado
     const palpitesFiltrados = {};
     const meusPals = pals[a.id] || {};
@@ -200,6 +210,7 @@ window.exportarCompilacaoJson = function () {
       }
     }
 
+    // ③ Não exportar o token do apostador
     return {
       id: a.id,
       nome: a.nome,
@@ -212,11 +223,24 @@ window.exportarCompilacaoJson = function () {
     };
   }).sort((a, b) => b.pts - a.pts);
 
-  const brk = APP.bracket || {};
+  // ④ Resultados com nomes reais dos times (resolvidos via bracket)
+  const resultadosExport = {};
+  for (const jogo of jogosOrdenados) {
+    const r = res[jogo.id];
+    if (!r || r.homeGoals === undefined) continue;
+    const hC = brk[jogo.id]?.home || jogo.home;
+    const aC = brk[jogo.id]?.away || jogo.away;
+    resultadosExport[jogo.id] = {
+      ...r,
+      home: window.TEAMS_BY_CODE?.[hC]?.name || hC,
+      away: window.TEAMS_BY_CODE?.[aC]?.name || aC,
+    };
+  }
+
   const exportData = {
     timestamp: new Date().toISOString(),
     status_apostas: APP.configStatus?.apostas_liberadas ? "LIBERADAS" : "TRAVADAS",
-    resultados_oficiais: res,
+    resultados_oficiais: resultadosExport,
     especiais_oficiais: {
       campeao: brk.campeao || "",
       vice: brk.vice || "",
@@ -235,10 +259,19 @@ window.exportarCompilacaoJson = function () {
 };
 
 window.exportarCompilacaoCsv = function () {
+  // ① Bloqueia exportação em modo simulação
+  if (APP.modoSimulacao) {
+    alert('⚠️ Você está em modo de simulação. Saia da simulação antes de exportar para não misturar dados simulados com resultados reais.');
+    return;
+  }
+
   const res = getResultados();
   const apos = APP.apostadores || [];
   const pals = APP.palpites || {};
-  const jogos = window.SCHEDULE || [];
+  const brk = APP.bracket || {};
+
+  // ② Ordem cronológica
+  const jogos = (window.SCHEDULE || []).slice().sort((a, b) => new Date(a.utc) - new Date(b.utc));
 
   if (!apos.length || !jogos.length) return;
 
@@ -249,6 +282,7 @@ window.exportarCompilacaoCsv = function () {
 
   let csvContent = "\uFEFF"; // BOM para forçar UTF-8 no Excel
 
+  // ③ Sem token na lista de cabeçalho
   const headers = ["ID Jogo", "Fase", "Data", "Mandante", "Visitante", "Resultado Oficial"];
   for (const a of ranking) {
     headers.push(`"${a.nome} (${a.apelido || ''})"`);
@@ -259,14 +293,22 @@ window.exportarCompilacaoCsv = function () {
     const r = res[jogo.id];
     const temRes = r && r.homeGoals !== undefined;
 
-    const hN = window.TEAMS_BY_CODE[jogo.home]?.name || jogo.home;
-    const aN = window.TEAMS_BY_CODE[jogo.away]?.name || jogo.away;
+    // ④ Nomes reais dos times — resolve via bracket (cobre fases eliminatórias)
+    const hC = brk[jogo.id]?.home || jogo.home;
+    const aC = brk[jogo.id]?.away || jogo.away;
+    const hN = window.TEAMS_BY_CODE?.[hC]?.name || hC;
+    const aN = window.TEAMS_BY_CODE?.[aC]?.name || aC;
     const dataHora = window.formatarDataBRT ? window.formatarDataBRT(jogo.utc, false) : jogo.utc;
 
+    // ⑤ Formato de resultado: "1-1 (PEN) 5-4" quando há pênaltis
     let resOficial = "";
     if (temRes) {
-      resOficial = `${r.homeGoals}x${r.awayGoals}`;
-      if (r.foi_penaltis) resOficial += " (PEN)";
+      resOficial = `${r.homeGoals}-${r.awayGoals}`;
+      if (r.foi_penaltis) {
+        const ph = r.penaltis_home ?? 0;
+        const pa = r.penaltis_away ?? 0;
+        resOficial += ` (PEN) ${ph}-${pa}`;
+      }
     }
 
     const row = [
@@ -281,7 +323,6 @@ window.exportarCompilacaoCsv = function () {
     for (const a of ranking) {
       const p = pals[a.id]?.[jogo.id];
       if (p && p.homeGoals !== undefined) {
-        // Regra de visibilidade no CSV
         const podeVer = temRes || !jogoAceita(jogo.id);
         row.push(podeVer ? `${p.homeGoals}x${p.awayGoals}` : "🔒");
       } else {
@@ -293,17 +334,15 @@ window.exportarCompilacaoCsv = function () {
   }
 
   // --- Linhas de Especiais no CSV ---
-  const brk = APP.bracket || {};
   const espOf = { campeao: brk.campeao, vice: brk.vice, terceiro: brk.terceiro };
   const labelsEsp = { campeao: "🏆 Campeão", vice: "🥈 Vice", terceiro: "🥉 3º Lugar" };
 
   for (const key of ["campeao", "vice", "terceiro"]) {
-    const nomeOf = window.TEAMS_BY_CODE[espOf[key]]?.name || "";
+    const nomeOf = window.TEAMS_BY_CODE?.[espOf[key]]?.name || "";
     const row = [ "ESP", "especial", "", `"${labelsEsp[key]}"`, "", `"${nomeOf}"` ];
     for (const a of ranking) {
       const palE = (a.especiais && a.especiais[key]) || "";
-      const nomePal = window.TEAMS_BY_CODE[palE]?.name || "";
-      // Visibilidade: se tem resultado oficial OU se as apostas finais travaram
+      const nomePal = window.TEAMS_BY_CODE?.[palE]?.name || "";
       const podeVer = espOf[key] || !jogoAceita("final");
       row.push(podeVer ? `"${nomePal}"` : "🔒");
     }

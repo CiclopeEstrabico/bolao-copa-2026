@@ -60,7 +60,7 @@ window.renderRegras = function () {
   h += '</div>';
 
   // Multiplicadores
-  const fatores = cfg?.fatores_fase || { grupos: 1, "32avos": 1.2, oitavas: 1.4, quartas: 1.6, semis: 1.8, terceiro: 1.8, final: 2.0 };
+  const fatores = cfg?.fatores_fase || { grupos: 1.0, "32avos": 1.2, oitavas: 1.4, quartas: 1.6, semis: 1.8, terceiro: 1.8, final: 2.0 };
   h += '<div style="margin-top:14px"><div style="font-size:.72rem;font-weight:700;color:var(--texto2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">× Multiplicador por Fase</div>';
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px">';
   for (const [nome, id] of [["Grupos", "grupos"], ["32 Avos", "32avos"], ["Oitavas", "oitavas"], ["Quartas", "quartas"], ["Semis", "semis"], ["3° Lugar", "terceiro"], ["Final", "final"]]) {
