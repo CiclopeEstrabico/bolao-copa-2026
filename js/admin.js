@@ -106,12 +106,12 @@ function _renderLogin() {
   const main = document.querySelector(".aba-conteudo");
   if (!main) return;
   main.innerHTML =
-    '<div class="card" style="max-width:340px;margin:40px auto">' +
+    '<div class="card" style="max-width:340px;margin:40px auto;text-align:center">' +
       '<div class="card-titulo">🔐 Acesso Admin</div>' +
-      '<p style="font-size:.85rem;color:var(--texto2);margin-bottom:16px">' +
+      '<p style="font-size:.85rem;color:var(--texto2);margin-bottom:20px">' +
         'Faça login com a conta Google autorizada.' +
       '</p>' +
-      '<button class="btn btn-primario" onclick="loginAdmin()">🔑 Entrar com Google</button>' +
+      '<button class="btn btn-primario" style="margin:0 auto;display:inline-flex;align-items:center;gap:8px" onclick="loginAdmin()">🔑 Entrar com Google</button>' +
     '</div>';
 }
 
