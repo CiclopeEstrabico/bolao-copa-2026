@@ -84,17 +84,13 @@ window.renderEstatisticas = function () {
   // --- Lanterninha ---
   const lanterninha = ranking[ranking.length - 1];
 
-  const maxPtsRealizado = calcularMaxPontosPossiveis(res);
-  const maxPtsTotal = calcularMaxPontosTotais();
-  const pctRealizado = maxPtsTotal > 0 ? ((maxPtsRealizado / maxPtsTotal) * 100).toFixed(1) : 0;
-
   let h = "";
 
   // Cards de destaque
   h += `<style>
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 6px;
       margin-bottom: 12px;
     }
@@ -125,14 +121,12 @@ window.renderEstatisticas = function () {
   h += _dCard("🏆", "Líder", melhorPts?.participante.apelido || melhorPts?.participante.nome || "—", melhorPts?.stats.total.toFixed(1) + " pts", "var(--dourado)");
   h += _dCard("🔮", "Vidente", melhorRes?.participante.apelido || melhorRes?.participante.nome || "—", melhorRes?.stats.acertos_resultado + " acertos de resultados", "#86efac");
   h += _dCard("🎯", "Atirador de Elite", melhorExato?.participante.apelido || melhorExato?.participante.nome || "—", melhorExato?.stats.acertos_placar_exato + " acertos de placar", "var(--verde-ok)");
-  
-  h += _dCard("📈", "Pontos Possíveis", `${maxPtsRealizado}/${maxPtsTotal}`, pctRealizado + "% da Copa", "#60a5fa");
-  h += _dCard("⚽", "Jogos Feitos", jogosFeitos.length + "/" + ((window.SCHEDULE || []).length), ((jogosFeitos.length / (window.SCHEDULE || [{ id: 1 }]).length * 100).toFixed(0) + "%"), "var(--texto2)");
   h += _dCard("🦓", "Zebra de Ouro", melhorZebra?.apelido || melhorZebra?.nome || "—", zebraCount + " zebras domadas", "#fcd34d");
   
   h += _dCard("💎", "Mestre dos Bônus", mestreBonus?.participante.apelido || mestreBonus?.participante.nome || "—", mestreBonus?.ptsBonus + " pts extras", "#c084fc");
   h += _dCard("🧗", "Escalando", escalandoApo?.apelido || escalandoApo?.nome || "—", (maiorSalto > 0 ? "+" + maiorSalto : (maiorSalto === -999 ? "—" : maiorSalto)) + " posições", "#fb7185");
   h += _dCard("🕯️", "Lanterninha", lanterninha?.participante.apelido || lanterninha?.participante.nome || "—", lanterninha?.stats.total.toFixed(1) + " pts", "#94a3b8");
+  h += _dCard("⚽", "Jogos Feitos", jogosFeitos.length + "/" + ((window.SCHEDULE || []).length), ((jogosFeitos.length / (window.SCHEDULE || [{ id: 1 }]).length * 100).toFixed(0) + "%"), "var(--texto2)");
   h += '</div>';
 
   // Jogo mais e menos acertado
