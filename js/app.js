@@ -131,17 +131,19 @@ async function gravarPalpite(apostadorId, gameId, homeGoals, awayGoals, token) {
 // ---- Modo Simulacao ---------------------------------------------------------
 function ativarSimulacao() {
   APP.modoSimulacao = true;
-  APP.resultadosSim = JSON.parse(JSON.stringify(APP.resultados));
+  APP.resultadosSim = {}; // apenas inputs do usuário — oficiais ficam em APP.resultados
   atualizarBracket(); renderAbaAtiva();
   document.getElementById("banner-simulacao")?.classList.remove("hidden");
-  if(document.getElementById("sim-icon")) document.getElementById("sim-icon").style.display = 'block';
+  const btn = document.getElementById("btn-simulacao");
+  if (btn) btn.style.display = 'flex';
 }
 function desativarSimulacao() {
   APP.modoSimulacao = false;
   APP.resultadosSim = null;
   atualizarBracket(); renderAbaAtiva();
   document.getElementById("banner-simulacao")?.classList.add("hidden");
-  if(document.getElementById("sim-icon")) document.getElementById("sim-icon").style.display = 'none';
+  const btn = document.getElementById("btn-simulacao");
+  if (btn) btn.style.display = 'none';
 }
 function simularResultado(gameId, hg, ag, foiPen, penVenc, ph, pa) {
   if (!APP.modoSimulacao) ativarSimulacao();
@@ -150,7 +152,15 @@ function simularResultado(gameId, hg, ag, foiPen, penVenc, ph, pa) {
   atualizarBracket(); renderAbaAtiva();
 }
 function getResultados() {
-  return (APP.modoSimulacao && APP.resultadosSim) ? APP.resultadosSim : APP.resultados;
+  if (APP.modoSimulacao && APP.resultadosSim) {
+    // merge: oficiais primeiro, simulados sobrepõem apenas os jogos digitados
+    return Object.assign({}, APP.resultados, APP.resultadosSim);
+  }
+  return APP.resultados;
+}
+// Retorna true SOMENTE para jogos que o usuário digitou na simulação (não oficiais)
+function jogoEhSimulado(gameId) {
+  return APP.modoSimulacao && APP.resultadosSim != null && APP.resultadosSim[gameId]?.simulado === true;
 }
 
 // ---- Bracket ----------------------------------------------------------------

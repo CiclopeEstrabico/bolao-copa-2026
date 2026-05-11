@@ -17,10 +17,10 @@
         onerror="this.textContent='🏆'">
       <div class="header-titulo">Bolão Copa 2026<small>Aeronáutica · 48 Seleções · 104 Jogos</small></div>
     </div>
-    <div id="sim-icon"
-      style="display:none; color:var(--dourado); font-size:1.6rem; text-shadow:0 0 10px rgba(234,179,8,0.5); padding-right:10px"
-      title="Simulação Ativa">⚙️</div>
+    <div id="sim-icon" style="display:none"></div>
   </header>
+
+  <button id="btn-simulacao" class="hidden" onclick="desativarSimulacao()" style="position:fixed;top:12px;right:12px;z-index:1000;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a1a1a;font-weight:900;font-size:0.82rem;padding:8px 14px;border-radius:999px;border:2px solid #fbbf24;box-shadow:0 0 16px rgba(245,158,11,0.6);cursor:pointer;display:none;align-items:center;gap:6px;letter-spacing:0.05em;text-transform:uppercase">🎭 <span style="color:#7c3aed;font-weight:900">SIMULAÇÃO</span> <span style="font-size:.65rem;opacity:.8">✕ Sair</span></button>
 
   <div class="tabs-wrap">
     <nav class="tabs" role="tablist">

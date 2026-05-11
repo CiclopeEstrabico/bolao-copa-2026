@@ -22,7 +22,10 @@ window._onInputPlacar = function(id) {
   
   if (!isNaN(hg) && !isNaN(ag)) {
     _palpitesLocais[id] = { homeGoals: hg, awayGoals: ag };
-    atualizarMiniTabelasAposta();
+
+    // Debounce para o re-render visual — não bloqueia o foco do teclado
+    clearTimeout(window._miniUpdateTimer);
+    window._miniUpdateTimer = setTimeout(() => atualizarMiniTabelasAposta(), 400);
     
     clearTimeout(window._saveTimerAposta);
     window._saveTimerAposta = setTimeout(() => salvarTodosPalpites(true), 2000);
@@ -411,7 +414,16 @@ async function salvarTodosPalpites(silencioso = false) {
   }
   await Promise.all(promessas);
   if (!silencioso) {
-    const btn = document.querySelector(".btn-primario");
-    if (btn) { const t = btn.textContent; btn.textContent = "✓ Salvo!"; setTimeout(() => btn.textContent = t, 1500); }
+    let toast = document.getElementById('toast-salvo');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'toast-salvo';
+      toast.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;font-weight:800;font-size:.9rem;padding:10px 24px;border-radius:999px;z-index:9999;box-shadow:0 4px 15px rgba(0,0,0,0.4);transition:opacity 0.4s ease;pointer-events:none;white-space:nowrap';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = '✓ Palpites salvos!';
+    toast.style.opacity = '1';
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => { toast.style.opacity = '0'; }, 2200);
   }
 }

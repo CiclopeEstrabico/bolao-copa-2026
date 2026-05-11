@@ -56,10 +56,12 @@ window.renderCompilacao = function () {
     const hC = b.home || jogo.home; const aC = b.away || jogo.away;
     const hN = getShortName(hC);
     const aN = getShortName(aC);
+    const hSigla = getSigla(hC);
+    const aSigla = getSigla(aC);
     const dataHora = formatarDataBRT(jogo.utc, false);
     h += '<tr><td class="col-jogo" style="position:sticky;left:0;background:var(--card2);padding:6px 8px;z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">';
     h += '<div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">' + dataHora + '</div>';
-    h += '<div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">' + htmlBandeira(hC, 14) + ' <span class="compilacao-time-nome" title="' + hN + '">' + hN + '</span> <span style="color:var(--texto2)">×</span> <span class="compilacao-time-nome" title="' + aN + '">' + aN + '</span> ' + htmlBandeira(aC, 14) + '</div></td>';
+    h += '<div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">' + htmlBandeira(hC, 14) + ' <span class="compilacao-time-nome comp-sigla" title="' + hN + '">' + hSigla + '</span> <span style="color:var(--texto2)">×</span> <span class="compilacao-time-nome comp-sigla" title="' + aN + '">' + aSigla + '</span> ' + htmlBandeira(aC, 14) + '</div></td>';
     // Resultado oficial
     if (temRes) {
       let resHtml = r.homeGoals + 'x' + r.awayGoals;
@@ -77,7 +79,8 @@ window.renderCompilacao = function () {
       if (!p || p.homeGoals === undefined) { h += '<td class="celula-sem">·</td>'; continue; }
       
       // REGRA DE VISIBILIDADE: só mostra se tem resultado OU se a fase está travada (não aceita mais apostas)
-      const podeVer = temRes || !jogoAceita(jogo.id);
+      const apostasAbertas = jogoAceita(jogo.id);
+      const podeVer = (temRes && !jogoEhSimulado(jogo.id)) || (!temRes && !apostasAbertas);
       
       if (!podeVer) {
         h += '<td class="celula-futuro" style="color:var(--texto2);opacity:0.3" title="Palpite oculto até o fechamento das apostas">🔒</td>';

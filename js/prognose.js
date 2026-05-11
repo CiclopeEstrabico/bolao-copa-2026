@@ -266,7 +266,17 @@ window.PROGNOSE = {
     const isNeutral = jogoInfo ? (jogoInfo.pais !== hC && jogoInfo.pais !== aC) : true;
     const c = this.calcular(hC, aC, isNeutral);
     const temRes = res[gameId] && res[gameId].homeGoals !== undefined;
-    const podeVer = temRes || !jogoAceita(gameId);
+    const apostasAbertas = jogoAceita(gameId);
+    const podeVer = temRes || !apostasAbertas;
+
+    // Simulação: bloquear se o jogo foi digitado pelo usuário E apostas ainda abertas
+    if (jogoEhSimulado(gameId) && apostasAbertas) {
+      return '<div style="text-align:center;padding:30px 20px;background:rgba(0,0,0,0.2);border-radius:10px;margin-bottom:15px;border:1px dashed var(--borda)">' +
+        '<div style="font-size:2rem;margin-bottom:12px">🎭</div>' +
+        '<div style="font-size:.9rem;font-weight:700;color:var(--dourado)">Simulação Ativa</div>' +
+        '<div style="font-size:.75rem;color:var(--texto2);margin-top:6px;max-width:260px;margin-left:auto;margin-right:auto">Estatísticas e prognósticos não são revelados para jogos simulados com apostas ainda abertas.</div>' +
+        '</div>';
+    }
 
     const fmt = (v) => (v * 100).toFixed(1) + "%";
     let h = "";
@@ -328,7 +338,16 @@ window.PROGNOSE = {
   _renderPalpites: function (gameId, s, hName, aName) {
     const res = getResultados();
     const temRes = res[gameId] && res[gameId].homeGoals !== undefined;
-    const podeVer = temRes || !jogoAceita(gameId);
+    const apostasAbertas = jogoAceita(gameId);
+    const podeVer = temRes || !apostasAbertas;
+
+    // Simulação: bloquear se o jogo foi digitado pelo usuário E apostas ainda abertas
+    if (jogoEhSimulado(gameId) && apostasAbertas) {
+      return '<div style="text-align:center;padding:40px 20px;color:var(--texto2)">' +
+             '<div style="font-size:2rem;margin-bottom:10px">🎭</div>' +
+             '<div style="font-weight:700;color:var(--dourado)">Simulação Ativa</div>' +
+             '<div style="font-size:.75rem;margin-top:5px">Apostas dos outros participantes não são reveladas para jogos simulados com apostas ainda abertas.</div></div>';
+    }
 
     if (!podeVer) {
       return '<div style="text-align:center;padding:40px 20px;color:var(--texto2)">' +

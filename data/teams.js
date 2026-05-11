@@ -102,5 +102,22 @@ window.getShortName = function (code) {
   return window.TEAM_ALIASES[team.name] || team.name;
 };
 
+window.TEAM_SIGLA = {
+  MEX: "MEX", RSA: "AFS", KOR: "COR", CZE: "TCH", CAN: "CAN", BIH: "BOS",
+  QAT: "QAT", SUI: "SUI", BRA: "BRA", MAR: "MAR", HAI: "HAI", SCO: "ESC",
+  USA: "EUA", PAR: "PAR", AUS: "ATL", TUR: "TUR", GER: "ALE", CUW: "CUR",
+  CIV: "CDM", ECU: "ECU", NED: "HOL", JPN: "JAP", SWE: "SUE", TUN: "TUN",
+  BEL: "BEL", EGY: "EGI", IRN: "IRN", NZL: "NZL", ESP: "ESP", CPV: "CBV",
+  KSA: "ARS", URU: "URU", FRA: "FRA", SEN: "SEN", IRQ: "IRQ", NOR: "NOR",
+  ARG: "ARG", ALG: "ALG", AUT: "AUT", JOR: "JOR", POR: "POR", COD: "CON",
+  UZB: "UZB", COL: "COL", ENG: "ING", CRO: "CRO", GHA: "GAN", PAN: "PAN"
+};
+
+// Retorna sigla de 3 letras para mobile, null para desktop
+window.getSigla = function (code) {
+  if (!code) return code;
+  return window.TEAM_SIGLA[code] || code.substring(0, 3).toUpperCase();
+};
+
 // Lookup rápido por código
 window.TEAMS_BY_CODE = Object.fromEntries(TEAMS.map(t => [t.code, t]));
