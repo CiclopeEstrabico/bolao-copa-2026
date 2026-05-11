@@ -20,18 +20,18 @@ window.renderEstatisticas = function () {
   const zebraScores = {};
   for (const jogo of jogosFeitos) {
     const r = res[jogo.id];
-    let vH=0, vD=0, vA=0, total=0;
+    let vH = 0, vD = 0, vA = 0, total = 0;
     for (const aId of Object.keys(pals)) {
       const p = pals[aId]?.[jogo.id];
       if (!p || p.homeGoals === undefined) continue;
       total++;
-      const hg=parseInt(p.homeGoals), ag=parseInt(p.awayGoals);
+      const hg = parseInt(p.homeGoals), ag = parseInt(p.awayGoals);
       if (hg > ag) vH++; else if (hg < ag) vA++; else vD++;
     }
     if (total === 0) continue;
     const resReal = r.homeGoals > r.awayGoals ? "H" : (r.homeGoals < r.awayGoals ? "A" : "D");
     const pctGanha = (resReal === "H" ? vH : (resReal === "A" ? vA : vD)) / total;
-    
+
     if (pctGanha < 0.20) { // Zebra!
       for (const a of apos) {
         const p = pals[a.id]?.[jogo.id];
@@ -41,7 +41,7 @@ window.renderEstatisticas = function () {
       }
     }
   }
-  const melhorZebraId = Object.entries(zebraScores).sort((a,b) => b[1] - a[1])[0]?.[0];
+  const melhorZebraId = Object.entries(zebraScores).sort((a, b) => b[1] - a[1])[0]?.[0];
   const melhorZebra = apos.find(a => a.id === melhorZebraId);
   const zebraCount = zebraScores[melhorZebraId] || 0;
 
@@ -51,24 +51,24 @@ window.renderEstatisticas = function () {
     const cfg = window.CONFIG?.pontuacao || {};
     // Calculamos apenas os pontos vindos de bônus
     const ptsBonus = (s.acertos_placar_exato * (cfg.bonus_placar_exato_baixo || 3)) +
-                     (s.acertos_placar_alto * (cfg.bonus_placar_exato_alto || 5)) +
-                     (s.acertos_bonus1 * (cfg.bonus_1_gol_diferenca || 1));
+      (s.acertos_placar_alto * (cfg.bonus_placar_exato_alto || 5)) +
+      (s.acertos_bonus1 * (cfg.bonus_1_gol_diferenca || 1));
     return { ...r, ptsBonus };
-  }).sort((a,b) => b.ptsBonus - a.ptsBonus);
+  }).sort((a, b) => b.ptsBonus - a.ptsBonus);
   const mestreBonus = bonusRanking[0];
 
   // --- Escalando (Últimos 5 jogos) ---
   const totalJogos = jogosFeitos.length;
   let escalandoApo = null, maiorSalto = -999;
   if (totalJogos >= 5) {
-    const jogosOrdenados = [...jogosFeitos].sort((a,b) => new Date(a.utc) - new Date(b.utc));
+    const jogosOrdenados = [...jogosFeitos].sort((a, b) => new Date(a.utc) - new Date(b.utc));
     const ultimos5Ids = jogosOrdenados.slice(-5).map(j => j.id);
     const resAnterior = {};
     for (const [id, val] of Object.entries(res)) {
       if (!ultimos5Ids.includes(id)) resAnterior[id] = val;
     }
     const rankingAnterior = gerarRanking(pals, resAnterior, apos, esp);
-    
+
     for (let i = 0; i < ranking.length; i++) {
       const aId = ranking[i].participante.id;
       const posAtual = i + 1;
@@ -122,7 +122,7 @@ window.renderEstatisticas = function () {
   h += _dCard("🔮", "Vidente", melhorRes?.participante.apelido || melhorRes?.participante.nome || "—", melhorRes?.stats.acertos_resultado + " acertos de resultados", "#86efac");
   h += _dCard("🎯", "Atirador de Elite", melhorExato?.participante.apelido || melhorExato?.participante.nome || "—", melhorExato?.stats.acertos_placar_exato + " acertos de placar", "var(--verde-ok)");
   h += _dCard("🦓", "Zebra de Ouro", melhorZebra?.apelido || melhorZebra?.nome || "—", zebraCount + " zebras domadas", "#fcd34d");
-  
+
   h += _dCard("💎", "Mestre dos Bônus", mestreBonus?.participante.apelido || mestreBonus?.participante.nome || "—", mestreBonus?.ptsBonus + " pts extras", "#c084fc");
   h += _dCard("🧗", "Escalando", escalandoApo?.apelido || escalandoApo?.nome || "—", (maiorSalto > 0 ? "+" + maiorSalto : (maiorSalto === -999 ? "—" : maiorSalto)) + " posições", "#fb7185");
   h += _dCard("🕯️", "Lanterninha", lanterninha?.participante.apelido || lanterninha?.participante.nome || "—", lanterninha?.stats.total.toFixed(1) + " pts", "#94a3b8");
@@ -192,18 +192,18 @@ window.renderEstatisticas = function () {
   h += '<div class="compilacao-wrap"><table class="compilacao-table" style="min-width:1000px; font-size:.7rem">';
   h += '<thead><tr>';
   h += '<th class="stat-col-jogo" style="text-align:left;position:sticky;left:0;background:var(--fundo2);z-index:2;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Jogo</th>';
-  h += '<th class="col-resultado">Res.</th>';
-  h += '<th title="Apostas no Time 1">Vanc. T1</th>';
-  h += '<th title="Apostas no Empate">Empate</th>';
-  h += '<th title="Apostas no Time 2">Vanc. T2</th>';
-  h += '<th title="Placar Mais Chutado">Top Placar</th>';
-  h += '<th title="Acertos de Resultado">Ac. Res.</th>';
-  h += '<th title="Acertos de Placar Exato">Ac. Plac.</th>';
+  h += '<th class="col-resultado">Resultado</th>';
+  h += '<th>Apostas T1</th>';
+  h += '<th>Apostas Emp</th>';
+  h += '<th>Apostas T2</th>';
+  h += '<th>Top Placar</th>';
+  h += '<th>Acertos Res</th>';
+  h += '<th>Acertos Plac</th>';
   h += '<th style="width:12px;background:var(--fundo);border-left:1px solid var(--borda);border-right:1px solid var(--borda)"></th>';
   h += '<th title="Elo T1">Elo T1</th>';
   h += '<th title="Elo T2">Elo T2</th>';
-  h += '<th title="xG T1">xG T1</th>';
-  h += '<th title="xG T2">xG T2</th>';
+  h += '<th title="xGols T1">xGols T1</th>';
+  h += '<th title="xGols T2">xGols T2</th>';
   h += '<th>Prob T1</th>';
   h += '<th>Prob E</th>';
   h += '<th>Prob T2</th>';
@@ -261,7 +261,7 @@ window.renderEstatisticas = function () {
     h += `<td class="stat-col-jogo" style="text-align:left;position:sticky;left:0;background:var(--card2);padding:6px 8px;z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">
             <div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">${formatarDataBRT(jogo.utc, false)}</div>
             <div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">
-              ${htmlBandeira(hC,14)} <span class="stat-time-nome">${hName}</span> <span style="color:var(--texto2)">×</span> <span class="stat-time-nome">${aName}</span> ${htmlBandeira(aC,14)}
+              ${htmlBandeira(hC, 14)} <span class="stat-time-nome">${hName}</span> <span style="color:var(--texto2)">×</span> <span class="stat-time-nome">${aName}</span> ${htmlBandeira(aC, 14)}
             </div>
           </td>`;
 
@@ -347,8 +347,8 @@ window.renderHtH = function () {
     const b = APP.bracket?.[jogo.id] || {}; const hC = b.home || jogo.home; const aC = b.away || jogo.away;
     const cor1 = v1 > v2 ? "var(--verde-ok)" : v1 < v2 ? "#f87171" : "var(--texto2)";
     const cor2 = v2 > v1 ? "var(--verde-ok)" : v2 < v1 ? "#f87171" : "var(--texto2)";
-    rows += '<tr><td class="stat-col-jogo" style="text-align:left;font-size:.73rem;position:sticky;left:0;background:var(--fundo);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">'+
-      '<div style="display:flex;align-items:center;gap:4px;width:100%"><span class="stat-time-nome">'+getShortName(hC)+'</span> <span style="color:var(--texto2)">×</span> <span class="stat-time-nome">'+getShortName(aC)+'</span></div></td>'+
+    rows += '<tr><td class="stat-col-jogo" style="text-align:left;font-size:.73rem;position:sticky;left:0;background:var(--fundo);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">' +
+      '<div style="display:flex;align-items:center;gap:4px;width:100%"><span class="stat-time-nome">' + getShortName(hC) + '</span> <span style="color:var(--texto2)">×</span> <span class="stat-time-nome">' + getShortName(aC) + '</span></div></td>' +
       '<td style="font-size:.72rem">' + r.homeGoals + '×' + r.awayGoals + '</td>' +
       '<td style="color:' + cor1 + ';font-weight:700">' + (p1 ? p1.homeGoals + '×' + p1.awayGoals + ' (' + v1 + 'pts)' : '—') + '</td>' +
       '<td style="color:' + cor2 + ';font-weight:700">' + (p2 ? p2.homeGoals + '×' + p2.awayGoals + ' (' + v2 + 'pts)' : '—') + '</td></tr>';
@@ -375,10 +375,10 @@ function _dCard(icon, label, nome, sub, cor) {
 
 function _jogoStatRow(hC, aC, r, acertos, total, cor) {
   const pct = total ? Math.round(acertos / total * 100) : 0;
-  return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0">'+
-    htmlBandeira(hC,16)+' <span class="stat-time-nome">'+getShortName(hC)+'</span>'+
-    '<span style="font-size:.72rem;color:var(--texto2);font-weight:700">'+r.homeGoals+'×'+r.awayGoals+'</span>'+
-    htmlBandeira(aC,16)+' <span class="stat-time-nome">'+getShortName(aC)+'</span>'+
+  return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0">' +
+    htmlBandeira(hC, 16) + ' <span class="stat-time-nome">' + getShortName(hC) + '</span>' +
+    '<span style="font-size:.72rem;color:var(--texto2);font-weight:700">' + r.homeGoals + '×' + r.awayGoals + '</span>' +
+    htmlBandeira(aC, 16) + ' <span class="stat-time-nome">' + getShortName(aC) + '</span>' +
     '<div style="flex:1;background:var(--fundo2);border-radius:3px;height:6px;margin:0 6px">' +
     '<div style="width:' + pct + '%;height:100%;background:' + cor + ';border-radius:3px"></div></div>' +
     '<span style="font-size:.7rem;color:' + cor + ';font-weight:700;min-width:40px;text-align:right">' + acertos + '/' + total + '</span></div>';
