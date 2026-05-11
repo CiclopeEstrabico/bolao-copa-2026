@@ -189,28 +189,28 @@ window.renderEstatisticas = function () {
 
   // Resumo Avançado de Todos os Jogos
   h += '<div class="card"><div class="card-titulo">📈 Estatísticas Avançadas por Jogo</div>';
-  h += '<div class="compilacao-wrap"><table class="compilacao-table" style="min-width:1400px; font-size:.72rem">';
+  h += '<div class="compilacao-wrap"><table class="compilacao-table" style="min-width:1000px; font-size:.7rem">';
   h += '<thead><tr>';
   h += '<th class="stat-col-jogo" style="text-align:left;position:sticky;left:0;background:var(--fundo2);z-index:2;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Jogo</th>';
-  h += '<th class="col-resultado">Resultado</th>';
-  h += '<th>Apostas Time 1</th>';
-  h += '<th>Apostas Empate</th>';
-  h += '<th>Apostas Time 2</th>';
-  h += '<th>Placar Mais Chutado</th>';
-  h += '<th>Acertos Result.</th>';
-  h += '<th>Acertos Placar</th>';
-  h += '<th style="width:20px;background:var(--fundo);border-left:1px solid var(--borda);border-right:1px solid var(--borda)"></th>';
-  h += '<th title="Elo do Modelo">Elo T1</th>';
-  h += '<th title="Elo do Modelo">Elo T2</th>';
-  h += '<th title="Gols Esperados">xG T1</th>';
-  h += '<th title="Gols Esperados">xG T2</th>';
+  h += '<th class="col-resultado">Res.</th>';
+  h += '<th title="Apostas no Time 1">Vanc. T1</th>';
+  h += '<th title="Apostas no Empate">Empate</th>';
+  h += '<th title="Apostas no Time 2">Vanc. T2</th>';
+  h += '<th title="Placar Mais Chutado">Top Placar</th>';
+  h += '<th title="Acertos de Resultado">Ac. Res.</th>';
+  h += '<th title="Acertos de Placar Exato">Ac. Plac.</th>';
+  h += '<th style="width:12px;background:var(--fundo);border-left:1px solid var(--borda);border-right:1px solid var(--borda)"></th>';
+  h += '<th title="Elo T1">Elo T1</th>';
+  h += '<th title="Elo T2">Elo T2</th>';
+  h += '<th title="xG T1">xG T1</th>';
+  h += '<th title="xG T2">xG T2</th>';
   h += '<th>Prob T1</th>';
-  h += '<th>Prob Emp</th>';
+  h += '<th>Prob E</th>';
   h += '<th>Prob T2</th>';
   h += '</tr></thead><tbody>';
 
-  const formatPct = (val, tot) => tot > 0 ? `<div style="font-size:.65rem;color:var(--texto2)">${((val / tot) * 100).toFixed(1)}%</div>` : '';
-  const formatNumPct = (val, tot, color = "var(--texto)") => `<div style="color:${color};font-weight:700">${val}</div>` + formatPct(val, tot);
+  const formatPct = (val, tot) => tot > 0 ? `<div style="font-size:.6rem;color:var(--texto2);margin-top:-2px;line-height:1">${((val / tot) * 100).toFixed(0)}%</div>` : '';
+  const formatNumPct = (val, tot, color = "var(--texto)") => `<div style="color:${color};font-weight:700;line-height:1">${val}</div>` + formatPct(val, tot);
 
   for (const jogo of (window.SCHEDULE || [])) {
     const b = APP.bracket?.[jogo.id] || {};
