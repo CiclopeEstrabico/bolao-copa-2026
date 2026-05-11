@@ -263,14 +263,12 @@ select{appearance:none;cursor:pointer}
   .compilacao-time-nome:first-of-type,.stat-time-nome:first-of-type{text-align:left}
   .compilacao-time-nome:last-of-type,.stat-time-nome:last-of-type{text-align:right}
   .col-jogo,.stat-col-jogo{width:180px !important;min-width:180px !important;max-width:180px !important}
-  /* Melhoria 4: siglas mobile — coluna estreita com 3 letras */
-  .compilacao-table .col-jogo,
-  .compilacao-table .stat-col-jogo,
-  .estatisticas-table .col-jogo,
-  .estatisticas-table .stat-col-jogo {
-    width:74px !important;min-width:74px !important;max-width:74px !important;
+  /* Siglas: coluna mais estreita só quando comp-sigla/stat-sigla estão presentes */
+  .compilacao-table .col-jogo:has(.comp-sigla),
+  .stat-col-jogo:has(.stat-sigla) {
+    width:80px !important;min-width:80px !important;max-width:80px !important;
   }
-  .comp-sigla,.stat-sigla{font-size:.68rem;font-weight:800;letter-spacing:.02em;overflow:visible;white-space:nowrap}
+  .comp-sigla,.stat-sigla{font-size:.72rem;font-weight:800;letter-spacing:.02em;flex:0 0 auto;overflow:visible;white-space:nowrap}
 }
 @media(max-width:500px){
   .td-hid{display:none}

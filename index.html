@@ -18,9 +18,11 @@
       <div class="header-titulo">Bolão Copa 2026<small>Aeronáutica · 48 Seleções · 104 Jogos</small></div>
     </div>
     <div id="sim-icon" style="display:none"></div>
+    <div id="btn-simulacao" onclick="desativarSimulacao()" title="Simulação ativa — clique para sair" style="display:none;cursor:pointer;padding:4px 8px;align-items:center;gap:5px;user-select:none;flex-shrink:0;margin-left:auto">
+      <svg width="18" height="22" viewBox="0 0 18 22" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 6px #f59e0b)"><path d="M10.5 1L1 13h7l-0.5 8L17 9h-7l1-8z" fill="#f59e0b" stroke="#fbbf24" stroke-width="1" stroke-linejoin="round"/></svg>
+      <span style="font-size:.65rem;font-weight:900;color:#f59e0b;letter-spacing:.08em;text-transform:uppercase;text-shadow:0 0 8px rgba(245,158,11,0.8)">SIM</span>
+    </div>
   </header>
-
-  <button id="btn-simulacao" class="hidden" onclick="desativarSimulacao()" style="position:fixed;top:12px;right:12px;z-index:1000;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a1a1a;font-weight:900;font-size:0.82rem;padding:8px 14px;border-radius:999px;border:2px solid #fbbf24;box-shadow:0 0 16px rgba(245,158,11,0.6);cursor:pointer;display:none;align-items:center;gap:6px;letter-spacing:0.05em;text-transform:uppercase">🎭 <span style="color:#7c3aed;font-weight:900">SIMULAÇÃO</span> <span style="font-size:.65rem;opacity:.8">✕ Sair</span></button>
 
   <div class="tabs-wrap">
     <nav class="tabs" role="tablist">

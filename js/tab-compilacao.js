@@ -56,12 +56,13 @@ window.renderCompilacao = function () {
     const hC = b.home || jogo.home; const aC = b.away || jogo.away;
     const hN = getShortName(hC);
     const aN = getShortName(aC);
-    const hSigla = getSigla(hC);
-    const aSigla = getSigla(aC);
+    const isMobile = window.innerWidth <= 600;
+    const hDisplay = isMobile ? getSigla(hC) : hN;
+    const aDisplay = isMobile ? getSigla(aC) : aN;
     const dataHora = formatarDataBRT(jogo.utc, false);
     h += '<tr><td class="col-jogo" style="position:sticky;left:0;background:var(--card2);padding:6px 8px;z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">';
     h += '<div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">' + dataHora + '</div>';
-    h += '<div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">' + htmlBandeira(hC, 14) + ' <span class="compilacao-time-nome comp-sigla" title="' + hN + '">' + hSigla + '</span> <span style="color:var(--texto2)">×</span> <span class="compilacao-time-nome comp-sigla" title="' + aN + '">' + aSigla + '</span> ' + htmlBandeira(aC, 14) + '</div></td>';
+    h += '<div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">' + htmlBandeira(hC, 14) + ' <span class="compilacao-time-nome' + (isMobile ? ' comp-sigla' : '') + '" title="' + hN + '">' + hDisplay + '</span> <span style="color:var(--texto2)">×</span> <span class="compilacao-time-nome' + (isMobile ? ' comp-sigla' : '') + '" title="' + aN + '">' + aDisplay + '</span> ' + htmlBandeira(aC, 14) + '</div></td>';
     // Resultado oficial
     if (temRes) {
       let resHtml = r.homeGoals + 'x' + r.awayGoals;

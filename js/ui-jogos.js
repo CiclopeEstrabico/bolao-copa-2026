@@ -237,9 +237,9 @@ function renderJogoRow(jogo, res, ehElim, isAdm, palApo, showFullDate = false) {
     const isLockedAposta = !isAdm && window.location.pathname.includes("aposta.html") && !jogoAceita(jogo.id);
     const disAttr = isLockedAposta ? ' disabled style="background-color:#30363d;color:var(--texto2);opacity:1;cursor:not-allowed;border-color:var(--borda)"' : '';
 
-    h += '<div class="placar-inputs"><input type="text" inputmode="numeric" pattern="[0-9]*" class="placar-input" id="sim-hg-' + jogo.id + '" maxlength="2" value="' + v1 + '" placeholder="-" oninput="_onInputPlacar(\'' + jogo.id + '\',' + ehElim + ')" onblur="_onBlurPlacar(\'' + jogo.id + '\',' + ehElim + ')"' + disAttr + '>';
+    h += '<div class="placar-inputs"><input type="number" class="placar-input" id="sim-hg-' + jogo.id + '" min="0" max="20" value="' + v1 + '" placeholder="-" oninput="_onInputPlacar(\'' + jogo.id + '\',' + ehElim + ')" onblur="_onBlurPlacar(\'' + jogo.id + '\',' + ehElim + ')"' + disAttr + '>';
     h += '<span class="vs">x</span>';
-    h += '<input type="text" inputmode="numeric" pattern="[0-9]*" class="placar-input" id="sim-ag-' + jogo.id + '" maxlength="2" value="' + v2 + '" placeholder="-" oninput="_onInputPlacar(\'' + jogo.id + '\',' + ehElim + ')" onblur="_onBlurPlacar(\'' + jogo.id + '\',' + ehElim + ')"' + disAttr + '></div>';
+    h += '<input type="number" class="placar-input" id="sim-ag-' + jogo.id + '" min="0" max="20" value="' + v2 + '" placeholder="-" oninput="_onInputPlacar(\'' + jogo.id + '\',' + ehElim + ')" onblur="_onBlurPlacar(\'' + jogo.id + '\',' + ehElim + ')"' + disAttr + '></div>';
     if (ehElim) {
       h += '<div class="pen-wrap' + (isEmp ? " visivel" : "") + '" id="pen-wrap-' + jogo.id + '">';
       h += '<div class="pen-label">Penaltis</div>';
