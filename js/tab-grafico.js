@@ -8,12 +8,12 @@ const _EVOLUCAO_CORES = [
 // Métricas disponíveis
 const _METRICAS = [
   { id: 'pts',        label: 'Pontos' },
-  { id: 'pct',        label: 'Aproveitamento %' },
-  { id: 'res',        label: 'Resultados' },
-  { id: 'bonus1',     label: 'Bônus +1' },
-  { id: 'placar',     label: 'Placar +3' },
-  { id: 'placar_alto',label: 'Placar +5' },
   { id: 'evolucao',   label: 'Evolução' },
+  { id: 'pct',        label: 'Pontos %' },
+  { id: 'res',        label: 'Resultados %' },
+  { id: 'bonus1',     label: 'Bônus+1 %' },
+  { id: 'placar',     label: 'Placar+3 %' },
+  { id: 'placar_alto',label: 'Placar+5 %' },
 ];
 
 window.renderGrafico = function() {
@@ -27,25 +27,19 @@ window.renderGrafico = function() {
   const metricaAtiva = window._graficoMetrica || "pts";
 
   // Ranking completo — base para cores consistentes e pct corrigido
-  const jogosRealizados = (window.SCHEDULE || []).filter(j => {
-    const r = res[j.id];
-    return r && r.homeGoals !== undefined;
-  }).length;
-
+  const maxPossivelGeral = calcularMaxPontosPossiveis(res);
+  
   let rankingCompleto = apos.map((a, idx) => {
     const st = calcularPontosApostador(pals[a.id]||{}, res, a, {});
-    // Aproveitamento = pontos / (jogos_realizados * 8) * 100
-    const maxPossivel = jogosRealizados * 8;
-    const pct = maxPossivel > 0 ? Math.round((st.total / maxPossivel) * 100) : 0;
     return {
       id: a.id,
       nome: (a.apelido || a.nome || "?").substring(0, 14),
       pts:         st.total,
-      pct:         pct,
-      res:         st.acertos_resultado,
-      bonus1:      st.acertos_bonus1,
-      placar:      st.acertos_placar_exato,
-      placar_alto: st.acertos_placar_alto,
+      pct:         st.pct_pontos,
+      res:         st.pct_resultado,
+      bonus1:      st.pct_bonus1,
+      placar:      st.pct_placar,
+      placar_alto: st.pct_placar_alto,
     };
   }).sort((a,b) => b.pts - a.pts);
 

@@ -69,23 +69,8 @@ window.renderClassificacao = function () {
   h += _statCard("Líder", lider ? (lider.participante.apelido || lider.participante.nome || "?") : "—", "🏆");
   h += '</div>';
 
-  // Calcular total de pontos possíveis
-  let maxPtsGeral = 0;
-  for (const jogo of (window.SCHEDULE || [])) {
-    const r = res[jogo.id];
-    if (r && r.homeGoals !== undefined) {
-      let maxBruto = window.CONFIG?.pontuacao?.resultado_base || 3;
-      if (!r.foi_penaltis) {
-        const tGols = Number(r.homeGoals) + Number(r.awayGoals);
-        const cfg = window.CONFIG?.pontuacao || {};
-        const limiar = cfg.limiar_placar_alto || 4;
-        const bonus = tGols >= limiar ? (cfg.bonus_placar_exato_alto || 5) : (cfg.bonus_placar_exato_baixo || 3);
-        maxBruto += bonus;
-      }
-      const fator = window.CONFIG?.pontuacao?.fatores_fase?.[jogo.fase] || 1.0;
-      maxPtsGeral += Math.round(maxBruto * fator * 10) / 10;
-    }
-  }
+  // Calcular total de pontos possíveis até agora
+  const maxPtsGeral = calcularMaxPontosPossiveis(res);
 
   // Tabela ranking
   h += '<div class="card" style="padding:0;overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="tabela-detalhe" style="width:100%;min-width:750px">';
@@ -138,12 +123,11 @@ window.renderClassificacao = function () {
     }
 
     const jReal = st.jogos_realizados || 0;
-    const pctPts = maxPtsGeral > 0 ? ((st.total / maxPtsGeral) * 100).toFixed(1) : "0.0";
-    const pctRes = jReal > 0 ? ((st.acertos_resultado / jReal) * 100).toFixed(1) : "0.0";
-    const pctBonus1 = jReal > 0 ? ((st.acertos_bonus1 / jReal) * 100).toFixed(1) : "0.0";
-    const pctPlacar = jReal > 0 ? ((st.acertos_placar_exato / jReal) * 100).toFixed(1) : "0.0";
-    const pctPlacarAlto = jReal > 0 ? ((st.acertos_placar_alto / jReal) * 100).toFixed(1) : "0.0";
-    const aprov = st.aproveitamento_pct;
+    const pctPts = st.pct_pontos;
+    const pctRes = st.pct_resultado;
+    const pctBonus1 = st.pct_bonus1;
+    const pctPlacar = st.pct_placar;
+    const pctPlacarAlto = st.pct_placar_alto;
 
     h += '<tr style="cursor:pointer" onclick="_toggleRankingDetalhe(\'rd-' + i + '\')">';
     h += '<td style="text-align:center;font-weight:900;font-size:.95rem">';

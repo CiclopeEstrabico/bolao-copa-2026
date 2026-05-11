@@ -109,6 +109,31 @@ function calcularPontosEspeciais(participante, campeaoOf, viceOf, terceiroOf) {
 }
 
 /**
+ * calcularMaxPontosPossiveis(resultados)
+ * Soma o total de pontos que um apostador perfeito teria ganho até agora,
+ * considerando os jogos que já tem resultado e os fatores de fase.
+ */
+function calcularMaxPontosPossiveis(resultados) {
+  let max = 0;
+  for (const jogo of (window.SCHEDULE || [])) {
+    const r = resultados[jogo.id];
+    if (r && r.homeGoals !== undefined) {
+      const cfg = window.CONFIG?.pontuacao || {};
+      let maxBruto = cfg.resultado_base || 3;
+      // Em jogo de penaltis o placar exato nao e possivel/pontuado
+      if (!r.foi_penaltis) {
+        const tGols = Number(r.homeGoals) + Number(r.awayGoals);
+        const limiar = cfg.limiar_placar_alto || 4;
+        const bonus = tGols >= limiar ? (cfg.bonus_placar_exato_alto || 5) : (cfg.bonus_placar_exato_baixo || 3);
+        maxBruto += bonus;
+      }
+      max += aplicarFator(maxBruto, jogo.fase);
+    }
+  }
+  return Math.round(max * 10) / 10;
+}
+
+/**
  * calcularPontosApostador(palpites, resultados, participante, especiais)
  */
 function calcularPontosApostador(palpites, resultados, participante, especiais) {
@@ -146,7 +171,7 @@ function calcularPontosApostador(palpites, resultados, participante, especiais) 
         }
       } else {
         if (brutos.bonus_pts > 0) {
-          acertos_bonus1 += brutos.bonus_pts; // Conta a quantidade de pontos de bonus (+1 ou +2)
+          acertos_bonus1 += brutos.bonus_pts;
         }
       }
     }
@@ -168,10 +193,13 @@ function calcularPontosApostador(palpites, resultados, participante, especiais) 
   const esp = calcularPontosEspeciais(participante, especiais.campeao, especiais.vice, especiais.terceiro);
   total += esp.total_especiais;
 
-  const jogos_apostados = acertos_placar + acertos_resultado + erros;
-  const aproveitamento = jogos_realizados
-    ? Math.round((acertos_placar + acertos_resultado) / Math.max(jogos_apostados, 1) * 100)
-    : 0;
+  // Cálculos de porcentagem baseados nos jogos realizados
+  const maxPossivel = calcularMaxPontosPossiveis(resultados);
+  const pct_pontos = maxPossivel > 0 ? (total / maxPossivel) * 100 : 0;
+  const pct_resultado = jogos_realizados > 0 ? (acertos_resultado / jogos_realizados) * 100 : 0;
+  const pct_placar = jogos_realizados > 0 ? (acertos_placar / jogos_realizados) * 100 : 0;
+  const pct_placar_alto = jogos_realizados > 0 ? (acertos_placar_alto / jogos_realizados) * 100 : 0;
+  const pct_bonus1 = jogos_realizados > 0 ? (acertos_bonus1 / jogos_realizados) * 100 : 0;
 
   return {
     apostadorId: participante.id || participante.token,
@@ -187,7 +215,12 @@ function calcularPontosApostador(palpites, resultados, participante, especiais) 
     erros,
     sem_palpite,
     jogos_realizados,
-    aproveitamento_pct: aproveitamento,
+    // Novos campos de porcentagem padronizados
+    pct_pontos: Math.round(pct_pontos * 10) / 10,
+    pct_resultado: Math.round(pct_resultado * 10) / 10,
+    pct_placar: Math.round(pct_placar * 10) / 10,
+    pct_placar_alto: Math.round(pct_placar_alto * 10) / 10,
+    pct_bonus1: Math.round(pct_bonus1 * 10) / 10,
     jogos
   };
 }
