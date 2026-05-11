@@ -210,7 +210,7 @@ window.renderEstatisticas = function () {
   h += '<th>Prob T2</th>';
   h += '</tr></thead><tbody>';
 
-  const formatPct = (val, tot) => tot > 0 ? `<div style="font-size:.6rem;color:var(--texto2);margin-top:-2px;line-height:1">${((val / tot) * 100).toFixed(0)}%</div>` : '';
+  const formatPct = (val, tot) => tot > 0 ? `<div style="font-size:.6rem;color:var(--texto2);margin-top:1px;line-height:1">${((val / tot) * 100).toFixed(0)}%</div>` : '';
   const formatNumPct = (val, tot, color = "var(--texto)") => `<div style="color:${color};font-weight:700;line-height:1">${val}</div>` + formatPct(val, tot);
 
   const jogosOrdenados = (window.SCHEDULE || []).sort((a, b) => new Date(a.utc) - new Date(b.utc));
