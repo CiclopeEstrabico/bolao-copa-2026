@@ -16,6 +16,10 @@ window.renderEstatisticas = function () {
   const melhorRes = [...ranking].sort((a, b) => b.stats.acertos_resultado - a.stats.acertos_resultado)[0];
   const melhorExato = [...ranking].sort((a, b) => b.stats.acertos_placar_exato - a.stats.acertos_placar_exato)[0];
 
+  const maxPtsRealizado = calcularMaxPontosPossiveis(res);
+  const maxPtsTotal = calcularMaxPontosTotais();
+  const pctRealizado = maxPtsTotal > 0 ? ((maxPtsRealizado / maxPtsTotal) * 100).toFixed(1) : 0;
+
   let h = "";
 
   // Cards de destaque
@@ -23,6 +27,7 @@ window.renderEstatisticas = function () {
   h += _dCard("🏆", "Líder", melhorPts?.participante.apelido || melhorPts?.participante.nome || "—", melhorPts?.stats.total.toFixed(1) + " pts", "var(--dourado)");
   h += _dCard("✓", "Mais Acertos de Resultados", melhorRes?.participante.apelido || melhorRes?.participante.nome || "—", melhorRes?.stats.acertos_resultado + " acertos", "#86efac");
   h += _dCard("🎯", "Mais Placares Exatos", melhorExato?.participante.apelido || melhorExato?.participante.nome || "—", melhorExato?.stats.acertos_placar_exato + " exatos", "var(--verde-ok)");
+  h += _dCard("📈", "Pontos Possíveis", `${maxPtsRealizado}/${maxPtsTotal}`, pctRealizado + "% da Copa", "#60a5fa");
   h += _dCard("⚽", "Jogos Realizados", jogosFeitos.length + "/" + ((window.SCHEDULE || []).length), ((jogosFeitos.length / (window.SCHEDULE || [{ id: 1 }]).length * 100).toFixed(0) + "% da Copa"), "var(--texto2)");
   h += '</div>';
 
