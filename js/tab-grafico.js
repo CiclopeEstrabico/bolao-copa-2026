@@ -5,6 +5,17 @@ const _EVOLUCAO_CORES = [
   '#80cbc4', '#fff176', '#ff8a65', '#90caf9', '#a5d6a7'
 ];
 
+// Métricas disponíveis
+const _METRICAS = [
+  { id: 'pts',        label: 'Pontos' },
+  { id: 'pct',        label: 'Aproveitamento %' },
+  { id: 'res',        label: 'Resultados' },
+  { id: 'bonus1',     label: 'Bônus +1' },
+  { id: 'placar',     label: 'Placar +3' },
+  { id: 'placar_alto',label: 'Placar +5' },
+  { id: 'evolucao',   label: 'Evolução' },
+];
+
 window.renderGrafico = function() {
   const el = document.getElementById("aba-grafico");
   if (!el) return;
@@ -15,47 +26,48 @@ window.renderGrafico = function() {
 
   const metricaAtiva = window._graficoMetrica || "pts";
 
-  // Ranking completo para saber top 5 e cores consistentes
-  let rankingCompleto = apos.map(a => {
+  // Ranking completo — base para cores consistentes e pct corrigido
+  const jogosRealizados = (window.SCHEDULE || []).filter(j => {
+    const r = res[j.id];
+    return r && r.homeGoals !== undefined;
+  }).length;
+
+  let rankingCompleto = apos.map((a, idx) => {
     const st = calcularPontosApostador(pals[a.id]||{}, res, a, {});
+    // Aproveitamento = pontos / (jogos_realizados * 8) * 100
+    const maxPossivel = jogosRealizados * 8;
+    const pct = maxPossivel > 0 ? Math.round((st.total / maxPossivel) * 100) : 0;
     return {
       id: a.id,
-      nome: (a.apelido || a.nome || "?").substring(0, 12),
-      pts: st.total,
-      placar: st.acertos_placar_exato,
-      res: st.acertos_resultado,
-      pct: st.aproveitamento_pct
+      nome: (a.apelido || a.nome || "?").substring(0, 14),
+      pts:         st.total,
+      pct:         pct,
+      res:         st.acertos_resultado,
+      bonus1:      st.acertos_bonus1,
+      placar:      st.acertos_placar_exato,
+      placar_alto: st.acertos_placar_alto,
     };
   }).sort((a,b) => b.pts - a.pts);
 
-  const top5Ids = new Set(rankingCompleto.slice(0, 5).map(a => a.id));
-
-  // Inicializar filtro com top 5 se ainda não definido
+  // Inicializar filtro com top 5
   if (!window._graficoFiltroApos) {
-    window._graficoFiltroApos = new Set(top5Ids);
+    window._graficoFiltroApos = new Set(rankingCompleto.slice(0,5).map(a => a.id));
   }
 
   // ── Toggle de métrica ──
-  let h = '<div class="toggle-bar" style="margin-bottom:15px;flex-wrap:wrap;justify-content:center">';
+  let h = '<div class="toggle-bar" style="margin-bottom:12px;flex-wrap:wrap;justify-content:center;gap:5px">';
   h += '<span class="toggle-label">Métrica:</span>';
-  h += '<button class="btn-toggle'+(metricaAtiva==="pts"?" ativo":"")+'" onclick="window._graficoMetrica=\'pts\';renderAbaAtiva()">Pontos</button>';
-  h += '<button class="btn-toggle'+(metricaAtiva==="pct"?" ativo":"")+'" onclick="window._graficoMetrica=\'pct\';renderAbaAtiva()">Aproveitamento (%)</button>';
-  h += '<button class="btn-toggle'+(metricaAtiva==="res"?" ativo":"")+'" onclick="window._graficoMetrica=\'res\';renderAbaAtiva()">Acertos Res.</button>';
-  h += '<button class="btn-toggle'+(metricaAtiva==="placar"?" ativo":"")+'" onclick="window._graficoMetrica=\'placar\';renderAbaAtiva()">Placar Exato</button>';
-  h += '<button class="btn-toggle'+(metricaAtiva==="evolucao"?" ativo":"")+'" onclick="_graficoIrEvolucao()">Evolução</button>';
+  _METRICAS.forEach(m => {
+    const ativo = metricaAtiva === m.id;
+    const onclick = m.id === 'evolucao'
+      ? 'onclick="_graficoIrEvolucao()"'
+      : `onclick="window._graficoMetrica='${m.id}';renderAbaAtiva()"`;
+    h += `<button class="btn-toggle${ativo?' ativo':''}" ${onclick}>${m.label}</button>`;
+  });
   h += '</div>';
 
-  // ── Filtro de apostadores ──
-  h += '<div class="card" style="padding:10px 14px;margin-bottom:12px">';
-  h += '<div style="font-size:.68rem;font-weight:700;color:var(--texto2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">👤 Apostadores exibidos</div>';
-  h += '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">';
-  rankingCompleto.forEach((a, i) => {
-    const ativo = window._graficoFiltroApos.has(a.id);
-    const cor = _EVOLUCAO_CORES[i % _EVOLUCAO_CORES.length];
-    h += '<button onclick="window._graficoToggleApos(\''+a.id+'\')" style="font-size:.68rem;padding:3px 10px;border-radius:12px;border:2px solid '+cor+';background:'+(ativo?cor:'transparent')+';color:'+(ativo?'#000':'var(--texto2)')+';cursor:pointer;font-weight:600;transition:all .15s">'+a.nome+'</button>';
-  });
-  h += '<button onclick="window._graficoFiltroApos=new Set(APP.apostadores.map(a=>a.id));renderAbaAtiva()" style="font-size:.62rem;padding:2px 8px;border-radius:10px;border:1px solid var(--borda);background:transparent;color:var(--texto2);cursor:pointer;margin-left:4px">Todos</button>';
-  h += '</div></div>';
+  // ── Filtro dropdown estilo Excel ──
+  h += _renderFiltroDropdown(rankingCompleto);
 
   if (metricaAtiva === "evolucao") {
     h += _renderEvolucao(res, pals, apos, rankingCompleto);
@@ -64,21 +76,101 @@ window.renderGrafico = function() {
   }
 
   el.innerHTML = h;
+
+  // Fechar dropdown ao clicar fora
+  document.addEventListener('click', _graficoFecharDropdown, { once: true });
+};
+
+// ── Dropdown filtro ────────────────────────────────────────────────────────
+function _renderFiltroDropdown(rankingCompleto) {
+  const filtro = window._graficoFiltroApos;
+  const selecionados = rankingCompleto.filter(a => filtro.has(a.id));
+  const label = selecionados.length === rankingCompleto.length
+    ? 'Todos os apostadores'
+    : selecionados.length === 0
+    ? 'Nenhum selecionado'
+    : selecionados.map(a => a.nome).join(', ');
+
+  let h = `<div style="position:relative;margin-bottom:12px;z-index:50">`;
+
+  // Botão que abre o dropdown
+  h += `<button onclick="_graficoToggleDropdown(event)"
+    style="width:100%;background:var(--fundo2);border:1.5px solid var(--borda2);border-radius:var(--radius-sm);
+           padding:9px 14px;color:var(--texto);font-size:.82rem;font-weight:600;cursor:pointer;
+           display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:inherit;text-align:left">
+    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">👤 ${label}</span>
+    <span style="flex-shrink:0;color:var(--texto2);font-size:.7rem">▼</span>
+  </button>`;
+
+  // Painel dropdown
+  h += `<div id="grafico-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;
+    background:var(--card);border:1.5px solid var(--borda2);border-radius:var(--radius-sm);
+    box-shadow:0 8px 24px rgba(0,0,0,.5);max-height:260px;overflow-y:auto;z-index:100">`;
+
+  // Opções: Todos / Nenhum
+  h += `<div style="display:flex;gap:0;border-bottom:1px solid var(--borda)">`;
+  h += `<button onclick="_graficoSelecionarTodos()" style="flex:1;padding:8px;font-size:.72rem;font-weight:700;background:none;border:none;border-right:1px solid var(--borda);color:var(--verde-light);cursor:pointer">✓ Todos</button>`;
+  h += `<button onclick="_graficoSelecionarNenhum()" style="flex:1;padding:8px;font-size:.72rem;font-weight:700;background:none;border:none;color:var(--texto2);cursor:pointer">✕ Limpar</button>`;
+  h += `</div>`;
+
+  // Lista de apostadores
+  rankingCompleto.forEach((a, i) => {
+    const ativo = filtro.has(a.id);
+    const cor = _EVOLUCAO_CORES[i % _EVOLUCAO_CORES.length];
+    h += `<label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--borda);transition:background .1s"
+      onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">
+      <input type="checkbox" ${ativo?'checked':''} onchange="window._graficoToggleApos('${a.id}')"
+        style="width:16px;height:16px;accent-color:${cor};cursor:pointer;flex-shrink:0">
+      <div style="width:10px;height:10px;border-radius:50%;background:${cor};flex-shrink:0"></div>
+      <span style="font-size:.82rem;font-weight:600;color:var(--texto)">${a.nome}</span>
+      <span style="margin-left:auto;font-size:.72rem;color:var(--texto2)">${a.pts} pts</span>
+    </label>`;
+  });
+
+  h += `</div></div>`;
+  return h;
+}
+
+window._graficoToggleDropdown = function(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('grafico-dropdown');
+  if (!dd) return;
+  const aberto = dd.style.display !== 'none';
+  dd.style.display = aberto ? 'none' : 'block';
+  if (!aberto) {
+    setTimeout(() => {
+      document.addEventListener('click', _graficoFecharDropdown, { once: true });
+    }, 0);
+  }
+};
+
+window._graficoFecharDropdown = function() {
+  const dd = document.getElementById('grafico-dropdown');
+  if (dd) dd.style.display = 'none';
 };
 
 window._graficoToggleApos = function(id) {
   if (!window._graficoFiltroApos) window._graficoFiltroApos = new Set();
   if (window._graficoFiltroApos.has(id)) {
-    if (window._graficoFiltroApos.size > 1) window._graficoFiltroApos.delete(id);
+    window._graficoFiltroApos.delete(id);
   } else {
     window._graficoFiltroApos.add(id);
   }
   renderAbaAtiva();
 };
 
+window._graficoSelecionarTodos = function() {
+  window._graficoFiltroApos = new Set((APP.apostadores||[]).map(a => a.id));
+  renderAbaAtiva();
+};
+
+window._graficoSelecionarNenhum = function() {
+  window._graficoFiltroApos = new Set();
+  renderAbaAtiva();
+};
+
 window._graficoIrEvolucao = function() {
   window._graficoMetrica = 'evolucao';
-  // Pré-seleciona top 5 ao entrar em evolução, se filtro tiver todos ou estiver vazio demais
   const res = getResultados();
   const apos = APP.apostadores || [];
   const pals = APP.palpites || {};
@@ -90,16 +182,23 @@ window._graficoIrEvolucao = function() {
   renderAbaAtiva();
 };
 
+// ── Labels de valor por métrica ────────────────────────────────────────────
+function _fmtVal(metricaAtiva, val) {
+  if (metricaAtiva === 'pct') return val + '%';
+  if (metricaAtiva === 'pts') return val.toFixed(1);
+  return String(val);
+}
+
 // ── Gráfico de Barras ──────────────────────────────────────────────────────
 function _renderBarras(rankingCompleto, metricaAtiva) {
   const filtro = window._graficoFiltroApos;
   let ranking = rankingCompleto.filter(a => filtro.has(a.id));
-  ranking.sort((a,b) => b[metricaAtiva] - a[metricaAtiva]);
-
   if (!ranking.length) return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador selecionado.</div>';
 
+  ranking = [...ranking].sort((a,b) => b[metricaAtiva] - a[metricaAtiva]);
+
   const maxVal = Math.max(1, ...ranking.map(a => a[metricaAtiva]));
-  const avgVal = ranking.reduce((acc, curr) => acc + curr[metricaAtiva], 0) / Math.max(1, ranking.length);
+  const avgVal = ranking.reduce((s, a) => s + a[metricaAtiva], 0) / ranking.length;
   const avgPerc = (avgVal / maxVal) * 100;
 
   const coresMap = {};
@@ -108,20 +207,19 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
   let h = '<div class="card" style="padding:20px 10px;overflow-x:auto">';
   h += '<div style="display:flex;align-items:flex-end;gap:12px;height:280px;min-width:min-content;padding-bottom:10px;border-bottom:1px solid var(--borda);margin-bottom:80px;position:relative">';
 
-  h += '<div style="position:absolute;bottom:10px;left:0;right:0;height:'+avgPerc+'%;border-top:1px dashed var(--texto2);opacity:0.6;pointer-events:none;z-index:0">';
-  h += '<span style="position:absolute;top:-18px;left:0;font-size:.65rem;color:var(--texto2);font-weight:700">Média: '+(metricaAtiva==="pct"?avgVal.toFixed(1)+"%":avgVal.toFixed(1))+'</span></div>';
+  // Linha da média
+  h += `<div style="position:absolute;bottom:10px;left:0;right:0;height:${avgPerc}%;border-top:1px dashed var(--texto2);opacity:0.6;pointer-events:none;z-index:0">`;
+  h += `<span style="position:absolute;top:-18px;left:0;font-size:.65rem;color:var(--texto2);font-weight:700">Média: ${_fmtVal(metricaAtiva, avgVal)}</span></div>`;
 
-  for (let i = 0; i < ranking.length; i++) {
-    const a = ranking[i];
+  for (const a of ranking) {
     const val = a[metricaAtiva];
     const perc = (val / maxVal) * 100;
-    const cor = coresMap[a.id] || _EVOLUCAO_CORES[i % _EVOLUCAO_CORES.length];
-    let valStr = metricaAtiva === "pct" ? val+"%" : metricaAtiva === "pts" ? val.toFixed(1) : val;
+    const cor = coresMap[a.id] || '#4fc3f7';
 
     h += '<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:40px;position:relative;height:100%;justify-content:flex-end;z-index:1">';
-    h += '<div style="font-size:.7rem;font-weight:800;color:var(--texto);margin-bottom:4px">'+valStr+'</div>';
-    h += '<div style="width:28px;background:'+cor+';border-radius:4px 4px 0 0;height:'+Math.max(2,perc)+'%;transition:height 0.4s ease;box-shadow:0 -2px 10px '+cor+'60"></div>';
-    h += '<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:.68rem;color:var(--texto2);font-weight:600;white-space:nowrap">'+a.nome+'</div>';
+    h += `<div style="font-size:.7rem;font-weight:800;color:var(--texto);margin-bottom:4px">${_fmtVal(metricaAtiva, val)}</div>`;
+    h += `<div style="width:28px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2,perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
+    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:.68rem;color:var(--texto2);font-weight:600;white-space:nowrap">${a.nome}</div>`;
     h += '</div>';
   }
 
@@ -133,16 +231,14 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
 function _renderEvolucao(res, pals, apos, rankingCompleto) {
   const filtro = window._graficoFiltroApos;
   const aposFiltrados = apos.filter(a => filtro.has(a.id));
-
   if (!aposFiltrados.length) return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador selecionado.</div>';
 
   const jogosComRes = (window.SCHEDULE || [])
     .filter(j => res[j.id] && res[j.id].homeGoals !== undefined)
     .sort((a, b) => new Date(a.utc) - new Date(b.utc));
 
-  if (!jogosComRes.length) {
+  if (!jogosComRes.length)
     return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum resultado oficial ainda.</div>';
-  }
 
   const series = aposFiltrados.map(a => {
     const idxGlobal = rankingCompleto.findIndex(r => r.id === a.id);
@@ -158,7 +254,7 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
       }
       return parseFloat(acumulado.toFixed(1));
     });
-    return { nome: (a.apelido || a.nome || "?").substring(0, 12), cor, pontos };
+    return { nome: (a.apelido || a.nome || "?").substring(0, 14), cor, pontos };
   });
 
   const W = 600, H = 280;
@@ -173,7 +269,6 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
 
   let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;display:block;margin:0 auto;overflow:visible">`;
 
-  // Grid horizontal
   for (let i = 0; i <= 4; i++) {
     const v = (maxPts / 4) * i;
     const y = yPos(v);
@@ -181,7 +276,6 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
     svg += `<text x="${PAD.left-6}" y="${(y+4).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--texto2)">${v.toFixed(0)}</text>`;
   }
 
-  // Labels eixo X
   const step = Math.max(1, Math.floor(nJogos / 8));
   for (let i = 0; i < nJogos; i += step) {
     const x = xPos(i).toFixed(1);
@@ -193,12 +287,10 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
     svg += `<text x="${x}" y="${PAD.top+chartH+14}" text-anchor="middle" font-size="10" fill="var(--texto2)">J${nJogos}</text>`;
   }
 
-  // Linha de cada apostador + label no final
   for (const s of series) {
     if (!s.pontos.length) continue;
     const pts = s.pontos.map((v, i) => `${xPos(i).toFixed(1)},${yPos(v).toFixed(1)}`).join(' ');
     svg += `<polyline points="${pts}" fill="none" stroke="${s.cor}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
-
     const lastX = xPos(s.pontos.length-1);
     const lastY = yPos(s.pontos[s.pontos.length-1]);
     svg += `<circle cx="${lastX.toFixed(1)}" cy="${lastY.toFixed(1)}" r="4" fill="${s.cor}" stroke="var(--fundo)" stroke-width="1.5"/>`;
@@ -210,7 +302,10 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
   let legenda = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;justify-content:center">';
   for (const s of series) {
     const ultimo = s.pontos[s.pontos.length-1] ?? 0;
-    legenda += `<div style="display:flex;align-items:center;gap:5px;font-size:.72rem;font-weight:600;color:var(--texto)"><div style="width:20px;height:3px;background:${s.cor};border-radius:2px"></div>${s.nome} <span style="color:var(--texto2);font-weight:400">${ultimo} pts</span></div>`;
+    legenda += `<div style="display:flex;align-items:center;gap:5px;font-size:.72rem;font-weight:600;color:var(--texto)">
+      <div style="width:20px;height:3px;background:${s.cor};border-radius:2px"></div>
+      ${s.nome} <span style="color:var(--texto2);font-weight:400">${ultimo} pts</span>
+    </div>`;
   }
   legenda += '</div>';
 
