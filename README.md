@@ -116,7 +116,7 @@ O sistema utiliza uma lógica de **pontos brutos** que são posteriormente multi
 | :---------: | :--------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
 | **8** | **Placar Exato Alto**  | Acerto do placar exato em jogos com 4 ou mais gols (ex: 2x2, 3x1, 4x0).                                                                |
 | **6** | **Placar Exato Baixo** | Acerto do placar exato em jogos com menos de 4 gols (ex: 1x0, 2x1, 0x0).                                                               |
-| **4** | **Resultado + Bônus** | Acertou o vencedor ou empate, errou o placar, mas acertou a**Diferença de Gols** OU acertou os **Gols de um dos times**. |
+| **4** | **Resultado + Bônus** | Acertou o vencedor ou empate, errou o placar, mas acertou a **Diferença de Gols** OU acertou os **Gols de um dos times**. |
 | **3** | **Apenas Resultado**   | Acertou apenas o vencedor ou que seria empate, errando o placar e os bônus acima.                                                     |
 | **0** | **Erro Total**         | Errou o vencedor ou o fato de ser empate.                                                                                              |
 
