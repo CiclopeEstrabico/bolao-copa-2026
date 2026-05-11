@@ -109,11 +109,12 @@ function calcularPontosEspeciais(participante, campeaoOf, viceOf, terceiroOf) {
 }
 
 /**
- * calcularMaxPontosPossiveis(resultados)
+ * calcularMaxPontosPossiveis(resultados, bracket)
  * Soma o total de pontos que um apostador perfeito teria ganho até agora,
- * considerando os jogos que já tem resultado e os fatores de fase.
+ * considerando os jogos que já tem resultado, os fatores de fase e os
+ * palpites especiais (campeão, vice, 3º) proporcional ao que já foi definido.
  */
-function calcularMaxPontosPossiveis(resultados) {
+function calcularMaxPontosPossiveis(resultados, bracket) {
   let max = 0;
   for (const jogo of (window.SCHEDULE || [])) {
     const r = resultados[jogo.id];
@@ -130,6 +131,21 @@ function calcularMaxPontosPossiveis(resultados) {
       max += aplicarFator(maxBruto, jogo.fase);
     }
   }
+
+  // Adiciona pontos máximos dos especiais conforme os resultados forem oficializados
+  const brk = bracket || APP.bracket || {};
+  const esp = window.CONFIG?.pontuacao?.extras || {};
+  const resF = resultados["FNL"];
+  const resT = resultados["TPL"];
+  if (resF && resF.homeGoals !== undefined) {
+    // Final já jogada: campeão e vice já podem ser acertados
+    max += (esp.primeiro_lugar || 15) + (esp.segundo_lugar || 10);
+  }
+  if (resT && resT.homeGoals !== undefined) {
+    // Disputa de 3º lugar já jogada
+    max += (esp.terceiro_lugar || 5);
+  }
+
   return Math.round(max * 10) / 10;
 }
 

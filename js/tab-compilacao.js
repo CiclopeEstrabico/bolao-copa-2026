@@ -105,33 +105,37 @@ window.renderCompilacao = function () {
   }
 
   // --- Linhas de Especiais (Campeão, Vice, 3º) ---
+  // Derivados automaticamente do bracket (igual à aba Classificação)
   const brk = APP.bracket || {};
-  const resOficialEsp = {
-    campeao: brk.campeao || "",
-    vice: brk.vice || "",
-    terceiro: brk.terceiro || ""
-  };
+  const resOficialEsp = typeof _extrairEspeciaisOficiais === 'function'
+    ? _extrairEspeciaisOficiais(res, brk)
+    : { campeao: brk.campeao || null, vice: brk.vice || null, terceiro: brk.terceiro || null };
 
   const rowsEsp = [
     { label: "🏆 Campeão", key: "campeao" },
-    { label: "🥈 Vice", key: "vice" },
+    { label: "🥈 Vice",    key: "vice" },
     { label: "🥉 3º Lugar", key: "terceiro" }
   ];
 
   for (const rowE of rowsEsp) {
     h += '<tr style="background:rgba(234,179,8,0.05)"><td class="col-jogo" style="position:sticky;left:0;background:var(--card2);z-index:1;font-weight:700;font-size:.68rem">' + rowE.label + '</td>';
-    
-    // Resultado Oficial do Especial
-    const escOf = resOficialEsp[rowE.key];
-    const nomeOf = window.TEAMS_BY_CODE[escOf]?.name || "—";
+
+    // Resultado oficial derivado automaticamente
+    const escOf = resOficialEsp[rowE.key] || "";
+    const nomeOf = window.TEAMS_BY_CODE?.[escOf]?.name || (escOf ? escOf : "—");
     h += '<td class="col-resultado" style="font-weight:700;font-size:.65rem;color:var(--dourado)">' + nomeOf + '</td>';
 
     for (const a of ranking) {
       const palE = (a.especiais && a.especiais[rowE.key]) || "";
-      const nomePal = window.TEAMS_BY_CODE[palE]?.name || "—";
+      const nomePal = window.TEAMS_BY_CODE?.[palE]?.name || (palE ? palE : "—");
       const acertou = escOf && palE === escOf;
-      const cor = acertou ? "var(--verde-ok)" : (escOf ? "var(--texto2)" : "var(--texto)");
-      h += '<td style="font-size:.62rem;text-align:center;color:' + cor + ';font-weight:' + (acertou ? 700 : 400) + '">' + nomePal + '</td>';
+      // Acerto: azul escuro (mesma cor do placar+5). Erro com resultado definido: texto esmaecido.
+      if (acertou) {
+        h += '<td class="celula-pts-8" style="font-size:.62rem">' + nomePal + '</td>';
+      } else {
+        const cor = escOf ? "var(--texto2)" : "var(--texto)";
+        h += '<td style="font-size:.62rem;text-align:center;color:' + cor + '">' + nomePal + '</td>';
+      }
     }
     h += '</tr>';
   }
