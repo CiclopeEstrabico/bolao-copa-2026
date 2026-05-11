@@ -202,8 +202,11 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
   h += '<div style="display:flex;align-items:flex-end;gap:12px;height:280px;min-width:min-content;padding-bottom:10px;border-bottom:1px solid var(--borda);margin-bottom:80px;position:relative">';
 
   // Linha da média
+  const avgValFmt = metricaAtiva === 'pct'
+    ? avgVal.toFixed(1) + '%'
+    : avgVal.toFixed(1);
   h += `<div style="position:absolute;bottom:10px;left:0;right:0;height:${avgPerc}%;border-top:1px dashed var(--texto2);opacity:0.6;pointer-events:none;z-index:0">`;
-  h += `<span style="position:absolute;top:-18px;left:0;font-size:.65rem;color:var(--texto2);font-weight:700">Média: ${_fmtVal(metricaAtiva, avgVal)}</span></div>`;
+  h += `<span style="position:absolute;top:-18px;left:0;font-size:.65rem;color:var(--texto2);font-weight:700">Média: ${avgValFmt}</span></div>`;
 
   for (const a of ranking) {
     const val = a[metricaAtiva];
