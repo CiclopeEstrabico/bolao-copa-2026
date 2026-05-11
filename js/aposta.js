@@ -42,7 +42,16 @@ async function iniciarAposta() {
 
   if (!token) { renderLoginToken(); return; }
 
-  await new Promise(r => setTimeout(r, 1000));
+  // Aguarda o primeiro snapshot dos apostadores chegar (ou timeout de 6s)
+  if (!APP.modoOffline && !APP._apostadoresCarregados) {
+    await new Promise(r => {
+      const check = setInterval(() => {
+        if (APP._apostadoresCarregados) { clearInterval(check); clearTimeout(fallback); r(); }
+      }, 50);
+      const fallback = setTimeout(() => { clearInterval(check); r(); }, 6000);
+    });
+  }
+
   atualizarBracket();
 
   // Primeiro tenta encontrar nos apostadores já carregados (já cadastrado antes)
@@ -184,16 +193,33 @@ async function salvarCadastro() {
   _apostador.token = _apostador.token;
   if (!_apostador.id) _apostador.id = "tok_" + Date.now();
   await gravarApostador(_apostador);
+
+  // Sincroniza apelido no doc do token (se estava vazio)
+  if (!APP.modoOffline && APP.db && _apostador.token && _apostador.apelido) {
+    try {
+      const snap = await APP.db.collection("tokens")
+        .where("token", "==", _apostador.token)
+        .limit(1)
+        .get();
+      if (!snap.empty) {
+        const tokenDoc = snap.docs[0];
+        if (!tokenDoc.data().apelido) {
+          await tokenDoc.ref.update({ apelido: _apostador.apelido });
+        }
+      }
+    } catch (e) { /* silencioso */ }
+  }
+
   renderAposta();
 }
 
 // ── Projeção on-demand dos palpites do apostador ──
+// Regra: resultado oficial sempre prevalece.
+// Palpite só é usado para jogos sem resultado oficial ainda.
 function calcularProjecao() {
   const res = Object.assign({}, APP.resultados);
   for (const [id, p] of Object.entries(_palpitesLocais)) {
-    if (!res[id]?.homeGoals !== undefined && p?.homeGoals !== undefined)
-      res[id] = { gameId: id, homeGoals: p.homeGoals, awayGoals: p.awayGoals, foi_penaltis: false };
-    else if (!res[id] && p?.homeGoals !== undefined)
+    if (res[id]?.homeGoals === undefined && p?.homeGoals !== undefined)
       res[id] = { gameId: id, homeGoals: p.homeGoals, awayGoals: p.awayGoals, foi_penaltis: false };
   }
   return window.BRACKET.calcularTodosOsGrupos(res);

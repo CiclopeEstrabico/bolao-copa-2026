@@ -181,6 +181,31 @@ window.PROGNOSE = {
       ov.innerHTML = '<div class="modal-box" id="prognose-box"></div>';
       ov.addEventListener("click", e => { if (e.target === ov) this.fecharModal(); });
       document.body.appendChild(ov);
+
+      // Swipe down para fechar (mobile)
+      const box = () => document.getElementById("prognose-box");
+      let startY = 0, startScroll = 0;
+      ov.addEventListener("touchstart", e => {
+        if (!box()) return;
+        startY = e.touches[0].clientY;
+        startScroll = box().scrollTop;
+      }, { passive: true });
+      ov.addEventListener("touchmove", e => {
+        if (!box()) return;
+        const dy = e.touches[0].clientY - startY;
+        // Só faz swipe se o box estiver no topo do scroll
+        if (dy > 0 && startScroll <= 0) {
+          box().style.transform = `translateY(${Math.min(dy * 0.6, 160)}px)`;
+          box().style.transition = "none";
+        }
+      }, { passive: true });
+      ov.addEventListener("touchend", e => {
+        if (!box()) return;
+        const dy = e.changedTouches[0].clientY - startY;
+        box().style.transition = "";
+        box().style.transform = "";
+        if (dy > 80 && startScroll <= 0) this.fecharModal();
+      }, { passive: true });
     }
     const box = document.getElementById("prognose-box");
     box.innerHTML = '<button class="modal-close" onclick="PROGNOSE.fecharModal()">✕</button>' + this.renderModal(gameId);

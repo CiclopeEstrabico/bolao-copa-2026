@@ -25,7 +25,7 @@ function initApp() {
       if (e.code === "app/duplicate-app") {
         APP.db = firebase.firestore();
         APP.configStatus = { apostas_liberadas: false };
-        listenConfigStatus();
+        listenResultados(); listenApostadores(); listenPalpites(); listenConfigStatus();
       } else { APP.modoOffline = true; APP.configStatus = { apostas_liberadas: true }; carregarDadosLocais(); }
     }
   }
@@ -62,6 +62,7 @@ function listenApostadores() {
     APP.apostadores = snap.docs.map(d => ({id: d.id, ...d.data()}))
       .filter(a => a.ativo !== false)
       .sort((a, b) => (a.ordem||0) - (b.ordem||0));
+    APP._apostadoresCarregados = true;
     renderAbaAtiva();
   });
   APP._unsubs.push(u);

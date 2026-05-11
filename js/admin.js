@@ -181,15 +181,27 @@ function limparLog() {
   renderAdmin();
 }
 
-function limparTudoAdmin() {
+async function limparTudoAdmin() {
   if (!_adminAutenticado()) return alert("Não autorizado.");
   if (!confirm("⚠️ LIMPAR TODOS OS RESULTADOS OFICIAIS?\nIsso não pode ser desfeito.")) return;
+
+  // Bug 3: aguarda a deleção no servidor ANTES de alterar estado local.
+  // Antes era fire-and-forget: se falhasse, o estado local ficava limpo
+  // mas os dados voltavam do Firestore no próximo onSnapshot.
+  if (APP.db && !APP.modoOffline) {
+    try {
+      const snap = await APP.db.collection("resultados_oficiais").get();
+      await Promise.all(snap.docs.map(d => d.ref.delete()));
+    } catch (e) {
+      alert("Erro ao limpar no servidor: " + e.message + "\nNenhum dado foi alterado.");
+      return;
+    }
+  }
+
   APP.resultados = {};
-  APP.resultadosSim = {};
+  APP.resultadosSim = null;
   _persistirLocal();
   document.querySelectorAll('input[type="number"]').forEach(el => (el.value = ""));
-  if (APP.db && !APP.modoOffline)
-    APP.db.collection("resultados_oficiais").get().then(s => s.forEach(d => d.ref.delete()));
   atualizarBracket();
   renderAdmin();
 }
@@ -337,7 +349,7 @@ function renderApostadores() {
     h += '</td>';
 
     // Token (com link para aposta.html)
-    const baseUrl = location.origin + location.pathname.replace(/admin\.html.*/, "") + "aposta.html?token=";
+    const baseUrl = "https://ciclopeestrabico.github.io/bolao-copa-2026/aposta.html?token=";
     const link = baseUrl + (a.token || "");
     h += '<td style="' + _tdS() + '">';
     h += '<a href="' + link + '" target="_blank" style="color:var(--dourado);text-decoration:underline;font-size:.66rem;font-family:monospace">';
@@ -481,20 +493,56 @@ async function limparFaseApostador(id) {
   alert("✅ Apostas limpas.");
 }
 
-function deletarApostadorId(id) {
+async function deletarApostadorId(id) {
   if (!_adminAutenticado()) return alert("Não autorizado.");
   const a = APP.apostadores.find(x => x.id === id);
   if (!confirm('Deletar "' + _esc(a?.apelido || a?.nome || id) + '"? Não pode ser desfeito.')) return;
 
+  const tokenDoApostador = a?.token;
+  const apelidoDoApostador = a?.apelido || "";
+
+  // Bug 4: deleções eram fire-and-forget. Se falhassem, o apostador sumia
+  // da UI mas persistia no Firestore e voltava no próximo onSnapshot.
+  // Agora: deleta no servidor primeiro, só altera estado local se der certo.
+  if (APP.db && !APP.modoOffline) {
+    try {
+      // Deletar subcoleção de palpites antes do documento pai
+      const palpitesSnap = await APP.db.collection("apostadores").doc(id)
+        .collection("palpites_jogos").get();
+      await Promise.all(palpitesSnap.docs.map(doc => doc.ref.delete()));
+
+      // Deletar o documento do apostador
+      await APP.db.collection("apostadores").doc(id).delete();
+
+      // Token volta para "Enviado" (não disponível) — operação secundária,
+      // não bloqueia nem reverte a deleção principal se falhar
+      if (tokenDoApostador) {
+        try {
+          const tokenSnap = await APP.db.collection("tokens")
+            .where("token", "==", tokenDoApostador)
+            .limit(1)
+            .get();
+          if (!tokenSnap.empty) {
+            const tokenDoc = tokenSnap.docs[0];
+            const dadosAtuais = tokenDoc.data();
+            await tokenDoc.ref.update({
+              enviado: true,
+              apelido: dadosAtuais.apelido || apelidoDoApostador,
+              enviado_em: dadosAtuais.enviado_em || new Date().toISOString()
+            });
+          }
+        } catch (_) { /* falha no token não impede a deleção */ }
+      }
+    } catch (e) {
+      alert("Erro ao deletar no servidor: " + e.message + "\nNenhum dado foi alterado.");
+      return;
+    }
+  }
+
+  // Só atualiza estado local após confirmar sucesso no servidor
   APP.apostadores = APP.apostadores.filter(x => x.id !== id);
   delete APP.palpites[id];
   _persistirLocal();
-
-  if (APP.db && !APP.modoOffline) {
-    APP.db.collection("apostadores").doc(id).delete();
-    APP.db.collection("apostadores").doc(id).collection("palpites_jogos").get()
-      .then(snap => snap.forEach(doc => doc.ref.delete()));
-  }
   renderApostadores();
 }
 
@@ -523,14 +571,16 @@ async function renderTokens() {
   }
 
   const tokensUsados = new Set(APP.apostadores.map(a => a.token).filter(Boolean));
-  const usados   = tokens.filter(t => tokensUsados.has(t.token));
-  const livres   = tokens.filter(t => t.ativo !== false && !tokensUsados.has(t.token));
-  const inativos = tokens.filter(t => t.ativo === false && !tokensUsados.has(t.token));
+  const usados    = tokens.filter(t => tokensUsados.has(t.token));
+  const enviados  = tokens.filter(t => !tokensUsados.has(t.token) && t.enviado === true);
+  const livres    = tokens.filter(t => !tokensUsados.has(t.token) && t.enviado !== true && t.ativo !== false);
+  const inativos  = tokens.filter(t => !tokensUsados.has(t.token) && t.enviado !== true && t.ativo === false);
 
   let h = '<div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">';
   h += '<div style="font-size:.9rem;font-weight:800">🔑 Tokens</div>';
   h += '<span style="font-size:.71rem;padding:2px 8px;border-radius:10px;background:var(--verde-ok);color:#fff">' + usados.length + ' em uso</span>';
-  h += '<span style="font-size:.71rem;padding:2px 8px;border-radius:10px;border:1px solid var(--verde-light);color:var(--verde-light)">' + livres.length + ' livres</span>';
+  h += '<span style="font-size:.71rem;padding:2px 8px;border-radius:10px;background:var(--dourado);color:#000">' + enviados.length + ' enviados</span>';
+  h += '<span style="font-size:.71rem;padding:2px 8px;border-radius:10px;border:1px solid var(--verde-light);color:var(--verde-light)">' + livres.length + ' disponíveis</span>';
   if (inativos.length)
     h += '<span style="font-size:.71rem;padding:2px 8px;border-radius:10px;border:1px solid var(--borda);color:var(--texto2)">' + inativos.length + ' inativos</span>';
   h += '<button class="btn btn-primario btn-sm" onclick="criarToken()" style="margin-left:auto">+ Novo Token</button>';
@@ -540,6 +590,13 @@ async function renderTokens() {
     h += '<div class="card"><div class="card-titulo">✅ Em Uso (' + usados.length + ')</div>';
     h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px">';
     usados.forEach(t => { h += _tokenCard(t, APP.apostadores.find(a => a.token === t.token), "usado"); });
+    h += '</div></div>';
+  }
+
+  if (enviados.length) {
+    h += '<div class="card"><div class="card-titulo">✉️ Enviados (' + enviados.length + ')</div>';
+    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px">';
+    enviados.forEach(t => { h += _tokenCard(t, null, "enviado"); });
     h += '</div></div>';
   }
 
@@ -567,9 +624,9 @@ async function renderTokens() {
 }
 
 function _tokenCard(t, apt, tipo) {
-  const corBorda = tipo === "usado" ? "var(--verde-ok)" : tipo === "livre" ? "var(--verde-light)" : "var(--borda)";
+  const corBorda = tipo === "usado" ? "var(--verde-ok)" : tipo === "enviado" ? "var(--dourado)" : tipo === "livre" ? "var(--verde-light)" : "var(--borda)";
   const tokenVal = t.token || t.id;
-  const baseUrl = location.origin + location.pathname.replace(/admin\.html.*/, "") + "aposta.html?token=";
+  const baseUrl = "https://ciclopeestrabico.github.io/bolao-copa-2026/aposta.html?token=";
   const link = baseUrl + tokenVal;
 
   let h = '<div style="background:var(--fundo2);border-radius:var(--radius-sm);padding:10px 12px;border-left:3px solid ' + corBorda + '">';
@@ -582,6 +639,9 @@ function _tokenCard(t, apt, tipo) {
   if (apt) {
     h += '<div style="font-size:.73rem;font-weight:700">' + _esc(apt.apelido || apt.nome || "—") + '</div>';
     if (apt.nome && apt.apelido) h += '<div style="font-size:.65rem;color:var(--texto2)">' + _esc(apt.nome) + '</div>';
+  } else if (tipo === "enviado") {
+    h += '<div style="font-size:.73rem;font-weight:700;color:var(--dourado)">✉️ ' + _esc(t.apelido || "—") + '</div>';
+    if (t.enviado_em) h += '<div style="font-size:.6rem;color:var(--texto2)">' + new Date(t.enviado_em).toLocaleDateString("pt-BR") + '</div>';
   } else if (tipo === "livre") {
     h += '<div style="font-size:.68rem;color:var(--verde-light);margin-bottom:2px">Disponível</div>';
     h += '<div style="font-size:.62rem;color:var(--texto2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">';
@@ -591,13 +651,45 @@ function _tokenCard(t, apt, tipo) {
   }
 
   h += '<div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">';
-  if (tipo !== "usado")
+  if (tipo === "livre") {
     h += '<button class="btn btn-sm" onclick="copiarLink(\'' + link + '\',this)" style="font-size:.62rem;padding:2px 6px">🔗 Link</button>';
-  if (tipo !== "usado")
+    h += '<button class="btn btn-sm" onclick="marcarEnviado(\'' + t.id + '\')" style="font-size:.62rem;padding:2px 6px;background:var(--dourado);color:#000;border:none">✉️ Enviar</button>';
     h += '<button class="btn btn-perigo btn-sm" onclick="deletarToken(\'' + t.id + '\')" style="font-size:.62rem;padding:2px 6px">🗑</button>';
+  } else if (tipo === "enviado") {
+    h += '<button class="btn btn-sm" onclick="copiarLink(\'' + link + '\',this)" style="font-size:.62rem;padding:2px 6px">🔗 Link</button>';
+    h += '<button class="btn btn-sm" onclick="reverterEnviado(\'' + t.id + '\')" style="font-size:.62rem;padding:2px 6px;background:var(--borda)">↩️ Reverter</button>';
+    h += '<button class="btn btn-perigo btn-sm" onclick="deletarToken(\'' + t.id + '\')" style="font-size:.62rem;padding:2px 6px">🗑</button>';
+  }
   h += '</div>';
   h += '</div>';
   return h;
+}
+
+async function marcarEnviado(tokenDocId) {
+  if (!_adminAutenticado()) return alert("Não autorizado.");
+  const apelido = prompt("Nome ou apelido de quem vai receber este token (opcional):");
+  if (apelido === null) return; // cancelou
+  try {
+    await APP.db.collection("tokens").doc(tokenDocId).update({
+      enviado: true,
+      apelido: apelido.trim(),
+      enviado_em: new Date().toISOString()
+    });
+    renderTokens();
+  } catch (e) { alert("Erro: " + e.message); }
+}
+
+async function reverterEnviado(tokenDocId) {
+  if (!_adminAutenticado()) return alert("Não autorizado.");
+  if (!confirm("Reverter token para Disponível? O apelido será removido.")) return;
+  try {
+    await APP.db.collection("tokens").doc(tokenDocId).update({
+      enviado: false,
+      apelido: "",
+      enviado_em: null
+    });
+    renderTokens();
+  } catch (e) { alert("Erro: " + e.message); }
 }
 
 function copiarTexto(txt, btn) {

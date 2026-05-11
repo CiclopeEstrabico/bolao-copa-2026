@@ -97,11 +97,14 @@ function aplicarFator(pontosBrutos, fase) {
  */
 function calcularPontosEspeciais(participante, campeaoOf, viceOf, terceiroOf) {
   const cfg = window.CONFIG.pontuacao.extras;
+  // Os palpites especiais ficam em participante.especiais.{campeao,vice,terceiro}
+  // gravados por gravarEspecialAposta() em aposta.js como código de time (ex: "BRA")
+  const esp = participante.especiais || {};
   let total = 0;
   const detalhes = [];
-  if (campeaoOf && participante.palpite_campeao === campeaoOf) { total += cfg.primeiro_lugar; detalhes.push("Campeao +" + cfg.primeiro_lugar); }
-  if (viceOf && participante.palpite_vice === viceOf) { total += cfg.segundo_lugar; detalhes.push("Vice +" + cfg.segundo_lugar); }
-  if (terceiroOf && participante.palpite_terceiro === terceiroOf) { total += cfg.terceiro_lugar; detalhes.push("3o lugar +" + cfg.terceiro_lugar); }
+  if (campeaoOf && esp.campeao === campeaoOf) { total += cfg.primeiro_lugar; detalhes.push("Campeao +" + cfg.primeiro_lugar); }
+  if (viceOf && esp.vice === viceOf) { total += cfg.segundo_lugar; detalhes.push("Vice +" + cfg.segundo_lugar); }
+  if (terceiroOf && esp.terceiro === terceiroOf) { total += cfg.terceiro_lugar; detalhes.push("3o lugar +" + cfg.terceiro_lugar); }
   return { total_especiais: total, detalhes };
 }
 
@@ -214,3 +217,6 @@ function gerarRanking(todosOsPalpites, resultados, participantes, especiais) {
     return { posicao: pos, ...item };
   });
 }
+// Expor funções internas necessárias para outros módulos
+window.calcularPontosBrutos = calcularPontosBrutos;
+window.aplicarFator = aplicarFator;
