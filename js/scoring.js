@@ -134,6 +134,24 @@ function calcularMaxPontosPossiveis(resultados) {
 }
 
 /**
+ * calcularMaxPontosTotais()
+ * Calcula o total máximo de pontos possível no campeonato inteiro,
+ * assumindo acerto de placar exato em todos os 104 jogos e bônus máximos.
+ */
+function calcularMaxPontosTotais() {
+  let max = 0;
+  const cfg = window.CONFIG?.pontuacao || {};
+  const resBase = cfg.resultado_base || 3;
+  const bonusMax = cfg.bonus_placar_exato_alto || 5;
+  const maxBruto = resBase + bonusMax;
+
+  for (const jogo of (window.SCHEDULE || [])) {
+    max += aplicarFator(maxBruto, jogo.fase);
+  }
+  return Math.round(max * 10) / 10;
+}
+
+/**
  * calcularPontosApostador(palpites, resultados, participante, especiais)
  */
 function calcularPontosApostador(palpites, resultados, participante, especiais) {

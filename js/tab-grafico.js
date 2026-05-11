@@ -10,10 +10,10 @@ const _METRICAS = [
   { id: 'pts',        label: 'Pontos' },
   { id: 'evolucao',   label: 'Evolução' },
   { id: 'pct',        label: 'Pontos %' },
-  { id: 'res',        label: 'Resultados %' },
-  { id: 'bonus1',     label: 'Bônus+1 %' },
-  { id: 'placar',     label: 'Placar+3 %' },
-  { id: 'placar_alto',label: 'Placar+5 %' },
+  { id: 'res',        label: 'Resultados' },
+  { id: 'bonus1',     label: 'Bônus+1' },
+  { id: 'placar',     label: 'Placar+3' },
+  { id: 'placar_alto',label: 'Placar+5' },
 ];
 
 window.renderGrafico = function() {
@@ -36,10 +36,10 @@ window.renderGrafico = function() {
       nome: (a.apelido || a.nome || "?").substring(0, 14),
       pts:         st.total,
       pct:         st.pct_pontos,
-      res:         st.pct_resultado,
-      bonus1:      st.pct_bonus1,
-      placar:      st.pct_placar,
-      placar_alto: st.pct_placar_alto,
+      res:         st.acertos_resultado,
+      bonus1:      st.acertos_bonus1,
+      placar:      st.acertos_placar_exato,
+      placar_alto: st.acertos_placar_alto,
     };
   }).sort((a,b) => b.pts - a.pts);
 

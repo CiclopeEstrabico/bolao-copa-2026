@@ -62,9 +62,14 @@ window.renderClassificacao = function () {
   // Header stats
   const totalJogos = (window.SCHEDULE || []).filter(j => res[j.id]?.homeGoals !== undefined).length;
   const totalPoss = (window.SCHEDULE || []).length;
-  let h = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">';
+  const maxPtsRealizado = calcularMaxPontosPossiveis(res);
+  const maxPtsTotal = calcularMaxPontosTotais();
+  const pctRealizado = maxPtsTotal > 0 ? ((maxPtsRealizado / maxPtsTotal) * 100).toFixed(1) : 0;
+
+  let h = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px">';
   h += _statCard("Participantes", ranking.length, "👥");
   h += _statCard("Jogos Realizados", totalJogos + "/" + totalPoss, "⚽");
+  h += _statCard("Pontos Possíveis", `${maxPtsRealizado}/${maxPtsTotal} <span style="font-size:.65rem;color:var(--texto2)">(${pctRealizado}%)</span>`, "📈");
   const lider = ranking[0];
   h += _statCard("Líder", lider ? (lider.participante.apelido || lider.participante.nome || "?") : "—", "🏆");
   h += '</div>';
