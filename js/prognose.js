@@ -257,8 +257,20 @@ window.PROGNOSE = {
     const jogoInfo = window.SCHEDULE_BY_ID?.[gameId];
     const isNeutral = jogoInfo ? (jogoInfo.pais !== hC && jogoInfo.pais !== aC) : true;
     const c = this.calcular(hC, aC, isNeutral);
-    const fmt = n => (n * 100).toFixed(1) + "%";
-    let h = '';
+    const temRes = res[gameId] && res[gameId].homeGoals !== undefined;
+    const podeVer = temRes || !jogoAceita(gameId);
+
+    if (!podeVer) {
+      h += '<div style="text-align:center;padding:20px;background:rgba(0,0,0,0.2);border-radius:10px;margin-bottom:15px;border:1px dashed var(--borda)">';
+      h += '<div style="font-size:1.5rem;margin-bottom:8px">🔒</div>';
+      h += '<div style="font-size:.85rem;font-weight:700">Previsão Bloqueada</div>';
+      h += '<div style="font-size:.7rem;color:var(--texto2);margin-top:4px">Os dados do modelo e as estatísticas coletivas ficam ocultos até o fechamento das apostas para este jogo.</div>';
+      h += '</div>';
+      // Renderizamos apenas as probabilidades básicas se quiser, ou nada. O usuário pediu para esconder ELO, xG e Matriz.
+      // Vou esconder tudo o que foi pedido.
+      return h;
+    }
+
     // ELO
     h += '<div class="elo-box">';
     h += '<div class="elo-time">' + htmlBandeira(hC, 28) + '<div class="elo-valor">' + Math.round(c.eloH) + '</div><div class="elo-nome">' + hName + '</div></div>';
@@ -305,6 +317,17 @@ window.PROGNOSE = {
   },
 
   _renderPalpites: function (gameId, s, hName, aName) {
+    const res = getResultados();
+    const temRes = res[gameId] && res[gameId].homeGoals !== undefined;
+    const podeVer = temRes || !jogoAceita(gameId);
+
+    if (!podeVer) {
+      return '<div style="text-align:center;padding:40px 20px;color:var(--texto2)">' +
+             '<div style="font-size:2rem;margin-bottom:10px">🔒</div>' +
+             '<div style="font-weight:700;color:var(--texto)">Palpites Ocultos</div>' +
+             '<div style="font-size:.75rem;margin-top:5px">A tendência das apostas dos outros participantes só será revelada após o fechamento do mercado para este jogo.</div></div>';
+    }
+
     if (!s.total) return '<p style="text-align:center;color:var(--texto2);padding:30px">Nenhum palpite registrado.</p>';
     const pHome = Math.round(s.home / s.total * 100);
     const pDraw = Math.round(s.draw / s.total * 100);

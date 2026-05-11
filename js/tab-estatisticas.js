@@ -140,6 +140,9 @@ window.renderEstatisticas = function () {
     }
 
     const mChutado = Object.entries(placares).sort((a, b) => b[1] - a[1])[0];
+    const temRes = r && r.homeGoals !== undefined;
+    const podeVer = temRes || !jogoAceita(jogo.id);
+
     const strPlacarMais = mChutado ? `${mChutado[0]} <span style="font-size:.65rem;color:var(--texto2)">(${((mChutado[1] / totalBets) * 100).toFixed(1)}%)</span>` : '—';
 
     // AI Prognosis
@@ -159,8 +162,8 @@ window.renderEstatisticas = function () {
             </div>
           </td>`;
 
-    // New Result column
-    if (r && r.homeGoals !== undefined) {
+    // Result column
+    if (temRes) {
       let resHtml = `${r.homeGoals}x${r.awayGoals}`;
       if (r.foi_penaltis) {
         const ph = r.penaltis_home ?? 0; const pa = r.penaltis_away ?? 0;
@@ -171,16 +174,20 @@ window.renderEstatisticas = function () {
       h += `<td class="col-resultado" style="color:var(--texto2)">–</td>`;
     }
 
-    h += `<td>${formatNumPct(vH, totalBets)}</td>`;
-    h += `<td>${formatNumPct(vD, totalBets)}</td>`;
-    h += `<td>${formatNumPct(vA, totalBets)}</td>`;
-    h += `<td><strong style="color:var(--verde-light)">${strPlacarMais}</strong></td>`;
-    h += `<td>${r ? formatNumPct(aRes, totalBets, 'var(--verde-ok)') : '—'}</td>`;
-    h += `<td>${r ? formatNumPct(aPlac, totalBets, '#86efac') : '—'}</td>`;
+    if (podeVer) {
+      h += `<td>${formatNumPct(vH, totalBets)}</td>`;
+      h += `<td>${formatNumPct(vD, totalBets)}</td>`;
+      h += `<td>${formatNumPct(vA, totalBets)}</td>`;
+      h += `<td><strong style="color:var(--verde-light)">${strPlacarMais}</strong></td>`;
+      h += `<td>${temRes ? formatNumPct(aRes, totalBets, 'var(--verde-ok)') : '—'}</td>`;
+      h += `<td>${temRes ? formatNumPct(aPlac, totalBets, '#86efac') : '—'}</td>`;
+    } else {
+      h += `<td colspan="6" style="color:var(--texto2);font-size:.75rem;letter-spacing:1px;opacity:0.6">🔒 Conteúdo bloqueado até o fechamento das apostas</td>`;
+    }
 
     h += `<td style="background:var(--fundo);border-left:1px solid var(--borda);border-right:1px solid var(--borda)"></td>`; // gap
 
-    if (prog) {
+    if (podeVer && prog) {
       h += `<td><span style="color:var(--texto2)">${Math.round(prog.eloH)}</span></td>`;
       h += `<td><span style="color:var(--texto2)">${Math.round(prog.eloA)}</span></td>`;
       h += `<td><strong style="color:var(--texto)">${prog.lH.toFixed(2)}</strong></td>`;
@@ -188,6 +195,8 @@ window.renderEstatisticas = function () {
       h += `<td><div style="color:var(--verde-light);font-weight:700">${(prog.home * 100).toFixed(1)}%</div></td>`;
       h += `<td><div style="color:var(--texto2);font-weight:700">${(prog.draw * 100).toFixed(1)}%</div></td>`;
       h += `<td><div style="color:var(--verde-light);font-weight:700">${(prog.away * 100).toFixed(1)}%</div></td>`;
+    } else if (!podeVer) {
+      h += `<td colspan="7" style="color:var(--texto2);font-size:.7rem;opacity:0.6">🔒 Previsão indisponível</td>`;
     } else {
       h += `<td colspan="7" style="color:var(--texto2);font-size:.65rem">Sem dados do modelo</td>`;
     }
