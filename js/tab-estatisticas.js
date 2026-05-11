@@ -9,7 +9,9 @@ window.renderEstatisticas = function () {
   if (!apos.length) { el.innerHTML = '<div class="card"><p style="color:var(--texto2)">Nenhum apostador cadastrado.</p></div>'; return; }
 
   const ranking = gerarRanking(pals, res, apos, esp);
-  const jogosFeitos = (window.SCHEDULE || []).filter(j => res[j.id]?.homeGoals !== undefined);
+  const jogosFeitos = (window.SCHEDULE || [])
+    .filter(j => res[j.id]?.homeGoals !== undefined)
+    .sort((a, b) => new Date(a.utc) - new Date(b.utc));
 
   // Top performers
   const melhorPts = [...ranking].sort((a, b) => b.stats.total - a.stats.total)[0];
@@ -211,7 +213,8 @@ window.renderEstatisticas = function () {
   const formatPct = (val, tot) => tot > 0 ? `<div style="font-size:.6rem;color:var(--texto2);margin-top:-2px;line-height:1">${((val / tot) * 100).toFixed(0)}%</div>` : '';
   const formatNumPct = (val, tot, color = "var(--texto)") => `<div style="color:${color};font-weight:700;line-height:1">${val}</div>` + formatPct(val, tot);
 
-  for (const jogo of (window.SCHEDULE || [])) {
+  const jogosOrdenados = (window.SCHEDULE || []).sort((a, b) => new Date(a.utc) - new Date(b.utc));
+  for (const jogo of jogosOrdenados) {
     const b = APP.bracket?.[jogo.id] || {};
     const hC = b.home || jogo.home;
     const aC = b.away || jogo.away;
