@@ -94,25 +94,49 @@ window.renderRegras = function () {
   // FAQ
   h += '<div class="card"><div class="card-titulo">❓ Perguntas Frequentes</div><div style="display:grid;gap:5px">';
   const faqs = [
+    // --- PONTUAÇÃO ---
     ["O que é acertar o RESULTADO?",
       "Acertar o resultado significa adivinhar quem venceu — ou que empatou.<br><br>Ex: apostou Brasil 2×0 e saiu Brasil 3×1. Ambos são vitória do Brasil → <strong>resultado correto = " + base + " pts</strong>."],
     ["O que é acertar o PLACAR EXATO?",
       "Significa adivinhar o placar final com o número exato de gols de cada time.<br><br>Ex: apostou <strong>2×1</strong> e saiu <strong>2×1</strong>. Com menos de " + limiar + " gols no total = <strong>+" + (base + bBaixo) + " pts</strong>. Com " + limiar + " ou mais gols = <strong>+" + (base + bAlto) + " pts</strong>."],
     ["Como funciona a diferença de gols?",
       "Se você acertou quem ganhou E a diferença de gols (ex: apostou 2×1, saiu 3×2 — ambos por 1 gol), ganha " + base + "+" + bDiff + " = <strong>" + (base + bDiff) + " pts</strong>."],
+    ["Os bônus se somam? Posso acumular diferença de gols + gols de um time?",
+      "Não. Os bônus são <strong>excludentes</strong> — você recebe apenas o maior bônus alcançado.<br><br>" +
+      "Se acertou a diferença de gols E os gols de um time ao mesmo tempo, isso significa que você acertou o <strong>placar exato</strong>. O sistema reconhece automaticamente e aplica o bônus de placar exato (maior), não dois bônus separados."],
     ["O que acontece se o jogo vai para a prorrogação?",
       "O placar considerado é o do tempo regulamentar mais a prorrogação. Se o jogo for para os pênaltis, acerta quem chutou o empate. Ou seja, os pênaltis não contam para o bolão."],
-    ["Posso alterar meu palpite?",
-      "Sim, até o prazo limite de cada fase. Após o prazo limite, os palpites daquela fase ficam bloqueados."],
-    ["Como são os melhores terceiros?",
-      "Na Copa 2026 com 12 grupos, os 8 melhores 3ºs colocados avançam. O critério é: pontos → saldo de gols → gols marcados."],
-    ["Todos veem os palpites dos outros?",
-      "Sim! Na aba Compilação você vê os palpites de todos. Faz parte da diversão! 😄"],
     ["Quais os critérios de DESEMPATE?",
       "Caso dois ou mais apostadores terminem com a mesma pontuação, os critérios de desempate são:<br><br>" +
       "1. <strong>Total de Placares Exatos</strong> (soma de acertos com bônus +3 e +5).<br>" +
       "2. <strong>Total de Resultados Corretos</strong> (vitória/empate acertados).<br><br>" +
       "Se o empate persistir após esses critérios, os apostadores dividem a mesma posição."],
+    // --- APOSTAS E PRAZOS ---
+    ["Tenho que apostar todos os jogos logo no começo do bolão?",
+      "Não! Somente a <strong>fase de grupos</strong> e os <strong>palpites especiais</strong> (campeão, vice e 3º lugar) precisam ser preenchidos antes do início da Copa.<br><br>" +
+      "As apostas das demais fases eliminatórias serão abertas gradualmente: os administradores liberam cada fase (32 avos, oitavas, quartas, semifinais, finais) em horário predeterminado, antes do início dos jogos daquela fase."],
+    ["Quais são as fases de apostas?",
+      "São <strong>6 fases</strong> no total: Grupos, 32 Avos de Final, Oitavas de Final, Quartas de Final, Semifinais e Finais.<br><br>" +
+      "Além disso, os <strong>palpites especiais</strong> (campeão, vice, 3º lugar) são preenchidos separadamente, junto com a fase de grupos."],
+    ["Posso alterar meu palpite?",
+      "Sim, até o prazo limite de cada fase. Após o prazo limite, os palpites daquela fase ficam bloqueados."],
+    ["Esqueci de preencher algum jogo. E agora?",
+      "Se as apostas da fase <strong>ainda estiverem abertas</strong>, você pode entrar no link da sua aposta e preencher normalmente a qualquer momento.<br><br>" +
+      "Se o prazo já fechou, não é possível mais alterar — os palpites não preenchidos valem <strong>zero pontos</strong> naquele jogo."],
+    ["Perdi meu token. E agora?",
+      "Fale com um dos <strong>administradores do bolão</strong>. Eles conseguem acessar o painel admin e recuperar o link da sua aposta com o seu token."],
+    // --- PARTICIPAÇÃO ---
+    ["Como faço para entrar no bolão e apostar?",
+      "Você receberá um <strong>token personalizado</strong> enviado pelo administrador do bolão. Basta abrir o link de apostas, colocar seu token e preencher seus palpites. Não é necessário criar conta ou senha.<br><br>" +
+      "🔗 <a href=\"https://ciclopeestrabico.github.io/bolao-copa-2026/aposta.html\" target=\"_blank\" style=\"color:var(--verde-light)\">ciclopeestrabico.github.io/bolao-copa-2026/aposta.html</a>"],
+    ["Todos veem os palpites dos outros?",
+      "Sim! Na aba Compilação você vê os palpites de todos — mas apenas dos jogos cujas apostas <strong>já foram encerradas</strong>. Enquanto as apostas estão abertas, os palpites ficam ocultos (🔒) para manter o jogo justo."],
+    ["Como são os melhores terceiros?",
+      "Na Copa 2026 com 12 grupos, os 8 melhores 3ºs colocados avançam. O critério é: pontos → saldo de gols → gols marcados."],
+    // --- TRANSPARÊNCIA ---
+    ["Como garanto que algum admin não vai mudar alguma aposta minha ou de outro jogador?",
+      "Os botões de <strong>Exportar CSV</strong> e <strong>Exportar JSON</strong> na aba Compilação estão disponíveis exatamente para isso.<br><br>" +
+      "Antes de cada fase começar — quando as apostas já estiverem bloqueadas — todos os participantes podem salvar uma cópia dos palpites para conferência e backup. Guarde seus exports e compare ao final se tiver dúvidas."],
   ];
   for (const [q, a] of faqs) {
     h += '<details style="background:var(--fundo2);border-radius:var(--radius-sm);overflow:hidden">';
