@@ -18,7 +18,7 @@ window.renderClassificacao = function () {
   const totalJogos = (window.SCHEDULE || []).filter(j => res[j.id]?.homeGoals !== undefined).length;
   const totalPoss = (window.SCHEDULE || []).length;
   const maxPtsRealizado = calcularMaxPontosPossiveis(res);
-  const maxPtsTotal = calcularMaxPontosTotais();
+  const maxPtsTotal = calcularMaxPontosTotais(res);
   const pctRealizado = maxPtsTotal > 0 ? ((maxPtsRealizado / maxPtsTotal) * 100).toFixed(1) : 0;
 
   let h = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px">';
