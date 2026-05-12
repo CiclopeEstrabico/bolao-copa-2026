@@ -123,62 +123,38 @@ function calcularMaxPontosPossiveis(resultados, bracket) {
   for (const jogo of (window.SCHEDULE || [])) {
     const r = resultados[jogo.id];
     if (r && r.homeGoals !== undefined) {
-      let maxBruto = cfg.resultado_base;
-      // Em jogo de penaltis o placar exato nao e possivel/pontuado
-      if (!r.foi_penaltis) {
-        const tGols = Number(r.homeGoals) + Number(r.awayGoals);
-        const limiar = cfg.limiar_placar_alto;
-        const bonus = tGols >= limiar ? cfg.bonus_placar_exato_alto : cfg.bonus_placar_exato_baixo;
-        maxBruto += bonus;
-      }
+      // Jogo realizado: usa bonus maximo teorico (igual ao denominador)
+      const maxBruto = cfg.resultado_base + cfg.bonus_placar_exato_alto;
       max += aplicarFator(maxBruto, jogo.fase);
     }
   }
 
-  // Adiciona pontos máximos dos especiais conforme os resultados forem oficializados
-  const brk = bracket || APP.bracket || {};
-  const esp = window.CONFIG?.pontuacao?.extras || {};
+  // Adiciona pontos maximos dos especiais conforme os resultados forem oficializados
+  const esp = cfg.extras || {};
   const resF = resultados["FNL"];
   const resT = resultados["TPL"];
   if (resF && resF.homeGoals !== undefined) {
-    // Final já jogada: campeão e vice já podem ser acertados
-    max += (esp.primeiro_lugar) + (esp.segundo_lugar);
+    max += (esp.primeiro_lugar ?? 0) + (esp.segundo_lugar ?? 0);
   }
   if (resT && resT.homeGoals !== undefined) {
-    // Disputa de 3º lugar já jogada
-    max += (esp.terceiro_lugar);
+    max += (esp.terceiro_lugar ?? 0);
   }
 
   return Math.round(max * 10) / 10;
 }
 
 /**
- * calcularMaxPontosTotais(resultados)
- * Calcula o total máximo de pontos possível no campeonato.
- * Para jogos já realizados, usa o bônus real (placar exato alto ou baixo
- * dependendo dos gols). Para jogos futuros, usa o bônus teórico máximo.
- * Assim, quando todos os resultados forem preenchidos, este valor == calcularMaxPontosPossiveis.
+ * calcularMaxPontosTotais()
+ * Calcula o total máximo de pontos possível no campeonato inteiro,
+ * assumindo acerto de placar exato com bônus máximo em todos os jogos.
  */
-function calcularMaxPontosTotais(resultados) {
+function calcularMaxPontosTotais() {
   let max = 0;
   const cfg = window.CONFIG?.pontuacao;
   if (!cfg) return 0;
+  const maxBruto = cfg.resultado_base + cfg.bonus_placar_exato_alto;
 
   for (const jogo of (window.SCHEDULE || [])) {
-    const r = resultados && resultados[jogo.id];
-    let maxBruto;
-    if (r && r.homeGoals !== undefined) {
-      // Jogo realizado: bonus real baseado nos gols marcados
-      maxBruto = cfg.resultado_base;
-      if (!r.foi_penaltis) {
-        const tGols = Number(r.homeGoals) + Number(r.awayGoals);
-        const bonus = tGols >= cfg.limiar_placar_alto ? cfg.bonus_placar_exato_alto : cfg.bonus_placar_exato_baixo;
-        maxBruto += bonus;
-      }
-    } else {
-      // Jogo futuro: maximo teorico
-      maxBruto = cfg.resultado_base + cfg.bonus_placar_exato_alto;
-    }
     max += aplicarFator(maxBruto, jogo.fase);
   }
 
