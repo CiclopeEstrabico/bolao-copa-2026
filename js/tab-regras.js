@@ -71,7 +71,7 @@ window.renderRegras = function () {
     const f = fatores[id] ?? 1;
     h += '<div style="text-align:center;padding:8px 6px;background:var(--fundo2);border-radius:var(--radius-sm)">';
     h += '<div style="font-size:.63rem;color:var(--texto2)">' + nome + '</div>';
-    h += '<div style="font-size:1.1rem;font-weight:900;color:var(--verde-light)">×' + f + '</div>';
+    h += '<div style="font-size:1.1rem;font-weight:900;color:var(--verde-light)">×' + Number(f).toFixed(1) + '</div>';
     // Exemplo: placar exato alto nessa fase
 
     h += '</div>';
