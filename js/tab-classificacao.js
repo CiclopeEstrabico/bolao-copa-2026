@@ -1,3 +1,4 @@
+const _rankingAnterior = {};
 window.renderClassificacao = function () {
   const el = document.getElementById("aba-classificacao");
   if (!el) return;
