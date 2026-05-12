@@ -291,7 +291,11 @@ window.exportarCompilacaoCsv = function () {
 
   const ranking = apos.map(a => {
     const st = window.calcularPontosApostador(pals[a.id] || {}, res, a, {});
-    return { id: a.id, nome: a.nome, apelido: a.apelido, pts: st.total };
+    const esp = a.especiais || {};
+    return {
+      id: a.id, nome: a.nome, apelido: a.apelido, pts: st.total,
+      especiais: { campeao: esp.campeao || "", vice: esp.vice || "", terceiro: esp.terceiro || "" }
+    };
   }).sort((a, b) => b.pts - a.pts);
 
   let csvContent = "\uFEFF"; // BOM para forçar UTF-8 no Excel
