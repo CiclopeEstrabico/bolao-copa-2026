@@ -24,7 +24,8 @@ function _vencedor(h, a) {
  * @returns {Object} {total_bruto, base, bonus_pts, bonus_tipo, descricao, acertou}
  */
 function calcularPontosBrutos(palpite, resultado) {
-  const cfg = window.CONFIG.pontuacao;
+  const cfg = window.CONFIG?.pontuacao;
+  if (!cfg) return { total_bruto: 0, base: 0, bonus_pts: 0, bonus_tipo: null, descricao: "Erro Config", acertou: false };
 
   if (!resultado || resultado.homeGoals === undefined) {
     return { total_bruto: 0, base: 0, bonus_pts: 0, bonus_tipo: null, descricao: "Aguardando resultado", acertou: null };
@@ -116,16 +117,18 @@ function calcularPontosEspeciais(participante, campeaoOf, viceOf, terceiroOf) {
  */
 function calcularMaxPontosPossiveis(resultados, bracket) {
   let max = 0;
+  const cfg = window.CONFIG?.pontuacao;
+  if (!cfg) return 0;
+
   for (const jogo of (window.SCHEDULE || [])) {
     const r = resultados[jogo.id];
     if (r && r.homeGoals !== undefined) {
-      const cfg = window.CONFIG?.pontuacao || {};
-      let maxBruto = cfg.resultado_base || 3;
+      let maxBruto = cfg.resultado_base;
       // Em jogo de penaltis o placar exato nao e possivel/pontuado
       if (!r.foi_penaltis) {
         const tGols = Number(r.homeGoals) + Number(r.awayGoals);
-        const limiar = cfg.limiar_placar_alto || 4;
-        const bonus = tGols >= limiar ? (cfg.bonus_placar_exato_alto || 5) : (cfg.bonus_placar_exato_baixo || 3);
+        const limiar = cfg.limiar_placar_alto;
+        const bonus = tGols >= limiar ? cfg.bonus_placar_exato_alto : cfg.bonus_placar_exato_baixo;
         maxBruto += bonus;
       }
       max += aplicarFator(maxBruto, jogo.fase);
@@ -139,11 +142,11 @@ function calcularMaxPontosPossiveis(resultados, bracket) {
   const resT = resultados["TPL"];
   if (resF && resF.homeGoals !== undefined) {
     // Final já jogada: campeão e vice já podem ser acertados
-    max += (esp.primeiro_lugar || 7) + (esp.segundo_lugar || 4);
+    max += (esp.primeiro_lugar) + (esp.segundo_lugar);
   }
   if (resT && resT.homeGoals !== undefined) {
     // Disputa de 3º lugar já jogada
-    max += (esp.terceiro_lugar || 2);
+    max += (esp.terceiro_lugar);
   }
 
   return Math.round(max * 10) / 10;
@@ -156,14 +159,19 @@ function calcularMaxPontosPossiveis(resultados, bracket) {
  */
 function calcularMaxPontosTotais() {
   let max = 0;
-  const cfg = window.CONFIG?.pontuacao || {};
-  const resBase = cfg.resultado_base || 3;
-  const bonusMax = cfg.bonus_placar_exato_alto || 5;
+  const cfg = window.CONFIG?.pontuacao;
+  if (!cfg) return 0;
+  const resBase = cfg.resultado_base;
+  const bonusMax = cfg.bonus_placar_exato_alto;
   const maxBruto = resBase + bonusMax;
 
   for (const jogo of (window.SCHEDULE || [])) {
     max += aplicarFator(maxBruto, jogo.fase);
   }
+
+  const esp = cfg.extras || {};
+  max += (esp.primeiro_lugar ?? 0) + (esp.segundo_lugar ?? 0) + (esp.terceiro_lugar ?? 0);
+
   return Math.round(max * 10) / 10;
 }
 
@@ -198,7 +206,7 @@ function calcularPontosApostador(palpites, resultados, participante, especiais) 
     } else if (brutos.acertou === true) {
       acertos_resultado++; // Todo resultado correto conta
       if (brutos.bonus_tipo === "placar_exato") {
-        if (brutos.bonus_pts === (window.CONFIG?.pontuacao?.bonus_placar_exato_alto || 5)) {
+        if (brutos.bonus_pts === (window.CONFIG?.pontuacao?.bonus_placar_exato_alto)) {
           acertos_placar_alto++;
         } else {
           acertos_placar++;

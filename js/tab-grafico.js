@@ -234,7 +234,7 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
     .filter(j => res[j.id] && res[j.id].homeGoals !== undefined)
     .sort((a, b) => new Date(a.utc) - new Date(b.utc));
 
-  const espOficiais = _extrairEspeciaisOficiais(res, APP.bracket || {});
+  const espOficiais = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
   const temEspeciais = !!(espOficiais.campeao || espOficiais.vice || espOficiais.terceiro);
 
   if (!jogosComRes.length && !temEspeciais)

@@ -1,57 +1,11 @@
-/** tab-classificacao.js - Ranking com sparklines e movimento */
-let _rankingAnterior = {};
-
-/**
- * Extrai campeão, vice e 3º lugar a partir dos resultados e bracket oficiais.
- * Só retorna o código do time quando o jogo correspondente já tem resultado.
- *   - Campeão  = vencedor de FNL
- *   - Vice     = perdedor de FNL
- *   - 3º lugar = vencedor de TPL
- */
-function _extrairEspeciaisOficiais(res, bracket) {
-  const out = { campeao: null, vice: null, terceiro: null };
-
-  // Final (FNL)
-  const rFinal = res["FNL"];
-  if (rFinal && rFinal.homeGoals !== undefined) {
-    const bFinal = bracket["FNL"] || {};
-    let winner, loser;
-    if (rFinal.foi_penaltis) {
-      winner = rFinal.penaltis_vencedor === "home" ? bFinal.home : bFinal.away;
-      loser  = rFinal.penaltis_vencedor === "home" ? bFinal.away : bFinal.home;
-    } else {
-      const h = rFinal.homeGoals, a = rFinal.awayGoals;
-      winner = h >= a ? bFinal.home : bFinal.away;
-      loser  = h >= a ? bFinal.away : bFinal.home;
-    }
-    if (winner) out.campeao  = winner;
-    if (loser)  out.vice     = loser;
-  }
-
-  // 3º Lugar (TPL)
-  const rTpl = res["TPL"];
-  if (rTpl && rTpl.homeGoals !== undefined) {
-    const bTpl = bracket["TPL"] || {};
-    let winner3;
-    if (rTpl.foi_penaltis) {
-      winner3 = rTpl.penaltis_vencedor === "home" ? bTpl.home : bTpl.away;
-    } else {
-      winner3 = rTpl.homeGoals >= rTpl.awayGoals ? bTpl.home : bTpl.away;
-    }
-    if (winner3) out.terceiro = winner3;
-  }
-
-  return out;
-}
-
 window.renderClassificacao = function () {
   const el = document.getElementById("aba-classificacao");
   if (!el) return;
   const res = getResultados();
   const apos = APP.apostadores || [];
   const pals = APP.palpites || {};
-  // Especiais oficiais derivados do bracket — não de APP.especiais (campo inexistente)
-  const esp = _extrairEspeciaisOficiais(res, APP.bracket || {});
+  // Especiais oficiais derivados do bracket
+  const esp = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
 
   const ranking = gerarRanking(pals, res, apos, esp);
 

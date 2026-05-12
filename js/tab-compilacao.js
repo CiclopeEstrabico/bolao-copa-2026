@@ -107,9 +107,7 @@ window.renderCompilacao = function () {
   // --- Linhas de Especiais (Campeão, Vice, 3º) ---
   // Derivados automaticamente do bracket (igual à aba Classificação)
   const brk = APP.bracket || {};
-  const resOficialEsp = typeof _extrairEspeciaisOficiais === 'function'
-    ? _extrairEspeciaisOficiais(res, brk)
-    : { campeao: brk.campeao || null, vice: brk.vice || null, terceiro: brk.terceiro || null };
+  const resOficialEsp = window.BRACKET.extrairEspeciaisOficiais(res, brk);
 
   const rowsEsp = [
     { label: "🏆 Campeão", key: "campeao" },
@@ -147,10 +145,10 @@ window.renderCompilacao = function () {
     const r = res[jogo.id];
     if (r && r.homeGoals !== undefined) {
       jogosRealizados++;
-      let maxBruto = window.CONFIG?.pontuacao?.resultado_base || 3;
-      if (!r.foi_penaltis) {
+      const cfg = window.CONFIG?.pontuacao;
+      let maxBruto = cfg?.resultado_base || 3;
+      if (!r.foi_penaltis && cfg) {
         const tGols = Number(r.homeGoals) + Number(r.awayGoals);
-        const cfg = window.CONFIG.pontuacao;
         const limiar = cfg.limiar_placar_alto || 4;
         const bonus = tGols >= limiar ? (cfg.bonus_placar_exato_alto || 5) : (cfg.bonus_placar_exato_baixo || 3);
         maxBruto += bonus;
@@ -203,18 +201,23 @@ window.exportarCompilacaoJson = function () {
 
   const ranking = apos.map(a => {
     const st = window.calcularPontosApostador(pals[a.id] || {}, res, a, {});
-
     // Filtra palpites para não vazar no JSON se a fase ainda estiver aberta e sem resultado
     const palpitesFiltrados = {};
     const meusPals = pals[a.id] || {};
     for (const jId of Object.keys(meusPals)) {
       const temRes = res[jId] && res[jId].homeGoals !== undefined;
       if (temRes || !jogoAceita(jId)) {
-        palpitesFiltrados[jId] = meusPals[jId];
+        const p = meusPals[jId];
+        // Strip token and other internal fields
+        palpitesFiltrados[jId] = {
+          homeGoals: p.homeGoals,
+          awayGoals: p.awayGoals
+        };
       }
     }
 
     // ③ Não exportar o token do apostador
+    const esp = a.especiais || {};
     return {
       id: a.id,
       nome: a.nome,
@@ -223,7 +226,11 @@ window.exportarCompilacaoJson = function () {
       placar_exato: st.acertos_placar_exato,
       resultado_correto: st.acertos_resultado,
       palpites: palpitesFiltrados,
-      especiais: a.especiais || {}
+      especiais: {
+        campeao: esp.campeao || "",
+        vice: esp.vice || "",
+        terceiro: esp.terceiro || ""
+      }
     };
   }).sort((a, b) => b.pts - a.pts);
 
@@ -242,9 +249,7 @@ window.exportarCompilacaoJson = function () {
   }
 
   // ⑤ Resultado oficial dos especiais derivado automaticamente do bracket
-  const espOficiais = typeof _extrairEspeciaisOficiais === 'function'
-    ? _extrairEspeciaisOficiais(res, brk)
-    : { campeao: null, vice: null, terceiro: null };
+  const espOficiais = window.BRACKET.extrairEspeciaisOficiais(res, brk);
 
   const exportData = {
     timestamp: new Date().toISOString(),
@@ -286,7 +291,7 @@ window.exportarCompilacaoCsv = function () {
 
   const ranking = apos.map(a => {
     const st = window.calcularPontosApostador(pals[a.id] || {}, res, a, {});
-    return { ...a, pts: st.total };
+    return { id: a.id, nome: a.nome, apelido: a.apelido, pts: st.total };
   }).sort((a, b) => b.pts - a.pts);
 
   let csvContent = "\uFEFF"; // BOM para forçar UTF-8 no Excel
@@ -343,10 +348,8 @@ window.exportarCompilacaoCsv = function () {
   }
 
   // --- Linhas de Especiais no CSV ---
-  // Resultado oficial derivado automaticamente (igual à aba de classificação)
-  const espOficiais = typeof _extrairEspeciaisOficiais === 'function'
-    ? _extrairEspeciaisOficiais(res, brk)
-    : { campeao: null, vice: null, terceiro: null };
+  // ⑥ Resultados oficiais (Campeão, Vice, 3º) automáticos do bracket
+  const espOficiais = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
   const labelsEsp = { campeao: "🏆 Campeão", vice: "🥈 Vice", terceiro: "🥉 3º Lugar" };
 
   for (const key of ["campeao", "vice", "terceiro"]) {

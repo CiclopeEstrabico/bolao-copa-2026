@@ -4,12 +4,16 @@ window.renderRegras = function () {
   if (!el) return;
 
   const cfg = window.CONFIG?.pontuacao;
-  const base = cfg?.resultado_base ?? 3;
-  const bDiff = cfg?.bonus_diferenca_gols ?? 1;
-  const bGols = cfg?.bonus_gols_um_time ?? 1;
-  const bBaixo = cfg?.bonus_placar_exato_baixo ?? 3;
-  const bAlto = cfg?.bonus_placar_exato_alto ?? 5;
-  const limiar = cfg?.limiar_placar_alto ?? 4;
+  if (!cfg) {
+    el.innerHTML = '<div class="card" style="padding:20px;text-align:center;color:var(--vermelho)">Erro: Configurações de pontuação não encontradas (config.js).</div>';
+    return;
+  }
+  const base = cfg.resultado_base;
+  const bDiff = cfg.bonus_diferenca_gols;
+  const bGols = cfg.bonus_gols_um_time;
+  const bBaixo = cfg.bonus_placar_exato_baixo;
+  const bAlto = cfg.bonus_placar_exato_alto;
+  const limiar = cfg.limiar_placar_alto;
 
   let h = '<div class="card">';
   h += '<div class="card-titulo">📐 Sistema de Pontuação</div>';
@@ -60,7 +64,7 @@ window.renderRegras = function () {
   h += '</div>';
 
   // Multiplicadores
-  const fatores = cfg?.fatores_fase || { grupos: 1.0, "32avos": 1.2, oitavas: 1.4, quartas: 1.6, semis: 1.8, terceiro: 1.8, final: 2.0 };
+  const fatores = cfg.fatores_fase;
   h += '<div style="margin-top:14px"><div style="font-size:.72rem;font-weight:700;color:var(--texto2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">× Multiplicador por Fase</div>';
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px">';
   for (const [nome, id] of [["Grupos", "grupos"], ["32 Avos", "32avos"], ["Oitavas", "oitavas"], ["Quartas", "quartas"], ["Semis", "semis"], ["3° Lugar", "terceiro"], ["Final", "final"]]) {
@@ -75,7 +79,7 @@ window.renderRegras = function () {
   h += '</div></div></div>';
 
   // Especiais
-  const ext = cfg?.extras || { primeiro_lugar: 7, segundo_lugar: 4, terceiro_lugar: 2 };
+  const ext = cfg.extras;
   h += '<div class="card"><div class="card-titulo">⭐ Palpites Especiais</div>';
   h += '<div style="display:grid;gap:6px">';
   for (const [ico, t, d, k] of [["🏆", "Campeão", "Acertou o campeão do mundial", "primeiro_lugar"], ["🥈", "Vice", "Acertou o vice-campeão", "segundo_lugar"], ["🥉", "3° Lugar", "Acertou o terceiro colocado", "terceiro_lugar"]]) {
@@ -83,7 +87,7 @@ window.renderRegras = function () {
     h += '<span style="font-size:1.2rem">' + ico + '</span>';
     h += '<div style="flex:1"><div style="font-weight:700;font-size:.82rem">' + t + '</div>';
     h += '<div style="font-size:.72rem;color:var(--texto2)">' + d + '</div></div>';
-    h += '<div style="font-weight:900;color:var(--dourado)">+' + (ext[k] || 0) + ' pts</div></div>';
+    h += '<div style="font-weight:900;color:var(--dourado)">+' + (ext[k]) + ' pts</div></div>';
   }
   h += '</div></div>';
 

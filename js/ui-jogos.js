@@ -267,3 +267,54 @@ function renderJogoRow(jogo, res, ehElim, isAdm, palApo, showFullDate = false) {
 
   h += '</div>'; return h;
 }
+
+/**
+ * renderTabelaPodio(res, bracket)
+ * Retorna HTML com a tabela de 1º, 2º e 3º lugar.
+ */
+function renderTabelaPodio(res, bracket) {
+  if (typeof window.BRACKET?.extrairEspeciaisOficiais !== 'function') return '';
+  
+  const esp = window.BRACKET.extrairEspeciaisOficiais(res, bracket);
+  const cfg = window.CONFIG?.pontuacao?.extras || {};
+  const algumDefinido = esp.campeao || esp.vice || esp.terceiro;
+
+  if (!algumDefinido) return '';
+
+  const _line = (pos, icon, key, cfgKey) => {
+    const code = esp[key];
+    const info = window.TEAMS_BY_CODE?.[code];
+    if (!code) return '';
+    const pts = cfg[cfgKey] ?? 0;
+    return `
+      <tr>
+        <td style="padding:10px 14px;font-size:1.3rem;text-align:center;width:44px">${icon}</td>
+        <td style="padding:10px 8px">
+          <div style="display:flex;align-items:center;gap:10px">
+            ${htmlBandeira(code, 24)}
+            <div>
+              <div style="font-weight:800;font-size:.92rem">${info?.name || code}</div>
+              <div style="font-size:.65rem;color:var(--texto2);margin-top:1px">${pos}. lugar</div>
+            </div>
+          </div>
+        </td>
+        <td style="padding:10px 14px;text-align:right;white-space:nowrap">
+          <span style="background:rgba(245,166,35,.12);color:var(--dourado);border:1px solid rgba(245,166,35,.25);border-radius:20px;padding:2px 10px;font-size:.75rem;font-weight:800">${pts} pts especiais</span>
+        </td>
+      </tr>`;
+  };
+
+  return `
+    <div class="card" style="margin-top:10px">
+      <div class="card-titulo">🏆 Pódio da Copa</div>
+      <table style="width:100%;border-collapse:collapse">
+        ${_line('1º', '🥇', 'campeao',  'primeiro_lugar')}
+        ${_line('2º', '🥈', 'vice',     'segundo_lugar')}
+        ${_line('3º', '🥉', 'terceiro', 'terceiro_lugar')}
+      </table>
+      <div style="font-size:.67rem;color:var(--texto2);margin-top:10px;padding-top:8px;border-top:1px solid var(--borda)">
+        Quem apostou nesses times durante a fase de grupos recebe os pontos especiais indicados.
+      </div>
+    </div>`;
+}
+window.renderTabelaPodio = renderTabelaPodio;

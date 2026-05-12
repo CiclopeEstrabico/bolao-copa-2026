@@ -290,10 +290,11 @@ window.renderAbaAtiva = function() {
 
 function renderEspeciaisAposta(res) {
   const esp = _apostador.especiais || {};
+  const cfgExtra = window.CONFIG?.pontuacao?.extras || {};
   const fases = [
-    { key: "campeao",  label: "🏆 Campeão",  pts: "15pts" },
-    { key: "vice",     label: "🥈 Vice",      pts: "10pts" },
-    { key: "terceiro", label: "🥉 3° Lugar",  pts: "5pts" },
+    { key: "campeao",  label: "🏆 Campeão",  pts: (cfgExtra.primeiro_lugar || 0) + "pts" },
+    { key: "vice",     label: "🥈 Vice",      pts: (cfgExtra.segundo_lugar || 0) + "pts" },
+    { key: "terceiro", label: "🥉 3° Lugar",  pts: (cfgExtra.terceiro_lugar || 0) + "pts" },
   ];
   const times = [...new Set((window.SCHEDULE || []).filter(j => j.grupo).map(j => [j.home, j.away]).flat())];
 
