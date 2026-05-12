@@ -95,12 +95,18 @@ window.renderRegras = function () {
   h += '<div class="card"><div class="card-titulo">❓ Perguntas Frequentes</div><div style="display:grid;gap:5px">';
   const faqs = [
     // --- PONTUAÇÃO ---
+    ["Como faço para entrar no bolão e apostar?",
+      "Você receberá um <strong>token personalizado</strong> enviado pelo administrador do bolão. Basta abrir o link de apostas, colocar seu token e preencher seus palpites. Não é necessário criar conta ou senha.<br><br>" +
+      "🔗 <a href=\"https://ciclopeestrabico.github.io/bolao-copa-2026/aposta.html\" target=\"_blank\" style=\"color:var(--verde-light)\">ciclopeestrabico.github.io/bolao-copa-2026/aposta.html</a>"],
     ["O que é acertar o RESULTADO?",
       "Acertar o resultado significa adivinhar quem venceu — ou que empatou.<br><br>Ex: apostou Brasil 2×0 e saiu Brasil 3×1. Ambos são vitória do Brasil → <strong>resultado correto = " + base + " pts</strong>."],
     ["O que é acertar o PLACAR EXATO?",
       "Significa adivinhar o placar final com o número exato de gols de cada time.<br><br>Ex: apostou <strong>2×1</strong> e saiu <strong>2×1</strong>. Com menos de " + limiar + " gols no total = <strong>+" + (base + bBaixo) + " pts</strong>. Com " + limiar + " ou mais gols = <strong>+" + (base + bAlto) + " pts</strong>."],
-    ["Como funciona a diferença de gols?",
-      "Se você acertou quem ganhou E a diferença de gols (ex: apostou 2×1, saiu 3×2 — ambos por 1 gol), ganha " + base + "+" + bDiff + " = <strong>" + (base + bDiff) + " pts</strong>."],
+    ["Como funciona o bônus por diferença de gols?",
+      "Se você acertou quem ganhou E a diferença de gols (ex: apostou 2×1, saiu 3×2 — ambos por 1 gol), ganha " + base + "+" + bDiff + " = <strong>" + (base + bDiff) + " pts</strong>." +
+      "<br><br>Veja que se você acertou um empate, mas sem ser placar exato, essa regra também se aplica e você recebe 1 ponto de bônus."],
+    ["Como funciona o bônus por gols de um time?",
+      "Se você acertou quem ganhou E o número de gols de um time (ex: apostou 2×1, saiu 3×1 — ambos com 1 gol do visitante), ganha " + base + "+" + bDiff + " = <strong>" + (base + bDiff) + " pts</strong>."],
     ["Os bônus se somam? Posso acumular diferença de gols + gols de um time?",
       "Não. Os bônus são <strong>excludentes</strong> — você recebe apenas o maior bônus alcançado.<br><br>" +
       "Se acertou a diferença de gols E os gols de um time ao mesmo tempo, isso significa que você acertou o <strong>placar exato</strong>. O sistema reconhece automaticamente e aplica o bônus de placar exato (maior), não dois bônus separados."],
@@ -126,9 +132,6 @@ window.renderRegras = function () {
     ["Perdi meu token. E agora?",
       "Fale com um dos <strong>administradores do bolão</strong>. Eles conseguem acessar o painel admin e recuperar o link da sua aposta com o seu token."],
     // --- PARTICIPAÇÃO ---
-    ["Como faço para entrar no bolão e apostar?",
-      "Você receberá um <strong>token personalizado</strong> enviado pelo administrador do bolão. Basta abrir o link de apostas, colocar seu token e preencher seus palpites. Não é necessário criar conta ou senha.<br><br>" +
-      "🔗 <a href=\"https://ciclopeestrabico.github.io/bolao-copa-2026/aposta.html\" target=\"_blank\" style=\"color:var(--verde-light)\">ciclopeestrabico.github.io/bolao-copa-2026/aposta.html</a>"],
     ["Todos veem os palpites dos outros?",
       "Sim! Na aba Compilação você vê os palpites de todos — mas apenas dos jogos cujas apostas <strong>já foram encerradas</strong>. Enquanto as apostas estão abertas, os palpites ficam ocultos (🔒) para manter o jogo justo."],
     ["Como são os melhores terceiros?",
