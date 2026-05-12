@@ -124,17 +124,17 @@ function renderToggles() {
 }
 
 /* ---- RENDER PRINCIPAL ---- */
-function renderJogosComToggle(res, tg, isAdm, palApo) {
+function renderJogosComToggle(res, tg, isAdm, palApo, bracketOverride) {
   let h = renderToggles();
   // Grupos NO TOPO: grid compacto acima dos jogos (sem duplicar no inline)
   if (_modoGrupos === "topo") h += '<div class="card" style="padding:10px;margin-bottom:10px">' + renderGruposGrid(tg, res) + '</div>';
   const gJogos = (window.SCHEDULE || []).filter(j => j.fase === "grupos");
-  h += _ordemJogos === "grupos" ? renderPorGrupo(gJogos, res, tg, isAdm, palApo) : renderPorDia(gJogos, res, isAdm, palApo);
+  h += _ordemJogos === "grupos" ? renderPorGrupo(gJogos, res, tg, isAdm, palApo, bracketOverride) : renderPorDia(gJogos, res, isAdm, palApo, bracketOverride);
   for (const fe of [{ l: "32 Avos de Final", ids: ["32avos"] }, { l: "Oitavas de Final", ids: ["oitavas"] }, { l: "Quartas de Final", ids: ["quartas"] }, { l: "Semifinais", ids: ["semis"] }, { l: "3° Lugar e Final", ids: ["terceiro", "final"] }]) {
     const jogos = (window.SCHEDULE || []).filter(j => fe.ids.includes(j.fase)).sort((a, b) => new Date(a.utc) - new Date(b.utc));
     if (!jogos.length) continue;
     h += '<div class="fase-header">' + fe.l + '</div><div class="fase-grupo-bloco">';
-    for (const j of jogos) h += renderJogoRow(j, res, true, isAdm, palApo, true);
+    for (const j of jogos) h += renderJogoRow(j, res, true, isAdm, palApo, true, bracketOverride);
     h += '</div>';
   }
   // Grupos NO FIM
@@ -142,7 +142,7 @@ function renderJogosComToggle(res, tg, isAdm, palApo) {
   return h;
 }
 
-function renderPorGrupo(jogos, res, tg, isAdm, palApo) {
+function renderPorGrupo(jogos, res, tg, isAdm, palApo, bracketOverride) {
   let h = "";
   for (const L of "ABCDEFGHIJKL".split("")) {
     const jg = jogos.filter(j => j.grupo === L).sort((a, b) => new Date(a.utc) - new Date(b.utc));
@@ -154,7 +154,7 @@ function renderPorGrupo(jogos, res, tg, isAdm, palApo) {
     if (_modoGrupos === "jogos" && st && ok === 6) h += '<span style="margin-left:auto;font-size:.65rem;color:#86efac">✓ ' + (window.TEAMS_BY_CODE[st[0]?.code]?.name || "") + " · " + (window.TEAMS_BY_CODE[st[1]?.code]?.name || "") + '</span>';
     h += '</div>';
     if (_modoGrupos === "jogos") { const miniTg = { grupos: tg.grupos, melhoresTerceiros: tg.melhoresTerceiros }; h += renderGrupoMini(L, miniTg, res); }
-    for (const j of jg) h += renderJogoRow(j, res, false, isAdm, palApo, true);
+    for (const j of jg) h += renderJogoRow(j, res, false, isAdm, palApo, true, bracketOverride);
     h += '</div>';
   }
   return h;
@@ -173,7 +173,7 @@ function renderGrupoMini(L, tg, res) {
   return h + '</tbody></table></div>';
 }
 
-function renderPorDia(jogos, res, isAdm, palApo) {
+function renderPorDia(jogos, res, isAdm, palApo, bracketOverride) {
   const porDia = {};
   [...jogos].sort((a, b) => new Date(a.utc) - new Date(b.utc)).forEach(j => {
     const d = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "2-digit", month: "long", timeZone: "America/Sao_Paulo" }).format(new Date(j.utc));
@@ -183,15 +183,15 @@ function renderPorDia(jogos, res, isAdm, palApo) {
   let h = "";
   for (const [d, jgs] of Object.entries(porDia)) {
     h += '<div class="dia-header">' + d + '</div><div class="fase-grupo-bloco">';
-    for (const j of jgs) h += renderJogoRow(j, res, false, isAdm, palApo, false);
+    for (const j of jgs) h += renderJogoRow(j, res, false, isAdm, palApo, false, bracketOverride);
     h += '</div>';
   }
   return h;
 }
 
 /* ---- JOGO ROW (grid 5 colunas) ---- */
-function renderJogoRow(jogo, res, ehElim, isAdm, palApo, showFullDate = false) {
-  const r = res[jogo.id]; const b = (APP.bracket && APP.bracket[jogo.id]) || {};
+function renderJogoRow(jogo, res, ehElim, isAdm, palApo, showFullDate = false, bracketOverride = null) {
+  const r = res[jogo.id]; const b = (bracketOverride && bracketOverride[jogo.id]) || (APP.bracket && APP.bracket[jogo.id]) || {};
   const hCode = b.home || jogo.home; const aCode = b.away || jogo.away;
   const hName = window.TEAMS_BY_CODE[hCode]?.name || window.BRACKET.descricaoPosicao(b.homePos || "") || "A definir";
   const aName = window.TEAMS_BY_CODE[aCode]?.name || window.BRACKET.descricaoPosicao(b.awayPos || "") || "A definir";

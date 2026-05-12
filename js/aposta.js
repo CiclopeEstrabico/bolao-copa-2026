@@ -23,17 +23,15 @@ window._onInputPlacar = function(id) {
   if (!isNaN(hg) && !isNaN(ag)) {
     _palpitesLocais[id] = { homeGoals: hg, awayGoals: ag };
 
-    // Marca que o usuário está digitando — suprime re-renders do Firebase por 3s
+    // Marca que o usuário está digitando — suprime re-renders do Firebase
     window._digitandoTimer && clearTimeout(window._digitandoTimer);
     window._estaDigitando = true;
     window._digitandoTimer = setTimeout(() => {
       window._estaDigitando = false;
-      // Atualiza progresso só depois que parou de digitar
+      // Atualiza mini-tabelas de progresso após parar de digitar
       atualizarMiniTabelasAposta();
-    }, 1500);
-
-    clearTimeout(window._saveTimerAposta);
-    window._saveTimerAposta = setTimeout(() => salvarTodosPalpites(true), 2500);
+    }, 800);
+    // Nota: sem auto-save — salvo somente pelo botão 💾 SALVAR PALPITES
   }
 };
 
@@ -246,6 +244,12 @@ function renderAposta() {
   const resOficiais = getResultados();
   const tg = calcularProjecao();
 
+  // Bracket projetado: palpites do apostador preenchem onde não há resultado oficial
+  // Resultados oficiais sempre sobrepõem os palpites
+  const _resProjecao = Object.assign({}, _palpitesLocais);
+  for (const [_pid, _pr] of Object.entries(resOficiais)) _resProjecao[_pid] = _pr;
+  const _bracketApostador = window.BRACKET.preencherBracket(_resProjecao);
+
   // Contagem palpites preenchidos
   const totalJogos = (window.SCHEDULE || []).filter(j => j.fase === "grupos").length;
   const preenchidos = Object.values(_palpitesLocais).filter(p => p?.homeGoals !== undefined).length;
@@ -273,12 +277,27 @@ function renderAposta() {
   if (!_modoVer) h += renderEspeciaisAposta(resOficiais);
 
   // Mesmo layout do resultados: grupos + toggle + jogos
-  h += renderJogosComToggle(resOficiais, tg, false, _palpitesLocais);
+  h += renderJogosComToggle(resOficiais, tg, false, _palpitesLocais, _bracketApostador);
+
+  // Focus Guard: captura o input focado antes de destruir o DOM
+  const _fgId  = document.activeElement?.id || null;
+  const _fgVal = document.activeElement?.value ?? null;
+  const _fgSel = document.activeElement?.selectionStart ?? null;
 
   el.innerHTML = h;
 
   // Registrar inputs: ao digitar, atualiza palpite local + re-renderiza grupos
   _registrarInputsAposta();
+
+  // Focus Guard: restaura foco após re-render
+  if (_fgId) {
+    const _fgEl = document.getElementById(_fgId);
+    if (_fgEl) {
+      _fgEl.focus();
+      if (_fgVal !== null) _fgEl.value = _fgVal;
+      try { _fgEl.setSelectionRange(_fgSel, _fgSel); } catch(_e) {}
+    }
+  }
 }
 
 // Sobrescreve a função global para que os toggles de ui-jogos.js funcionem aqui
