@@ -236,7 +236,7 @@ function calcularProjecao() {
 // ── Render principal ──
 function renderAposta() {
   const el = document.getElementById("aposta-main");
-  if (!el) return;
+  if (!el || !_apostador) return;
   const displayName = _apostador.nome ? `${_apostador.nome}` + (_apostador.apelido ? ` ("${_apostador.apelido}")` : "") : "Apostador";
 
   // Header com nome
@@ -414,13 +414,44 @@ function _registrarInputsAposta() {
 async function salvarTodosPalpites(silencioso = false) {
   if (_modoVer) return;
   if (!_apostador?.id) return;
-  const promessas = [];
+  
+  const batch = !APP.modoOffline ? APP.db.batch() : null;
+  let cont = 0;
+  
+  const refBase = !APP.modoOffline ? APP.db.collection("apostadores").doc(_apostador.id).collection("palpites_jogos") : null;
+
   for (const [gameId, p] of Object.entries(_palpitesLocais)) {
-    // Garantia dupla: checa se ambos os gols existem e se a fase aceita apostas
-    if (p?.homeGoals !== undefined && p?.awayGoals !== undefined && jogoAceita(gameId))
-      promessas.push(gravarPalpite(_apostador.id, gameId, p.homeGoals, p.awayGoals, _apostador.token));
+    // Só salva se mudou algo em relação ao que já temos no APP.palpites
+    const pAnterior = APP.palpites[_apostador.id]?.[gameId];
+    if (pAnterior?.homeGoals === p.homeGoals && pAnterior?.awayGoals === p.awayGoals) continue;
+
+    if (p?.homeGoals !== undefined && p?.awayGoals !== undefined && jogoAceita(gameId)) {
+      const jogo = window.SCHEDULE_BY_ID[gameId];
+      const fase = (jogo.fase === "final" || jogo.fase === "terceiro") ? "finais" : jogo.fase;
+      const data = { 
+        apostadorId: _apostador.id, gameId, homeGoals: p.homeGoals, awayGoals: p.awayGoals, fase,
+        token: _apostador.token || null,
+        atualizado_em: new Date().toISOString() 
+      };
+
+      if (APP.modoOffline) {
+        if (!APP.palpites[_apostador.id]) APP.palpites[_apostador.id] = {};
+        APP.palpites[_apostador.id][gameId] = data;
+        cont++;
+      } else {
+        batch.set(refBase.doc(gameId), data, {merge: true});
+        cont++;
+      }
+    }
   }
-  await Promise.all(promessas);
+
+  if (cont > 0) {
+    if (batch) await batch.commit();
+    if (APP.modoOffline) {
+      _persistirLocal();
+      renderAbaAtiva();
+    }
+  }
   if (!silencioso) {
     let toast = document.getElementById('toast-salvo');
     if (!toast) {
