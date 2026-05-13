@@ -17,6 +17,9 @@ function _onInputPlacar(id, ehElim) {
 }
 function _onBlurPlacar(id, ehElim) {
   if (window._isAdminView) return;
+  // Na página de apostas o blur nunca deve simular — palpite é capturado no oninput
+  // e salvo manualmente pelo botão 💾 SALVAR PALPITES.
+  if (window.location.pathname.includes("aposta.html")) return;
   const hg = parseInt(document.getElementById("sim-hg-" + id)?.value);
   const ag = parseInt(document.getElementById("sim-ag-" + id)?.value);
   if (isNaN(hg) || isNaN(ag)) return;
@@ -31,6 +34,9 @@ function _onBlurPlacar(id, ehElim) {
 function _onInputPen(id) { }
 function _onBlurPen(id) {
   if (window._isAdminView) return;
+  // Na página de apostas o blur nunca deve simular — pênaltis são capturados
+  // pelo window._onBlurPen sobrescrito em aposta.js.
+  if (window.location.pathname.includes("aposta.html")) return;
   const hg = parseInt(document.getElementById("sim-hg-" + id)?.value);
   const ag = parseInt(document.getElementById("sim-ag-" + id)?.value);
   const ph = parseInt(document.getElementById("pen-hg-" + id)?.value);

@@ -46,6 +46,20 @@ window._onInputPlacar = function(id, ehElim) {
   }
 };
 
+// Blur no placar: nunca simula — apenas atualiza visibilidade do campo de pênaltis.
+// Guard defensivo: mesmo que ui-jogos.js seja carregado depois de aposta.js,
+// esta sobrescrita garante que simularResultado() nunca é chamado aqui.
+window._onBlurPlacar = function(id, ehElim) {
+  const hg = parseInt(document.getElementById("sim-hg-" + id)?.value);
+  const ag = parseInt(document.getElementById("sim-ag-" + id)?.value);
+  const pw = document.getElementById("pen-wrap-" + id);
+  if (pw) {
+    (ehElim && !isNaN(hg) && !isNaN(ag) && hg === ag)
+      ? pw.classList.add("visivel")
+      : pw.classList.remove("visivel");
+  }
+};
+
 // Captura pênaltis no palpite local para projeção do bracket pessoal
 window._onBlurPen = function(id) {
   const ph = parseInt(document.getElementById("pen-hg-" + id)?.value);
