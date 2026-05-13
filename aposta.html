@@ -17,9 +17,16 @@
         onerror="this.style.display='none'">
       <div class="header-titulo" id="header-nome">Bolão Copa 2026<small>Meus Palpites</small></div>
     </div>
-    <a href="index.html"
-      style="margin-left:auto;font-size:.73rem;color:var(--texto2);text-decoration:none;padding:4px 10px;border:1px solid var(--borda);border-radius:6px;white-space:nowrap">Ver
-      Ranking</a>
+    <div class="header-acoes">
+      <button class="header-btn header-btn-salvar" id="btn-salvar-header" onclick="salvarTodosPalpites()" title="Salvar Palpites">
+        <span class="header-btn-icon">💾</span>
+        <span class="header-btn-label">Salvar</span>
+      </button>
+      <a href="index.html" class="header-btn header-btn-ranking" title="Ver Ranking">
+        <span class="header-btn-icon">🏆</span>
+        <span class="header-btn-label">Ranking</span>
+      </a>
+    </div>
   </header>
   <main class="main" id="aposta-main">
     <div class="loading">

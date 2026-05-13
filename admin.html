@@ -11,7 +11,16 @@
 <header class="header">
   <img src="assets/logo-white.jpg" alt="Copa 2026" class="header-logo" style="height:42px;width:auto;flex-shrink:0" onerror="this.style.display='none'">
   <div class="header-titulo">Admin — Bolão Copa 2026<small>Painel de Controle</small></div>
-  <a href="index.html" style="margin-left:auto;font-size:.75rem;color:var(--texto2);text-decoration:none;padding:4px 10px;border:1px solid var(--borda);border-radius:6px">Ver Ranking</a>
+  <div class="header-acoes">
+    <button class="header-btn header-btn-salvar" id="btn-salvar-header" onclick="gravarTudoAdmin()" title="Gravar Resultados Oficiais">
+      <span class="header-btn-icon">💾</span>
+      <span class="header-btn-label">Salvar</span>
+    </button>
+    <a href="index.html" class="header-btn header-btn-ranking" title="Ver Ranking">
+      <span class="header-btn-icon">🏆</span>
+      <span class="header-btn-label">Ranking</span>
+    </a>
+  </div>
 </header>
 
 <div class="tabs-wrap">

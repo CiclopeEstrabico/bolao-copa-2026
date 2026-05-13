@@ -10,18 +10,29 @@ let _palpitesLocais = {};
 let _modoVer = false;
 
 // Sobrescrever a função do ui-jogos para a tela de apostas
-window._onInputPlacar = function(id) {
+window._onInputPlacar = function(id, ehElim) {
   const h1 = document.getElementById("sim-hg-" + id)?.value;
   const h2 = document.getElementById("sim-ag-" + id)?.value;
-  
+
   // Se um dos dois estiver vazio, não atualizamos o palpite local "salvável"
   if (h1 === "" || h2 === "") return;
 
   const hg = parseInt(h1);
   const ag = parseInt(h2);
-  
+
   if (!isNaN(hg) && !isNaN(ag)) {
-    _palpitesLocais[id] = { homeGoals: hg, awayGoals: ag };
+    if (!_palpitesLocais[id]) _palpitesLocais[id] = {};
+    _palpitesLocais[id].homeGoals = hg;
+    _palpitesLocais[id].awayGoals = ag;
+
+    // Mostrar/esconder campo de pênaltis em eliminatórias
+    const pw = document.getElementById("pen-wrap-" + id);
+    if (pw) { (ehElim && hg === ag) ? pw.classList.add("visivel") : pw.classList.remove("visivel"); }
+    // Se não é mais empate, limpa pênaltis do palpite local
+    if (!(ehElim && hg === ag)) {
+      delete _palpitesLocais[id].penaltis_home;
+      delete _palpitesLocais[id].penaltis_away;
+    }
 
     // Marca que o usuário está digitando — suprime re-renders do Firebase
     window._digitandoTimer && clearTimeout(window._digitandoTimer);
@@ -35,9 +46,16 @@ window._onInputPlacar = function(id) {
   }
 };
 
-// Impedir que o modo simulação seja ativado ao editar apostas
-window._onBlurPlacar = function(id) { /* No-op na tela de apostas */ };
-window._onBlurPen = function(id) { /* No-op na tela de apostas */ };
+// Captura pênaltis no palpite local para projeção do bracket pessoal
+window._onBlurPen = function(id) {
+  const ph = parseInt(document.getElementById("pen-hg-" + id)?.value);
+  const pa = parseInt(document.getElementById("pen-ag-" + id)?.value);
+  if (!isNaN(ph) && !isNaN(pa)) {
+    if (!_palpitesLocais[id]) _palpitesLocais[id] = {};
+    _palpitesLocais[id].penaltis_home = ph;
+    _palpitesLocais[id].penaltis_away = pa;
+  }
+};
 
 document.addEventListener("DOMContentLoaded", iniciarAposta);
 
@@ -222,11 +240,30 @@ async function salvarCadastro() {
 // ── Projeção on-demand dos palpites do apostador ──
 // Regra: resultado oficial sempre prevalece.
 // Palpite só é usado para jogos sem resultado oficial ainda.
+// Em jogos eliminatórios onde o palpite é empate, os pênaltis do palpite
+// são usados APENAS para decidir quem avança no bracket (não afetam pontos).
 function calcularProjecao() {
   const res = Object.assign({}, APP.resultados);
   for (const [id, p] of Object.entries(_palpitesLocais)) {
-    if (res[id]?.homeGoals === undefined && p?.homeGoals !== undefined)
-      res[id] = { gameId: id, homeGoals: p.homeGoals, awayGoals: p.awayGoals, foi_penaltis: false };
+    if (res[id]?.homeGoals === undefined && p?.homeGoals !== undefined) {
+      const jogo = window.SCHEDULE_BY_ID[id];
+      const ehElim = jogo && jogo.fase !== "grupos";
+      const ehEmpate = p.homeGoals === p.awayGoals;
+      // Pênaltis do palpite: só existem se o apostador os preencheu (pen-hg / pen-ag)
+      const penH = p.penaltis_home;
+      const penA = p.penaltis_away;
+      const temPen = ehElim && ehEmpate && penH !== undefined && penA !== undefined && penH !== penA;
+      res[id] = {
+        gameId:            id,
+        homeGoals:         p.homeGoals,
+        awayGoals:         p.awayGoals,
+        // foi_penaltis: true apenas quando há pênaltis declarados no palpite de eliminatória
+        foi_penaltis:      !!temPen,
+        penaltis_vencedor: temPen ? (penH > penA ? "home" : "away") : null,
+        penaltis_home:     temPen ? penH : null,
+        penaltis_away:     temPen ? penA : null,
+      };
+    }
   }
   return window.BRACKET.calcularTodosOsGrupos(res);
 }
@@ -244,9 +281,29 @@ function renderAposta() {
   const resOficiais = getResultados();
   const tg = calcularProjecao();
 
-  // Bracket projetado: palpites do apostador preenchem onde não há resultado oficial
-  // Resultados oficiais sempre sobrepõem os palpites
-  const _resProjecao = Object.assign({}, _palpitesLocais);
+  // Bracket projetado: palpites do apostador preenchem onde não há resultado oficial.
+  // Pênaltis do palpite são propagados para que empates em eliminatórias avancem o time certo.
+  // Resultados oficiais sempre sobrepõem os palpites.
+  const _resProjecao = {};
+  for (const [_pid, _p] of Object.entries(_palpitesLocais)) {
+    if (_p?.homeGoals !== undefined) {
+      const _j = window.SCHEDULE_BY_ID[_pid];
+      const _ehElim = _j && _j.fase !== "grupos";
+      const _ehEmpate = _p.homeGoals === _p.awayGoals;
+      const _pH = _p.penaltis_home;
+      const _pA = _p.penaltis_away;
+      const _temPen = _ehElim && _ehEmpate && _pH !== undefined && _pA !== undefined && _pH !== _pA;
+      _resProjecao[_pid] = {
+        gameId:            _pid,
+        homeGoals:         _p.homeGoals,
+        awayGoals:         _p.awayGoals,
+        foi_penaltis:      !!_temPen,
+        penaltis_vencedor: _temPen ? (_pH > _pA ? "home" : "away") : null,
+        penaltis_home:     _temPen ? _pH : null,
+        penaltis_away:     _temPen ? _pA : null,
+      };
+    }
+  }
   for (const [_pid, _pr] of Object.entries(resOficiais)) _resProjecao[_pid] = _pr;
   const _bracketApostador = window.BRACKET.preencherBracket(_resProjecao);
 

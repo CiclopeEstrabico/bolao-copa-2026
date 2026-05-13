@@ -405,3 +405,77 @@ details[open] > summary span:last-child { content: "−"; }
 
 /* Header distinção admin */
 .header-admin{background:linear-gradient(90deg,#1a0f00,#1C2333)}
+/* ── Header action buttons (Salvar + Ranking) ── */
+.header-acoes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.header-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: rgba(255,255,255,.05);
+  color: var(--texto2);
+  cursor: pointer;
+  text-decoration: none;
+  font-family: inherit;
+  transition: background .15s, color .15s, border-color .15s;
+  /* Mobile: icon-only, compact */
+  padding: 5px 8px;
+  min-width: 38px;
+}
+.header-btn:hover {
+  background: rgba(255,255,255,.10);
+  color: var(--texto);
+  border-color: var(--verde-light);
+}
+.header-btn-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+.header-btn-label {
+  /* Hidden on mobile */
+  display: none;
+  font-size: .57rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+.header-btn-salvar {
+  border-color: rgba(34,197,94,.35);
+  color: var(--verde-light);
+}
+.header-btn-salvar:hover {
+  background: rgba(34,197,94,.12);
+  border-color: var(--verde-light);
+  color: #fff;
+}
+.header-btn-ranking {
+  border-color: rgba(245,166,35,.35);
+  color: var(--dourado);
+}
+.header-btn-ranking:hover {
+  background: rgba(245,166,35,.12);
+  border-color: var(--dourado);
+  color: #fff;
+}
+
+/* Desktop: show label below icon */
+@media (min-width: 600px) {
+  .header-btn {
+    padding: 5px 12px;
+    min-width: 54px;
+  }
+  .header-btn-label {
+    display: block;
+  }
+}
