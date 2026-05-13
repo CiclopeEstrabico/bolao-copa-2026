@@ -5,7 +5,8 @@ window.renderEstatisticas = function () {
   const res = getResultados();
   const apos = APP.apostadores || [];
   const pals = APP.palpites || {};
-  const esp = APP.especiais || {};
+  // Fix #8: APP.especiais não existe — usar extrairEspeciaisOficiais, igual às outras abas.
+  const esp = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
   if (!apos.length) { el.innerHTML = '<div class="card"><p style="color:var(--texto2)">Nenhum apostador cadastrado.</p></div>'; return; }
 
   const ranking = gerarRanking(pals, res, apos, esp);
@@ -16,7 +17,13 @@ window.renderEstatisticas = function () {
   // Top performers
   const melhorPts = [...ranking].sort((a, b) => b.stats.total - a.stats.total)[0];
   const melhorRes = [...ranking].sort((a, b) => b.stats.acertos_resultado - a.stats.acertos_resultado)[0];
-  const melhorExato = [...ranking].sort((a, b) => b.stats.acertos_placar_exato - a.stats.acertos_placar_exato)[0];
+  const melhorExato = [...ranking].sort((a, b) =>
+    (b.stats.acertos_placar_exato + b.stats.acertos_placar_alto) -
+    (a.stats.acertos_placar_exato + a.stats.acertos_placar_alto)
+  )[0];
+  const melhorExatoCount = melhorExato
+    ? (melhorExato.stats.acertos_placar_exato + melhorExato.stats.acertos_placar_alto)
+    : 0;
 
   // --- Zebra de Ouro ---
   const zebraScores = {};
@@ -50,13 +57,11 @@ window.renderEstatisticas = function () {
   // --- Mestre dos Bônus ---
   const bonusRanking = ranking.map(r => {
     const s = r.stats;
-    const cfg = window.CONFIG?.pontuacao || {};
-    // Calculamos apenas os pontos vindos de bônus
-    const ptsBonus = (s.acertos_placar_exato * (cfg.bonus_placar_exato_baixo || 3)) +
-      (s.acertos_placar_alto * (cfg.bonus_placar_exato_alto || 5)) +
-      (s.acertos_bonus1 * (cfg.bonus_1_gol_diferenca || 1));
-    return { ...r, ptsBonus };
-  }).sort((a, b) => b.ptsBonus - a.ptsBonus);
+    // Contagem total de jogos onde o apostador recebeu algum bônus:
+    // placares exatos (baixo ou alto) + bônus+1 (diferença ou gols de um time)
+    const jogosComBonus = s.acertos_placar_exato + s.acertos_placar_alto + s.acertos_bonus1;
+    return { ...r, jogosComBonus };
+  }).sort((a, b) => b.jogosComBonus - a.jogosComBonus);
   const mestreBonus = bonusRanking[0];
 
   // --- Escalando (Últimos 5 jogos) ---
@@ -122,10 +127,10 @@ window.renderEstatisticas = function () {
   h += '<div class="stats-grid">';
   h += _dCard("🏆", "Líder", melhorPts?.participante.apelido || melhorPts?.participante.nome || "—", melhorPts?.stats.total.toFixed(1) + " pts", "var(--dourado)");
   h += _dCard("🔮", "Vidente", melhorRes?.participante.apelido || melhorRes?.participante.nome || "—", melhorRes?.stats.acertos_resultado + " acertos de resultados", "#86efac");
-  h += _dCard("🎯", "Atirador de Elite", melhorExato?.participante.apelido || melhorExato?.participante.nome || "—", melhorExato?.stats.acertos_placar_exato + " acertos de placar", "var(--verde-ok)");
+  h += _dCard("🎯", "Atirador de Elite", melhorExato?.participante.apelido || melhorExato?.participante.nome || "—", melhorExatoCount + " placares exatos", "var(--verde-ok)");
   h += _dCard("🦓", "Zebra de Ouro", melhorZebra?.apelido || melhorZebra?.nome || "—", zebraCount + " zebras domadas", "#fcd34d");
 
-  h += _dCard("💎", "Mestre dos Bônus", mestreBonus?.participante.apelido || mestreBonus?.participante.nome || "—", mestreBonus?.ptsBonus + " pts extras", "#c084fc");
+  h += _dCard("💎", "Mestre dos Bônus", mestreBonus?.participante.apelido || mestreBonus?.participante.nome || "—", (mestreBonus?.jogosComBonus ?? 0) + " jogos com bônus", "#c084fc");
   h += _dCard("🧗", "Escalando", escalandoApo?.apelido || escalandoApo?.nome || "—", (maiorSalto > 0 ? "+" + maiorSalto : (maiorSalto === -999 ? "—" : maiorSalto)) + " posições", "#fb7185");
   h += _dCard("🕯️", "Lanterninha", lanterninha?.participante.apelido || lanterninha?.participante.nome || "—", lanterninha?.stats.total.toFixed(1) + " pts", "#94a3b8");
   h += _dCard("⚽", "Jogos Feitos", jogosFeitos.length + "/" + ((window.SCHEDULE || []).length), ((jogosFeitos.length / (window.SCHEDULE || [{ id: 1 }]).length * 100).toFixed(0) + "%"), "var(--texto2)");
@@ -163,9 +168,10 @@ window.renderEstatisticas = function () {
   }
 
   // Projeção campeão (% dos apostadores)
+  // Fix #8: especiais ficam em apostador.especiais, não em esp[a.id]
   const campVotos = {};
   for (const a of apos) {
-    const c = esp[a.id]?.campeao || pals[a.id]?.campeao;
+    const c = a.especiais?.campeao;
     if (!c) continue;
     campVotos[c] = (campVotos[c] || 0) + 1;
   }
@@ -177,7 +183,8 @@ window.renderEstatisticas = function () {
     for (const [code, ct] of sortedCamp) {
       const info = window.TEAMS_BY_CODE?.[code];
       const pct = apos.length ? Math.round(ct / apos.length * 100) : 0;
-      const campeaoOficial = res["FNL"] && APP.bracket?.["FNL"]?.home === code;
+      // Fix #4: campeão oficial vem de extrairEspeciaisOficiais, não de bracket["FNL"].home
+      const campeaoOficial = esp.campeao && esp.campeao === code;
       h += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0">';
       h += htmlBandeira(code, 18) + '<span class="stat-time-nome" style="font-weight:600;flex:1">' + (info?.name || code) + '</span>';
       h += '<div style="width:80px;background:var(--fundo2);border-radius:3px;height:6px"><div style="width:' + (ct / maxV * 100) + '%;height:100%;background:var(--verde);border-radius:3px"></div></div>';

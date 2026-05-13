@@ -209,53 +209,70 @@ async function limparTudoAdmin() {
   renderAdmin();
 }
 
-function gravarTudoAdmin() {
+async function gravarTudoAdmin() {
   if (!_adminAutenticado()) return alert("Não autorizado.");
   const log = JSON.parse(localStorage.getItem("bolao_admin_log") || "[]");
-  let gravou = 0;
 
+  // Coleta todos os jogos que mudaram antes de tocar no estado local
+  const pendentes = [];
   for (const j of window.SCHEDULE) {
     const hg = parseInt(document.getElementById("sim-hg-" + j.id)?.value);
     const ag = parseInt(document.getElementById("sim-ag-" + j.id)?.value);
+    if (isNaN(hg) || isNaN(ag)) continue;
 
-    if (!isNaN(hg) && !isNaN(ag)) {
-      let foiPen = false, penH = null, penA = null;
-      if (j.fase !== "grupos" && hg === ag) {
-        penH = parseInt(document.getElementById("pen-hg-" + j.id)?.value);
-        penA = parseInt(document.getElementById("pen-ag-" + j.id)?.value);
-        if (!isNaN(penH) && !isNaN(penA)) {
-          if (penH === penA) { alert("Pênaltis não podem empatar! Jogo: " + j.id); return; }
-          foiPen = true;
-        }
+    let foiPen = false, penH = null, penA = null;
+    if (j.fase !== "grupos" && hg === ag) {
+      penH = parseInt(document.getElementById("pen-hg-" + j.id)?.value);
+      penA = parseInt(document.getElementById("pen-ag-" + j.id)?.value);
+      if (!isNaN(penH) && !isNaN(penA)) {
+        if (penH === penA) { alert("Pênaltis não podem empatar! Jogo: " + j.id); return; }
+        foiPen = true;
       }
-      const pv = foiPen ? (penH > penA ? "home" : "away") : null;
+    }
+    const pv = foiPen ? (penH > penA ? "home" : "away") : null;
 
-      const resLocal = APP.resultados[j.id];
-      if (!resLocal || resLocal.homeGoals !== hg || resLocal.awayGoals !== ag || resLocal.foi_penaltis !== foiPen) {
-        const data = {
+    const resLocal = APP.resultados[j.id];
+    if (!resLocal || resLocal.homeGoals !== hg || resLocal.awayGoals !== ag || resLocal.foi_penaltis !== foiPen) {
+      pendentes.push({
+        id: j.id,
+        data: {
           gameId: j.id, homeGoals: hg, awayGoals: ag,
           foi_penaltis: foiPen, penaltis_vencedor: pv,
           penaltis_home: foiPen ? penH : null, penaltis_away: foiPen ? penA : null,
           inserido_em: new Date().toISOString(), inserido_por: "admin"
-        };
-        APP.resultados[j.id] = data;
-        if (APP.db && !APP.modoOffline)
-          APP.db.collection("resultados_oficiais").doc(j.id).set(data, { merge: true });
-        log.push(new Date().toLocaleString("pt-BR") + " | " + j.id + " | " + hg + "x" + ag);
-        gravou++;
-      }
+        }
+      });
     }
   }
 
-  if (gravou > 0) {
-    _persistirLocal();
-    localStorage.setItem("bolao_admin_log", JSON.stringify(log.slice(-50)));
-    atualizarBracket();
-    renderAdmin();
-    alert("✅ " + gravou + " jogos gravados.");
-  } else {
-    alert("Nenhum novo placar para gravar.");
+  if (pendentes.length === 0) { alert("Nenhum novo placar para gravar."); return; }
+
+  // Persiste no Firestore ANTES de atualizar o estado local.
+  // Se falhar, o estado local não é alterado e os dados no servidor ficam intactos.
+  if (APP.db && !APP.modoOffline) {
+    try {
+      await Promise.all(
+        pendentes.map(p =>
+          APP.db.collection("resultados_oficiais").doc(p.id).set(p.data, { merge: true })
+        )
+      );
+    } catch (e) {
+      alert("❌ Erro ao gravar no servidor:\n" + e.message + "\n\nNenhum dado foi alterado localmente.");
+      return;
+    }
   }
+
+  // Só agora atualiza o estado local (servidor já confirmou)
+  for (const p of pendentes) {
+    APP.resultados[p.id] = p.data;
+    log.push(new Date().toLocaleString("pt-BR") + " | " + p.id + " | " + p.data.homeGoals + "x" + p.data.awayGoals);
+  }
+
+  _persistirLocal();
+  localStorage.setItem("bolao_admin_log", JSON.stringify(log.slice(-50)));
+  atualizarBracket();
+  renderAdmin();
+  alert("✅ " + pendentes.length + " jogos gravados.");
 }
 
 function toggleStatusFase(fase) {

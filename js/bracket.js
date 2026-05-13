@@ -135,8 +135,8 @@ window.BRACKET = (() => {
             winner = res.penaltis_vencedor === "home" ? jogoRef.home : jogoRef.away;
             loser = res.penaltis_vencedor === "home" ? jogoRef.away : jogoRef.home;
           } else {
-            winner = res.homeGoals >= res.awayGoals ? jogoRef.home : jogoRef.away;
-            loser = res.homeGoals >= res.awayGoals ? jogoRef.away : jogoRef.home;
+            winner = res.homeGoals > res.awayGoals ? jogoRef.home : jogoRef.away;
+            loser = res.homeGoals > res.awayGoals ? jogoRef.away : jogoRef.home;
           }
           return { code: prefix === "W" ? winner : loser, resolved: true };
         }
@@ -184,8 +184,8 @@ window.BRACKET = (() => {
         winner = rFinal.penaltis_vencedor === "home" ? bFinal.home : bFinal.away;
         loser  = rFinal.penaltis_vencedor === "home" ? bFinal.away : bFinal.home;
       } else {
-        winner = rFinal.homeGoals >= rFinal.awayGoals ? bFinal.home : bFinal.away;
-        loser  = rFinal.homeGoals >= rFinal.awayGoals ? bFinal.away : bFinal.home;
+        winner = rFinal.homeGoals > rFinal.awayGoals ? bFinal.home : bFinal.away;
+        loser  = rFinal.homeGoals > rFinal.awayGoals ? bFinal.away : bFinal.home;
       }
       out.campeao = winner; out.vice = loser;
     }
@@ -194,7 +194,7 @@ window.BRACKET = (() => {
       const bTpl = bracket["TPL"] || {};
       out.terceiro = rTpl.foi_penaltis 
         ? (rTpl.penaltis_vencedor === "home" ? bTpl.home : bTpl.away)
-        : (rTpl.homeGoals >= rTpl.awayGoals ? bTpl.home : bTpl.away);
+        : (rTpl.homeGoals > rTpl.awayGoals ? bTpl.home : bTpl.away);
     }
     return out;
   }

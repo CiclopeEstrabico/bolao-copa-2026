@@ -36,17 +36,18 @@ function calcularPontosBrutos(palpite, resultado) {
   const Hr = Number(resultado.homeGoals);
   const Ar = Number(resultado.awayGoals);
 
-  // Com penaltis: para efeito de apostas o resultado efetivo e empate
-  // (o jogo terminou empatado em 90+prorrogacao, penaltis nao contam)
-  const res_ef = resultado.foi_penaltis ? "draw" : _vencedor(Hr, Ar);
+  // Pênaltis são IGNORADOS para efeito de pontuação.
+  // O placar considerado é sempre o de 90min + prorrogação (homeGoals x awayGoals).
+  // foi_penaltis só serve para avançar o time correto no bracket — não muda nada aqui.
+  const res_ef  = _vencedor(Hr, Ar);
   const res_pal = _vencedor(Hp, Ap);
 
   if (res_pal !== res_ef) {
     return { total_bruto: 0, base: 0, bonus_pts: 0, bonus_tipo: "erro", descricao: "Resultado errado", acertou: false };
   }
 
-  // Placar exato: nao aplicavel em jogo de penaltis
-  if (!resultado.foi_penaltis && Hp === Hr && Ap === Ar) {
+  // Placar exato
+  if (Hp === Hr && Ap === Ar) {
     const total_gols = Hr + Ar;
     const bonus = total_gols >= cfg.limiar_placar_alto
       ? cfg.bonus_placar_exato_alto
@@ -61,16 +62,13 @@ function calcularPontosBrutos(palpite, resultado) {
     };
   }
 
-  // Bonus de diferenca de gols e gols de um time
-  // Nao aplicavel em penaltis (empate forcado)
+  // Bônus de diferença de gols ou gols de um time
+  const acertou_diff = Math.abs(Hp - Ap) === Math.abs(Hr - Ar);
+  const acertou_gols = Hp === Hr || Ap === Ar;
   let bonus = 0;
   const tipos = [];
-  if (!resultado.foi_penaltis) {
-    const acertou_diff = Math.abs(Hp - Ap) === Math.abs(Hr - Ar);
-    const acertou_gols = Hp === Hr || Ap === Ar;
-    if (acertou_diff) { bonus = cfg.bonus_diferenca_gols; tipos.push("diferenca"); }
-    else if (acertou_gols) { bonus = cfg.bonus_gols_um_time; tipos.push("gols"); }
-  }
+  if (acertou_diff) { bonus = cfg.bonus_diferenca_gols; tipos.push("diferenca"); }
+  else if (acertou_gols) { bonus = cfg.bonus_gols_um_time; tipos.push("gols"); }
 
   return {
     total_bruto: cfg.resultado_base + bonus,
@@ -115,28 +113,38 @@ function calcularPontosEspeciais(participante, campeaoOf, viceOf, terceiroOf) {
  * considerando os jogos que já tem resultado, os fatores de fase e os
  * palpites especiais (campeão, vice, 3º) proporcional ao que já foi definido.
  */
-function calcularMaxPontosPossiveis(resultados, bracket) {
+/**
+ * calcularMaxPontosPossiveis(resultados)
+ * Denominador das estatísticas individuais (pct_pontos, "% dos Pontos Possíveis").
+ * Para cada jogo JÁ REALIZADO usa o bônus máximo real possível naquele jogo:
+ *   - total de gols >= limiar_placar_alto → base + bonus_alto  (ex: 3+5 = 8 × fator)
+ *   - total de gols <  limiar_placar_alto → base + bonus_baixo (ex: 3+3 = 6 × fator)
+ * Jogos ainda não realizados NÃO entram — só o que já esteve em jogo conta.
+ * Especiais entram apenas quando o resultado oficial existir.
+ */
+function calcularMaxPontosPossiveis(resultados) {
   let max = 0;
   const cfg = window.CONFIG?.pontuacao;
   if (!cfg) return 0;
+  const limiar = cfg.limiar_placar_alto ?? 4;
 
   for (const jogo of (window.SCHEDULE || [])) {
     const r = resultados[jogo.id];
-    if (r && r.homeGoals !== undefined) {
-      // Jogo realizado: usa bonus maximo teorico (igual ao denominador)
-      const maxBruto = cfg.resultado_base + cfg.bonus_placar_exato_alto;
-      max += aplicarFator(maxBruto, jogo.fase);
-    }
+    if (!r || r.homeGoals === undefined) continue;
+    // Pênaltis ignorados para pontuação — usa o placar de 90min+prorrogação normalmente.
+    const totalGols = Number(r.homeGoals) + Number(r.awayGoals);
+    const maxBruto = totalGols >= limiar
+      ? cfg.resultado_base + cfg.bonus_placar_exato_alto
+      : cfg.resultado_base + cfg.bonus_placar_exato_baixo;
+    max += aplicarFator(maxBruto, jogo.fase);
   }
 
-  // Adiciona pontos maximos dos especiais conforme os resultados forem oficializados
+  // Especiais entram apenas quando oficializados
   const esp = cfg.extras || {};
-  const resF = resultados["FNL"];
-  const resT = resultados["TPL"];
-  if (resF && resF.homeGoals !== undefined) {
+  if (resultados["FNL"]?.homeGoals !== undefined) {
     max += (esp.primeiro_lugar ?? 0) + (esp.segundo_lugar ?? 0);
   }
-  if (resT && resT.homeGoals !== undefined) {
+  if (resultados["TPL"]?.homeGoals !== undefined) {
     max += (esp.terceiro_lugar ?? 0);
   }
 
@@ -144,24 +152,34 @@ function calcularMaxPontosPossiveis(resultados, bracket) {
 }
 
 /**
- * calcularMaxPontosTotais()
- * Calcula o total máximo de pontos possível no campeonato inteiro,
- * assumindo acerto de placar exato com bônus máximo em todos os jogos.
+ * calcularPontosAindaEmJogo(resultados)
+ * Usado no card "Pontos em Jogo" da classificação.
+ * Retorna tudo que AINDA PODE ser ganho: jogos sem resultado oficial
+ * valem o máximo teórico (base + bonus_alto × fator) + especiais ainda
+ * não oficializados (também ao máximo).
  */
-function calcularMaxPontosTotais() {
-  let max = 0;
+function calcularPontosAindaEmJogo(resultados) {
+  let emJogo = 0;
   const cfg = window.CONFIG?.pontuacao;
   if (!cfg) return 0;
   const maxBruto = cfg.resultado_base + cfg.bonus_placar_exato_alto;
 
   for (const jogo of (window.SCHEDULE || [])) {
-    max += aplicarFator(maxBruto, jogo.fase);
+    const r = resultados[jogo.id];
+    if (r && r.homeGoals !== undefined) continue; // já realizado — fora
+    emJogo += aplicarFator(maxBruto, jogo.fase);
   }
 
+  // Especiais só entram se ainda não foram oficializados
   const esp = cfg.extras || {};
-  max += (esp.primeiro_lugar ?? 0) + (esp.segundo_lugar ?? 0) + (esp.terceiro_lugar ?? 0);
+  if (!resultados["FNL"] || resultados["FNL"].homeGoals === undefined) {
+    emJogo += (esp.primeiro_lugar ?? 0) + (esp.segundo_lugar ?? 0);
+  }
+  if (!resultados["TPL"] || resultados["TPL"].homeGoals === undefined) {
+    emJogo += (esp.terceiro_lugar ?? 0);
+  }
 
-  return Math.round(max * 10) / 10;
+  return Math.round(emJogo * 10) / 10;
 }
 
 /**
@@ -173,6 +191,9 @@ function calcularPontosApostador(palpites, resultados, participante, especiais) 
   let acertos_placar = 0, acertos_placar_alto = 0;
   let acertos_resultado = 0, acertos_bonus1 = 0;
   let erros = 0, sem_palpite = 0, jogos_realizados = 0;
+  // jogos_com_palpite: jogos realizados em que o apostador tinha palpite.
+  // É o denominador correto para todas as porcentagens por jogo.
+  let jogos_com_palpite = 0;
   const jogos = [];
 
   for (const jogo of (window.SCHEDULE || [])) {
@@ -187,6 +208,7 @@ function calcularPontosApostador(palpites, resultados, participante, especiais) 
       continue;
     }
 
+    jogos_com_palpite++;
     const brutos = calcularPontosBrutos(palpite, resultado);
     const pontos = aplicarFator(brutos.total_bruto, jogo.fase);
 
@@ -201,8 +223,11 @@ function calcularPontosApostador(palpites, resultados, participante, especiais) 
           acertos_placar++;
         }
       } else {
+        // acertos_bonus1: contagem de jogos onde o apostador acertou o resultado
+        // E recebeu algum dos bônus+1 (diferença de gols ou gols de um time).
+        // Os dois tipos de bônus+1 não se acumulam entre si.
         if (brutos.bonus_pts > 0) {
-          acertos_bonus1 += brutos.bonus_pts;
+          acertos_bonus1++;
         }
       }
     }
@@ -224,13 +249,14 @@ function calcularPontosApostador(palpites, resultados, participante, especiais) 
   const esp = calcularPontosEspeciais(participante, especiais.campeao, especiais.vice, especiais.terceiro);
   total += esp.total_especiais;
 
-  // Cálculos de porcentagem baseados nos jogos realizados
+  // Porcentagens: denominador é jogos_com_palpite (exclui sem_palpite),
+  // exceto pct_pontos que compara com o máximo teórico do campeonato.
   const maxPossivel = calcularMaxPontosPossiveis(resultados);
-  const pct_pontos = maxPossivel > 0 ? (total / maxPossivel) * 100 : 0;
-  const pct_resultado = jogos_realizados > 0 ? (acertos_resultado / jogos_realizados) * 100 : 0;
-  const pct_placar = jogos_realizados > 0 ? (acertos_placar / jogos_realizados) * 100 : 0;
-  const pct_placar_alto = jogos_realizados > 0 ? (acertos_placar_alto / jogos_realizados) * 100 : 0;
-  const pct_bonus1 = jogos_realizados > 0 ? (acertos_bonus1 / jogos_realizados) * 100 : 0;
+  const pct_pontos    = maxPossivel > 0 ? (total / maxPossivel) * 100 : 0;
+  const pct_resultado = jogos_com_palpite > 0 ? (acertos_resultado / jogos_com_palpite) * 100 : 0;
+  const pct_placar    = jogos_com_palpite > 0 ? (acertos_placar    / jogos_com_palpite) * 100 : 0;
+  const pct_placar_alto = jogos_com_palpite > 0 ? (acertos_placar_alto / jogos_com_palpite) * 100 : 0;
+  const pct_bonus1    = jogos_com_palpite > 0 ? (acertos_bonus1    / jogos_com_palpite) * 100 : 0;
 
   return {
     apostadorId: participante.id || participante.token,
@@ -246,12 +272,13 @@ function calcularPontosApostador(palpites, resultados, participante, especiais) 
     erros,
     sem_palpite,
     jogos_realizados,
-    // Novos campos de porcentagem padronizados
-    pct_pontos: Math.round(pct_pontos * 10) / 10,
-    pct_resultado: Math.round(pct_resultado * 10) / 10,
-    pct_placar: Math.round(pct_placar * 10) / 10,
+    jogos_com_palpite,
+    // Porcentagens padronizadas (denominador: jogos_com_palpite)
+    pct_pontos:      Math.round(pct_pontos      * 10) / 10,
+    pct_resultado:   Math.round(pct_resultado   * 10) / 10,
+    pct_placar:      Math.round(pct_placar      * 10) / 10,
     pct_placar_alto: Math.round(pct_placar_alto * 10) / 10,
-    pct_bonus1: Math.round(pct_bonus1 * 10) / 10,
+    pct_bonus1:      Math.round(pct_bonus1      * 10) / 10,
     jogos
   };
 }
@@ -277,7 +304,16 @@ function gerarRanking(todosOsPalpites, resultados, participantes, especiais) {
 
   let pos = 1;
   return stats.map((item, i) => {
-    if (i > 0 && item.stats.total < stats[i - 1].stats.total) pos = i + 1;
+    if (i > 0) {
+      const prev = stats[i - 1].stats;
+      const cur  = item.stats;
+      // Reaplica os mesmos 3 critérios do sort para decidir se a posição muda
+      const mesmoPts    = cur.total === prev.total;
+      const mesmoExatos = (cur.acertos_placar_exato + cur.acertos_placar_alto) ===
+                          (prev.acertos_placar_exato + prev.acertos_placar_alto);
+      const mesmoRes    = cur.acertos_resultado === prev.acertos_resultado;
+      if (!(mesmoPts && mesmoExatos && mesmoRes)) pos = i + 1;
+    }
     return { posicao: pos, ...item };
   });
 }

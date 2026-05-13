@@ -33,9 +33,18 @@ window.renderCompilacao = function () {
   if (!jogos.length) { el.innerHTML = h + '<div class="card"><p style="color:var(--texto2)">Sem jogos nesta fase.</p></div>'; return; }
 
   // Ranking lateral: ordenar apostadores
+  // Passa especiais oficiais para que pontos totais incluam campeão/vice/3º
+  const espOficiaisComp = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
   const ranking = apos.map(a => {
-    const st = calcularPontosApostador(pals[a.id] || {}, res, a, {});
-    return { ...a, pts: st.total, placar: st.acertos_placar_exato, res: st.acertos_resultado };
+    const st = calcularPontosApostador(pals[a.id] || {}, res, a, espOficiaisComp);
+    return {
+      ...a,
+      pts:    st.total,
+      // placar: soma placares exatos baixos + altos para sort consistente com classificação
+      placar: st.acertos_placar_exato + st.acertos_placar_alto,
+      res:    st.acertos_resultado,
+      jogos_com_palpite: st.jogos_com_palpite,
+    };
   }).sort((a, b) => {
     if (ordemStr === "alfa") return (a.apelido || a.nome || "").localeCompare(b.apelido || b.nome || "");
     if (ordemStr === "res") return b.res - a.res;
@@ -139,31 +148,18 @@ window.renderCompilacao = function () {
   }
 
   // Estatisticas de Aproveitamento (Linhas Finais)
-  let maxPtsGeral = 0;
-  let jogosRealizados = 0;
-  for (const jogo of (window.SCHEDULE || [])) {
-    const r = res[jogo.id];
-    if (r && r.homeGoals !== undefined) {
-      jogosRealizados++;
-      const cfg = window.CONFIG?.pontuacao;
-      let maxBruto = cfg?.resultado_base || 3;
-      if (!r.foi_penaltis && cfg) {
-        const tGols = Number(r.homeGoals) + Number(r.awayGoals);
-        const limiar = cfg.limiar_placar_alto || 4;
-        const bonus = tGols >= limiar ? (cfg.bonus_placar_exato_alto || 5) : (cfg.bonus_placar_exato_baixo || 3);
-        maxBruto += bonus;
-      }
-      maxPtsGeral += aplicarFator(maxBruto, jogo.fase);
-    }
-  }
+  // maxPtsGeral: mesmo critério de scoring.js — base(3) + bonus_alto(5) × fator,
+  // para todos os jogos já realizados. Consistente com calcularMaxPontosPossiveis.
+  const maxPtsGeral = calcularMaxPontosPossiveis(res);
 
   const lbls = [
-    { title: "Qtd. de Acertos (Resultado)", val: a => a.res, cor: "var(--texto)" },
-    { title: "Qtd. de Placar Exato", val: a => a.placar, cor: "var(--texto)" },
-    { title: "% Resultado Correto", val: a => jogosRealizados ? ((a.res / jogosRealizados) * 100).toFixed(1) + "%" : "0.0%", cor: "var(--texto2)" },
-    { title: "% Placar Exato", val: a => jogosRealizados ? ((a.placar / jogosRealizados) * 100).toFixed(1) + "%" : "0.0%", cor: "var(--texto2)" },
+    { title: "Qtd. de Acertos (Resultado)", val: a => a.res,    cor: "var(--texto)" },
+    { title: "Qtd. de Placar Exato",        val: a => a.placar, cor: "var(--texto)" },
+    // % usa jogos_com_palpite por apostador como denominador (exclui jogos sem palpite)
+    { title: "% Resultado Correto", val: a => a.jogos_com_palpite ? ((a.res    / a.jogos_com_palpite) * 100).toFixed(1) + "%" : "0.0%", cor: "var(--texto2)" },
+    { title: "% Placar Exato",      val: a => a.jogos_com_palpite ? ((a.placar / a.jogos_com_palpite) * 100).toFixed(1) + "%" : "0.0%", cor: "var(--texto2)" },
     { title: "Pontos Totais Alcançados", val: a => a.pts.toFixed(1), cor: "var(--dourado)" },
-    { title: "% dos Pontos Possíveis", val: a => maxPtsGeral ? ((a.pts / maxPtsGeral) * 100).toFixed(1) + "%" : "0.0%", cor: "var(--dourado)" }
+    { title: "% dos Pontos Possíveis",  val: a => maxPtsGeral ? ((a.pts / maxPtsGeral) * 100).toFixed(1) + "%" : "0.0%", cor: "var(--dourado)" }
   ];
 
   for (const L of lbls) {
@@ -199,8 +195,10 @@ window.exportarCompilacaoJson = function () {
   // ② Jogos em ordem cronológica
   const jogosOrdenados = (window.SCHEDULE || []).sort((a, b) => new Date(a.utc) - new Date(b.utc));
 
+  const espOficiaisExp = window.BRACKET.extrairEspeciaisOficiais(res, brk);
+
   const ranking = apos.map(a => {
-    const st = window.calcularPontosApostador(pals[a.id] || {}, res, a, {});
+    const st = window.calcularPontosApostador(pals[a.id] || {}, res, a, espOficiaisExp);
     // Filtra palpites para não vazar no JSON se a fase ainda estiver aberta e sem resultado
     const palpitesFiltrados = {};
     const meusPals = pals[a.id] || {};
@@ -249,16 +247,14 @@ window.exportarCompilacaoJson = function () {
   }
 
   // ⑤ Resultado oficial dos especiais derivado automaticamente do bracket
-  const espOficiais = window.BRACKET.extrairEspeciaisOficiais(res, brk);
-
   const exportData = {
     timestamp: new Date().toISOString(),
     status_apostas: APP.configStatus?.apostas_liberadas ? "LIBERADAS" : "TRAVADAS",
     resultados_oficiais: resultadosExport,
     especiais_oficiais: {
-      campeao: espOficiais.campeao ? (window.TEAMS_BY_CODE?.[espOficiais.campeao]?.name || espOficiais.campeao) : "",
-      vice:    espOficiais.vice    ? (window.TEAMS_BY_CODE?.[espOficiais.vice]?.name    || espOficiais.vice)    : "",
-      terceiro: espOficiais.terceiro ? (window.TEAMS_BY_CODE?.[espOficiais.terceiro]?.name || espOficiais.terceiro) : ""
+      campeao:  espOficiaisExp.campeao  ? (window.TEAMS_BY_CODE?.[espOficiaisExp.campeao]?.name  || espOficiaisExp.campeao)  : "",
+      vice:     espOficiaisExp.vice     ? (window.TEAMS_BY_CODE?.[espOficiaisExp.vice]?.name     || espOficiaisExp.vice)     : "",
+      terceiro: espOficiaisExp.terceiro ? (window.TEAMS_BY_CODE?.[espOficiaisExp.terceiro]?.name || espOficiaisExp.terceiro) : ""
     },
     ranking_e_palpites: ranking
   };
@@ -289,8 +285,10 @@ window.exportarCompilacaoCsv = function () {
 
   if (!apos.length || !jogos.length) return;
 
+  const espOficiaisCsv = window.BRACKET.extrairEspeciaisOficiais(res, brk);
+
   const ranking = apos.map(a => {
-    const st = window.calcularPontosApostador(pals[a.id] || {}, res, a, {});
+    const st = window.calcularPontosApostador(pals[a.id] || {}, res, a, espOficiaisCsv);
     const esp = a.especiais || {};
     return {
       id: a.id, nome: a.nome, apelido: a.apelido, pts: st.total,
@@ -353,11 +351,10 @@ window.exportarCompilacaoCsv = function () {
 
   // --- Linhas de Especiais no CSV ---
   // ⑥ Resultados oficiais (Campeão, Vice, 3º) automáticos do bracket
-  const espOficiais = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
   const labelsEsp = { campeao: "🏆 Campeão", vice: "🥈 Vice", terceiro: "🥉 3º Lugar" };
 
   for (const key of ["campeao", "vice", "terceiro"]) {
-    const ofCode = espOficiais[key] || "";
+    const ofCode = espOficiaisCsv[key] || "";
     const nomeOf = window.TEAMS_BY_CODE?.[ofCode]?.name || (ofCode || "");
     const row = [ "ESP", "especial", "", `"${labelsEsp[key]}"`, "", `"${nomeOf}"` ];
     for (const a of ranking) {

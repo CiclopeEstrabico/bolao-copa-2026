@@ -27,10 +27,12 @@ window.renderGrafico = function() {
   const metricaAtiva = window._graficoMetrica || "pts";
 
   // Ranking completo — base para cores consistentes e pct corrigido
-  const maxPossivelGeral = calcularMaxPontosPossiveis(res);
+  // Passa especiais oficiais para que pontos totais incluam campeão/vice/3º,
+  // mantendo a ordem de cores consistente com a aba Classificação.
+  const espOficiaisGraf = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
   
   let rankingCompleto = apos.map((a, idx) => {
-    const st = calcularPontosApostador(pals[a.id]||{}, res, a, {});
+    const st = calcularPontosApostador(pals[a.id]||{}, res, a, espOficiaisGraf);
     return {
       id: a.id,
       nome: (a.apelido || a.nome || "?").substring(0, 14),
@@ -38,7 +40,7 @@ window.renderGrafico = function() {
       pct:         st.pct_pontos,
       res:         st.acertos_resultado,
       bonus1:      st.acertos_bonus1,
-      placar:      st.acertos_placar_exato,
+      placar:      st.acertos_placar_exato + st.acertos_placar_alto,
       placar_alto: st.acertos_placar_alto,
     };
   }).sort((a,b) => b.pts - a.pts);
@@ -168,9 +170,10 @@ window._graficoIrEvolucao = function() {
   const res = getResultados();
   const apos = APP.apostadores || [];
   const pals = APP.palpites || {};
+  const espOficiaisIr = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
   const top5 = apos.map(a => ({
     id: a.id,
-    pts: calcularPontosApostador(pals[a.id]||{}, res, a, {}).total
+    pts: calcularPontosApostador(pals[a.id]||{}, res, a, espOficiaisIr).total
   })).sort((a,b) => b.pts - a.pts).slice(0,5).map(a => a.id);
   window._graficoFiltroApos = new Set(top5);
   renderAbaAtiva();
