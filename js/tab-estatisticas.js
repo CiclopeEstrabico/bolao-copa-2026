@@ -78,7 +78,7 @@ window.renderEstatisticas = function () {
 
     for (let i = 0; i < ranking.length; i++) {
       const aId = ranking[i].participante.id;
-      const posAtual = i + 1;
+      const posAtual = ranking[i].posicao;
       const posAnt = rankingAnterior.findIndex(x => x.participante.id === aId) + 1;
       const salto = posAnt - posAtual;
       if (salto > maiorSalto) {
@@ -86,6 +86,7 @@ window.renderEstatisticas = function () {
         escalandoApo = ranking[i].participante;
       }
     }
+
   }
 
   // --- Lanterninha ---

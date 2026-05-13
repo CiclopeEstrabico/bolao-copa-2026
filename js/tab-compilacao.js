@@ -124,19 +124,29 @@ window.renderCompilacao = function () {
     { label: "🥉 3º Lugar", key: "terceiro" }
   ];
 
+  // Visibilidade dos especiais: exibe se grupos travados OU resultado oficial real conhecido.
+  // Nunca exibe resultado simulado como se fosse oficial.
+  const gruposTravados = !(window.APP?.configStatus?.liberado_grupos);
+
   for (const rowE of rowsEsp) {
     h += '<tr style="background:rgba(234,179,8,0.05)"><td class="col-jogo" style="position:sticky;left:0;background:var(--card2);z-index:1;font-weight:700;font-size:.68rem">' + rowE.label + '</td>';
 
     // Resultado oficial derivado automaticamente
     const escOf = resOficialEsp[rowE.key] || "";
+    const resultadoOficialReal = escOf && !jogoEhSimulado("FNL");
     const nomeOf = window.TEAMS_BY_CODE?.[escOf]?.name || (escOf ? escOf : "—");
-    h += '<td class="col-resultado" style="font-weight:700;font-size:.65rem;color:var(--dourado)">' + nomeOf + '</td>';
+    h += '<td class="col-resultado" style="font-weight:700;font-size:.65rem;color:var(--dourado)">' + (resultadoOficialReal ? nomeOf : (gruposTravados ? nomeOf : "—")) + '</td>';
 
     for (const a of ranking) {
       const palE = (a.especiais && a.especiais[rowE.key]) || "";
       const nomePal = window.TEAMS_BY_CODE?.[palE]?.name || (palE ? palE : "—");
-      const acertou = escOf && palE === escOf;
-      // Acerto: azul escuro (mesma cor do placar+5). Erro com resultado definido: texto esmaecido.
+      const acertou = resultadoOficialReal && palE === escOf;
+      const podeVerEsp = resultadoOficialReal || gruposTravados;
+
+      if (!podeVerEsp) {
+        h += '<td style="font-size:.62rem;text-align:center;color:var(--texto2);opacity:0.3" title="Palpite oculto até o fechamento dos grupos">🔒</td>';
+        continue;
+      }
       if (acertou) {
         h += '<td class="celula-pts-8" style="font-size:.62rem">' + nomePal + '</td>';
       } else {
@@ -146,6 +156,7 @@ window.renderCompilacao = function () {
     }
     h += '</tr>';
   }
+
 
   // Estatisticas de Aproveitamento (Linhas Finais)
   // maxPtsGeral: mesmo critério de scoring.js — base(3) + bonus_alto(5) × fator,
@@ -352,19 +363,23 @@ window.exportarCompilacaoCsv = function () {
   // --- Linhas de Especiais no CSV ---
   // ⑥ Resultados oficiais (Campeão, Vice, 3º) automáticos do bracket
   const labelsEsp = { campeao: "🏆 Campeão", vice: "🥈 Vice", terceiro: "🥉 3º Lugar" };
+  const gruposTravadosCSV = !(window.APP?.configStatus?.liberado_grupos);
 
   for (const key of ["campeao", "vice", "terceiro"]) {
     const ofCode = espOficiaisCsv[key] || "";
     const nomeOf = window.TEAMS_BY_CODE?.[ofCode]?.name || (ofCode || "");
     const row = [ "ESP", "especial", "", `"${labelsEsp[key]}"`, "", `"${nomeOf}"` ];
+    // Exibe se: resultado oficial real (não simulado) disponível, OU grupos travados
+    const resultadoOficialRealCSV = ofCode && !jogoEhSimulado("FNL");
+    const podeVerEspCSV = resultadoOficialRealCSV || gruposTravadosCSV;
     for (const a of ranking) {
       const palE = (a.especiais && a.especiais[key]) || "";
       const nomePal = window.TEAMS_BY_CODE?.[palE]?.name || "";
-      const podeVer = ofCode || !jogoAceita("final");
-      row.push(podeVer ? `"${nomePal}"` : "🔒");
+      row.push(podeVerEspCSV ? `"${nomePal}"` : "🔒");
     }
     csvContent += row.join(";") + "\r\n";
   }
+
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);

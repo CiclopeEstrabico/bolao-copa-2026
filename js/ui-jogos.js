@@ -39,8 +39,16 @@ function _onBlurPen(id) {
   if (typeof simularResultado === "function") simularResultado(id, hg, ag, true, ph > pa ? "home" : "away", ph, pa);
 }
 function limparSimulacao(id) { delete APP.resultadosSim[id]; atualizarBracket(); renderAbaAtiva(); }
-function limparResultadoAdmin(id) {
-  // Removemos o confirm para ser "imediato" conforme solicitado
+async function limparResultadoAdmin(id) {
+  if (APP.db && !APP.modoOffline) {
+    try {
+      await APP.db.collection("resultados_oficiais").doc(id).delete();
+    } catch (e) {
+      alert("Erro ao deletar no servidor: " + e.message + "\nNenhum dado foi alterado.");
+      return;
+    }
+  }
+
   delete APP.resultados[id];
   if (APP.resultadosSim) delete APP.resultadosSim[id];
   _persistirLocal();
@@ -50,13 +58,10 @@ function limparResultadoAdmin(id) {
   if (hg) hg.value = "";
   if (ag) ag.value = "";
 
-  if (APP.db && !APP.modoOffline) {
-    APP.db.collection("resultados_oficiais").doc(id).delete();
-  }
-
   atualizarBracket();
   renderAbaAtiva();
 }
+
 function confirmarAdmin(id, ehElim) {
   const hg = parseInt(document.getElementById("sim-hg-" + id)?.value);
   const ag = parseInt(document.getElementById("sim-ag-" + id)?.value);
