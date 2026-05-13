@@ -7,6 +7,7 @@
 - **Não re-explique** o que o código faz após escrever.
 - Mantenha o padrão **Premium & Mobile-First**.
 - Deve funcionar em Android, Iphone e Desktop.
+- NUNCA suba firestore.rules para o github
 
 ## Stack e Arquitetura
 
