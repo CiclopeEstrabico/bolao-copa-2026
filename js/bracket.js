@@ -98,24 +98,33 @@ window.BRACKET = (() => {
 
   function calcularTodosOsGrupos(resultados) {
     const grupos = {}, classificados = {}, terceiros = [];
+    let gruposCompletos = 0;
     for (const letra of "ABCDEFGHIJKL".split("")) {
       const standing = calcularClassificacaoGrupo(letra, resultados);
       grupos[letra] = standing;
       const jogosGrupo = window.SCHEDULE.filter(j => j.grupo === letra);
       const grupoCompleto = jogosGrupo.length === 6 && jogosGrupo.every(j => resultados[j.id] && resultados[j.id].homeGoals !== undefined);
       if (grupoCompleto) {
+        gruposCompletos++;
         if (standing[0]) classificados[`1${letra}`] = standing[0].code;
         if (standing[1]) classificados[`2${letra}`] = standing[1].code;
         if (standing[2]) terceiros.push({ ...standing[2], grupo: letra });
       }
     }
-    terceiros.sort((a, b) => {
-      if (b.Pts !== a.Pts) return b.Pts - a.Pts;
-      if (b.SG !== a.SG) return b.SG - a.SG;
-      return b.GP - a.GP;
-    });
-    const melhoresTerceiros = terceiros.slice(0, 8);
-    melhoresTerceiros.forEach((t, i) => { classificados[`3X${i + 1}`] = t.code; });
+    // Melhores terceiros SÓ são definidos quando TODOS os 12 grupos estiverem completos.
+    // Antes disso, cada grupo coleta seu 3° interno mas a seleção dos 8 melhores
+    // (e os slots 3X1..3X8 no bracket) ficam vazios — evitando rankings incorretos
+    // quando dados mistos (oficiais + palpites/simulação) fecham grupos fora de ordem.
+    let melhoresTerceiros = [];
+    if (gruposCompletos === 12) {
+      terceiros.sort((a, b) => {
+        if (b.Pts !== a.Pts) return b.Pts - a.Pts;
+        if (b.SG !== a.SG) return b.SG - a.SG;
+        return b.GP - a.GP;
+      });
+      melhoresTerceiros = terceiros.slice(0, 8);
+      melhoresTerceiros.forEach((t, i) => { classificados[`3X${i + 1}`] = t.code; });
+    }
     return { grupos, classificados, terceiros, melhoresTerceiros };
   }
 
@@ -182,17 +191,17 @@ window.BRACKET = (() => {
       let winner, loser;
       if (rFinal.foi_penaltis) {
         winner = rFinal.penaltis_vencedor === "home" ? bFinal.home : bFinal.away;
-        loser  = rFinal.penaltis_vencedor === "home" ? bFinal.away : bFinal.home;
+        loser = rFinal.penaltis_vencedor === "home" ? bFinal.away : bFinal.home;
       } else {
         winner = rFinal.homeGoals > rFinal.awayGoals ? bFinal.home : bFinal.away;
-        loser  = rFinal.homeGoals > rFinal.awayGoals ? bFinal.away : bFinal.home;
+        loser = rFinal.homeGoals > rFinal.awayGoals ? bFinal.away : bFinal.home;
       }
       out.campeao = winner; out.vice = loser;
     }
     const rTpl = res["TPL"];
     if (rTpl && rTpl.homeGoals !== undefined) {
       const bTpl = bracket["TPL"] || {};
-      out.terceiro = rTpl.foi_penaltis 
+      out.terceiro = rTpl.foi_penaltis
         ? (rTpl.penaltis_vencedor === "home" ? bTpl.home : bTpl.away)
         : (rTpl.homeGoals > rTpl.awayGoals ? bTpl.home : bTpl.away);
     }

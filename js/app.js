@@ -21,7 +21,7 @@ function initApp() {
       APP.db = firebase.firestore();
       APP.configStatus = { apostas_liberadas: false };
       listenResultados(); listenApostadores(); listenPalpites(); listenConfigStatus();
-    } catch(e) {
+    } catch (e) {
       if (e.code === "app/duplicate-app") {
         APP.db = firebase.firestore();
         APP.configStatus = { apostas_liberadas: false };
@@ -36,10 +36,10 @@ function initApp() {
 // ---- Offline (localStorage) -------------------------------------------------
 function carregarDadosLocais() {
   try {
-    APP.resultados   = JSON.parse(localStorage.getItem("bolao_res") || "{}");
-    APP.palpites     = JSON.parse(localStorage.getItem("bolao_pal") || "{}");
-    APP.apostadores  = JSON.parse(localStorage.getItem("bolao_apt") || "[]");
-  } catch(e) {}
+    APP.resultados = JSON.parse(localStorage.getItem("bolao_res") || "{}");
+    APP.palpites = JSON.parse(localStorage.getItem("bolao_pal") || "{}");
+    APP.apostadores = JSON.parse(localStorage.getItem("bolao_apt") || "[]");
+  } catch (e) { }
 }
 function _persistirLocal() {
   localStorage.setItem("bolao_res", JSON.stringify(APP.resultados));
@@ -59,9 +59,9 @@ function listenResultados() {
 }
 function listenApostadores() {
   const u = APP.db.collection("apostadores").onSnapshot(snap => {
-    APP.apostadores = snap.docs.map(d => ({id: d.id, ...d.data()}))
+    APP.apostadores = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .filter(a => a.ativo !== false)
-      .sort((a, b) => (a.ordem||0) - (b.ordem||0));
+      .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
     APP._apostadoresCarregados = true;
     renderAbaAtiva();
   });
@@ -92,8 +92,10 @@ function listenConfigStatus() {
 
 // ---- Gravar resultado -------------------------------------------------------
 async function gravarResultadoOficial(gameId, homeGoals, awayGoals, foiPen, penVenc, extraData) {
-  const data = Object.assign({ gameId, homeGoals, awayGoals, foi_penaltis: !!foiPen,
-    penaltis_vencedor: penVenc||null, inserido_em: new Date().toISOString(), inserido_por:"admin" },
+  const data = Object.assign({
+    gameId, homeGoals, awayGoals, foi_penaltis: !!foiPen,
+    penaltis_vencedor: penVenc || null, inserido_em: new Date().toISOString(), inserido_por: "admin"
+  },
     extraData || {});
   if (APP.modoOffline) {
     APP.resultados[gameId] = data; _persistirLocal();
@@ -108,16 +110,16 @@ async function gravarApostador(apostador) {
     if (i >= 0) APP.apostadores[i] = apostador; else APP.apostadores.push(apostador);
     _persistirLocal(); renderAbaAtiva(); return;
   }
-  await APP.db.collection("apostadores").doc(apostador.id).set(apostador, {merge: true});
+  await APP.db.collection("apostadores").doc(apostador.id).set(apostador, { merge: true });
 }
 
 async function gravarPalpite(apostadorId, gameId, homeGoals, awayGoals, token) {
   const jogo = window.SCHEDULE_BY_ID[gameId];
   const fase = (jogo.fase === "final" || jogo.fase === "terceiro") ? "finais" : jogo.fase;
-  const data = { 
+  const data = {
     apostadorId, gameId, homeGoals, awayGoals, fase,
     token: token || null, // Token para validação de segurança no Firestore
-    atualizado_em: new Date().toISOString() 
+    atualizado_em: new Date().toISOString()
   };
   if (APP.modoOffline) {
     if (!APP.palpites[apostadorId]) APP.palpites[apostadorId] = {};
@@ -125,7 +127,7 @@ async function gravarPalpite(apostadorId, gameId, homeGoals, awayGoals, token) {
     renderAbaAtiva(); return;
   }
   await APP.db.collection("apostadores").doc(apostadorId)
-    .collection("palpites_jogos").doc(gameId).set(data, {merge: true});
+    .collection("palpites_jogos").doc(gameId).set(data, { merge: true });
 }
 
 // ---- Modo Simulacao ---------------------------------------------------------
@@ -147,8 +149,10 @@ function desativarSimulacao() {
 }
 function simularResultado(gameId, hg, ag, foiPen, penVenc, ph, pa) {
   if (!APP.modoSimulacao) ativarSimulacao();
-  APP.resultadosSim[gameId] = { gameId, homeGoals: hg, awayGoals: ag,
-    foi_penaltis: !!foiPen, penaltis_vencedor: penVenc||null, simulado: true, penaltis_home: ph, penaltis_away: pa };
+  APP.resultadosSim[gameId] = {
+    gameId, homeGoals: hg, awayGoals: ag,
+    foi_penaltis: !!foiPen, penaltis_vencedor: penVenc || null, simulado: true, penaltis_home: ph, penaltis_away: pa
+  };
   atualizarBracket(); renderAbaAtiva();
 }
 function getResultados() {
@@ -169,13 +173,13 @@ function atualizarBracket() {
 }
 
 // ---- Roteador ---------------------------------------------------------------
-const ABAS = ["resultados","classificacao","tabela","compilacao","estatisticas","grafico","regras"];
+const ABAS = ["resultados", "classificacao", "tabela", "compilacao", "estatisticas", "grafico", "regras"];
 let _abaAtiva = "resultados";
 
 function iniciarRoteador() {
   document.querySelectorAll("[data-tab]").forEach(btn =>
     btn.addEventListener("click", () => mudarAba(btn.dataset.tab)));
-  const hash = location.hash.replace("#","");
+  const hash = location.hash.replace("#", "");
   mudarAba(ABAS.includes(hash) ? hash : "resultados");
 }
 function mudarAba(aba) {
@@ -188,16 +192,18 @@ function mudarAba(aba) {
   renderAbaAtiva(true);
 }
 function renderAbaAtiva(resetScroll = false) {
-  const fn = { resultados: window.renderResultados, classificacao: window.renderClassificacao,
+  const fn = {
+    resultados: window.renderResultados, classificacao: window.renderClassificacao,
     tabela: window.renderTabela, compilacao: window.renderCompilacao,
-    grafico: window.renderGrafico, estatisticas: window.renderEstatisticas, regras: window.renderRegras };
-  
+    grafico: window.renderGrafico, estatisticas: window.renderEstatisticas, regras: window.renderRegras
+  };
+
   // Salva scroll e foco
   const activeId = resetScroll ? null : document.activeElement?.id;
   const sy = resetScroll ? 0 : window.scrollY;
   const sStart = document.activeElement?.selectionStart;
   const sEnd = document.activeElement?.selectionEnd;
-  
+
   const oldHeight = document.body.style.minHeight;
   document.body.style.minHeight = document.body.scrollHeight + 'px';
 
@@ -208,7 +214,7 @@ function renderAbaAtiva(resetScroll = false) {
     const el = document.getElementById(activeId);
     if (el) {
       el.focus();
-      try { el.setSelectionRange(sStart !== null ? sStart : el.value.length, sEnd !== null ? sEnd : el.value.length); } catch(e){}
+      try { el.setSelectionRange(sStart !== null ? sStart : el.value.length, sEnd !== null ? sEnd : el.value.length); } catch (e) { }
     }
   }
   window.scrollTo(0, sy);
@@ -218,15 +224,15 @@ function renderAbaAtiva(resetScroll = false) {
 // ---- Utilitarios ------------------------------------------------------------
 function formatarDataBRT(utcStr, soHora) {
   const opts = soHora
-    ? { hour:"2-digit", minute:"2-digit", timeZone:"America/Sao_Paulo" }
-    : { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit", timeZone:"America/Sao_Paulo" };
+    ? { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }
+    : { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" };
   return new Intl.DateTimeFormat("pt-BR", opts).format(new Date(utcStr));
 }
 function htmlBandeira(code, size) {
   size = size || 24;
   const t = window.TEAMS_BY_CODE[code];
-  if (!t) return '<span class="flag-empty" style="width:'+size+'px;display:inline-block"></span>';
-  return '<img src="'+t.flag+'" alt="'+t.name+'" width="'+size+'" height="'+Math.round(size*.75)+'" class="flag" loading="lazy">';
+  if (!t) return '<span class="flag-empty" style="width:' + size + 'px;display:inline-block"></span>';
+  return '<img src="' + t.flag + '" alt="' + t.name + '" width="' + size + '" height="' + Math.round(size * .75) + '" class="flag" loading="lazy">';
 }
 function nomeTime(code) {
   return window.TEAMS_BY_CODE[code]?.name ?? code ?? "A definir";

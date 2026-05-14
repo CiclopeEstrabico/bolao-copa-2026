@@ -10,7 +10,7 @@ let _palpitesLocais = {};
 let _modoVer = false;
 
 // Sobrescrever a função do ui-jogos para a tela de apostas
-window._onInputPlacar = function(id, ehElim) {
+window._onInputPlacar = function (id, ehElim) {
   const h1 = document.getElementById("sim-hg-" + id)?.value;
   const h2 = document.getElementById("sim-ag-" + id)?.value;
 
@@ -49,7 +49,7 @@ window._onInputPlacar = function(id, ehElim) {
 // Blur no placar: nunca simula — apenas atualiza visibilidade do campo de pênaltis.
 // Guard defensivo: mesmo que ui-jogos.js seja carregado depois de aposta.js,
 // esta sobrescrita garante que simularResultado() nunca é chamado aqui.
-window._onBlurPlacar = function(id, ehElim) {
+window._onBlurPlacar = function (id, ehElim) {
   const hg = parseInt(document.getElementById("sim-hg-" + id)?.value);
   const ag = parseInt(document.getElementById("sim-ag-" + id)?.value);
   const pw = document.getElementById("pen-wrap-" + id);
@@ -61,7 +61,7 @@ window._onBlurPlacar = function(id, ehElim) {
 };
 
 // Captura pênaltis no palpite local para projeção do bracket pessoal
-window._onBlurPen = function(id) {
+window._onBlurPen = function (id) {
   const ph = parseInt(document.getElementById("pen-hg-" + id)?.value);
   const pa = parseInt(document.getElementById("pen-ag-" + id)?.value);
   if (!isNaN(ph) && !isNaN(pa)) {
@@ -140,17 +140,17 @@ function renderLoginToken() {
   if (!el) return;
   el.innerHTML =
     '<div class="card" style="max-width:360px;margin:60px auto;text-align:center">' +
-      '<div style="font-size:2.2rem;margin-bottom:8px">🏆</div>' +
-      '<div class="card-titulo" style="justify-content:center">Bolão Copa 2026</div>' +
-      '<p style="font-size:.85rem;color:var(--texto2);margin:0 0 18px">Digite o token que você recebeu do organizador.</p>' +
-      '<div class="form-group" style="text-align:left">' +
-        '<label>Seu token</label>' +
-        '<input type="text" id="token-input" placeholder="Ex: pfvit651u6kb" maxlength="20" ' +
-          'style="font-family:monospace;letter-spacing:.05em" ' +
-          'onkeydown="if(event.key===\'Enter\')entrarComToken()">' +
-      '</div>' +
-      '<button class="btn btn-primario" style="width:100%" onclick="entrarComToken()">Entrar →</button>' +
-      '<div id="token-erro" style="margin-top:12px;font-size:.8rem;color:var(--vermelho);min-height:18px"></div>' +
+    '<div style="font-size:2.2rem;margin-bottom:8px">🏆</div>' +
+    '<div class="card-titulo" style="justify-content:center">Bolão Copa 2026</div>' +
+    '<p style="font-size:.85rem;color:var(--texto2);margin:0 0 18px">Digite o token que você recebeu do organizador.</p>' +
+    '<div class="form-group" style="text-align:left">' +
+    '<label>Seu token</label>' +
+    '<input type="text" id="token-input" placeholder="Ex: pfvit651u6kb" maxlength="20" ' +
+    'style="font-family:monospace;letter-spacing:.05em" ' +
+    'onkeydown="if(event.key===\'Enter\')entrarComToken()">' +
+    '</div>' +
+    '<button class="btn btn-primario" style="width:100%" onclick="entrarComToken()">Entrar →</button>' +
+    '<div id="token-erro" style="margin-top:12px;font-size:.8rem;color:var(--vermelho);min-height:18px"></div>' +
     '</div>';
   setTimeout(() => document.getElementById("token-input")?.focus(), 100);
 }
@@ -173,21 +173,21 @@ async function entrarComToken() {
 
 function mostrarErroAposta(msg) {
   const el = document.getElementById("aposta-main");
-  if (el) el.innerHTML = '<div class="card" style="max-width:380px;margin:40px auto;text-align:center">'+
-    '<div style="font-size:2rem;margin-bottom:10px">⚠️</div>'+
-    '<div style="font-weight:700;margin-bottom:6px">Erro</div>'+
-    '<div style="font-size:.82rem;color:var(--texto2)">'+msg+'</div></div>';
+  if (el) el.innerHTML = '<div class="card" style="max-width:380px;margin:40px auto;text-align:center">' +
+    '<div style="font-size:2rem;margin-bottom:10px">⚠️</div>' +
+    '<div style="font-weight:700;margin-bottom:6px">Erro</div>' +
+    '<div style="font-size:.82rem;color:var(--texto2)">' + msg + '</div></div>';
 }
 
 function renderCadastro() {
   const el = document.getElementById("aposta-main");
   if (!el) return;
-  el.innerHTML = '<div class="card" style="max-width:380px;margin:40px auto">'+
-    '<div class="card-titulo">👤 Seu Cadastro</div>'+
-    '<div class="form-group"><label>Nome completo</label>'+
-    '<input type="text" id="apt-nome" placeholder="Ex: João Silva" maxlength="50"></div>'+
-    '<div class="form-group"><label>Apelido <span style="font-size:0.65rem;color:var(--dourado)">(Letras e ponto ".", máx 10)</span></label>'+
-    '<input type="text" id="apt-apelido" placeholder="Nome que os outros apostadores verão." maxlength="10" oninput="formatarApelido(this)"></div>'+
+  el.innerHTML = '<div class="card" style="max-width:380px;margin:40px auto">' +
+    '<div class="card-titulo">👤 Seu Cadastro</div>' +
+    '<div class="form-group"><label>Nome completo</label>' +
+    '<input type="text" id="apt-nome" placeholder="Ex: João Silva" maxlength="50"></div>' +
+    '<div class="form-group"><label>Apelido <span style="font-size:0.65rem;color:var(--dourado)">(Letras e ponto ".", máx 10)</span></label>' +
+    '<input type="text" id="apt-apelido" placeholder="Nome que os outros apostadores verão." maxlength="10" oninput="formatarApelido(this)"></div>' +
     '<button class="btn btn-primario" style="width:100%" onclick="salvarCadastro()">Salvar e Começar</button></div>';
 }
 
@@ -216,7 +216,7 @@ async function salvarCadastro() {
     }).join('');
   }
   apelido = apelido.substring(0, 10);
-  
+
   if (!nome) { alert("Informe seu nome."); return; }
   _apostador.nome = nome;
   _apostador.apelido = apelido || nome.split(" ")[0].replace(/[^A-Za-zÀ-ÖØ-öø-ÿ. ]/g, '').substring(0, 10);
@@ -268,14 +268,14 @@ function calcularProjecao() {
       const penA = p.penaltis_away;
       const temPen = ehElim && ehEmpate && penH !== undefined && penA !== undefined && penH !== penA;
       res[id] = {
-        gameId:            id,
-        homeGoals:         p.homeGoals,
-        awayGoals:         p.awayGoals,
+        gameId: id,
+        homeGoals: p.homeGoals,
+        awayGoals: p.awayGoals,
         // foi_penaltis: true apenas quando há pênaltis declarados no palpite de eliminatória
-        foi_penaltis:      !!temPen,
+        foi_penaltis: !!temPen,
         penaltis_vencedor: temPen ? (penH > penA ? "home" : "away") : null,
-        penaltis_home:     temPen ? penH : null,
-        penaltis_away:     temPen ? penA : null,
+        penaltis_home: temPen ? penH : null,
+        penaltis_away: temPen ? penA : null,
       };
     }
   }
@@ -308,13 +308,13 @@ function renderAposta() {
       const _pA = _p.penaltis_away;
       const _temPen = _ehElim && _ehEmpate && _pH !== undefined && _pA !== undefined && _pH !== _pA;
       _resProjecao[_pid] = {
-        gameId:            _pid,
-        homeGoals:         _p.homeGoals,
-        awayGoals:         _p.awayGoals,
-        foi_penaltis:      !!_temPen,
+        gameId: _pid,
+        homeGoals: _p.homeGoals,
+        awayGoals: _p.awayGoals,
+        foi_penaltis: !!_temPen,
         penaltis_vencedor: _temPen ? (_pH > _pA ? "home" : "away") : null,
-        penaltis_home:     _temPen ? _pH : null,
-        penaltis_away:     _temPen ? _pA : null,
+        penaltis_home: _temPen ? _pH : null,
+        penaltis_away: _temPen ? _pA : null,
       };
     }
   }
@@ -351,7 +351,7 @@ function renderAposta() {
   h += renderJogosComToggle(resOficiais, tg, false, _palpitesLocais, _bracketApostador);
 
   // Focus Guard: captura o input focado antes de destruir o DOM
-  const _fgId  = document.activeElement?.id || null;
+  const _fgId = document.activeElement?.id || null;
   const _fgVal = document.activeElement?.value ?? null;
   const _fgSel = document.activeElement?.selectionStart ?? null;
 
@@ -366,13 +366,13 @@ function renderAposta() {
     if (_fgEl) {
       _fgEl.focus();
       if (_fgVal !== null) _fgEl.value = _fgVal;
-      try { _fgEl.setSelectionRange(_fgSel, _fgSel); } catch(_e) {}
+      try { _fgEl.setSelectionRange(_fgSel, _fgSel); } catch (_e) { }
     }
   }
 }
 
 // Sobrescreve a função global para que os toggles de ui-jogos.js funcionem aqui
-window.renderAbaAtiva = function() {
+window.renderAbaAtiva = function () {
   // Suprime re-render completo enquanto usuário está digitando (evita flickering)
   if (window._estaDigitando) return;
   renderAposta();
@@ -382,9 +382,9 @@ function renderEspeciaisAposta(res) {
   const esp = _apostador.especiais || {};
   const cfgExtra = window.CONFIG?.pontuacao?.extras || {};
   const fases = [
-    { key: "campeao",  label: "🏆 Campeão",  pts: (cfgExtra.primeiro_lugar || 0) + "pts" },
-    { key: "vice",     label: "🥈 Vice",      pts: (cfgExtra.segundo_lugar || 0) + "pts" },
-    { key: "terceiro", label: "🥉 3° Lugar",  pts: (cfgExtra.terceiro_lugar || 0) + "pts" },
+    { key: "campeao", label: "🏆 Campeão", pts: (cfgExtra.primeiro_lugar || 0) + "pts" },
+    { key: "vice", label: "🥈 Vice", pts: (cfgExtra.segundo_lugar || 0) + "pts" },
+    { key: "terceiro", label: "🥉 3° Lugar", pts: (cfgExtra.terceiro_lugar || 0) + "pts" },
   ];
   const times = [...new Set((window.SCHEDULE || []).filter(j => j.grupo).map(j => [j.home, j.away]).flat())];
 
@@ -432,13 +432,13 @@ async function gravarEspecialAposta(sel) {
 function atualizarMiniTabelasAposta() {
   const tg = calcularProjecao();
   const resOficiais = getResultados();
-  
+
   // Atualizar o grid de grupos no topo se existir
   const gridContainer = document.querySelector(".grupos-grid")?.parentElement;
   if (gridContainer && _modoGrupos === "topo") {
     gridContainer.innerHTML = renderGruposGrid(tg, resOficiais);
   }
-  
+
   // Atualizar a tabela de progresso
   const progContainer = document.getElementById("progresso-container");
   if (progContainer) progContainer.innerHTML = renderProgressoAposta();
@@ -446,18 +446,18 @@ function atualizarMiniTabelasAposta() {
 
 function renderProgressoAposta() {
   const fases = [
-    { key: "grupos",  label: "Grupos",  total: 72 },
-    { key: "32avos",  label: "32avos",  total: 16 },
+    { key: "grupos", label: "Grupos", total: 72 },
+    { key: "32avos", label: "32avos", total: 16 },
     { key: "oitavas", label: "Oitavas", total: 8 },
     { key: "quartas", label: "Quartas", total: 4 },
-    { key: "semis",   label: "Semis",   total: 2 },
-    { key: "finais",  label: "Finais",  total: 2 },
+    { key: "semis", label: "Semis", total: 2 },
+    { key: "finais", label: "Finais", total: 2 },
     { key: "especiais", label: "Extra", total: 3 }
   ];
 
   const pals = _palpitesLocais || {};
   const counts = {};
-  
+
   // Contar palpites por fase
   fases.forEach(f => {
     if (f.key === "especiais") {
@@ -487,13 +487,13 @@ function renderProgressoAposta() {
     let cor = "var(--texto2)";
     if (total > 0 && feitos === total) cor = "var(--verde-light)";
     else if (feitos > 0) cor = "var(--dourado)";
-    
+
     h += '<td style="padding:6px 2px; font-weight:800; color:' + cor + '; font-size:1rem">';
     h += feitos + '<span style="opacity:.4; font-weight:400; font-size:.62rem">/' + total + '</span>';
     h += '</td>';
   });
   h += '</tr></tbody></table></div></div>';
-  
+
   return h;
 }
 
@@ -504,10 +504,10 @@ function _registrarInputsAposta() {
 async function salvarTodosPalpites(silencioso = false) {
   if (_modoVer) return;
   if (!_apostador?.id) return;
-  
+
   const batch = !APP.modoOffline ? APP.db.batch() : null;
   let cont = 0;
-  
+
   const refBase = !APP.modoOffline ? APP.db.collection("apostadores").doc(_apostador.id).collection("palpites_jogos") : null;
 
   for (const [gameId, p] of Object.entries(_palpitesLocais)) {
@@ -518,10 +518,10 @@ async function salvarTodosPalpites(silencioso = false) {
     if (p?.homeGoals !== undefined && p?.awayGoals !== undefined && jogoAceita(gameId)) {
       const jogo = window.SCHEDULE_BY_ID[gameId];
       const fase = (jogo.fase === "final" || jogo.fase === "terceiro") ? "finais" : jogo.fase;
-      const data = { 
+      const data = {
         apostadorId: _apostador.id, gameId, homeGoals: p.homeGoals, awayGoals: p.awayGoals, fase,
         token: _apostador.token || null,
-        atualizado_em: new Date().toISOString() 
+        atualizado_em: new Date().toISOString()
       };
 
       if (APP.modoOffline) {
@@ -529,7 +529,7 @@ async function salvarTodosPalpites(silencioso = false) {
         APP.palpites[_apostador.id][gameId] = data;
         cont++;
       } else {
-        batch.set(refBase.doc(gameId), data, {merge: true});
+        batch.set(refBase.doc(gameId), data, { merge: true });
         cont++;
       }
     }
