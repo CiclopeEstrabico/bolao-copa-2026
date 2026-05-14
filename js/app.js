@@ -1,50 +1,32 @@
 /**
  * app.js - Init Firebase + estado global + roteador de abas
- * Modo offline: usa localStorage quando Firebase nao configurado.
  */
 window.APP = {
-  db: null, modoOffline: false, modoSimulacao: false,
+  db: null, modoSimulacao: false,
   resultados: {}, resultadosSim: null,
   palpites: {}, apostadores: [], bracket: {}, _unsubs: []
 };
 
 function initApp() {
-  const semConfig = !window.FIREBASE_CONFIG || !window.FIREBASE_CONFIG.apiKey;
-  if (semConfig) {
-    console.warn("[app] Modo offline ativo");
-    APP.modoOffline = true;
-    APP.configStatus = { apostas_liberadas: true }; // default no offline
-    carregarDadosLocais();
-  } else {
-    try {
-      firebase.initializeApp(window.FIREBASE_CONFIG);
-      APP.db = firebase.firestore();
-      APP.configStatus = { apostas_liberadas: false };
-      listenResultados(); listenApostadores(); listenPalpites(); listenConfigStatus();
-    } catch (e) {
-      if (e.code === "app/duplicate-app") {
-        APP.db = firebase.firestore();
-        APP.configStatus = { apostas_liberadas: false };
-        listenResultados(); listenApostadores(); listenPalpites(); listenConfigStatus();
-      } else { APP.modoOffline = true; APP.configStatus = { apostas_liberadas: true }; carregarDadosLocais(); }
-    }
+  if (!window.FIREBASE_CONFIG || !window.FIREBASE_CONFIG.apiKey) {
+    console.error("[app] Firebase não configurado. Verifique firebase-config.js.");
+    document.body.innerHTML =
+      '<div style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif">' +
+      '<div style="text-align:center;padding:40px"><div style="font-size:2rem;margin-bottom:12px">⚙️</div>' +
+      '<div style="font-weight:700;margin-bottom:6px">Firebase não configurado</div>' +
+      '<div style="font-size:.85rem;color:#888">Adicione suas credenciais em firebase-config.js</div></div></div>';
+    return;
   }
+  try {
+    firebase.initializeApp(window.FIREBASE_CONFIG);
+  } catch (e) {
+    if (e.code !== "app/duplicate-app") throw e;
+  }
+  APP.db = firebase.firestore();
+  APP.configStatus = {};
+  listenResultados(); listenApostadores(); listenPalpites(); listenConfigStatus();
   atualizarBracket();
   iniciarRoteador();
-}
-
-// ---- Offline (localStorage) -------------------------------------------------
-function carregarDadosLocais() {
-  try {
-    APP.resultados = JSON.parse(localStorage.getItem("bolao_res") || "{}");
-    APP.palpites = JSON.parse(localStorage.getItem("bolao_pal") || "{}");
-    APP.apostadores = JSON.parse(localStorage.getItem("bolao_apt") || "[]");
-  } catch (e) { }
-}
-function _persistirLocal() {
-  localStorage.setItem("bolao_res", JSON.stringify(APP.resultados));
-  localStorage.setItem("bolao_pal", JSON.stringify(APP.palpites));
-  localStorage.setItem("bolao_apt", JSON.stringify(APP.apostadores));
 }
 
 // ---- Firestore listeners ----------------------------------------------------
@@ -97,19 +79,10 @@ async function gravarResultadoOficial(gameId, homeGoals, awayGoals, foiPen, penV
     penaltis_vencedor: penVenc || null, inserido_em: new Date().toISOString(), inserido_por: "admin"
   },
     extraData || {});
-  if (APP.modoOffline) {
-    APP.resultados[gameId] = data; _persistirLocal();
-    atualizarBracket(); renderAbaAtiva(); return;
-  }
   await APP.db.collection("resultados_oficiais").doc(gameId).set(data);
 }
 
 async function gravarApostador(apostador) {
-  if (APP.modoOffline) {
-    const i = APP.apostadores.findIndex(a => a.id === apostador.id);
-    if (i >= 0) APP.apostadores[i] = apostador; else APP.apostadores.push(apostador);
-    _persistirLocal(); renderAbaAtiva(); return;
-  }
   await APP.db.collection("apostadores").doc(apostador.id).set(apostador, { merge: true });
 }
 
@@ -118,14 +91,9 @@ async function gravarPalpite(apostadorId, gameId, homeGoals, awayGoals, token) {
   const fase = (jogo.fase === "final" || jogo.fase === "terceiro") ? "finais" : jogo.fase;
   const data = {
     apostadorId, gameId, homeGoals, awayGoals, fase,
-    token: token || null, // Token para validação de segurança no Firestore
+    token: token || null,
     atualizado_em: new Date().toISOString()
   };
-  if (APP.modoOffline) {
-    if (!APP.palpites[apostadorId]) APP.palpites[apostadorId] = {};
-    APP.palpites[apostadorId][gameId] = data; _persistirLocal();
-    renderAbaAtiva(); return;
-  }
   await APP.db.collection("apostadores").doc(apostadorId)
     .collection("palpites_jogos").doc(gameId).set(data, { merge: true });
 }
@@ -249,8 +217,12 @@ function jogoAceita(jogoId) {
   if (jogo.fase === "final" || jogo.fase === "terceiro") return !!status.liberado_finais;
   return false;
 }
-function adminAutenticado() {
-  return sessionStorage.getItem("bolao_admin") === window.CONFIG.admin_senha;
-}
+
+// Reage a rotação/redimensionamento de tela para layouts que dependem de isMobile
+let _resizeTimer;
+window.addEventListener("resize", () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => renderAbaAtiva(), 250);
+}, { passive: true });
 
 document.addEventListener("DOMContentLoaded", initApp);

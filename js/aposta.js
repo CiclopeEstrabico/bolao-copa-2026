@@ -81,7 +81,7 @@ async function iniciarAposta() {
   if (!token) { renderLoginToken(); return; }
 
   // Aguarda o primeiro snapshot dos apostadores chegar (ou timeout de 6s)
-  if (!APP.modoOffline && !APP._apostadoresCarregados) {
+  if (!APP._apostadoresCarregados) {
     await new Promise(r => {
       const check = setInterval(() => {
         if (APP._apostadoresCarregados) { clearInterval(check); clearTimeout(fallback); r(); }
@@ -97,31 +97,25 @@ async function iniciarAposta() {
 
   // Se não encontrou, valida o token no Firestore
   if (!_apostador) {
-    if (APP.modoOffline) {
-      // Fallback offline
-      _apostador = { id: "local_" + token, token, nome: "", apelido: "", ativo: true, novo: true };
-      APP.apostadores.push(_apostador);
-    } else {
-      try {
-        const snap = await APP.db.collection("tokens")
-          .where("token", "==", token)
-          .where("ativo", "==", true)
-          .limit(1)
-          .get();
+    try {
+      const snap = await APP.db.collection("tokens")
+        .where("token", "==", token)
+        .where("ativo", "==", true)
+        .limit(1)
+        .get();
 
-        if (snap.empty) {
-          mostrarErroAposta("Token inválido ou expirado. Solicite seu link ao organizador.");
-          return;
-        }
-
-        const info = snap.docs[0].data();
-        _apostador = { ...info, nome: "", apelido: "", novo: true };
-        APP.apostadores.push(_apostador);
-      } catch (e) {
-        console.error("Erro ao validar token:", e);
-        mostrarErroAposta("Erro ao verificar seu token. Tente novamente.");
+      if (snap.empty) {
+        mostrarErroAposta("Token inválido ou expirado. Solicite seu link ao organizador.");
         return;
       }
+
+      const info = snap.docs[0].data();
+      _apostador = { ...info, nome: "", apelido: "", novo: true };
+      APP.apostadores.push(_apostador);
+    } catch (e) {
+      console.error("Erro ao validar token:", e);
+      mostrarErroAposta("Erro ao verificar seu token. Tente novamente.");
+      return;
     }
   }
 
@@ -233,7 +227,7 @@ async function salvarCadastro() {
   await gravarApostador(_apostador);
 
   // Sincroniza apelido no doc do token (se estava vazio)
-  if (!APP.modoOffline && APP.db && _apostador.token && _apostador.apelido) {
+  if (_apostador.token && _apostador.apelido) {
     try {
       const snap = await APP.db.collection("tokens")
         .where("token", "==", _apostador.token)
@@ -353,7 +347,7 @@ function renderAposta() {
   h += '<div id="progresso-container" style="margin-bottom:15px">' + renderProgressoAposta() + '</div>';
 
   // Palpites especiais (campeão, vice, 3o)
-  if (!_modoVer) h += renderEspeciaisAposta(resOficiais);
+  if (!_modoVer) h += '<div id="especiais-container">' + renderEspeciaisAposta(resOficiais) + '</div>';
 
   // Mesmo layout do resultados: grupos + toggle + jogos
   h += renderJogosComToggle(resOficiais, tg, false, _palpitesLocais, _bracketApostador, resCompleto);
@@ -401,6 +395,8 @@ function renderEspeciaisAposta(res) {
   for (const f of fases) {
     const val = esp[f.key] || "";
     const info = window.TEAMS_BY_CODE?.[val];
+    // Times já escolhidos nas outras posições (não pode repetir)
+    const outrasEscolhas = fases.filter(f2 => f2.key !== f.key).map(f2 => esp[f2.key]).filter(Boolean);
     h += '<div style="background:var(--fundo2);border-radius:var(--radius-sm);padding:10px">';
     h += '<div style="font-size:.78rem;font-weight:700;margin-bottom:6px">' + f.label + ' <span style="color:var(--dourado);font-size:.65rem">' + f.pts + '</span></div>';
     h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">' + htmlBandeira(val, 24);
@@ -412,7 +408,8 @@ function renderEspeciaisAposta(res) {
       h += '<option value="">-- Selecionar --</option>';
       for (const c of times.sort()) {
         const t = window.TEAMS_BY_CODE?.[c];
-        h += '<option value="' + c + '"' + (val === c ? " selected" : "") + '>' + (t?.name || c) + '</option>';
+        const jaEscolhido = outrasEscolhas.includes(c);
+        h += '<option value="' + c + '"' + (val === c ? " selected" : "") + (jaEscolhido ? ' disabled style="color:var(--texto2);opacity:.4"' : '') + '>' + (t?.name || c) + (jaEscolhido ? ' ✕' : '') + '</option>';
       }
       h += '</select>';
     }
@@ -427,14 +424,14 @@ async function gravarEspecialAposta(sel) {
   if (!_apostador.especiais) _apostador.especiais = {};
   _apostador.especiais[key] = sel.value;
 
-  // Atualiza a bandeira e nome imediatamente acima do select
-  const divHeader = sel.previousElementSibling;
-  const info = window.TEAMS_BY_CODE?.[sel.value];
-  if (divHeader) {
-    divHeader.innerHTML = htmlBandeira(sel.value, 24) + '<span style="font-size:.82rem;font-weight:600">' + (info?.name || "Selecionar") + '</span>';
-  }
-
   await gravarApostador(_apostador);
+
+  // Re-renderiza o bloco de especiais para atualizar validação cruzada dos dropdowns
+  const espContainer = document.getElementById("especiais-container");
+  if (espContainer) {
+    const res = getResultados();
+    espContainer.innerHTML = renderEspeciaisAposta(res);
+  }
 }
 
 function atualizarMiniTabelasAposta() {
@@ -521,10 +518,10 @@ async function salvarTodosPalpites(silencioso = false) {
   if (_modoVer) return;
   if (!_apostador?.id) return;
 
-  const batch = !APP.modoOffline ? APP.db.batch() : null;
+  const batch = APP.db.batch();
   let cont = 0;
 
-  const refBase = !APP.modoOffline ? APP.db.collection("apostadores").doc(_apostador.id).collection("palpites_jogos") : null;
+  const refBase = APP.db.collection("apostadores").doc(_apostador.id).collection("palpites_jogos");
 
   for (const [gameId, p] of Object.entries(_palpitesLocais)) {
     // Só salva se mudou algo em relação ao que já temos no APP.palpites
@@ -539,24 +536,13 @@ async function salvarTodosPalpites(silencioso = false) {
         token: _apostador.token || null,
         atualizado_em: new Date().toISOString()
       };
-
-      if (APP.modoOffline) {
-        if (!APP.palpites[_apostador.id]) APP.palpites[_apostador.id] = {};
-        APP.palpites[_apostador.id][gameId] = data;
-        cont++;
-      } else {
-        batch.set(refBase.doc(gameId), data, { merge: true });
-        cont++;
-      }
+      batch.set(refBase.doc(gameId), data, { merge: true });
+      cont++;
     }
   }
 
   if (cont > 0) {
-    if (batch) await batch.commit();
-    if (APP.modoOffline) {
-      _persistirLocal();
-      renderAbaAtiva();
-    }
+    await batch.commit();
   }
   if (!silencioso) {
     let toast = document.getElementById('toast-salvo');

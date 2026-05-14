@@ -189,21 +189,16 @@ async function limparTudoAdmin() {
   if (!confirm("⚠️ LIMPAR TODOS OS RESULTADOS OFICIAIS?\nIsso não pode ser desfeito.")) return;
 
   // Bug 3: aguarda a deleção no servidor ANTES de alterar estado local.
-  // Antes era fire-and-forget: se falhasse, o estado local ficava limpo
-  // mas os dados voltavam do Firestore no próximo onSnapshot.
-  if (APP.db && !APP.modoOffline) {
-    try {
-      const snap = await APP.db.collection("resultados_oficiais").get();
-      await Promise.all(snap.docs.map(d => d.ref.delete()));
-    } catch (e) {
-      alert("Erro ao limpar no servidor: " + e.message + "\nNenhum dado foi alterado.");
-      return;
-    }
+  try {
+    const snap = await APP.db.collection("resultados_oficiais").get();
+    await Promise.all(snap.docs.map(d => d.ref.delete()));
+  } catch (e) {
+    alert("Erro ao limpar no servidor: " + e.message + "\nNenhum dado foi alterado.");
+    return;
   }
 
   APP.resultados = {};
   APP.resultadosSim = null;
-  _persistirLocal();
   document.querySelectorAll('input[type="number"]').forEach(el => (el.value = ""));
   atualizarBracket();
   renderAdmin();
@@ -248,18 +243,15 @@ async function gravarTudoAdmin() {
   if (pendentes.length === 0) { alert("Nenhum novo placar para gravar."); return; }
 
   // Persiste no Firestore ANTES de atualizar o estado local.
-  // Se falhar, o estado local não é alterado e os dados no servidor ficam intactos.
-  if (APP.db && !APP.modoOffline) {
-    try {
-      await Promise.all(
-        pendentes.map(p =>
-          APP.db.collection("resultados_oficiais").doc(p.id).set(p.data, { merge: true })
-        )
-      );
-    } catch (e) {
-      alert("❌ Erro ao gravar no servidor:\n" + e.message + "\n\nNenhum dado foi alterado localmente.");
-      return;
-    }
+  try {
+    await Promise.all(
+      pendentes.map(p =>
+        APP.db.collection("resultados_oficiais").doc(p.id).set(p.data, { merge: true })
+      )
+    );
+  } catch (e) {
+    alert("❌ Erro ao gravar no servidor:\n" + e.message + "\n\nNenhum dado foi alterado localmente.");
+    return;
   }
 
   // Só agora atualiza o estado local (servidor já confirmou)
@@ -268,7 +260,6 @@ async function gravarTudoAdmin() {
     log.push(new Date().toLocaleString("pt-BR") + " | " + p.id + " | " + p.data.homeGoals + "x" + p.data.awayGoals);
   }
 
-  _persistirLocal();
   localStorage.setItem("bolao_admin_log", JSON.stringify(log.slice(-50)));
   atualizarBracket();
   renderAdmin();
@@ -277,7 +268,6 @@ async function gravarTudoAdmin() {
 
 function toggleStatusFase(fase) {
   if (!_adminAutenticado()) return alert("Não autorizado.");
-  if (APP.modoOffline) return alert("Indisponível offline.");
   const key = "liberado_" + fase;
   const atual = !!(APP.configStatus && APP.configStatus[key]);
   const novo = !atual;
@@ -500,12 +490,10 @@ async function limparFaseApostador(id) {
     const jogosParaLimpar = (window.SCHEDULE || []).filter(j => fasesFiltro.includes(j.fase));
     for (const j of jogosParaLimpar) {
       if (APP.palpites[id]) delete APP.palpites[id][j.id];
-      if (APP.db && !APP.modoOffline)
-        await APP.db.collection("apostadores").doc(id)
-          .collection("palpites_jogos").doc(j.id).delete().catch(() => {});
+      await APP.db.collection("apostadores").doc(id)
+        .collection("palpites_jogos").doc(j.id).delete().catch(() => {});
     }
     if (fase === "todas" && a) { a.especiais = {}; await gravarApostador(a); }
-    _persistirLocal();
   }
 
   toggleEditApostador(id);
@@ -521,48 +509,41 @@ async function deletarApostadorId(id) {
   const tokenDoApostador = a?.token;
   const apelidoDoApostador = a?.apelido || "";
 
-  // Bug 4: deleções eram fire-and-forget. Se falhassem, o apostador sumia
-  // da UI mas persistia no Firestore e voltava no próximo onSnapshot.
-  // Agora: deleta no servidor primeiro, só altera estado local se der certo.
-  if (APP.db && !APP.modoOffline) {
-    try {
-      // Deletar subcoleção de palpites antes do documento pai
-      const palpitesSnap = await APP.db.collection("apostadores").doc(id)
-        .collection("palpites_jogos").get();
-      await Promise.all(palpitesSnap.docs.map(doc => doc.ref.delete()));
+  try {
+    // Deletar subcoleção de palpites antes do documento pai
+    const palpitesSnap = await APP.db.collection("apostadores").doc(id)
+      .collection("palpites_jogos").get();
+    await Promise.all(palpitesSnap.docs.map(doc => doc.ref.delete()));
 
-      // Deletar o documento do apostador
-      await APP.db.collection("apostadores").doc(id).delete();
+    // Deletar o documento do apostador
+    await APP.db.collection("apostadores").doc(id).delete();
 
-      // Token volta para "Enviado" (não disponível) — operação secundária,
-      // não bloqueia nem reverte a deleção principal se falhar
-      if (tokenDoApostador) {
-        try {
-          const tokenSnap = await APP.db.collection("tokens")
-            .where("token", "==", tokenDoApostador)
-            .limit(1)
-            .get();
-          if (!tokenSnap.empty) {
-            const tokenDoc = tokenSnap.docs[0];
-            const dadosAtuais = tokenDoc.data();
-            await tokenDoc.ref.update({
-              enviado: true,
-              apelido: dadosAtuais.apelido || apelidoDoApostador,
-              enviado_em: dadosAtuais.enviado_em || new Date().toISOString()
-            });
-          }
-        } catch (_) { /* falha no token não impede a deleção */ }
-      }
-    } catch (e) {
-      alert("Erro ao deletar no servidor: " + e.message + "\nNenhum dado foi alterado.");
-      return;
+    // Token volta para "Enviado" — operação secundária
+    if (tokenDoApostador) {
+      try {
+        const tokenSnap = await APP.db.collection("tokens")
+          .where("token", "==", tokenDoApostador)
+          .limit(1)
+          .get();
+        if (!tokenSnap.empty) {
+          const tokenDoc = tokenSnap.docs[0];
+          const dadosAtuais = tokenDoc.data();
+          await tokenDoc.ref.update({
+            enviado: true,
+            apelido: dadosAtuais.apelido || apelidoDoApostador,
+            enviado_em: dadosAtuais.enviado_em || new Date().toISOString()
+          });
+        }
+      } catch (_) { /* falha no token não impede a deleção */ }
     }
+  } catch (e) {
+    alert("Erro ao deletar no servidor: " + e.message + "\nNenhum dado foi alterado.");
+    return;
   }
 
   // Só atualiza estado local após confirmar sucesso no servidor
   APP.apostadores = APP.apostadores.filter(x => x.id !== id);
   delete APP.palpites[id];
-  _persistirLocal();
   renderApostadores();
 }
 
@@ -573,11 +554,6 @@ async function deletarApostadorId(id) {
 async function renderTokens() {
   const el = document.getElementById("aba-tokens");
   if (!el) return;
-
-  if (APP.modoOffline) {
-    el.innerHTML = '<div class="card" style="color:var(--texto2);text-align:center;padding:30px">Tokens indisponíveis no modo offline.</div>';
-    return;
-  }
 
   el.innerHTML = '<div class="loading"><div class="spinner"></div>Buscando tokens...</div>';
 

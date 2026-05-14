@@ -13,7 +13,7 @@
 
 - **Core**: HTML5 + Vanilla CSS + Vanilla JS (ES6).
 - **Sem Bundlers**: Não use `import/export`. Tudo é global via `window` ou funções declaradas no escopo global.
-- **Firebase**: Uso nativo do Firebase SDK (v8). Firestore como banco principal.
+- **Firebase**: Uso nativo do Firebase SDK v10 (compat mode). Firestore como banco principal.
 - **Modo Offline**: Sincronização automática com `localStorage` via `carregarDadosLocais()` e `_persistirLocal()` em `app.js`.
 
 ## Estrutura de Arquivos
@@ -62,7 +62,7 @@ APP.apostadores     // array [{id, nome, apelido, token, especiais...}]
 APP.configStatus    // { liberado_grupos: true, ... }
 ```
 
-## **Firestore (v8 SDK)** - Estrutura principal de dados
+## **Firestore (v10 SDK compat)** - Estrutura principal de dados
 
 - **`resultados_oficiais`**:
   - `gameId`: `{ homeGoals, awayGoals, foi_penaltis, penaltis_vencedor, penaltis_home, penaltis_away }`

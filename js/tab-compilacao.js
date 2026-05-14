@@ -126,14 +126,20 @@ window.renderCompilacao = function () {
 
   // Visibilidade dos especiais: exibe se grupos travados OU resultado oficial real conhecido.
   // Nunca exibe resultado simulado como se fosse oficial.
+  // Campeão e Vice dependem do jogo FNL; 3º Lugar depende do jogo TPL.
   const gruposTravados = !(window.APP?.configStatus?.liberado_grupos);
+  const _resOficiais = getResultados();
+  const fnlOficial = !!_resOficiais["FNL"] && _resOficiais["FNL"].homeGoals !== undefined && !jogoEhSimulado("FNL");
+  const tplOficial = !!_resOficiais["TPL"] && _resOficiais["TPL"].homeGoals !== undefined && !jogoEhSimulado("TPL");
+  const _jogoOficialPorKey = { campeao: fnlOficial, vice: fnlOficial, terceiro: tplOficial };
 
   for (const rowE of rowsEsp) {
     h += '<tr style="background:rgba(234,179,8,0.05)"><td class="col-jogo" style="position:sticky;left:0;background:var(--card2);z-index:1;font-weight:700;font-size:.68rem">' + rowE.label + '</td>';
 
-    // Resultado oficial derivado automaticamente
+    // Resultado oficial derivado automaticamente — só considerado "real" se o jogo
+    // específico de cada posição já tiver resultado oficial (não simulado).
     const escOf = resOficialEsp[rowE.key] || "";
-    const resultadoOficialReal = escOf && !jogoEhSimulado("FNL");
+    const resultadoOficialReal = escOf && _jogoOficialPorKey[rowE.key];
     const nomeOf = window.TEAMS_BY_CODE?.[escOf]?.name || (escOf ? escOf : "—");
     h += '<td class="col-resultado" style="font-weight:700;font-size:.65rem;color:var(--dourado)">' + (resultadoOficialReal ? nomeOf : (gruposTravados ? nomeOf : "—")) + '</td>';
 
@@ -208,6 +214,11 @@ window.exportarCompilacaoJson = function () {
 
   const espOficiaisExp = window.BRACKET.extrairEspeciaisOficiais(res, brk);
 
+  // Verifica se ao menos uma fase está liberada (sem depender de apostas_liberadas,
+  // que só existe em modo offline — removido)
+  const _cfgSt = APP.configStatus || {};
+  const _algumaLiberada = Object.keys(_cfgSt).some(k => k.startsWith("liberado_") && _cfgSt[k]);
+
   const ranking = apos.map(a => {
     const st = window.calcularPontosApostador(pals[a.id] || {}, res, a, espOficiaisExp);
     // Filtra palpites para não vazar no JSON se a fase ainda estiver aberta e sem resultado
@@ -225,7 +236,10 @@ window.exportarCompilacaoJson = function () {
       }
     }
 
-    // ③ Não exportar o token do apostador
+    // ③ Não exportar o token do apostador; especiais só visíveis por regra de visibilidade
+    // (calculada abaixo após conhecer _fnlOficialJson/_tplOficialJson — usamos funções inline
+    //  que serão avaliadas depois que _podeExpEsp for definido; por ora passamos raw e filtramos
+    //  no bloco de exportData). Aqui mantemos os valores para uso interno de calcularPontos.
     const esp = a.especiais || {};
     return {
       id: a.id,
@@ -235,11 +249,7 @@ window.exportarCompilacaoJson = function () {
       placar_exato: st.acertos_placar_exato,
       resultado_correto: st.acertos_resultado,
       palpites: palpitesFiltrados,
-      especiais: {
-        campeao: esp.campeao || "",
-        vice: esp.vice || "",
-        terceiro: esp.terceiro || ""
-      }
+      _espRaw: esp  // removido no exportData abaixo
     };
   }).sort((a, b) => b.pts - a.pts);
 
@@ -257,17 +267,36 @@ window.exportarCompilacaoJson = function () {
     };
   }
 
-  // ⑤ Resultado oficial dos especiais derivado automaticamente do bracket
+  // ⑤ Resultado oficial dos especiais: só expõe se o jogo específico é oficial não-simulado,
+  // OU se os grupos já estão travados. Campeão/Vice ← FNL; 3º lugar ← TPL.
+  const _gruposTravadosJson = !_algumaLiberada || !(_cfgSt.liberado_grupos);
+  const _fnlOficialJson = !!res["FNL"] && res["FNL"].homeGoals !== undefined && !jogoEhSimulado("FNL");
+  const _tplOficialJson = !!res["TPL"] && res["TPL"].homeGoals !== undefined && !jogoEhSimulado("TPL");
+  const _podeExpEsp = {
+    campeao:  _fnlOficialJson || _gruposTravadosJson,
+    vice:     _fnlOficialJson || _gruposTravadosJson,
+    terceiro: _tplOficialJson || _gruposTravadosJson,
+  };
   const exportData = {
     timestamp: new Date().toISOString(),
-    status_apostas: APP.configStatus?.apostas_liberadas ? "LIBERADAS" : "TRAVADAS",
+    status_apostas: _algumaLiberada ? "LIBERADAS" : "TRAVADAS",
     resultados_oficiais: resultadosExport,
     especiais_oficiais: {
-      campeao:  espOficiaisExp.campeao  ? (window.TEAMS_BY_CODE?.[espOficiaisExp.campeao]?.name  || espOficiaisExp.campeao)  : "",
-      vice:     espOficiaisExp.vice     ? (window.TEAMS_BY_CODE?.[espOficiaisExp.vice]?.name     || espOficiaisExp.vice)     : "",
-      terceiro: espOficiaisExp.terceiro ? (window.TEAMS_BY_CODE?.[espOficiaisExp.terceiro]?.name || espOficiaisExp.terceiro) : ""
+      campeao:  _podeExpEsp.campeao  ? (window.TEAMS_BY_CODE?.[espOficiaisExp.campeao]?.name  || espOficiaisExp.campeao  || "") : "",
+      vice:     _podeExpEsp.vice     ? (window.TEAMS_BY_CODE?.[espOficiaisExp.vice]?.name     || espOficiaisExp.vice     || "") : "",
+      terceiro: _podeExpEsp.terceiro ? (window.TEAMS_BY_CODE?.[espOficiaisExp.terceiro]?.name || espOficiaisExp.terceiro || "") : ""
     },
-    ranking_e_palpites: ranking
+    ranking_e_palpites: ranking.map(a => {
+      const esp = a._espRaw || {};
+      const r = Object.assign({}, a);
+      delete r._espRaw;
+      r.especiais = {
+        campeao:  _podeExpEsp.campeao  ? (esp.campeao  || "") : "🔒",
+        vice:     _podeExpEsp.vice     ? (esp.vice     || "") : "🔒",
+        terceiro: _podeExpEsp.terceiro ? (esp.terceiro || "") : "🔒",
+      };
+      return r;
+    })
   };
 
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
@@ -364,13 +393,17 @@ window.exportarCompilacaoCsv = function () {
   // ⑥ Resultados oficiais (Campeão, Vice, 3º) automáticos do bracket
   const labelsEsp = { campeao: "🏆 Campeão", vice: "🥈 Vice", terceiro: "🥉 3º Lugar" };
   const gruposTravadosCSV = !(window.APP?.configStatus?.liberado_grupos);
+  const _resCsv = getResultados();
+  const fnlOficialCSV = !!_resCsv["FNL"] && _resCsv["FNL"].homeGoals !== undefined && !jogoEhSimulado("FNL");
+  const tplOficialCSV = !!_resCsv["TPL"] && _resCsv["TPL"].homeGoals !== undefined && !jogoEhSimulado("TPL");
+  const _jogoOficialCSV = { campeao: fnlOficialCSV, vice: fnlOficialCSV, terceiro: tplOficialCSV };
 
   for (const key of ["campeao", "vice", "terceiro"]) {
     const ofCode = espOficiaisCsv[key] || "";
     const nomeOf = window.TEAMS_BY_CODE?.[ofCode]?.name || (ofCode || "");
     const row = [ "ESP", "especial", "", `"${labelsEsp[key]}"`, "", `"${nomeOf}"` ];
-    // Exibe se: resultado oficial real (não simulado) disponível, OU grupos travados
-    const resultadoOficialRealCSV = ofCode && !jogoEhSimulado("FNL");
+    // Exibe se: resultado oficial real (jogo específico não simulado) disponível, OU grupos travados
+    const resultadoOficialRealCSV = ofCode && _jogoOficialCSV[key];
     const podeVerEspCSV = resultadoOficialRealCSV || gruposTravadosCSV;
     for (const a of ranking) {
       const palE = (a.especiais && a.especiais[key]) || "";

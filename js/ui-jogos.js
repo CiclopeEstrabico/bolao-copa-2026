@@ -46,18 +46,15 @@ function _onBlurPen(id) {
 }
 function limparSimulacao(id) { delete APP.resultadosSim[id]; atualizarBracket(); renderAbaAtiva(); }
 async function limparResultadoAdmin(id) {
-  if (APP.db && !APP.modoOffline) {
-    try {
-      await APP.db.collection("resultados_oficiais").doc(id).delete();
-    } catch (e) {
-      alert("Erro ao deletar no servidor: " + e.message + "\nNenhum dado foi alterado.");
-      return;
-    }
+  try {
+    await APP.db.collection("resultados_oficiais").doc(id).delete();
+  } catch (e) {
+    alert("Erro ao deletar no servidor: " + e.message + "\nNenhum dado foi alterado.");
+    return;
   }
 
   delete APP.resultados[id];
   if (APP.resultadosSim) delete APP.resultadosSim[id];
-  _persistirLocal();
 
   const hg = document.getElementById("sim-hg-" + id);
   const ag = document.getElementById("sim-ag-" + id);
