@@ -295,6 +295,14 @@ function renderAposta() {
   const resOficiais = getResultados();
   const tg = calcularProjecao();
 
+  // resCompleto = official + bets para o check de 'ok' nas badges de grupos.
+  // res (oficial) continua sendo usado para display de placar e inputs — não muda o UX.
+  const resCompleto = Object.assign({}, resOficiais);
+  for (const [id, p] of Object.entries(_palpitesLocais)) {
+    if (resCompleto[id]?.homeGoals === undefined && p?.homeGoals !== undefined) {
+      resCompleto[id] = { homeGoals: p.homeGoals, awayGoals: p.awayGoals };
+    }
+  }
   // Bracket projetado: palpites do apostador preenchem onde não há resultado oficial.
   // Pênaltis do palpite são propagados para que empates em eliminatórias avancem o time certo.
   // Resultados oficiais sempre sobrepõem os palpites.
@@ -348,7 +356,7 @@ function renderAposta() {
   if (!_modoVer) h += renderEspeciaisAposta(resOficiais);
 
   // Mesmo layout do resultados: grupos + toggle + jogos
-  h += renderJogosComToggle(resOficiais, tg, false, _palpitesLocais, _bracketApostador);
+  h += renderJogosComToggle(resOficiais, tg, false, _palpitesLocais, _bracketApostador, resCompleto);
 
   // Focus Guard: captura o input focado antes de destruir o DOM
   const _fgId = document.activeElement?.id || null;
@@ -433,10 +441,18 @@ function atualizarMiniTabelasAposta() {
   const tg = calcularProjecao();
   const resOficiais = getResultados();
 
+  // resCompleto = oficial + bets para badges de grupos
+  const resCompleto = Object.assign({}, resOficiais);
+  for (const [id, p] of Object.entries(_palpitesLocais)) {
+    if (resCompleto[id]?.homeGoals === undefined && p?.homeGoals !== undefined) {
+      resCompleto[id] = { homeGoals: p.homeGoals, awayGoals: p.awayGoals };
+    }
+  }
+
   // Atualizar o grid de grupos no topo se existir
   const gridContainer = document.querySelector(".grupos-grid")?.parentElement;
   if (gridContainer && _modoGrupos === "topo") {
-    gridContainer.innerHTML = renderGruposGrid(tg, resOficiais);
+    gridContainer.innerHTML = renderGruposGrid(tg, resOficiais, resCompleto);
   }
 
   // Atualizar a tabela de progresso

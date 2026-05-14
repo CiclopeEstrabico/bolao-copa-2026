@@ -93,12 +93,13 @@ function confirmarAdmin(id, ehElim) {
 }
 
 /* ---- GRUPOS GRID ---- */
-function renderGruposGrid(tg, res) {
+function renderGruposGrid(tg, res, resCompleto) {
+  const resOk = resCompleto || res; // resCompleto usado para badges quando disponível
   let h = '<div class="grupos-grid">';
   for (const L of "ABCDEFGHIJKL".split("")) {
     const st = tg.grupos[L] || []; if (!st.length) continue;
     const jg = (window.SCHEDULE || []).filter(j => j.grupo === L);
-    const ok = jg.length === 6 && jg.every(j => res[j.id]?.homeGoals !== undefined);
+    const ok = jg.length === 6 && jg.every(j => resOk[j.id]?.homeGoals !== undefined);
     h += '<div class="grupo-mini"><div class="grupo-mini-header">GRUPO ' + L + '</div>';
     h += '<table class="tabela-mini"><thead><tr><th>Seleção</th><th title="Pts">P</th><th class="td-hid">J</th><th class="td-hid">V</th><th class="td-hid">E</th><th class="td-hid">D</th><th title="Gols Pró">GP</th><th title="Gols Contra">GC</th><th>SG</th></tr></thead><tbody>';
     st.forEach((t, i) => {
@@ -135,12 +136,12 @@ function renderToggles() {
 }
 
 /* ---- RENDER PRINCIPAL ---- */
-function renderJogosComToggle(res, tg, isAdm, palApo, bracketOverride) {
+function renderJogosComToggle(res, tg, isAdm, palApo, bracketOverride, resCompleto) {
   let h = renderToggles();
   // Grupos NO TOPO: grid compacto acima dos jogos (sem duplicar no inline)
-  if (_modoGrupos === "topo") h += '<div class="card" style="padding:10px;margin-bottom:10px">' + renderGruposGrid(tg, res) + '</div>';
+  if (_modoGrupos === "topo") h += '<div class="card" style="padding:10px;margin-bottom:10px">' + renderGruposGrid(tg, res, resCompleto) + '</div>';
   const gJogos = (window.SCHEDULE || []).filter(j => j.fase === "grupos");
-  h += _ordemJogos === "grupos" ? renderPorGrupo(gJogos, res, tg, isAdm, palApo, bracketOverride) : renderPorDia(gJogos, res, isAdm, palApo, bracketOverride);
+  h += _ordemJogos === "grupos" ? renderPorGrupo(gJogos, res, tg, isAdm, palApo, bracketOverride, resCompleto) : renderPorDia(gJogos, res, isAdm, palApo, bracketOverride);
   for (const fe of [{ l: "32 Avos de Final", ids: ["32avos"] }, { l: "Oitavas de Final", ids: ["oitavas"] }, { l: "Quartas de Final", ids: ["quartas"] }, { l: "Semifinais", ids: ["semis"] }, { l: "3° Lugar e Final", ids: ["terceiro", "final"] }]) {
     const jogos = (window.SCHEDULE || []).filter(j => fe.ids.includes(j.fase)).sort((a, b) => new Date(a.utc) - new Date(b.utc));
     if (!jogos.length) continue;
@@ -149,32 +150,34 @@ function renderJogosComToggle(res, tg, isAdm, palApo, bracketOverride) {
     h += '</div>';
   }
   // Grupos NO FIM
-  if (_modoGrupos === "baixo") h += '<div class="card" style="padding:10px;margin-top:20px">' + renderGruposGrid(tg, res) + '</div>';
+  if (_modoGrupos === "baixo") h += '<div class="card" style="padding:10px;margin-top:20px">' + renderGruposGrid(tg, res, resCompleto) + '</div>';
   return h;
 }
 
-function renderPorGrupo(jogos, res, tg, isAdm, palApo, bracketOverride) {
+function renderPorGrupo(jogos, res, tg, isAdm, palApo, bracketOverride, resCompleto) {
+  const resOk = resCompleto || res; // resCompleto para badge quando disponível
   let h = "";
   for (const L of "ABCDEFGHIJKL".split("")) {
     const jg = jogos.filter(j => j.grupo === L).sort((a, b) => new Date(a.utc) - new Date(b.utc));
     if (!jg.length) continue;
-    const ok = jg.filter(j => res[j.id]?.homeGoals !== undefined).length;
+    const ok = jg.filter(j => resOk[j.id]?.homeGoals !== undefined).length;
     const st = tg?.grupos[L];
     h += '<div class="fase-grupo-bloco"><div class="grupo-header"><span class="grupo-badge">GRUPO ' + L + '</span>';
     h += '<span style="font-size:.65rem;color:rgba(255,255,255,.6)">' + ok + '/6</span>';
     if (_modoGrupos === "jogos" && st && ok === 6) h += '<span style="margin-left:auto;font-size:.65rem;color:#86efac">✓ ' + (window.TEAMS_BY_CODE[st[0]?.code]?.name || "") + " · " + (window.TEAMS_BY_CODE[st[1]?.code]?.name || "") + '</span>';
     h += '</div>';
-    if (_modoGrupos === "jogos") { const miniTg = { grupos: tg.grupos, melhoresTerceiros: tg.melhoresTerceiros }; h += renderGrupoMini(L, miniTg, res); }
+    if (_modoGrupos === "jogos") { const miniTg = { grupos: tg.grupos, melhoresTerceiros: tg.melhoresTerceiros }; h += renderGrupoMini(L, miniTg, res, resCompleto); }
     for (const j of jg) h += renderJogoRow(j, res, false, isAdm, palApo, true, bracketOverride);
     h += '</div>';
   }
   return h;
 }
 
-function renderGrupoMini(L, tg, res) {
+function renderGrupoMini(L, tg, res, resCompleto) {
+  const resOk = resCompleto || res; // resCompleto para badge quando disponível
   const st = tg.grupos[L] || []; if (!st.length) return "";
   const jg = (window.SCHEDULE || []).filter(j => j.grupo === L);
-  const ok = jg.every(j => res[j.id]?.homeGoals !== undefined);
+  const ok = jg.every(j => resOk[j.id]?.homeGoals !== undefined);
   let h = '<div style="padding:6px 10px;border-bottom:1px solid var(--borda)"><table class="tabela-mini"><thead><tr><th>Seleção</th><th>P</th><th class="td-hid">J</th><th class="td-hid">V</th><th class="td-hid">E</th><th class="td-hid">D</th><th title="Gols Pró">GP</th><th title="Gols Contra">GC</th><th>SG</th></tr></thead><tbody>';
   st.forEach((t, i) => {
     const cls = ok && i < 2 ? "row-classif" : (ok && tg.melhoresTerceiros?.some(x => x.code === t.code) ? "row-terceiro" : "");
