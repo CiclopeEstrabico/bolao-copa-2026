@@ -383,33 +383,54 @@ window.renderAbaAtiva = function () {
 function renderEspeciaisAposta(res) {
   const esp = _apostador.especiais || {};
   const cfgExtra = window.CONFIG?.pontuacao?.extras || {};
+  // jogoOficial: qual jogo define oficialmente aquela posição no pódio
   const fases = [
-    { key: "campeao", label: "🏆 Campeão", pts: (cfgExtra.primeiro_lugar || 0) + "pts" },
-    { key: "vice", label: "🥈 Vice", pts: (cfgExtra.segundo_lugar || 0) + "pts" },
-    { key: "terceiro", label: "🥉 3° Lugar", pts: (cfgExtra.terceiro_lugar || 0) + "pts" },
+    { key: "campeao",  label: "🏆 Campeão",   pts: (cfgExtra.primeiro_lugar || 0) + "pts", jogoOficial: "FNL" },
+    { key: "vice",     label: "🥈 Vice",       pts: (cfgExtra.segundo_lugar  || 0) + "pts", jogoOficial: "FNL" },
+    { key: "terceiro", label: "🥉 3° Lugar",   pts: (cfgExtra.terceiro_lugar || 0) + "pts", jogoOficial: "TPL" },
   ];
   const times = [...new Set((window.SCHEDULE || []).filter(j => j.grupo).map(j => [j.home, j.away]).flat())];
+  const liberadoGrupos = window.APP?.configStatus?.liberado_grupos === true;
 
   let h = '<div class="card" style="margin-bottom:20px"><div class="card-titulo">⭐ Palpites Especiais</div>';
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;justify-content:center">';
   for (const f of fases) {
     const val = esp[f.key] || "";
     const info = window.TEAMS_BY_CODE?.[val];
-    // Times já escolhidos nas outras posições (não pode repetir)
     const outrasEscolhas = fases.filter(f2 => f2.key !== f.key).map(f2 => esp[f2.key]).filter(Boolean);
+
+    // Regra 1: fase de grupos travada → bloqueia todos os especiais
+    const bloqueadoPorFase = !liberadoGrupos;
+    // Regra 2: resultado oficial do jogo que define essa posição já existe → bloqueia esse campo
+    const bloqueadoPorResultado = res[f.jogoOficial]?.homeGoals !== undefined;
+    const estaBloqueado = bloqueadoPorFase || bloqueadoPorResultado;
+
     h += '<div style="background:var(--fundo2);border-radius:var(--radius-sm);padding:10px">';
-    h += '<div style="font-size:.78rem;font-weight:700;margin-bottom:6px">' + f.label + ' <span style="color:var(--dourado);font-size:.65rem">' + f.pts + '</span></div>';
+    // Label com indicador visual do motivo do bloqueio
+    h += '<div style="font-size:.78rem;font-weight:700;margin-bottom:6px">' + f.label +
+         ' <span style="color:var(--dourado);font-size:.65rem">' + f.pts + '</span>';
+    if (bloqueadoPorResultado) {
+      h += ' <span style="font-size:.58rem;color:var(--verde-light);opacity:.9;margin-left:2px">✓ oficial</span>';
+    } else if (bloqueadoPorFase) {
+      h += ' <span style="font-size:.65rem;color:var(--texto2);margin-left:2px">🔒</span>';
+    }
+    h += '</div>';
+
     h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">' + htmlBandeira(val, 24);
     h += '<span style="font-size:.82rem;font-weight:600">' + (info?.name || "Selecionar") + '</span></div>';
+
     if (!_modoVer) {
-      const liberadoGeral = window.APP?.configStatus?.liberado_grupos === true;
-      const disAttr = liberadoGeral ? '' : ' disabled style="background-color:#30363d;color:var(--texto2);opacity:1;cursor:not-allowed;border-color:var(--borda)"';
+      const disAttr = estaBloqueado
+        ? ' disabled style="background-color:#30363d;color:var(--texto2);opacity:1;cursor:not-allowed;border-color:var(--borda)"'
+        : '';
       h += '<select class="apt-esp" data-key="' + f.key + '" onchange="gravarEspecialAposta(this)" style="font-size:.75rem;padding:5px 8px"' + disAttr + '>';
       h += '<option value="">-- Selecionar --</option>';
       for (const c of times.sort()) {
         const t = window.TEAMS_BY_CODE?.[c];
         const jaEscolhido = outrasEscolhas.includes(c);
-        h += '<option value="' + c + '"' + (val === c ? " selected" : "") + (jaEscolhido ? ' disabled style="color:var(--texto2);opacity:.4"' : '') + '>' + (t?.name || c) + (jaEscolhido ? ' ✕' : '') + '</option>';
+        h += '<option value="' + c + '"' + (val === c ? " selected" : "") +
+             (jaEscolhido ? ' disabled style="color:var(--texto2);opacity:.4"' : '') + '>' +
+             (t?.name || c) + (jaEscolhido ? ' ✕' : '') + '</option>';
       }
       h += '</select>';
     }
