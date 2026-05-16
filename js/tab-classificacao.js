@@ -125,9 +125,10 @@ window._toggleRankingDetalhe = function (id) {
 
 // Retorna HTML da medalha para os top 5; null para posições fora do pódio
 function _getMedalhao(pos) {
-  if (pos === 1) return '🥇';
-  if (pos === 2) return '🥈';
-  if (pos === 3) return '🥉';
+  const _emoji = (e, title) => '<span title="' + title + '" style="font-size:1.25rem;line-height:1;vertical-align:middle;display:inline-block">' + e + '</span>';
+  if (pos === 1) return _emoji('🥇', '1° Lugar');
+  if (pos === 2) return _emoji('🥈', '2° Lugar');
+  if (pos === 3) return _emoji('🥉', '3° Lugar');
   if (pos === 4) return '<span title="4° Lugar" style="display:inline-block;background:#B87333;color:#fff;font-size:.6rem;font-weight:900;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;vertical-align:middle">4°</span>';
   if (pos === 5) return '<span title="5° Lugar" style="display:inline-block;background:#8B9DC3;color:#fff;font-size:.6rem;font-weight:900;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;vertical-align:middle">5°</span>';
   return null;
