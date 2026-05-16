@@ -14,7 +14,7 @@ window._isAdminView = true;
 const ADMIN_UIDS = [
   "oSnCwYjIe6eh7W1pUhZZUtX0B1q2",
   "J0anvKKB5deimhpidxz6B7Ql2yd2",
-  "",
+  "PnHGV4PrzCY4HwbgYZiKu6IngPB2",
   "",
 ];
 
@@ -62,9 +62,9 @@ window.renderAbaAtiva = function () {
 
 function _renderAbaAdmin() {
   const fn = {
-    resultados:  renderAdmin,
+    resultados: renderAdmin,
     apostadores: renderApostadores,
-    tokens:      renderTokens,
+    tokens: renderTokens,
   };
   fn[_adminAbaAtiva]?.();
 }
@@ -107,11 +107,11 @@ function _renderLogin() {
   if (!main) return;
   main.innerHTML =
     '<div class="card" style="max-width:340px;margin:40px auto;text-align:center">' +
-      '<div class="card-titulo">🔐 Acesso Admin</div>' +
-      '<p style="font-size:.85rem;color:var(--texto2);margin-bottom:20px">' +
-        'Faça login com a conta Google autorizada.' +
-      '</p>' +
-      '<button class="btn btn-primario" style="margin:0 auto;display:inline-flex;align-items:center;gap:8px" onclick="loginAdmin()">🔑 Entrar com Google</button>' +
+    '<div class="card-titulo">🔐 Acesso Admin</div>' +
+    '<p style="font-size:.85rem;color:var(--texto2);margin-bottom:20px">' +
+    'Faça login com a conta Google autorizada.' +
+    '</p>' +
+    '<button class="btn btn-primario" style="margin:0 auto;display:inline-flex;align-items:center;gap:8px" onclick="loginAdmin()">🔑 Entrar com Google</button>' +
     '</div>';
 }
 
@@ -127,19 +127,19 @@ function renderAdmin() {
   const status = APP.configStatus || {};
 
   let h = '<div style="display:flex;flex-direction:column;gap:12px;margin-bottom:12px">';
-  
+
   // Linha de controles de trava (Mobile-First)
   h += '<div class="card" style="padding:10px;margin-bottom:0">';
   h += '<div style="font-size:.75rem;font-weight:700;color:var(--texto2);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">🔓 Controle de Acesso (Manual)</div>';
   h += '<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;-ms-overflow-style:none">';
-  
+
   const bts = [
-    { k: "grupos",  l: "Grupos" },
-    { k: "32avos",  l: "32avos" },
+    { k: "grupos", l: "Grupos" },
+    { k: "32avos", l: "32avos" },
     { k: "oitavas", l: "Oitavas" },
     { k: "quartas", l: "Quartas" },
-    { k: "semis",   l: "Semis" },
-    { k: "finais",  l: "Finais" }
+    { k: "semis", l: "Semis" },
+    { k: "finais", l: "Finais" }
   ];
 
   bts.forEach(b => {
@@ -148,7 +148,7 @@ function renderAdmin() {
     const cl = liberado ? "btn-primario" : "btn-perigo";
     h += `<button class="btn ${cl} btn-sm" onclick="toggleStatusFase('${b.k}')" style="white-space:nowrap;font-size:.65rem;padding:4px 8px;flex-shrink:0">${icon} ${b.l}</button>`;
   });
-  
+
   h += '</div></div>';
 
   // Linha de ações globais
@@ -271,9 +271,9 @@ function toggleStatusFase(fase) {
   const key = "liberado_" + fase;
   const atual = !!(APP.configStatus && APP.configStatus[key]);
   const novo = !atual;
-  
+
   if (!confirm("Deseja realmente " + (novo ? "LIBERAR" : "TRAVAR") + " apostas de " + fase + "?")) return;
-  
+
   APP.db.collection("config").doc("status")
     .set({ [key]: novo }, { merge: true })
     .then(() => alert("Fase " + fase.toUpperCase() + " " + (novo ? "LIBERADA ✅" : "TRAVADA 🔒")))
@@ -285,12 +285,12 @@ function toggleStatusFase(fase) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const FASES_CONFIG = [
-  { key: "grupos",  label: "Grupos"  },
-  { key: "32avos",  label: "32avos"  },
+  { key: "grupos", label: "Grupos" },
+  { key: "32avos", label: "32avos" },
   { key: "oitavas", label: "Oitavas" },
   { key: "quartas", label: "Quartas" },
-  { key: "semis",   label: "Semis"   },
-  { key: "finais",  label: "Finais"  },
+  { key: "semis", label: "Semis" },
+  { key: "finais", label: "Finais" },
 ];
 
 function _totalJogosFase(fase) {
@@ -485,13 +485,13 @@ async function limparFaseApostador(id) {
   if (fase === "especiais") {
     if (a) { a.especiais = {}; await gravarApostador(a); }
   } else {
-    const fasesFiltro = fase === "todas" ? ["grupos", "32avos", "oitavas", "quartas", "semis", "final", "terceiro"] : 
-                       (fase === "finais" ? ["final", "terceiro"] : [fase]);
+    const fasesFiltro = fase === "todas" ? ["grupos", "32avos", "oitavas", "quartas", "semis", "final", "terceiro"] :
+      (fase === "finais" ? ["final", "terceiro"] : [fase]);
     const jogosParaLimpar = (window.SCHEDULE || []).filter(j => fasesFiltro.includes(j.fase));
     for (const j of jogosParaLimpar) {
       if (APP.palpites[id]) delete APP.palpites[id][j.id];
       await APP.db.collection("apostadores").doc(id)
-        .collection("palpites_jogos").doc(j.id).delete().catch(() => {});
+        .collection("palpites_jogos").doc(j.id).delete().catch(() => { });
     }
     if (fase === "todas" && a) { a.especiais = {}; await gravarApostador(a); }
   }
@@ -567,10 +567,10 @@ async function renderTokens() {
   }
 
   const tokensUsados = new Set(APP.apostadores.map(a => a.token).filter(Boolean));
-  const usados    = tokens.filter(t => tokensUsados.has(t.token));
-  const enviados  = tokens.filter(t => !tokensUsados.has(t.token) && t.enviado === true);
-  const livres    = tokens.filter(t => !tokensUsados.has(t.token) && t.enviado !== true && t.ativo !== false);
-  const inativos  = tokens.filter(t => !tokensUsados.has(t.token) && t.enviado !== true && t.ativo === false);
+  const usados = tokens.filter(t => tokensUsados.has(t.token));
+  const enviados = tokens.filter(t => !tokensUsados.has(t.token) && t.enviado === true);
+  const livres = tokens.filter(t => !tokensUsados.has(t.token) && t.enviado !== true && t.ativo !== false);
+  const inativos = tokens.filter(t => !tokensUsados.has(t.token) && t.enviado !== true && t.ativo === false);
 
   let h = '<div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">';
   h += '<div style="font-size:.9rem;font-weight:800">🔑 Tokens</div>';
