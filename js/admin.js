@@ -720,13 +720,42 @@ function copiarLink(url, btn) {
 
 async function criarToken() {
   if (!_adminAutenticado()) return alert("Não autorizado.");
+  
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
   const token = Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  
   if (!confirm("Criar token: " + token + "?")) return;
+  
   try {
-    await APP.db.collection("tokens").add({ token, ativo: true, criado_em: new Date().toISOString() });
+    const snap = await APP.db.collection("tokens").orderBy("numero", "desc").limit(1).get();
+    let proxNumero = 1;
+    if (!snap.empty) {
+      const maxAtual = snap.docs[0].data().numero || 0;
+      proxNumero = maxAtual + 1;
+    }
+    
+    const novoDocId = "tok_" + proxNumero;
+    const docRef = APP.db.collection("tokens").doc(novoDocId);
+    
+    const docVerifica = await docRef.get();
+    if (docVerifica.exists) {
+      throw new Error("Conflito de ID (" + novoDocId + "). Tente novamente.");
+    }
+    
+    await docRef.set({
+      id: novoDocId,
+      numero: proxNumero,
+      token: token,
+      ativo: true,
+      nome: "",
+      apelido: "",
+      criado_em: new Date().toISOString()
+    });
+    
     renderTokens();
-  } catch (e) { alert("Erro: " + e.message); }
+  } catch (e) { 
+    alert("Erro ao criar token: " + e.message); 
+  }
 }
 
 async function deletarToken(tokenDocId) {
