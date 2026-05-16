@@ -149,14 +149,32 @@ window.renderRegras = function () {
   h += '</div></div>';
 
   // Premiação
+  const premiacoes = [
+    { pos: 1, emoji: "🥇", label: "1° Lugar",  desc: "Campeão do Bolão",  pct: 40, cor: "#F5C842" },
+    { pos: 2, emoji: "🥈", label: "2° Lugar",  desc: "Vice-campeão",      pct: 25, cor: "#94A3B8" },
+    { pos: 3, emoji: "🥉", label: "3° Lugar",  desc: "3° Colocado",       pct: 18, cor: "#CD7C2F" },
+    { pos: 4, emoji: "🏅", label: "4° Lugar",  desc: "4° Colocado",       pct: 10, cor: "#B87333" },
+    { pos: 5, emoji: "🎖️", label: "5° Lugar",  desc: "5° Colocado",       pct:  7, cor: "#8B9DC3" },
+  ];
   h += '<div class="card"><div class="card-titulo">🏅 Premiação</div>';
   h += '<div style="display:grid;gap:6px">';
-  for (const [pos, desc, cor] of [["🥇 1° Lugar", "Campeão do Bolão", "var(--dourado)"], ["🥈 2° Lugar", "Vice-campeão", "#94A3B8"], ["🥉 3° Lugar", "3° Colocado", "#CD7C2F"]]) {
-    h += '<div style="display:flex;align-items:center;gap:12px;padding:9px 12px;background:var(--fundo2);border-radius:var(--radius-sm);border-left:3px solid ' + cor + '">';
-    h += '<span style="font-weight:800;color:' + cor + '">' + pos + '</span>';
-    h += '<span style="font-size:.78rem;color:var(--texto2)">' + desc + '</span></div>';
+  for (const pr of premiacoes) {
+    h += '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--fundo2);border-radius:var(--radius-sm);border-left:4px solid ' + pr.cor + '">';
+    h += '<span style="font-size:1.3rem;flex-shrink:0">' + pr.emoji + '</span>';
+    h += '<div style="flex:1">';
+    h += '<div style="font-weight:800;font-size:.85rem;color:' + pr.cor + '">' + pr.label + '</div>';
+    h += '<div style="font-size:.72rem;color:var(--texto2);margin-top:2px">' + pr.desc + '</div>';
+    h += '</div>';
+    h += '<div style="text-align:right;flex-shrink:0">';
+    h += '<div style="font-size:1.15rem;font-weight:900;color:' + pr.cor + '">' + pr.pct + '%</div>';
+    h += '<div style="font-size:.62rem;color:var(--texto2);margin-top:1px">do montante</div>';
+    h += '</div>';
+    h += '</div>';
   }
-  h += '<div style="font-size:.71rem;color:var(--texto2);padding:8px 12px;background:var(--fundo2);border-radius:var(--radius-sm);margin-top:2px">💡 Valores definidos pelo organizador antes do torneio.</div>';
+  h += '<div style="font-size:.71rem;color:var(--texto2);padding:10px 14px;background:var(--fundo2);border-radius:var(--radius-sm);margin-top:2px;line-height:1.55">';
+  h += '💡 Os prêmios são calculados sobre o <strong>montante total arrecadado</strong> pelo bolão. ';
+  h += 'Em caso de empate na pontuação, os colocados dividem o prêmio das posições empatadas em partes iguais.';
+  h += '</div>';
   h += '</div></div>';
 
   el.innerHTML = h;

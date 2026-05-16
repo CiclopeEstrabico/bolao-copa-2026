@@ -54,7 +54,7 @@ window.renderClassificacao = function () {
     const posAnterior = _rankingAnterior[p.id || p.token];
     const mov = posAnterior ? (posAnterior > pos ? '▲' : posAnterior < pos ? '▼' : '—') : '—';
     const movCor = mov === '▲' ? 'var(--verde-ok)' : mov === '▼' ? '#f87171' : 'var(--texto2)';
-    const medalhao = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : '';
+    const medalhao = _getMedalhao(pos);
 
     // Sparkline: últimos 5 jogos
     let spark = '';
@@ -89,7 +89,7 @@ window.renderClassificacao = function () {
 
     h += '<tr style="cursor:pointer" onclick="_toggleRankingDetalhe(\'rd-' + i + '\')">';
     h += '<td style="text-align:center;font-weight:900;font-size:.95rem">';
-    h += (medalhao || pos) + '<span style="font-size:.65rem;color:' + movCor + '"> ' + mov + '</span></td>';
+    h += (medalhao !== null ? medalhao : '<span style="font-size:.88rem">' + pos + '</span>') + '<span style="font-size:.65rem;color:' + movCor + '"> ' + mov + '</span></td>';
     h += '<td style="text-align:left;font-weight:600;position:sticky;left:0;background:var(--fundo);z-index:1">' + (p.apelido || p.nome || p.token?.substring(0, 8) || "?") + '</td>';
     h += _renderCol(st.total.toFixed(1), pctPts, "var(--verde-light)");
     h += _renderCol(st.acertos_resultado, pctRes, "var(--texto)");
@@ -122,6 +122,16 @@ window._toggleRankingDetalhe = function (id) {
   const el = document.getElementById(id);
   if (el) el.style.display = el.style.display === 'none' ? '' : 'none';
 };
+
+// Retorna HTML da medalha para os top 5; null para posições fora do pódio
+function _getMedalhao(pos) {
+  if (pos === 1) return '🥇';
+  if (pos === 2) return '🥈';
+  if (pos === 3) return '🥉';
+  if (pos === 4) return '<span title="4° Lugar" style="display:inline-block;background:#B87333;color:#fff;font-size:.6rem;font-weight:900;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;vertical-align:middle">4°</span>';
+  if (pos === 5) return '<span title="5° Lugar" style="display:inline-block;background:#8B9DC3;color:#fff;font-size:.6rem;font-weight:900;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;vertical-align:middle">5°</span>';
+  return null;
+}
 
 function _statCard(label, valor, icon) {
   return '<div style="background:var(--card);border:1px solid var(--borda);border-radius:var(--radius-sm);padding:12px;text-align:center">' +
