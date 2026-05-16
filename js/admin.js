@@ -647,6 +647,15 @@ function _tokenCard(t, apt, tipo) {
   }
 
   h += '<div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">';
+  
+  // Botão PAGO para tokens Em Uso e Enviados
+  if (tipo === "usado" || tipo === "enviado") {
+    const isPago = t.pago === true;
+    const btnText = isPago ? "✅ PAGO" : "A PAGAR";
+    const btnStyle = isPago ? "background:var(--verde-ok);color:#fff;border:none" : "background:transparent;color:var(--texto2);border:1px solid var(--borda)";
+    h += '<button class="btn btn-sm" onclick="togglePago(\'' + t.id + '\', ' + !isPago + ')" style="font-size:.62rem;padding:2px 6px;' + btnStyle + '">' + btnText + '</button>';
+  }
+
   if (tipo === "livre") {
     h += '<button class="btn btn-sm" onclick="copiarLink(\'' + link + '\',this)" style="font-size:.62rem;padding:2px 6px">🔗 Link</button>';
     h += '<button class="btn btn-sm" onclick="marcarEnviado(\'' + t.id + '\')" style="font-size:.62rem;padding:2px 6px;background:var(--dourado);color:#000;border:none">✉️ Enviar</button>';
@@ -686,6 +695,15 @@ async function reverterEnviado(tokenDocId) {
     });
     renderTokens();
   } catch (e) { alert("Erro: " + e.message); }
+}
+
+async function togglePago(tokenDocId, isPago) {
+  if (!_adminAutenticado()) return alert("Não autorizado.");
+  try {
+    const updateData = { pago: isPago ? true : "" };
+    await APP.db.collection("tokens").doc(tokenDocId).update(updateData);
+    renderTokens();
+  } catch (e) { alert("Erro ao atualizar status de pagamento: " + e.message); }
 }
 
 function copiarTexto(txt, btn) {
