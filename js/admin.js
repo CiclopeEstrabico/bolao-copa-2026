@@ -186,7 +186,7 @@ function limparLog() {
 
 async function limparTudoAdmin() {
   if (!_adminAutenticado()) return alert("Não autorizado.");
-  if (!confirm("⚠️ LIMPAR TODOS OS RESULTADOS OFICIAIS?\nIsso não pode ser desfeito.")) return;
+  if (!confirm("⚠️ ALERTA CRÍTICO: LIMPEZA DE RESULTADOS\n\nVocê está prestes a apagar TODOS os resultados oficiais já inseridos no sistema.\n\nFique tranquilo: isso NÃO apaga as apostas feitas pelos usuários, apenas reseta os placares reais.\n\nEssa ação zera a pontuação gerada e NÃO pode ser desfeita.\n\nDeseja CONFIRMAR a exclusão total?")) return;
 
   // Bug 3: aguarda a deleção no servidor ANTES de alterar estado local.
   try {
@@ -272,7 +272,7 @@ function toggleStatusFase(fase) {
   const atual = !!(APP.configStatus && APP.configStatus[key]);
   const novo = !atual;
 
-  if (!confirm("Deseja realmente " + (novo ? "LIBERAR" : "TRAVAR") + " apostas de " + fase + "?")) return;
+  if (!confirm("🔒 CONTROLE DE FASE\n\nVocê está prestes a " + (novo ? "LIBERAR" : "TRAVAR") + " a fase: " + fase.toUpperCase() + ".\n\n- Se TRAVAR: Ninguém mais poderá alterar palpites nesta fase.\n- Se LIBERAR: Os participantes voltarão a poder editar seus palpites.\n\nLembre-se: Você sempre pode reverter essa decisão a qualquer momento clicando novamente.\n\nDeseja CONFIRMAR a alteração?")) return;
 
   APP.db.collection("config").doc("status")
     .set({ [key]: novo }, { merge: true })
@@ -458,6 +458,8 @@ async function salvarEdicaoApostador(id) {
   const a = APP.apostadores.find(x => x.id === id);
   if (!a) return;
 
+  if (!confirm("✏️ ALTERAR DADOS DO APOSTADOR\n\nVocê modificou os dados de perfil deste apostador. Isso atualizará as informações visíveis dele na tabela de classificação geral.\n\nDeseja CONFIRMAR as alterações?")) return;
+
   const novoNome = document.getElementById("edit-nome-" + id)?.value.trim();
   const novoApelido = document.getElementById("edit-apelido-" + id)?.value.trim();
   const novoToken = document.getElementById("edit-token-" + id)?.value.trim();
@@ -480,7 +482,7 @@ async function limparFaseApostador(id) {
   const a = APP.apostadores.find(x => x.id === id);
   const nome = a?.apelido || a?.nome || id;
   const desc = fase === "todas" ? "TODAS as apostas" : fase === "especiais" ? "apostas especiais" : "apostas: " + fase;
-  if (!confirm("Limpar " + desc + " de " + nome + "?")) return;
+  if (!confirm("🗑 EXCLUIR PALPITES DO APOSTADOR\n\nVocê vai deletar " + desc + " pertencentes a " + nome + ".\nOs dados serão apagados definitivamente do banco de dados e a pontuação dele será reduzida.\n\nDeseja CONFIRMAR a exclusão?")) return;
 
   if (fase === "especiais") {
     if (a) { a.especiais = {}; await gravarApostador(a); }
@@ -504,7 +506,8 @@ async function limparFaseApostador(id) {
 async function deletarApostadorId(id) {
   if (!_adminAutenticado()) return alert("Não autorizado.");
   const a = APP.apostadores.find(x => x.id === id);
-  if (!confirm('Deletar "' + _esc(a?.apelido || a?.nome || id) + '"? Não pode ser desfeito.')) return;
+  const nome = _esc(a?.apelido || a?.nome || id);
+  if (!confirm("⛔ DELEÇÃO DEFINITIVA DE APOSTADOR\n\nCUIDADO! Você está excluindo permanentemente " + nome + " e TODOS os seus palpites.\nO token utilizado por ele voltará a ficar disponível na aba de Tokens.\nEsta ação NÃO pode ser desfeita.\n\nDeseja CONFIRMAR a exclusão?")) return;
 
   const tokenDoApostador = a?.token;
   const apelidoDoApostador = a?.apelido || "";
@@ -686,7 +689,7 @@ async function marcarEnviado(tokenDocId) {
 
 async function reverterEnviado(tokenDocId) {
   if (!_adminAutenticado()) return alert("Não autorizado.");
-  if (!confirm("Reverter token para Disponível? O apelido será removido.")) return;
+  if (!confirm("↩️ REVERTER STATUS DO TOKEN\n\nO token voltará a ficar 'Disponível'. O nome ou apelido provisório anotado nele será apagado e qualquer pessoa que acessar esse link poderá utilizá-lo.\n\nDeseja CONFIRMAR a reversão?")) return;
   try {
     await APP.db.collection("tokens").doc(tokenDocId).update({
       enviado: false,
@@ -699,6 +702,11 @@ async function reverterEnviado(tokenDocId) {
 
 async function togglePago(tokenDocId, isPago) {
   if (!_adminAutenticado()) return alert("Não autorizado.");
+  
+  if (!isPago) {
+    if (!confirm("💰 REMOVER PAGAMENTO\n\nEste token estava marcado como PAGO.\nTem certeza que deseja reverter o status para NÃO PAGO?\n\nDeseja CONFIRMAR?")) return;
+  }
+  
   try {
     const updateData = { pago: isPago ? true : "" };
     await APP.db.collection("tokens").doc(tokenDocId).update(updateData);
@@ -760,7 +768,7 @@ async function criarToken() {
 
 async function deletarToken(tokenDocId) {
   if (!_adminAutenticado()) return alert("Não autorizado.");
-  if (!confirm("Deletar este token permanentemente?")) return;
+  if (!confirm("🗑 DELEÇÃO DE TOKEN\n\nVocê vai deletar este token do banco de dados permanentemente.\n\nDeseja CONFIRMAR a exclusão deste token?")) return;
   try {
     await APP.db.collection("tokens").doc(tokenDocId).delete();
     renderTokens();
