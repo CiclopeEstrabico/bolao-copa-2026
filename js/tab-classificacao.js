@@ -1,4 +1,3 @@
-const _rankingAnterior = {};
 window.renderClassificacao = function () {
   const el = document.getElementById("aba-classificacao");
   if (!el) return;
@@ -9,6 +8,42 @@ window.renderClassificacao = function () {
   const esp = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
 
   const ranking = gerarRanking(pals, res, apos, esp);
+
+  // --- CALCULAR RANKING ANTERIOR (baseado na exclusão da última rodada de jogos) ---
+  const todosJogosRealizados = (window.SCHEDULE || [])
+    .filter(j => res[j.id]?.homeGoals !== undefined)
+    .sort((a, b) => new Date(b.utc) - new Date(a.utc));
+    
+  const _rankingAnteriorData = {};
+  if (todosJogosRealizados.length > 0) {
+    const resAnterior = { ...res };
+    const ultimaDataUtc = todosJogosRealizados[0].utc;
+    for (const j of todosJogosRealizados) {
+      if (j.utc === ultimaDataUtc) delete resAnterior[j.id];
+    }
+    const espAnterior = window.BRACKET.extrairEspeciaisOficiais(resAnterior, APP.bracket || {});
+    const rankingAntList = gerarRanking(pals, resAnterior, apos, espAnterior);
+    
+    rankingAntList.forEach(item => {
+      _rankingAnteriorData[item.participante.id || item.participante.token] = item.posicao;
+    });
+
+    const mod = window.getModelo ? window.getModelo() : null;
+    if (mod && APP._modeloCarregado) {
+      const stModAnt = calcularPontosApostador(APP.palpitesModelo || {}, resAnterior, mod, espAnterior);
+      let posModAnt = 1;
+      for (const item of rankingAntList) {
+        const exItem = item.stats.acertos_placar_exato + item.stats.acertos_placar_alto;
+        const exMod = stModAnt.acertos_placar_exato + stModAnt.acertos_placar_alto;
+        if (item.stats.total > stModAnt.total) posModAnt++;
+        else if (item.stats.total === stModAnt.total) {
+          if (exItem > exMod) posModAnt++;
+          else if (exItem === exMod && item.stats.acertos_resultado > stModAnt.acertos_resultado) posModAnt++;
+        }
+      }
+      _rankingAnteriorData['MODELO'] = posModAnt;
+    }
+  }
 
   // Inserir MODELO visualmente na posição correta
   const modeloParticipante = window.getModelo ? window.getModelo() : null;
@@ -90,7 +125,7 @@ window.renderClassificacao = function () {
     const isModelo = !!item.isModelo;
     const p = item.participante; const st = item.stats;
     const pos = item.posicao;
-    const posAnterior = _rankingAnterior[p.id || p.token || 'MODELO'];
+    const posAnterior = _rankingAnteriorData[p.id || p.token || 'MODELO'];
     const mov = (posAnterior) ? (posAnterior > pos ? '▲' : posAnterior < pos ? '▼' : '—') : '—';
     const movCor = mov === '▲' ? 'var(--verde-ok)' : mov === '▼' ? '#f87171' : 'var(--texto2)';
     const medalhao = isModelo ? '🤖' : _getMedalhao(pos);
