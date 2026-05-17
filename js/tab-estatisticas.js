@@ -361,7 +361,7 @@ window.renderHtH = function () {
   const pals = APP.palpites || {};
   const palsMod = APP.palpitesModelo || {};
   
-  const getPalpite = (id, jid) => id === "Modelo" ? palsMod[jid] : pals[id]?.[jid];
+  const getPalpite = (id, jid) => id === "MODELO" ? palsMod[jid] : pals[id]?.[jid];
 
   const jogosFeitos = (window.SCHEDULE || []).filter(j => res[j.id]?.homeGoals !== undefined);
   let pts1 = 0, pts2 = 0, ganhou1 = 0, ganhou2 = 0, empHtH = 0;
