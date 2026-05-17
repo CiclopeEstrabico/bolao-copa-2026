@@ -195,6 +195,9 @@ window.renderRegras = function () {
       "<li><strong>Distribuição Dixon-Coles</strong> — modelo estatístico de contagem de gols que gera uma matriz de probabilidade para cada placar possível, corrigindo o viés de empates de 0×0.</li>" +
       "</ul><br>" +
       "A partir dessa matriz, o Modelo escolhe para cada jogo o placar que <em>maximiza o valor esperado de pontos</em> no sistema de pontuação do bolão — não necessariamente o placar mais provável."],
+    // --- SUPORTE / BUGS ---
+    ["Encontrei um bug. O que faço?",
+      "Primeiramente, limpe o cache do navegador. Se o bug persistir, contate um administrador."],
   ];
   for (const [q, a] of faqs) {
     h += '<details style="background:var(--fundo2);border-radius:var(--radius-sm);overflow:hidden">';
