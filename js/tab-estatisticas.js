@@ -254,7 +254,8 @@ window.renderEstatisticas = function () {
 
     const mChutado = Object.entries(placares).sort((a, b) => b[1] - a[1])[0];
     const temRes = r && r.homeGoals !== undefined;
-    const podeVer = (temRes && !jogoEhSimulado(jogo.id)) || (!temRes && !jogoAceita(jogo.id));
+    const apostasAbertas = jogoAceita(jogo.id);
+    const podeVer = (temRes && !jogoEhSimulado(jogo.id)) || !apostasAbertas;
 
     const strPlacarMais = mChutado ? `${mChutado[0]} <span style="font-size:.65rem;color:var(--texto2)">(${((mChutado[1] / totalBets) * 100).toFixed(1)}%)</span>` : '—';
 

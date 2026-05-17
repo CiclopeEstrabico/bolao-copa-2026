@@ -121,7 +121,7 @@ window.renderCompilacao = function () {
 
       // REGRA DE VISIBILIDADE: mesma regra aplicada a todos, incluindo MODELO
       const apostasAbertas = jogoAceita(jogo.id);
-      const podeVer = (temRes && !jogoEhSimulado(jogo.id)) || (!temRes && !apostasAbertas);
+      const podeVer = (temRes && !jogoEhSimulado(jogo.id)) || !apostasAbertas;
 
       if (!podeVer) {
         h += '<td class="celula-futuro" style="color:var(--texto2);opacity:0.3" title="Palpite oculto até o fechamento das apostas">🔒</td>';
