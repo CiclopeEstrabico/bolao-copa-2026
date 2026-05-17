@@ -46,13 +46,13 @@ window.renderGrafico = function() {
     };
   }).sort((a,b) => b.pts - a.pts);
 
-  // Inserir MODELO na posição correta
+  // Inserir Modelo na posição correta
   const modeloGraf = window.getModelo ? window.getModelo() : null;
   if (modeloGraf && APP._modeloCarregado) {
     const stMod = calcularPontosApostador(APP.palpitesModelo || {}, res, modeloGraf, espOficiaisGraf);
     const itemMod = {
-      id: "MODELO",
-      nome: "MODELO",
+      id: "Modelo",
+      nome: "Modelo",
       pts:         stMod.total,
       pct:         stMod.pct_pontos,
       res:         stMod.acertos_resultado,
@@ -130,12 +130,12 @@ function _renderFiltroDropdown(rankingCompleto) {
   h += `<button onclick="_graficoSelecionarNenhum()" style="flex:1;padding:8px;font-size:.72rem;font-weight:700;background:none;border:none;color:var(--texto2);cursor:pointer">✕ Limpar</button>`;
   h += `</div>`;
 
-  // Lista de apostadores (incluindo MODELO)
+  // Lista de apostadores (incluindo Modelo)
   rankingCompleto.forEach((a, i) => {
     const ativo = filtro.has(a.id);
-    const cor = a.isModelo ? '#f59e0b' : _EVOLUCAO_CORES[i % _EVOLUCAO_CORES.length];
+    const cor = a.isModelo ? '#b8cfe8' : _EVOLUCAO_CORES[i % _EVOLUCAO_CORES.length];
     const nomeBadge = a.isModelo
-      ? `<span style="background:rgba(245,158,11,.2);color:#f59e0b;font-size:.48rem;font-weight:900;padding:1px 3px;border-radius:2px;margin-right:3px">MOD</span>${a.nome}`
+      ? `<span style="color:#b8cfe8">${a.nome}</span>`
       : a.nome;
     h += `<label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--borda);transition:background .1s"
       onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">
@@ -181,7 +181,7 @@ window._graficoToggleApos = function(id) {
 
 window._graficoSelecionarTodos = function() {
   const ids = (APP.apostadores||[]).map(a => a.id);
-  if (APP.modelo) ids.push("MODELO");
+  if (APP.modelo) ids.push("Modelo");
   window._graficoFiltroApos = new Set(ids);
   renderAbaAtiva();
 };
@@ -226,7 +226,7 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
 
   const coresMap = {};
   rankingCompleto.forEach((a, i) => {
-    coresMap[a.id] = a.isModelo ? '#f59e0b' : _EVOLUCAO_CORES[i % _EVOLUCAO_CORES.length];
+    coresMap[a.id] = a.isModelo ? '#b8cfe8' : _EVOLUCAO_CORES[i % _EVOLUCAO_CORES.length];
   });
 
   let h = '<div class="card" style="padding:20px 10px;overflow-x:auto">';
@@ -245,7 +245,7 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
     const cor = coresMap[a.id] || '#4fc3f7';
 
     const nomeBarra = a.isModelo
-      ? `<span style='color:#f59e0b;font-size:.55rem;font-weight:900'>MOD</span>`
+      ? `<span style='color:#b8cfe8'>${a.nome}</span>`
       : a.nome;
     h += '<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:40px;position:relative;height:100%;justify-content:flex-end;z-index:1">';
     h += `<div style="font-size:.7rem;font-weight:800;color:var(--texto);margin-bottom:4px">${_fmtVal(metricaAtiva, val)}</div>`;
@@ -262,7 +262,7 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
 function _renderEvolucao(res, pals, apos, rankingCompleto) {
   const filtro = window._graficoFiltroApos;
   const aposFiltrados = apos.filter(a => filtro.has(a.id));
-  if (!aposFiltrados.length && !filtro.has("MODELO")) return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador selecionado.</div>';
+  if (!aposFiltrados.length && !filtro.has("Modelo")) return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador selecionado.</div>';
 
   const jogosComRes = (window.SCHEDULE || [])
     .filter(j => res[j.id] && res[j.id].homeGoals !== undefined)
@@ -299,11 +299,11 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
     return { nome: (a.apelido || a.nome || "?").substring(0, 14), cor, pontos };
   });
 
-  // Inserir MODELO se selecionado
+  // Inserir Modelo se selecionado
   const modeloGrafEv = window.getModelo ? window.getModelo() : null;
-  if (modeloGrafEv && filtro.has("MODELO") && APP._modeloCarregado) {
-    const idxMod = rankingCompleto.findIndex(r => r.id === "MODELO");
-    const corMod = idxMod >= 0 ? _EVOLUCAO_CORES[idxMod % _EVOLUCAO_CORES.length] : '#f59e0b';
+  if (modeloGrafEv && filtro.has("Modelo") && APP._modeloCarregado) {
+    const idxMod = rankingCompleto.findIndex(r => r.id === "Modelo");
+    const corMod = idxMod >= 0 ? _EVOLUCAO_CORES[idxMod % _EVOLUCAO_CORES.length] : '#b8cfe8';
     const palMod = APP.palpitesModelo || {};
     let acumuladoMod = 0;
     const pontosMod = [0];
@@ -321,7 +321,7 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
       acumuladoMod += total_especiais;
       pontosMod.push(parseFloat(acumuladoMod.toFixed(1)));
     }
-    series.push({ nome: "MODELO", cor: corMod, pontos: pontosMod, isModelo: true });
+    series.push({ nome: "Modelo", cor: corMod, pontos: pontosMod, isModelo: true });
   }
 
   if (!series.length)

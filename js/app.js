@@ -83,6 +83,42 @@ function listenModelo() {
       APP.modelo = null;
       APP.palpitesModelo = {};
       APP._modeloCarregado = true;
+      if (!window._estaDigitando) renderAbaAtiva();
+      return;
+    }
+    // Armazena apenas os dados crus do Firestore; getModelo() compõe o objeto final
+    APP.modelo = doc.data();
+
+    if (!APP._modeloPalpitesUnsub) {
+      const innerUnsub = doc.ref.collection("palpites_modelo").onSnapshot(snap => {
+        APP.palpitesModelo = {};
+        snap.forEach(d => { APP.palpitesModelo[d.id] = d.data(); });
+        if (!window._estaDigitando) renderAbaAtiva();
+      });
+      APP._modeloPalpitesUnsub = innerUnsub;
+      APP._unsubs.push(innerUnsub);
+    }
+    APP._modeloCarregado = true;
+    if (!window._estaDigitando) renderAbaAtiva();
+  });
+  APP._unsubs.push(u);
+}
+function listenConfigStatus() {
+  const u = APP.db.collection("config").doc("status").onSnapshot(doc => {
+    if (doc.exists) {
+      APP.configStatus = doc.data();
+    }
+    renderAbaAtiva();
+  });
+  APP._unsubs.push(u);
+}
+
+function listenModelo() {
+  const u = APP.db.collection("modelo").doc("dados").onSnapshot(doc => {
+    if (!doc.exists) {
+      APP.modelo = null;
+      APP.palpitesModelo = {};
+      APP._modeloCarregado = true;
       renderAbaAtiva();
       return;
     }

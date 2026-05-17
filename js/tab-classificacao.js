@@ -126,7 +126,7 @@ window.renderClassificacao = function () {
     const pctPlacarAlto = st.pct_placar_alto;
 
     const rowBg = isModelo
-      ? 'background:color-mix(in srgb,var(--dourado) 5%,var(--fundo));border-left:2px solid color-mix(in srgb,var(--dourado) 35%,var(--borda))'
+      ? 'background:rgba(180,210,240,0.06);border-left:2px solid rgba(180,210,240,0.25)'
       : '';
 
     h += '<tr style="cursor:pointer;' + rowBg + '" onclick="_toggleRankingDetalhe(\'rd-' + i + '\')">';
@@ -139,11 +139,10 @@ window.renderClassificacao = function () {
     h += '</td>';
 
     // Nome
-    const stickyBg = isModelo ? 'color-mix(in srgb,var(--dourado) 5%,var(--fundo))' : 'var(--fundo)';
+    const stickyBg = isModelo ? 'rgba(180,210,240,0.06)' : 'var(--fundo)';
     h += '<td style="text-align:left;font-weight:600;position:sticky;left:0;background:' + stickyBg + ';z-index:1">';
     if (isModelo) {
-      h += '<span style="background:color-mix(in srgb,var(--dourado) 25%,var(--fundo2));color:var(--dourado);font-size:.52rem;font-weight:900;padding:1px 3px;border-radius:3px;margin-right:3px">MOD</span>';
-      h += '<span style="font-weight:700">MODELO</span>';
+      h += '<span style="font-weight:700;color:#b8cfe8">Modelo</span>';
       h += '<div style="font-size:.6rem;color:var(--texto2)">referência · fora do ranking</div>';
     } else {
       h += (p.apelido || p.nome || p.token?.substring(0, 8) || "?");
@@ -162,7 +161,7 @@ window.renderClassificacao = function () {
     h += '<div style="background:var(--fundo2);padding:10px 14px;font-size:.76rem">';
     h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">';
     if (isModelo) {
-      h += '<div><div style="color:var(--texto2)">Tipo</div><div style="font-weight:700;color:var(--dourado)">Referência estatística</div></div>';
+      h += '<div><div style="color:var(--texto2)">Tipo</div><div style="font-weight:700;color:#b8cfe8">Referência estatística</div></div>';
     } else {
       h += '<div><div style="color:var(--texto2)">Nome Completo</div><div style="font-weight:700">' + (p.nome || "—") + '</div></div>';
     }

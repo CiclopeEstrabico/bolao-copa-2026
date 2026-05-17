@@ -16,6 +16,17 @@ const _FASES_MAPA = {
   finais:  ["final", "terceiro"],
 };
 
+function _faseEstaAberta(faseKey) {
+  const st = APP.configStatus || {};
+  if (faseKey === "grupos")  return !!st.liberado_grupos;
+  if (faseKey === "32avos")  return !!st.liberado_32avos;
+  if (faseKey === "oitavas") return !!st.liberado_oitavas;
+  if (faseKey === "quartas") return !!st.liberado_quartas;
+  if (faseKey === "semis")   return !!st.liberado_semis;
+  if (faseKey === "finais")  return !!st.liberado_finais;
+  return false;
+}
+
 function _estadoFases(resultados) {
   const estado = {};
   for (const faseKey of _FASES_ORDEM) {
@@ -150,6 +161,13 @@ window.MODELO_MANAGER = {
 
     if (!_confrontosDefinidos(faseKey, APP.bracket || {})) {
       alert(`⚠️ Ainda existem confrontos indefinidos na fase "${faseKey}". Aguarde o chaveamento ser completado.`);
+      return;
+    }
+
+    // Guarda: a fase precisa estar aberta para apostas no configStatus
+    const _faseAberta = _faseEstaAberta(faseKey);
+    if (!_faseAberta) {
+      alert(`⚠️ A fase "${faseKey}" ainda não está aberta para apostas.\n\nAbra a fase no painel de configurações antes de atualizar o Modelo.`);
       return;
     }
 

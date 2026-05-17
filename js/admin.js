@@ -325,7 +325,7 @@ function _palpitesModeloFase(faseKey) {
 
 function _htmlEditModelo() {
   let h = '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">';
-  h += '<div style="font-size:.7rem;font-weight:700;color:var(--dourado);padding:4px 8px;background:color-mix(in srgb,var(--dourado) 10%,var(--fundo2));border-radius:4px">🤖 MODELO — Apostador Estatístico</div>';
+  h += '<div style="font-size:.7rem;font-weight:700;color:#b8cfe8;padding:4px 8px;background:rgba(180,210,240,0.08);border-radius:4px">🤖 Modelo — Apostador Estatístico</div>';
   h += '<div><label style="font-size:.67rem;color:var(--texto2);display:block;margin-bottom:3px">Limpar apostas de</label>';
   h += '<select id="edit-fase-MODELO" class="form-input" style="padding:4px 8px;font-size:.72rem;height:28px">';
   h += '<option value="">— selecionar —</option>';
@@ -356,15 +356,13 @@ function _htmlLinhaModelo(numCols) {
   const baseUrl = "https://ciclopeestrabico.github.io/bolao-copa-2026/aposta.html?token=modelo";
   let h = '';
 
-  h += '<tr style="background:color-mix(in srgb,var(--dourado) 6%,var(--fundo));border-top:1px solid color-mix(in srgb,var(--dourado) 25%,var(--borda))" id="row-MODELO">';
+  h += '<tr style="background:rgba(180,210,240,0.05);border-top:1px solid rgba(180,210,240,0.18)" id="row-MODELO">';
   h += '<td style="' + _tdS("left") + '">';
-  h += '<div style="font-weight:700;display:flex;align-items:center;gap:5px">';
-  h += '<span style="background:color-mix(in srgb,var(--dourado) 30%,var(--fundo2));color:var(--dourado);font-size:.55rem;font-weight:900;padding:1px 4px;border-radius:3px;letter-spacing:.3px">MOD</span>';
-  h += 'MODELO</div>';
+  h += '<div style="font-weight:700;color:#b8cfe8">Modelo</div>';
   h += '<div style="color:var(--texto2);font-size:.65rem;margin-top:1px">Referência estatística</div>';
   h += '</td>';
   h += '<td style="' + _tdS() + '">';
-  h += '<a href="' + baseUrl + '" target="_blank" style="color:var(--dourado);text-decoration:underline;font-size:.66rem;font-family:monospace">modelo</a>';
+  h += '<a href="' + baseUrl + '" target="_blank" style="color:#b8cfe8;text-decoration:underline;font-size:.66rem;font-family:monospace">modelo</a>';
   h += '</td>';
 
   for (const f of FASES_CONFIG) {
@@ -372,7 +370,7 @@ function _htmlLinhaModelo(numCols) {
     const feitos = _palpitesModeloFase(f.key);
     let cor = "var(--texto2)";
     if (total > 0 && feitos === total) cor = "var(--verde-light)";
-    else if (feitos > 0) cor = "var(--dourado)";
+    else if (feitos > 0) cor = "#b8cfe8";
     h += '<td style="' + _tdS() + 'color:' + cor + ';font-weight:' + (feitos > 0 ? 700 : 400) + '">';
     h += feitos;
     if (total) h += '<span style="opacity:.4;font-size:.64rem">/' + total + '</span>';
@@ -489,7 +487,7 @@ function renderApostadores() {
   });
 
   // Separador + linha do MODELO
-  h += '<tr><td colspan="' + numCols + '" style="height:1px;padding:0;background:color-mix(in srgb,var(--dourado) 20%,var(--borda))"></td></tr>';
+  h += '<tr><td colspan="' + numCols + '" style="height:1px;padding:0;background:rgba(180,210,240,0.25)"></td></tr>';
   if (APP._modeloCarregado !== false) {
     h += _htmlLinhaModelo(numCols);
   }
