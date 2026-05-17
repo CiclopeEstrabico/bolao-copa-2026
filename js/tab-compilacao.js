@@ -9,7 +9,7 @@ window.renderCompilacao = function () {
 
   // Filtros de fase
   const fases = ["todos", "grupos", "32avos", "oitavas", "quartas", "semis", "terceiro", "final"];
-  const faseAtiva = window._compFase || "grupos";
+  const faseAtiva = window._compFase || "todos";
   const nomesFase = { todos: "Todos", grupos: "Grupos", "32avos": "32 Avos", oitavas: "Oitavas", quartas: "Quartas", semis: "Semis", terceiro: "3o Lugar", final: "Final" };
 
   let h = '<div class="toggle-bar" style="margin-bottom:15px">';
