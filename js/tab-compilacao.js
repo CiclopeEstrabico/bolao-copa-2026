@@ -80,7 +80,7 @@ window.renderCompilacao = function () {
   for (const a of ranking) {
     const nomeA = a.apelido || a.nome || "?";
     if (a.isModelo) {
-      h += '<th title="Modelo — Referência Estatística" style="z-index:1;max-width:50px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:4px 2px;font-weight:normal;color:#94a3b8">' +
+      h += '<th title="Modelo — Referência Estatística" style="z-index:1;max-width:50px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:4px 2px;font-weight:normal;color:#7ba4c9">' +
            'Modelo' + '</th>';
     } else {
       h += '<th title="' + (a.nome || nomeA) + '" style="z-index:1;max-width:50px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:4px 2px">' + nomeA + '</th>';

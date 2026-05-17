@@ -135,7 +135,7 @@ function _renderFiltroDropdown(rankingCompleto) {
     const ativo = filtro.has(a.id);
     const cor = a.isModelo ? '#b8cfe8' : _EVOLUCAO_CORES[i % _EVOLUCAO_CORES.length];
     const nomeBadge = a.isModelo
-      ? `<span style="color:#b8cfe8">${a.nome}</span>`
+      ? `<span style="font-weight:normal;color:#b8cfe8">${a.nome}</span>`
       : a.nome;
     h += `<label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--borda);transition:background .1s"
       onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">
@@ -245,7 +245,7 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
     const cor = coresMap[a.id] || '#4fc3f7';
 
     const nomeBarra = a.isModelo
-      ? `<span style='color:#b8cfe8'>${a.nome}</span>`
+      ? `<span style='font-weight:normal;color:#b8cfe8'>${a.nome}</span>`
       : a.nome;
     h += '<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:40px;position:relative;height:100%;justify-content:flex-end;z-index:1">';
     h += `<div style="font-size:.7rem;font-weight:800;color:var(--texto);margin-bottom:4px">${_fmtVal(metricaAtiva, val)}</div>`;
@@ -371,7 +371,8 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
     const lastX = xPos(lastIdx);
     const lastY = yPos(s.pontos[lastIdx]);
     svg += `<circle cx="${lastX.toFixed(1)}" cy="${lastY.toFixed(1)}" r="4" fill="${s.cor}" stroke="var(--fundo)" stroke-width="1.5"/>`;
-    svg += `<text x="${(lastX+8).toFixed(1)}" y="${(lastY+4).toFixed(1)}" font-size="10" font-weight="700" fill="${s.cor}">${s.nome}</text>`;
+    const fw = s.isModelo ? "normal" : "700";
+    svg += `<text x="${(lastX+8).toFixed(1)}" y="${(lastY+4).toFixed(1)}" font-size="10" font-weight="${fw}" fill="${s.cor}">${s.nome}</text>`;
   }
 
   svg += '</svg>';
