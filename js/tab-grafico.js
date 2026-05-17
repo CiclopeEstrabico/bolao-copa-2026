@@ -197,10 +197,21 @@ window._graficoIrEvolucao = function() {
   const apos = APP.apostadores || [];
   const pals = APP.palpites || {};
   const espOficiaisIr = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
-  const top5 = apos.map(a => ({
+  
+  const rankingTemp = apos.map(a => ({
     id: a.id,
     pts: calcularPontosApostador(pals[a.id]||{}, res, a, espOficiaisIr).total
-  })).sort((a,b) => b.pts - a.pts).slice(0,5).map(a => a.id);
+  }));
+
+  const mod = window.getModelo ? window.getModelo() : null;
+  if (mod && APP._modeloCarregado) {
+    rankingTemp.push({
+      id: "Modelo",
+      pts: calcularPontosApostador(APP.palpitesModelo||{}, res, mod, espOficiaisIr).total
+    });
+  }
+
+  const top5 = rankingTemp.sort((a,b) => b.pts - a.pts).slice(0,5).map(a => a.id);
   window._graficoFiltroApos = new Set(top5);
   renderAbaAtiva();
 };
