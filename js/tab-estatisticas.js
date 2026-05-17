@@ -384,7 +384,6 @@ window.renderHtH = function () {
       '<td style="color:' + cor1 + ';font-weight:700">' + (p1 ? p1.homeGoals + '×' + p1.awayGoals + ' (' + v1 + 'pts)' : '—') + '</td>' +
       '<td style="color:' + cor2 + ';font-weight:700">' + (p2 ? p2.homeGoals + '×' + p2.awayGoals + ' (' + v2 + 'pts)' : '—') + '</td></tr>';
   }
-  }
   
   let aposHtH = [...(APP.apostadores || [])];
   const modHtH = window.getModelo ? window.getModelo() : null;
