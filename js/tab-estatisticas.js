@@ -320,16 +320,26 @@ window.renderEstatisticas = function () {
   h += '</tbody></table></div></div>';
 
   // Head-to-Head (se >= 2 apostadores)
-  if (apos.length >= 2) {
+  let aposHtH = [...apos];
+  const modHtH = window.getModelo ? window.getModelo() : null;
+  if (modHtH && APP._modeloCarregado) {
+    aposHtH.push(modHtH);
+  }
+
+  if (aposHtH.length >= 2) {
     h += '<div class="card"><div class="card-titulo">⚔️ Head-to-Head</div>';
-    h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">';
-    h += '<select id="hth-a1" style="flex:1" onchange="renderHtH()"><option value="">Apostador 1</option>';
-    for (const a of apos) h += '<option value="' + a.id + '">' + (a.apelido || a.nome || a.token) + '</option>';
-    h += '</select><span style="align-self:center">vs</span>';
-    h += '<select id="hth-a2" style="flex:1" onchange="renderHtH()"><option value="">Apostador 2</option>';
-    for (const a of apos) h += '<option value="' + a.id + '">' + (a.apelido || a.nome || a.token) + '</option>';
-    h += '</select></div>';
-    h += '<div id="hth-resultado"></div></div>';
+    if (APP._modoSimulacao) {
+      h += '<div style="color:#f87171;font-size:.8rem;padding:10px 0;text-align:center">🔒 O Head-to-Head fica indisponível no modo simulação para proteger a privacidade dos palpites.</div></div>';
+    } else {
+      h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">';
+      h += '<select id="hth-a1" style="flex:1" onchange="renderHtH()"><option value="">Apostador 1</option>';
+      for (const a of aposHtH) h += '<option value="' + a.id + '">' + (a.apelido || a.nome || a.token) + '</option>';
+      h += '</select><span style="align-self:center">vs</span>';
+      h += '<select id="hth-a2" style="flex:1" onchange="renderHtH()"><option value="">Apostador 2</option>';
+      for (const a of aposHtH) h += '<option value="' + a.id + '">' + (a.apelido || a.nome || a.token) + '</option>';
+      h += '</select></div>';
+      h += '<div id="hth-resultado"></div></div>';
+    }
   }
 
   el.innerHTML = h;
@@ -340,15 +350,25 @@ window.renderHtH = function () {
   const id2 = document.getElementById("hth-a2")?.value;
   const out = document.getElementById("hth-resultado");
   if (!out) return;
-  if (!id1 || !id2 || id1 === id2) { out.innerHTML = '<p style="color:var(--texto2);font-size:.78rem">Selecione dois apostadores diferentes.</p>'; return; }
-  const res = getResultados();
+  if (APP._modoSimulacao) {
+    out.innerHTML = '<p style="color:#f87171;font-size:.78rem;text-align:center">Indisponível em simulação.</p>';
+    return;
+  }
+  if (!id1 || !id2 || id1 === id2) { out.innerHTML = '<p style="color:var(--texto2);font-size:.78rem;text-align:center">Selecione dois apostadores diferentes.</p>'; return; }
+  
+  // Garantia absoluta de usar apenas resultados oficiais
+  const res = window.RESULTADOS || {};
   const pals = APP.palpites || {};
+  const palsMod = APP.palpitesModelo || {};
+  
+  const getPalpite = (id, jid) => id === "Modelo" ? palsMod[jid] : pals[id]?.[jid];
+
   const jogosFeitos = (window.SCHEDULE || []).filter(j => res[j.id]?.homeGoals !== undefined);
   let pts1 = 0, pts2 = 0, ganhou1 = 0, ganhou2 = 0, empHtH = 0;
   let rows = "";
   for (const jogo of jogosFeitos) {
     const r = res[jogo.id];
-    const p1 = pals[id1]?.[jogo.id]; const p2 = pals[id2]?.[jogo.id];
+    const p1 = getPalpite(id1, jogo.id); const p2 = getPalpite(id2, jogo.id);
     const br1 = p1?.homeGoals !== undefined ? calcularPontosBrutos(p1, r) : null;
     const br2 = p2?.homeGoals !== undefined ? calcularPontosBrutos(p2, r) : null;
     const v1 = br1 ? aplicarFator(br1.total_bruto, jogo.fase) : 0;
@@ -364,7 +384,14 @@ window.renderHtH = function () {
       '<td style="color:' + cor1 + ';font-weight:700">' + (p1 ? p1.homeGoals + '×' + p1.awayGoals + ' (' + v1 + 'pts)' : '—') + '</td>' +
       '<td style="color:' + cor2 + ';font-weight:700">' + (p2 ? p2.homeGoals + '×' + p2.awayGoals + ' (' + v2 + 'pts)' : '—') + '</td></tr>';
   }
-  const a1 = APP.apostadores?.find(a => a.id === id1); const a2 = APP.apostadores?.find(a => a.id === id2);
+  }
+  
+  let aposHtH = [...(APP.apostadores || [])];
+  const modHtH = window.getModelo ? window.getModelo() : null;
+  if (modHtH && APP._modeloCarregado) aposHtH.push(modHtH);
+
+  const a1 = aposHtH.find(a => a.id === id1); 
+  const a2 = aposHtH.find(a => a.id === id2);
   const n1 = a1?.apelido || a1?.nome || "A1"; const n2 = a2?.apelido || a2?.nome || "A2";
   const corTot1 = pts1 > pts2 ? "var(--verde-ok)" : "var(--texto2)"; const corTot2 = pts2 > pts1 ? "var(--verde-ok)" : "var(--texto2)";
   let h = '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;text-align:center;margin-bottom:10px;align-items:center">';
