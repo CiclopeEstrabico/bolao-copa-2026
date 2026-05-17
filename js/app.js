@@ -287,6 +287,17 @@ function htmlBandeira(code, size) {
 function nomeTime(code) {
   return window.TEAMS_BY_CODE[code]?.name ?? code ?? "A definir";
 }
+function getFaseLabel(jogo) {
+  if (!jogo) return "";
+  if (jogo.fase === "grupos") return "Grupo " + (jogo.group || "");
+  if (jogo.fase === "32avos") return "32 Avos";
+  if (jogo.fase === "oitavas") return "Oitavas";
+  if (jogo.fase === "quartas") return "Quartas";
+  if (jogo.fase === "semis") return "Semi";
+  if (jogo.fase === "terceiro") return "3º Lugar";
+  if (jogo.fase === "final") return "Final";
+  return "";
+}
 function jogoAceita(jogoId) {
   const jogo = window.SCHEDULE_BY_ID[jogoId];
   if (!jogo) return false;
