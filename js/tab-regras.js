@@ -142,6 +142,10 @@ window.renderRegras = function () {
     ["Os bônus se somam? Posso acumular diferença de gols + gols de um time?",
       "Não. Os bônus são <strong>excludentes</strong> — você recebe apenas o maior bônus alcançado.<br><br>" +
       "Se acertou a diferença de gols E os gols de um time ao mesmo tempo, isso significa que você acertou o <strong>placar exato</strong>. O sistema reconhece automaticamente e aplica o bônus de placar exato (maior), não dois bônus separados."],
+    ["Como funciona o multiplicador de fase?",
+      "Cada fase tem um multiplicador que <strong>amplifica</strong> os pontos ganhos nos jogos daquela fase. A pontuação bruta (resultado, bônus etc.) é multiplicada por esse fator.<br><br>" +
+      "Exemplo: você acertou o placar exato nas Oitavas de Final, que vale " + (base + bBaixo) + " pts base. Com o multiplicador ×" + Number(cfg.fatores_fase?.oitavas ?? 1).toFixed(1) + ", você recebe " + (base + bBaixo) + " × " + Number(cfg.fatores_fase?.oitavas ?? 1).toFixed(1) + " = <strong>" + ((base + bBaixo) * (cfg.fatores_fase?.oitavas ?? 1)).toFixed(1) + " pts</strong>.<br><br>" +
+      "Os multiplicadores estão na tabela da seção de Pontuação. Quanto mais avançada a fase, maior o multiplicador — tornando os jogos finais muito mais decisivos para a classificação."],
     ["O que acontece se o jogo vai para a prorrogação? E para os pênaltis?",
       "O placar considerado é o do tempo regulamentar mais a prorrogação. Se o jogo for para os pênaltis, acerta quem chutou o empate. Ou seja, os pênaltis não contam para o bolão."],
     ["Quais os critérios de DESEMPATE para premiação do bolão?",
@@ -177,26 +181,20 @@ window.renderRegras = function () {
       "A Copa do Mundo de 2026 tem um formato novo: <strong>48 seleções</strong> participam, divididas em <strong>12 grupos de 4 times</strong>.<br><br>" +
       "Os 2 melhores de cada grupo avançam automaticamente (24 classificados), mais os <strong>8 melhores terceiros colocados</strong> — totalizando <strong>32 times</strong> na fase eliminatória.<br><br>" +
       "Como são 32 times nessa rodada, ela se chama <strong>32 Avos de Final</strong> (cada time disputa 1/32 da fase eliminatória). A partir daí o formato é o clássico: Oitavas → Quartas → Semifinais → Final."],
-    // --- MULTIPLICADORES ---
-    ["Como funciona o multiplicador de fase?",
-      "Cada fase tem um multiplicador que <strong>amplifica</strong> os pontos ganhos nos jogos daquela fase. A pontuação bruta (resultado, bônus etc.) é multiplicada por esse fator.<br><br>" +
-      "Exemplo: você acertou o placar exato nas Oitavas de Final, que vale " + (base + bBaixo) + " pts base. Com o multiplicador ×" + Number(cfg.fatores_fase?.oitavas ?? 1).toFixed(1) + ", você recebe " + (base + bBaixo) + " × " + Number(cfg.fatores_fase?.oitavas ?? 1).toFixed(1) + " = <strong>" + ((base + bBaixo) * (cfg.fatores_fase?.oitavas ?? 1)).toFixed(1) + " pts</strong>.<br><br>" +
-      "Os multiplicadores estão na tabela da seção de Pontuação. Quanto mais avançada a fase, maior o multiplicador — tornando os jogos finais muito mais decisivos para a classificação."],
     // --- TRANSPARÊNCIA ---
     ["Como garanto que algum admin não vai mudar alguma aposta minha ou de outro jogador?",
       "Os botões de <strong>Exportar CSV</strong> e <strong>Exportar JSON</strong> na aba Compilação estão disponíveis exatamente para isso.<br><br>" +
       "Antes de cada fase começar — quando as apostas já estiverem bloqueadas — todos os participantes podem salvar uma cópia dos palpites para conferência e backup. Guarde seus exports e compare ao final se tiver dúvidas."],
     // --- MODELO ---
-    ["O que é esse apostador \"MODELO\"? Ele está competindo?",
-      "Não. O MODELO é uma <strong>referência estatística</strong> e não participa da classificação do bolão — seus palpites não valem pontos reais nem afetam a posição de ninguém.<br><br>" +
-      "Ele serve como régua de comparação: se você estiver acima do MODELO, está se saindo bem; abaixo, talvez valha revisar suas estratégias. 😄<br><br>" +
-      "Os palpites do MODELO são gerados automaticamente antes de cada fase, com base em três camadas combinadas:<br>" +
+    ["O que é esse apostador \"Modelo\"? Ele está competindo?",
+      "Não. O Modelo é uma <strong>referência estatística</strong> e não participa da classificação do bolão — seus palpites não valem pontos reais nem afetam a posição de ninguém.<br><br>" +
+      "Os palpites do Modelo são gerados automaticamente antes de cada fase, com base em três camadas combinadas:<br>" +
       "<ul style=\"margin:8px 0 0 16px;padding:0;list-style:disc\">" +
       "<li style=\"margin-bottom:4px\"><strong>ELO Rating</strong> — força histórica de cada seleção atualizada jogo a jogo, usada como prior para estimar a probabilidade de vitória.</li>" +
       "<li style=\"margin-bottom:4px\"><strong>Rede Neural GRU</strong> — aprende padrões temporais de desempenho recente das seleções para ajustar os ratings puros de ELO.</li>" +
       "<li><strong>Distribuição Dixon-Coles</strong> — modelo estatístico de contagem de gols que gera uma matriz de probabilidade para cada placar possível, corrigindo o viés de empates de 0×0.</li>" +
       "</ul><br>" +
-      "A partir dessa matriz, o MODELO escolhe para cada jogo o placar que <em>maximiza o valor esperado de pontos</em> no sistema de pontuação do bolão — não necessariamente o placar mais provável."],
+      "A partir dessa matriz, o Modelo escolhe para cada jogo o placar que <em>maximiza o valor esperado de pontos</em> no sistema de pontuação do bolão — não necessariamente o placar mais provável."],
   ];
   for (const [q, a] of faqs) {
     h += '<details style="background:var(--fundo2);border-radius:var(--radius-sm);overflow:hidden">';

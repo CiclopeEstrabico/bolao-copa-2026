@@ -300,9 +300,16 @@ function jogoAceita(jogoId) {
   return false;
 }
 
-// Reage a rotação/redimensionamento de tela para layouts que dependem de isMobile
+// Reage a rotação/redimensionamento de tela para layouts que dependem de isMobile.
+// No mobile, abrir o teclado virtual dispara resize (janela encolhe na altura).
+// Ignoramos resizes que só mudam a altura — esses são causados pelo teclado.
+// Só re-renderizamos quando a LARGURA muda (rotação real ou redimensionamento de janela).
 let _resizeTimer;
+let _lastInnerWidth = window.innerWidth;
 window.addEventListener("resize", () => {
+  const newWidth = window.innerWidth;
+  if (newWidth === _lastInnerWidth) return; // altura mudou, largura não → teclado virtual
+  _lastInnerWidth = newWidth;
   clearTimeout(_resizeTimer);
   _resizeTimer = setTimeout(() => renderAbaAtiva(), 250);
 }, { passive: true });
