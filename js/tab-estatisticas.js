@@ -357,7 +357,7 @@ window.renderHtH = function () {
   if (!id1 || !id2 || id1 === id2) { out.innerHTML = '<p style="color:var(--texto2);font-size:.78rem;text-align:center">Selecione dois apostadores diferentes.</p>'; return; }
   
   // Garantia absoluta de usar apenas resultados oficiais
-  const res = window.RESULTADOS || {};
+  const res = APP.resultados || {};
   const pals = APP.palpites || {};
   const palsMod = APP.palpitesModelo || {};
   
