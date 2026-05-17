@@ -289,7 +289,7 @@ function nomeTime(code) {
 }
 function getFaseLabel(jogo) {
   if (!jogo) return "";
-  if (jogo.fase === "grupos") return "Grupo " + (jogo.group || "");
+  if (jogo.fase === "grupos") return "Grupo " + (jogo.grupo || "");
   if (jogo.fase === "32avos") return "32 Avos";
   if (jogo.fase === "oitavas") return "Oitavas";
   if (jogo.fase === "quartas") return "Quartas";
