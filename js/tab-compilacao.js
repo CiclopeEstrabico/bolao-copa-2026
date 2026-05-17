@@ -80,7 +80,7 @@ window.renderCompilacao = function () {
   for (const a of ranking) {
     const nomeA = a.apelido || a.nome || "?";
     if (a.isModelo) {
-      h += '<th title="Modelo — Referência Estatística" style="z-index:1;max-width:50px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:4px 2px;background:rgba(180,210,240,0.07);color:#b8cfe8">' +
+      h += '<th title="Modelo — Referência Estatística" style="z-index:1;max-width:50px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:4px 2px;font-weight:normal;color:#94a3b8">' +
            'Modelo' + '</th>';
     } else {
       h += '<th title="' + (a.nome || nomeA) + '" style="z-index:1;max-width:50px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:4px 2px">' + nomeA + '</th>';
@@ -128,7 +128,7 @@ window.renderCompilacao = function () {
         continue;
       }
 
-      const cellStyle = a.isModelo ? 'background:rgba(180,210,240,0.06);' : '';
+      const cellStyle = '';
 
       if (!temRes) { h += '<td class="celula-futuro" style="' + cellStyle + '">' + p.homeGoals + 'x' + p.awayGoals + '</td>'; continue; }
       const br = calcularPontosBrutos(p, r);
@@ -182,7 +182,7 @@ window.renderCompilacao = function () {
       const nomePal = window.TEAMS_BY_CODE?.[palE]?.name || (palE ? palE : "—");
       const acertou = resultadoOficialReal && palE === escOf;
       const podeVerEsp = resultadoOficialReal || gruposTravados;
-      const cellStyle = a.isModelo ? 'background:rgba(180,210,240,0.06);' : '';
+      const cellStyle = '';
 
       if (!podeVerEsp) {
         h += '<td style="font-size:.62rem;text-align:center;color:var(--texto2);opacity:0.3" title="Palpite oculto até o fechamento dos grupos">🔒</td>';
@@ -217,7 +217,7 @@ window.renderCompilacao = function () {
     h += '<tr><td class="col-jogo" style="position:sticky;left:0;background:var(--fundo2);font-weight:700;font-size:.7rem;border-top:1px solid var(--borda)">' + L.title + '</td>';
     h += '<td class="col-resultado" style="background:var(--fundo2);border-top:1px solid var(--borda)"></td>';
     for (const a of ranking) {
-      const cellStyle = a.isModelo ? 'background:rgba(180,210,240,0.07);' : 'background:var(--fundo2);';
+      const cellStyle = 'background:var(--fundo2);';
       h += '<td style="font-weight:800;color:' + L.cor + ';font-size:.75rem;' + cellStyle + 'border-top:1px solid var(--borda)">' + L.val(a) + '</td>';
     }
     h += '</tr>';

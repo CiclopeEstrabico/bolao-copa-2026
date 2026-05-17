@@ -125,9 +125,7 @@ window.renderClassificacao = function () {
     const pctPlacar = st.pct_placar;
     const pctPlacarAlto = st.pct_placar_alto;
 
-    const rowBg = isModelo
-      ? 'background:rgba(180,210,240,0.06);border-left:2px solid rgba(180,210,240,0.25)'
-      : '';
+    const rowBg = '';
 
     h += '<tr style="cursor:pointer;' + rowBg + '" onclick="_toggleRankingDetalhe(\'rd-' + i + '\')">';
     h += '<td style="text-align:center;font-weight:900;font-size:.95rem">';
@@ -139,10 +137,10 @@ window.renderClassificacao = function () {
     h += '</td>';
 
     // Nome
-    const stickyBg = isModelo ? 'rgba(180,210,240,0.06)' : 'var(--fundo)';
+    const stickyBg = 'var(--fundo)';
     h += '<td style="text-align:left;font-weight:600;position:sticky;left:0;background:' + stickyBg + ';z-index:1">';
     if (isModelo) {
-      h += '<span style="font-weight:700;color:#b8cfe8">Modelo</span>';
+      h += '<span style="font-weight:normal;color:#94a3b8">Modelo</span>';
       h += '<div style="font-size:.6rem;color:var(--texto2)">referência · fora do ranking</div>';
     } else {
       h += (p.apelido || p.nome || p.token?.substring(0, 8) || "?");
@@ -161,9 +159,9 @@ window.renderClassificacao = function () {
     h += '<div style="background:var(--fundo2);padding:10px 14px;font-size:.76rem">';
     h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">';
     if (isModelo) {
-      h += '<div><div style="color:var(--texto2)">Tipo</div><div style="font-weight:700;color:#b8cfe8">Referência estatística</div></div>';
+      h += '<div style="grid-column: 1 / -1; margin-bottom: 4px;"><div style="color:var(--texto2)">Tipo</div><div style="font-weight:normal;color:#94a3b8">Referência estatística</div></div>';
     } else {
-      h += '<div><div style="color:var(--texto2)">Nome Completo</div><div style="font-weight:700">' + (p.nome || "—") + '</div></div>';
+      h += '<div style="grid-column: 1 / -1; margin-bottom: 4px;"><div style="color:var(--texto2)">Nome Completo</div><div style="font-weight:700">' + (p.nome || "—") + '</div></div>';
     }
     h += '<div><div style="color:var(--texto2)">Grupos</div><div style="font-weight:700">' + st.total_grupos.toFixed(1) + ' pts</div></div>';
     h += '<div><div style="color:var(--texto2)">Eliminatórias</div><div style="font-weight:700">' + st.total_eliminatorias.toFixed(1) + ' pts</div></div>';
