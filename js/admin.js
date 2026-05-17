@@ -312,6 +312,93 @@ function _especialesPreenchidos(apostador) {
   return { preenchidos: ["campeao", "vice", "terceiro"].filter(k => esp[k]).length, total: 3 };
 }
 
+function _palpitesModeloFase(faseKey) {
+  const fasesReais = faseKey === "finais" ? ["final", "terceiro"] : [faseKey];
+  const pals = APP.palpitesModelo || {};
+  return (window.SCHEDULE || [])
+    .filter(j => fasesReais.includes(j.fase))
+    .filter(j => {
+      const p = pals[j.id];
+      return p && p.homeGoals !== undefined && p.awayGoals !== undefined;
+    }).length;
+}
+
+function _htmlEditModelo() {
+  let h = '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">';
+  h += '<div style="font-size:.7rem;font-weight:700;color:var(--dourado);padding:4px 8px;background:color-mix(in srgb,var(--dourado) 10%,var(--fundo2));border-radius:4px">🤖 MODELO — Apostador Estatístico</div>';
+  h += '<div><label style="font-size:.67rem;color:var(--texto2);display:block;margin-bottom:3px">Limpar apostas de</label>';
+  h += '<select id="edit-fase-MODELO" class="form-input" style="padding:4px 8px;font-size:.72rem;height:28px">';
+  h += '<option value="">— selecionar —</option>';
+  for (const f of FASES_CONFIG)
+    h += '<option value="' + f.key + '">' + f.label + '</option>';
+  h += '<option value="todas">⚠️ TODAS</option>';
+  h += '</select></div>';
+  h += '<div style="display:flex;gap:6px;margin-top:auto">';
+  h += '<button class="btn btn-primario btn-sm" onclick="window.MODELO_MANAGER.atualizar()" style="font-size:.7rem">🤖 Atualizar MODELO</button>';
+  h += '<button class="btn btn-perigo btn-sm" onclick="_limparFaseModelo()" style="font-size:.7rem">🗑 Limpar</button>';
+  h += '<button class="btn btn-sm" onclick="toggleEditApostador(\'MODELO\')" style="font-size:.7rem;background:var(--borda)">✕ Fechar</button>';
+  h += '</div></div>';
+  return h;
+}
+
+function _limparFaseModelo() {
+  const fase = document.getElementById("edit-fase-MODELO")?.value;
+  if (!fase) return alert("Selecione uma fase para limpar.");
+  if (fase === "todas") {
+    window.MODELO_MANAGER.limparTodas();
+  } else {
+    window.MODELO_MANAGER.limparFase(fase);
+  }
+}
+
+function _htmlLinhaModelo(numCols) {
+  const m = APP.modelo;
+  const baseUrl = "https://ciclopeestrabico.github.io/bolao-copa-2026/aposta.html?token=modelo";
+  let h = '';
+
+  h += '<tr style="background:color-mix(in srgb,var(--dourado) 6%,var(--fundo));border-top:1px solid color-mix(in srgb,var(--dourado) 25%,var(--borda))" id="row-MODELO">';
+  h += '<td style="' + _tdS("left") + '">';
+  h += '<div style="font-weight:700;display:flex;align-items:center;gap:5px">';
+  h += '<span style="background:color-mix(in srgb,var(--dourado) 30%,var(--fundo2));color:var(--dourado);font-size:.55rem;font-weight:900;padding:1px 4px;border-radius:3px;letter-spacing:.3px">MOD</span>';
+  h += 'MODELO</div>';
+  h += '<div style="color:var(--texto2);font-size:.65rem;margin-top:1px">Referência estatística</div>';
+  h += '</td>';
+  h += '<td style="' + _tdS() + '">';
+  h += '<a href="' + baseUrl + '" target="_blank" style="color:var(--dourado);text-decoration:underline;font-size:.66rem;font-family:monospace">modelo</a>';
+  h += '</td>';
+
+  for (const f of FASES_CONFIG) {
+    const total = _totalJogosFase(f.key);
+    const feitos = _palpitesModeloFase(f.key);
+    let cor = "var(--texto2)";
+    if (total > 0 && feitos === total) cor = "var(--verde-light)";
+    else if (feitos > 0) cor = "var(--dourado)";
+    h += '<td style="' + _tdS() + 'color:' + cor + ';font-weight:' + (feitos > 0 ? 700 : 400) + '">';
+    h += feitos;
+    if (total) h += '<span style="opacity:.4;font-size:.64rem">/' + total + '</span>';
+    h += '</td>';
+  }
+
+  const esp = m?.especiais || {};
+  const espCount = ["campeao", "vice", "terceiro"].filter(k => esp[k]).length;
+  const espCor = espCount === 3 ? "var(--verde-light)" : espCount > 0 ? "var(--dourado)" : "var(--texto2)";
+  h += '<td style="' + _tdS() + 'color:' + espCor + ';font-weight:' + (espCount > 0 ? 700 : 400) + '">';
+  h += espCount + '<span style="opacity:.4;font-size:.64rem">/3</span></td>';
+
+  h += '<td style="' + _tdS() + '">';
+  h += '<div style="display:flex;gap:4px;justify-content:center">';
+  h += '<button class="btn btn-sm" onclick="toggleEditApostador(\'MODELO\')" style="font-size:.64rem;padding:3px 7px" title="Gerenciar MODELO">✏️</button>';
+  h += '</div></td>';
+  h += '</tr>';
+
+  h += '<tr id="edit-row-MODELO" style="display:none">';
+  h += '<td colspan="' + numCols + '" style="padding:10px 14px;background:color-mix(in srgb,var(--fundo2) 70%,transparent)">';
+  h += _htmlEditModelo();
+  h += '</td></tr>';
+
+  return h;
+}
+
 function renderApostadores() {
   const el = document.getElementById("aba-apostadores");
   if (!el) return;
@@ -400,6 +487,12 @@ function renderApostadores() {
     h += _htmlEditApostador(a);
     h += '</td></tr>';
   });
+
+  // Separador + linha do MODELO
+  h += '<tr><td colspan="' + numCols + '" style="height:1px;padding:0;background:color-mix(in srgb,var(--dourado) 20%,var(--borda))"></td></tr>';
+  if (APP._modeloCarregado !== false) {
+    h += _htmlLinhaModelo(numCols);
+  }
 
   h += '</tbody></table></div>';
   el.innerHTML = h;

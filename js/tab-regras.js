@@ -186,6 +186,17 @@ window.renderRegras = function () {
     ["Como garanto que algum admin não vai mudar alguma aposta minha ou de outro jogador?",
       "Os botões de <strong>Exportar CSV</strong> e <strong>Exportar JSON</strong> na aba Compilação estão disponíveis exatamente para isso.<br><br>" +
       "Antes de cada fase começar — quando as apostas já estiverem bloqueadas — todos os participantes podem salvar uma cópia dos palpites para conferência e backup. Guarde seus exports e compare ao final se tiver dúvidas."],
+    // --- MODELO ---
+    ["O que é esse apostador \"MODELO\"? Ele está competindo?",
+      "Não. O MODELO é uma <strong>referência estatística</strong> e não participa da classificação do bolão — seus palpites não valem pontos reais nem afetam a posição de ninguém.<br><br>" +
+      "Ele serve como régua de comparação: se você estiver acima do MODELO, está se saindo bem; abaixo, talvez valha revisar suas estratégias. 😄<br><br>" +
+      "Os palpites do MODELO são gerados automaticamente antes de cada fase, com base em três camadas combinadas:<br>" +
+      "<ul style=\"margin:8px 0 0 16px;padding:0;list-style:disc\">" +
+      "<li style=\"margin-bottom:4px\"><strong>ELO Rating</strong> — força histórica de cada seleção atualizada jogo a jogo, usada como prior para estimar a probabilidade de vitória.</li>" +
+      "<li style=\"margin-bottom:4px\"><strong>Rede Neural GRU</strong> — aprende padrões temporais de desempenho recente das seleções para ajustar os ratings puros de ELO.</li>" +
+      "<li><strong>Distribuição Dixon-Coles</strong> — modelo estatístico de contagem de gols que gera uma matriz de probabilidade para cada placar possível, corrigindo o viés de empates de 0×0.</li>" +
+      "</ul><br>" +
+      "A partir dessa matriz, o MODELO escolhe para cada jogo o placar que <em>maximiza o valor esperado de pontos</em> no sistema de pontuação do bolão — não necessariamente o placar mais provável."],
   ];
   for (const [q, a] of faqs) {
     h += '<details style="background:var(--fundo2);border-radius:var(--radius-sm);overflow:hidden">';

@@ -8,6 +8,7 @@
 let _apostador = null;
 let _palpitesLocais = {};
 let _modoVer = false;
+let _modoModelo = false;
 
 // Sobrescrever a função do ui-jogos para a tela de apostas
 window._onInputPlacar = function (id, ehElim) {
@@ -77,6 +78,34 @@ async function iniciarAposta() {
   const params = new URLSearchParams(location.search);
   const token = params.get("token");
   _modoVer = params.has("ver");
+
+  // ─── MODELO ─────────────────────────────────────────────────────────────────
+  if (token === "modelo") {
+    _modoModelo = true;
+    _modoVer = true; // sempre somente-leitura
+    window._modoModeloAtivo = true;
+
+    // Aguarda MODELO carregar
+    if (!APP._modeloCarregado) {
+      await new Promise(r => {
+        const check = setInterval(() => {
+          if (APP._modeloCarregado) { clearInterval(check); clearTimeout(fb); r(); }
+        }, 50);
+        const fb = setTimeout(() => { clearInterval(check); r(); }, 6000);
+      });
+    }
+
+    _apostador = window.getModelo ? window.getModelo() : null;
+    if (!_apostador) {
+      mostrarErroAposta("Nenhum palpite do MODELO disponível ainda.");
+      return;
+    }
+
+    _palpitesLocais = JSON.parse(JSON.stringify(APP.palpitesModelo || {}));
+    renderAposta();
+    return;
+  }
+  // ────────────────────────────────────────────────────────────────────────────
 
   if (!token) { renderLoginToken(); return; }
 
@@ -280,11 +309,14 @@ function calcularProjecao() {
 function renderAposta() {
   const el = document.getElementById("aposta-main");
   if (!el || !_apostador) return;
-  const displayName = _apostador.nome ? `${_apostador.nome}` + (_apostador.apelido ? ` ("${_apostador.apelido}")` : "") : "Apostador";
+  const displayName = _modoModelo
+    ? "MODELO"
+    : (_apostador.nome ? `${_apostador.nome}` + (_apostador.apelido ? ` ("${_apostador.apelido}")` : "") : "Apostador");
+  const headerPrefix = _modoModelo ? "Palpites do " : (_modoVer ? "Palpites de " : "Olá, ");
 
   // Header com nome
   const hn = document.getElementById("header-nome");
-  if (hn) hn.innerHTML = (_modoVer ? "Palpites de " : "Olá, ") + "<strong>" + displayName + "</strong><small>Bolão Copa 2026</small>";
+  if (hn) hn.innerHTML = headerPrefix + "<strong>" + displayName + "</strong><small>Bolão Copa 2026</small>";
 
   const resOficiais = getResultados();
   const tg = calcularProjecao();
@@ -347,7 +379,12 @@ function renderAposta() {
   h += '<div id="progresso-container" style="margin-bottom:15px">' + renderProgressoAposta() + '</div>';
 
   // Palpites especiais (campeão, vice, 3o)
-  if (!_modoVer) h += '<div id="especiais-container">' + renderEspeciaisAposta(resOficiais) + '</div>';
+  // MODELO: somente-leitura; apostador normal: editável (nunca ambos)
+  if (_modoModelo) {
+    h += '<div id="especiais-container">' + renderEspeciaisModeloReadOnly() + '</div>';
+  } else if (!_modoVer) {
+    h += '<div id="especiais-container">' + renderEspeciaisAposta(resOficiais) + '</div>';
+  }
 
   // Mesmo layout do resultados: grupos + toggle + jogos
   h += renderJogosComToggle(resOficiais, tg, false, _palpitesLocais, _bracketApostador, resCompleto);
@@ -377,6 +414,10 @@ function renderAposta() {
 window.renderAbaAtiva = function () {
   // Suprime re-render completo enquanto usuário está digitando (evita flickering)
   if (window._estaDigitando) return;
+  if (_modoModelo) {
+    _palpitesLocais = JSON.parse(JSON.stringify(APP.palpitesModelo || {}));
+    _apostador = window.getModelo ? window.getModelo() : _apostador;
+  }
   renderAposta();
 };
 
@@ -578,4 +619,198 @@ async function salvarTodosPalpites(silencioso = false) {
     clearTimeout(window._toastTimer);
     window._toastTimer = setTimeout(() => { toast.style.opacity = '0'; }, 2200);
   }
+}
+
+// ── MODELO: Especiais somente-leitura ──
+function renderEspeciaisModeloReadOnly() {
+  const modelo = window.getModelo ? window.getModelo() : null;
+  const esp = modelo?.especiais || {};
+  const cfgExtra = window.CONFIG?.pontuacao?.extras || {};
+  const fases = [
+    { key: "campeao",  label: "🏆 Campeão",  pts: (cfgExtra.primeiro_lugar || 0) + "pts" },
+    { key: "vice",     label: "🥈 Vice",      pts: (cfgExtra.segundo_lugar  || 0) + "pts" },
+    { key: "terceiro", label: "🥉 3° Lugar",  pts: (cfgExtra.terceiro_lugar || 0) + "pts" },
+  ];
+
+  let h = '<div class="card" style="margin-bottom:20px"><div class="card-titulo">⭐ Palpites Especiais — MODELO</div>';
+  h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;justify-content:center">';
+  for (const f of fases) {
+    const val = esp[f.key] || "";
+    const info = window.TEAMS_BY_CODE?.[val];
+    h += '<div style="background:var(--fundo2);border-radius:var(--radius-sm);padding:10px">';
+    h += '<div style="font-size:.78rem;font-weight:700;margin-bottom:6px">' + f.label +
+         ' <span style="color:var(--dourado);font-size:.65rem">' + f.pts + '</span></div>';
+    h += '<div style="display:flex;align-items:center;gap:6px">' + htmlBandeira(val, 24);
+    h += '<span style="font-size:.82rem;font-weight:600">' + (info?.name || (val ? val : "Não definido")) + '</span></div>';
+    h += '</div>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+// ── MODELO: Funções de matriz ──
+function _abrirMatrizModelo(gameId) {
+  let ov = document.getElementById("modal-prog");
+  let box = document.getElementById("modal-prog-body");
+
+  if (!ov || !box) {
+    ov = document.createElement("div");
+    ov.id = "modal-prog";
+    ov.className = "modal-overlay";
+    ov.innerHTML = '<div class="modal-box" id="modal-prog-body"></div>';
+    document.body.appendChild(ov);
+    box = document.getElementById("modal-prog-body");
+  }
+
+  if (!ov._clickEv) {
+    ov.addEventListener("click", e => {
+      if (e.target === ov) {
+        ov.classList.remove("aberto");
+        document.body.style.overflow = "";
+      }
+    });
+    ov._clickEv = true;
+  }
+
+  box.innerHTML = '<button class="modal-close" onclick="(function(){document.getElementById(\'modal-prog\').classList.remove(\'aberto\');document.body.style.overflow=\'\'})()">✕</button>' +
+    _renderMatrizModelo(gameId);
+  ov.classList.add("aberto");
+  document.body.style.overflow = "hidden";
+  _switchTabModelo("placares");
+}
+
+function _switchTabModelo(tab) {
+  ["placares", "pontos"].forEach(t => {
+    const c = document.getElementById("modal-mmod-" + t);
+    const b = document.getElementById("mtab-mmod-" + t);
+    if (c) c.style.display = t === tab ? "" : "none";
+    if (b) b.classList.toggle("ativo", t === tab);
+  });
+}
+
+function _renderMatrizModelo(gameId) {
+  const jogo = window.SCHEDULE_BY_ID?.[gameId];
+  const b = APP.bracket?.[jogo?.id] || {};
+  const hC = b.home || jogo?.home;
+  const aC = b.away || jogo?.away;
+  const hName = window.TEAMS_BY_CODE?.[hC]?.name || hC || "?";
+  const aName = window.TEAMS_BY_CODE?.[aC]?.name || aC || "?";
+
+  let h = '';
+  // Header
+  h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">';
+  h += htmlBandeira(hC, 22) + '<span style="font-weight:700">' + hName + '</span>';
+  h += '<span style="color:var(--texto2);margin:0 4px">×</span>';
+  h += '<span style="font-weight:700">' + aName + '</span>' + htmlBandeira(aC, 22);
+  h += '</div>';
+
+  // Abas
+  h += '<div style="display:flex;gap:4px;margin-bottom:10px">';
+  h += '<button id="mtab-mmod-placares" class="btn-toggle ativo" onclick="_switchTabModelo(\'placares\')" style="font-size:.7rem">📊 Matriz de Placares</button>';
+  h += '<button id="mtab-mmod-pontos" class="btn-toggle" onclick="_switchTabModelo(\'pontos\')" style="font-size:.7rem">🎯 Pontos Esperados</button>';
+  h += '</div>';
+
+  h += '<div id="modal-mmod-placares">' + _renderMatrizPlacares(gameId, hC, aC, hName, aName) + '</div>';
+  h += '<div id="modal-mmod-pontos" style="display:none">' + _renderMatrizPontos(gameId, hC, aC, hName, aName) + '</div>';
+  return h;
+}
+
+function _renderMatrizPlacares(gameId, hC, aC, hName, aName) {
+  const isNeutral = (() => {
+    const j = window.SCHEDULE_BY_ID?.[gameId];
+    return j ? (j.pais !== hC && j.pais !== aC) : true;
+  })();
+  const c = window.PROGNOSE?.calcular(hC, aC, isNeutral);
+  if (!c || !c.matrix) return '<p style="text-align:center;padding:30px;color:var(--texto2)">Dados não disponíveis.</p>';
+
+  const N = c.N;
+  const all = c.matrix.flat().sort((a, b) => b - a);
+  const top1 = all[0] || 1;
+
+  let h = '<div style="font-size:.72rem;font-weight:700;color:var(--texto2);margin:10px 0 6px;text-align:center">Probabilidade Poisson por Placar</div>';
+  h += '<div style="overflow-x:auto"><table class="matriz-poisson"><thead><tr><th></th>';
+  for (let j = 0; j < N; j++) h += '<th>' + aName.substring(0, 3) + ' ' + (j === 6 ? "6+" : j) + '</th>';
+  h += '</tr></thead><tbody>';
+
+  for (let i = 0; i < N; i++) {
+    h += '<tr><th>' + hName.substring(0, 3) + ' ' + (i === 6 ? "6+" : i) + '</th>';
+    for (let j = 0; j < N; j++) {
+      const v = c.matrix[i][j];
+      const p = Math.max(0, Math.min(1, v / top1));
+      const hue = 60 * (1 - p);
+      const alpha = 0.1 + 0.6 * p;
+      const bg = `hsla(${hue}, 100%, 50%, ${alpha})`;
+      const fw = p > 0.8 ? '800' : (p > 0.4 ? '600' : '400');
+      const color = p > 0.5 ? '#fff' : 'var(--texto2)';
+      const border = i === j ? 'outline:1px solid rgba(255,255,255,0.2);outline-offset:-1px;' : '';
+      const palModelo = _palpitesLocais[gameId];
+      const ehPalpiteModelo = palModelo && palModelo.homeGoals === i && palModelo.awayGoals === j;
+      const destaque = ehPalpiteModelo ? 'box-shadow:0 0 0 2px var(--dourado) inset;' : '';
+      h += `<td style="background:${bg};color:${color};font-weight:${fw};${border}${destaque}">${(v * 100).toFixed(1)}%</td>`;
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  h += '<div style="font-size:.65rem;color:var(--texto2);text-align:center;margin-top:6px">🔲 = Palpite escolhido pelo MODELO</div>';
+  return h;
+}
+
+function _renderMatrizPontos(gameId, hC, aC, hName, aName) {
+  const isNeutral = (() => {
+    const j = window.SCHEDULE_BY_ID?.[gameId];
+    return j ? (j.pais !== hC && j.pais !== aC) : true;
+  })();
+  const c = window.PROGNOSE?.calcular(hC, aC, isNeutral);
+  if (!c || !c.matrix) return '<p style="text-align:center;padding:30px;color:var(--texto2)">Dados não disponíveis.</p>';
+
+  const N = c.N;
+  const jogo = window.SCHEDULE_BY_ID?.[gameId];
+  const faseReal = jogo?.fase || "grupos";
+
+  const matrizPontos = [];
+  let maxPts = 0;
+  for (let h = 0; h < N; h++) {
+    matrizPontos[h] = [];
+    for (let a = 0; a < N; a++) {
+      let esperado = 0;
+      for (let rh = 0; rh < N; rh++) {
+        for (let ra = 0; ra < N; ra++) {
+          const pReal = c.matrix[rh][ra];
+          if (pReal < 1e-9) continue;
+          const brutos = window.calcularPontosBrutos({ homeGoals: h, awayGoals: a }, { homeGoals: rh, awayGoals: ra, foi_penaltis: false });
+          const pts = window.aplicarFator(brutos.total_bruto, faseReal);
+          esperado += pReal * pts;
+        }
+      }
+      matrizPontos[h][a] = esperado;
+      if (esperado > maxPts) maxPts = esperado;
+    }
+  }
+
+  let h = '<div style="font-size:.72rem;font-weight:700;color:var(--texto2);margin:10px 0 6px;text-align:center">Pontos Esperados por Palpite (🔴 baixo → 🟢 alto)</div>';
+  h += '<div style="overflow-x:auto"><table class="matriz-poisson"><thead><tr><th></th>';
+  for (let j = 0; j < N; j++) h += '<th>' + aName.substring(0, 3) + ' ' + (j === 6 ? "6+" : j) + '</th>';
+  h += '</tr></thead><tbody>';
+
+  for (let i = 0; i < N; i++) {
+    h += '<tr><th>' + hName.substring(0, 3) + ' ' + (i === 6 ? "6+" : i) + '</th>';
+    for (let j = 0; j < N; j++) {
+      const v = matrizPontos[i][j];
+      const p = maxPts > 0 ? v / maxPts : 0;
+      const hue = 120 * p;
+      const alpha = 0.15 + 0.55 * p;
+      const bg = `hsla(${hue}, 80%, 45%, ${alpha})`;
+      const fw = p > 0.7 ? '800' : (p > 0.35 ? '600' : '400');
+      const color = p > 0.5 ? '#fff' : 'var(--texto2)';
+      const border = i === j ? 'outline:1px solid rgba(255,255,255,0.2);outline-offset:-1px;' : '';
+      const palModelo = _palpitesLocais[gameId];
+      const ehPalpiteModelo = palModelo && palModelo.homeGoals === i && palModelo.awayGoals === j;
+      const destaque = ehPalpiteModelo ? 'box-shadow:0 0 0 2px var(--dourado) inset;' : '';
+      h += `<td style="background:${bg};color:${color};font-weight:${fw};${border}${destaque}">${v.toFixed(1)}</td>`;
+    }
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  h += '<div style="font-size:.65rem;color:var(--texto2);text-align:center;margin-top:6px">Valores em pontos · 🔲 = Palpite escolhido pelo MODELO</div>';
+  return h;
 }

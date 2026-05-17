@@ -10,6 +10,44 @@ window.renderClassificacao = function () {
 
   const ranking = gerarRanking(pals, res, apos, esp);
 
+  // Inserir MODELO visualmente na posição correta
+  const modeloParticipante = window.getModelo ? window.getModelo() : null;
+  let rankingComModelo = ranking.slice();
+
+  if (modeloParticipante && APP._modeloCarregado) {
+    const palsModelo = APP.palpitesModelo || {};
+    const statsModelo = calcularPontosApostador(palsModelo, res, modeloParticipante, esp);
+
+    let posModelo = 1;
+    for (const item of ranking) {
+      const exatosItem = item.stats.acertos_placar_exato + item.stats.acertos_placar_alto;
+      const exatosModelo = statsModelo.acertos_placar_exato + statsModelo.acertos_placar_alto;
+      if (item.stats.total > statsModelo.total) posModelo++;
+      else if (item.stats.total === statsModelo.total) {
+        if (exatosItem > exatosModelo) posModelo++;
+        else if (exatosItem === exatosModelo && item.stats.acertos_resultado > statsModelo.acertos_resultado) posModelo++;
+      }
+    }
+
+    const itemModelo = {
+      posicao: posModelo,
+      participante: modeloParticipante,
+      stats: statsModelo,
+      isModelo: true,
+    };
+
+    const insertIdx = rankingComModelo.findIndex(item => {
+      const exatosItem = item.stats.acertos_placar_exato + item.stats.acertos_placar_alto;
+      const exatosModelo = statsModelo.acertos_placar_exato + statsModelo.acertos_placar_alto;
+      if (item.stats.total < statsModelo.total) return true;
+      if (item.stats.total === statsModelo.total && exatosItem < exatosModelo) return true;
+      if (item.stats.total === statsModelo.total && exatosItem === exatosModelo && item.stats.acertos_resultado < statsModelo.acertos_resultado) return true;
+      return false;
+    });
+    if (insertIdx === -1) rankingComModelo.push(itemModelo);
+    else rankingComModelo.splice(insertIdx, 0, itemModelo);
+  }
+
   // Jogos realizados recentes (ultimos 5)
   const jogosFeitosIds = (window.SCHEDULE || []).filter(j => res[j.id]?.homeGoals !== undefined)
     .sort((a, b) => new Date(b.utc) - new Date(a.utc)).slice(0, 5).map(j => j.id);
@@ -48,13 +86,14 @@ window.renderClassificacao = function () {
       '</div></td>';
   };
 
-  ranking.forEach((item, i) => {
+  rankingComModelo.forEach((item, i) => {
+    const isModelo = !!item.isModelo;
     const p = item.participante; const st = item.stats;
     const pos = item.posicao;
     const posAnterior = _rankingAnterior[p.id || p.token];
-    const mov = posAnterior ? (posAnterior > pos ? '▲' : posAnterior < pos ? '▼' : '—') : '—';
+    const mov = (!isModelo && posAnterior) ? (posAnterior > pos ? '▲' : posAnterior < pos ? '▼' : '—') : '—';
     const movCor = mov === '▲' ? 'var(--verde-ok)' : mov === '▼' ? '#f87171' : 'var(--texto2)';
-    const medalhao = _getMedalhao(pos);
+    const medalhao = isModelo ? '🤖' : _getMedalhao(pos);
 
     // Sparkline: últimos 5 jogos
     let spark = '';
@@ -80,17 +119,37 @@ window.renderClassificacao = function () {
       }
     }
 
-    const jReal = st.jogos_realizados || 0;
     const pctPts = st.pct_pontos;
     const pctRes = st.pct_resultado;
     const pctBonus1 = st.pct_bonus1;
     const pctPlacar = st.pct_placar;
     const pctPlacarAlto = st.pct_placar_alto;
 
-    h += '<tr style="cursor:pointer" onclick="_toggleRankingDetalhe(\'rd-' + i + '\')">';
+    const rowBg = isModelo
+      ? 'background:color-mix(in srgb,var(--dourado) 5%,var(--fundo));border-left:2px solid color-mix(in srgb,var(--dourado) 35%,var(--borda))'
+      : '';
+
+    h += '<tr style="cursor:pointer;' + rowBg + '" onclick="_toggleRankingDetalhe(\'rd-' + i + '\')">';
     h += '<td style="text-align:center;font-weight:900;font-size:.95rem">';
-    h += (medalhao !== null ? medalhao : '<span style="font-size:.88rem">' + pos + '</span>') + '<span style="font-size:.65rem;color:' + movCor + '"> ' + mov + '</span></td>';
-    h += '<td style="text-align:left;font-weight:600;position:sticky;left:0;background:var(--fundo);z-index:1">' + (p.apelido || p.nome || p.token?.substring(0, 8) || "?") + '</td>';
+    if (isModelo) {
+      h += '<span style="font-size:1.1rem">🤖</span>';
+    } else {
+      h += (medalhao !== null ? medalhao : '<span style="font-size:.88rem">' + pos + '</span>') + '<span style="font-size:.65rem;color:' + movCor + '"> ' + mov + '</span>';
+    }
+    h += '</td>';
+
+    // Nome
+    const stickyBg = isModelo ? 'color-mix(in srgb,var(--dourado) 5%,var(--fundo))' : 'var(--fundo)';
+    h += '<td style="text-align:left;font-weight:600;position:sticky;left:0;background:' + stickyBg + ';z-index:1">';
+    if (isModelo) {
+      h += '<span style="background:color-mix(in srgb,var(--dourado) 25%,var(--fundo2));color:var(--dourado);font-size:.52rem;font-weight:900;padding:1px 3px;border-radius:3px;margin-right:3px">MOD</span>';
+      h += '<span style="font-weight:700">MODELO</span>';
+      h += '<div style="font-size:.6rem;color:var(--texto2)">referência · fora do ranking</div>';
+    } else {
+      h += (p.apelido || p.nome || p.token?.substring(0, 8) || "?");
+    }
+    h += '</td>';
+
     h += _renderCol(st.total.toFixed(1), pctPts, "var(--verde-light)");
     h += _renderCol(st.acertos_resultado, pctRes, "var(--texto)");
     h += _renderCol(st.acertos_bonus1, pctBonus1, "#fbbf24");
@@ -102,7 +161,11 @@ window.renderClassificacao = function () {
     h += '<tr id="rd-' + i + '" style="display:none"><td colspan="8" style="padding:0">';
     h += '<div style="background:var(--fundo2);padding:10px 14px;font-size:.76rem">';
     h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">';
-    h += '<div><div style="color:var(--texto2)">Nome Completo</div><div style="font-weight:700">' + (p.nome || "—") + '</div></div>';
+    if (isModelo) {
+      h += '<div><div style="color:var(--texto2)">Tipo</div><div style="font-weight:700;color:var(--dourado)">Referência estatística</div></div>';
+    } else {
+      h += '<div><div style="color:var(--texto2)">Nome Completo</div><div style="font-weight:700">' + (p.nome || "—") + '</div></div>';
+    }
     h += '<div><div style="color:var(--texto2)">Grupos</div><div style="font-weight:700">' + st.total_grupos.toFixed(1) + ' pts</div></div>';
     h += '<div><div style="color:var(--texto2)">Eliminatórias</div><div style="font-weight:700">' + st.total_eliminatorias.toFixed(1) + ' pts</div></div>';
     h += '<div><div style="color:var(--texto2)">Especiais</div><div style="font-weight:700">' + st.total_especiais + ' pts</div></div>';
@@ -112,7 +175,7 @@ window.renderClassificacao = function () {
 
   h += '</tbody></table></div>';
 
-  // Guardar ranking para mostrar movimento
+  // Guardar ranking para mostrar movimento (apenas apostadores reais)
   ranking.forEach(item => { _rankingAnterior[item.participante.id || item.participante.token] = item.posicao; });
 
   el.innerHTML = h;

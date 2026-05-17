@@ -274,6 +274,9 @@ function renderJogoRow(jogo, res, ehElim, isAdm, palApo, showFullDate = false, b
   if (!isApostaPage && window.PROGNOSE) {
     h += '<button class="btn-prog" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" title="Info e Estatísticas">📊</button>';
   }
+  if (isApostaPage && window._modoModeloAtivo) {
+    h += '<button class="btn-prog" onclick="_abrirMatrizModelo(\'' + jogo.id + '\')" title="Matrizes do MODELO">📐</button>';
+  }
   h += '</div>';
 
   h += '</div>'; return h;

@@ -42,8 +42,29 @@ window.renderGrafico = function() {
       bonus1:      st.acertos_bonus1,
       placar:      st.acertos_placar_exato + st.acertos_placar_alto,
       placar_alto: st.acertos_placar_alto,
+      isModelo: false,
     };
   }).sort((a,b) => b.pts - a.pts);
+
+  // Inserir MODELO na posição correta
+  const modeloGraf = window.getModelo ? window.getModelo() : null;
+  if (modeloGraf && APP._modeloCarregado) {
+    const stMod = calcularPontosApostador(APP.palpitesModelo || {}, res, modeloGraf, espOficiaisGraf);
+    const itemMod = {
+      id: "MODELO",
+      nome: "MODELO",
+      pts:         stMod.total,
+      pct:         stMod.pct_pontos,
+      res:         stMod.acertos_resultado,
+      bonus1:      stMod.acertos_bonus1,
+      placar:      stMod.acertos_placar_exato + stMod.acertos_placar_alto,
+      placar_alto: stMod.acertos_placar_alto,
+      isModelo: true,
+    };
+    const insertIdx = rankingCompleto.findIndex(a => a.pts < stMod.total);
+    if (insertIdx === -1) rankingCompleto.push(itemMod);
+    else rankingCompleto.splice(insertIdx, 0, itemMod);
+  }
 
   // Inicializar filtro com top 5
   if (!window._graficoFiltroApos) {
@@ -109,16 +130,19 @@ function _renderFiltroDropdown(rankingCompleto) {
   h += `<button onclick="_graficoSelecionarNenhum()" style="flex:1;padding:8px;font-size:.72rem;font-weight:700;background:none;border:none;color:var(--texto2);cursor:pointer">✕ Limpar</button>`;
   h += `</div>`;
 
-  // Lista de apostadores
+  // Lista de apostadores (incluindo MODELO)
   rankingCompleto.forEach((a, i) => {
     const ativo = filtro.has(a.id);
-    const cor = _EVOLUCAO_CORES[i % _EVOLUCAO_CORES.length];
+    const cor = a.isModelo ? '#f59e0b' : _EVOLUCAO_CORES[i % _EVOLUCAO_CORES.length];
+    const nomeBadge = a.isModelo
+      ? `<span style="background:rgba(245,158,11,.2);color:#f59e0b;font-size:.48rem;font-weight:900;padding:1px 3px;border-radius:2px;margin-right:3px">MOD</span>${a.nome}`
+      : a.nome;
     h += `<label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--borda);transition:background .1s"
       onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">
       <input type="checkbox" ${ativo?'checked':''} onchange="window._graficoToggleApos('${a.id}')"
         style="width:16px;height:16px;accent-color:${cor};cursor:pointer;flex-shrink:0">
       <div style="width:10px;height:10px;border-radius:50%;background:${cor};flex-shrink:0"></div>
-      <span style="font-size:.82rem;font-weight:600;color:var(--texto)">${a.nome}</span>
+      <span style="font-size:.82rem;font-weight:600;color:var(--texto)">${nomeBadge}</span>
       <span style="margin-left:auto;font-size:.72rem;color:var(--texto2)">${a.pts} pts</span>
     </label>`;
   });
@@ -156,7 +180,9 @@ window._graficoToggleApos = function(id) {
 };
 
 window._graficoSelecionarTodos = function() {
-  window._graficoFiltroApos = new Set((APP.apostadores||[]).map(a => a.id));
+  const ids = (APP.apostadores||[]).map(a => a.id);
+  if (APP.modelo) ids.push("MODELO");
+  window._graficoFiltroApos = new Set(ids);
   renderAbaAtiva();
 };
 
@@ -199,7 +225,9 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
   const avgPerc = (avgVal / maxVal) * 100;
 
   const coresMap = {};
-  rankingCompleto.forEach((a, i) => { coresMap[a.id] = _EVOLUCAO_CORES[i % _EVOLUCAO_CORES.length]; });
+  rankingCompleto.forEach((a, i) => {
+    coresMap[a.id] = a.isModelo ? '#f59e0b' : _EVOLUCAO_CORES[i % _EVOLUCAO_CORES.length];
+  });
 
   let h = '<div class="card" style="padding:20px 10px;overflow-x:auto">';
   h += '<div style="display:flex;align-items:flex-end;gap:12px;height:280px;min-width:min-content;padding-bottom:10px;border-bottom:1px solid var(--borda);margin-bottom:80px;position:relative">';
@@ -216,10 +244,13 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
     const perc = (val / maxVal) * 100;
     const cor = coresMap[a.id] || '#4fc3f7';
 
+    const nomeBarra = a.isModelo
+      ? `<span style='color:#f59e0b;font-size:.55rem;font-weight:900'>MOD</span>`
+      : a.nome;
     h += '<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:40px;position:relative;height:100%;justify-content:flex-end;z-index:1">';
     h += `<div style="font-size:.7rem;font-weight:800;color:var(--texto);margin-bottom:4px">${_fmtVal(metricaAtiva, val)}</div>`;
     h += `<div style="width:28px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2,perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
-    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:.68rem;color:var(--texto2);font-weight:600;white-space:nowrap">${a.nome}</div>`;
+    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:.68rem;color:var(--texto2);font-weight:600;white-space:nowrap">${nomeBarra}</div>`;
     h += '</div>';
   }
 
@@ -231,7 +262,7 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
 function _renderEvolucao(res, pals, apos, rankingCompleto) {
   const filtro = window._graficoFiltroApos;
   const aposFiltrados = apos.filter(a => filtro.has(a.id));
-  if (!aposFiltrados.length) return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador selecionado.</div>';
+  if (!aposFiltrados.length && !filtro.has("MODELO")) return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador selecionado.</div>';
 
   const jogosComRes = (window.SCHEDULE || [])
     .filter(j => res[j.id] && res[j.id].homeGoals !== undefined)
@@ -248,8 +279,7 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
     const cor = _EVOLUCAO_CORES[idxGlobal % _EVOLUCAO_CORES.length];
     const pal = pals[a.id] || {};
     let acumulado = 0;
-    // Iniciamos com 0 para que todos comecem no ponto (0,0)
-    const pontos = [0]; 
+    const pontos = [0];
     jogosComRes.forEach(j => {
       const p = pal[j.id];
       const r = res[j.id];
@@ -269,12 +299,40 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
     return { nome: (a.apelido || a.nome || "?").substring(0, 14), cor, pontos };
   });
 
+  // Inserir MODELO se selecionado
+  const modeloGrafEv = window.getModelo ? window.getModelo() : null;
+  if (modeloGrafEv && filtro.has("MODELO") && APP._modeloCarregado) {
+    const idxMod = rankingCompleto.findIndex(r => r.id === "MODELO");
+    const corMod = idxMod >= 0 ? _EVOLUCAO_CORES[idxMod % _EVOLUCAO_CORES.length] : '#f59e0b';
+    const palMod = APP.palpitesModelo || {};
+    let acumuladoMod = 0;
+    const pontosMod = [0];
+    jogosComRes.forEach(j => {
+      const p = palMod[j.id];
+      const r = res[j.id];
+      if (p && r && p.homeGoals !== undefined) {
+        const br = calcularPontosBrutos(p, r);
+        acumuladoMod += aplicarFator(br.total_bruto, j.fase);
+      }
+      pontosMod.push(parseFloat(acumuladoMod.toFixed(1)));
+    });
+    if (temEspeciais) {
+      const { total_especiais } = calcularPontosEspeciais(modeloGrafEv, espOficiais.campeao, espOficiais.vice, espOficiais.terceiro);
+      acumuladoMod += total_especiais;
+      pontosMod.push(parseFloat(acumuladoMod.toFixed(1)));
+    }
+    series.push({ nome: "MODELO", cor: corMod, pontos: pontosMod, isModelo: true });
+  }
+
+  if (!series.length)
+    return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador selecionado.</div>';
+
   const W = 600, H = 280;
   const PAD = { top: 20, right: 100, bottom: 40, left: 48 };
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
   const nMatches = jogosComRes.length;
-  const nPoints = series[0].pontos.length; 
+  const nPoints = Math.max(...series.map(s => s.pontos.length), 2);
   const maxPts = Math.max(1, ...series.map(s => Math.max(...s.pontos, 0)));
 
   // i vai de 0 a nMatches (ou mais, caso existam especiais)
@@ -306,7 +364,9 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
   for (const s of series) {
     if (!s.pontos.length) continue;
     const pts = s.pontos.map((v, i) => `${xPos(i).toFixed(1)},${yPos(v).toFixed(1)}`).join(' ');
-    svg += `<polyline points="${pts}" fill="none" stroke="${s.cor}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const dash = s.isModelo ? ' stroke-dasharray="6,3"' : '';
+    const sw = s.isModelo ? '3' : '2.5';
+    svg += `<polyline points="${pts}" fill="none" stroke="${s.cor}" stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round"${dash}/>`;
     const lastIdx = s.pontos.length - 1;
     const lastX = xPos(lastIdx);
     const lastY = yPos(s.pontos[lastIdx]);

@@ -4,7 +4,11 @@
 window.APP = {
   db: null, modoSimulacao: false,
   resultados: {}, resultadosSim: null,
-  palpites: {}, apostadores: [], bracket: {}, _unsubs: []
+  palpites: {}, apostadores: [], bracket: {}, _unsubs: [],
+  modelo: null,           // metadados do MODELO (ou null se não existir)
+  palpitesModelo: {},     // { gameId: { homeGoals, awayGoals, ... } }
+  _modeloCarregado: false,
+  _modeloPalpitesUnsub: null,
 };
 
 function initApp() {
@@ -25,6 +29,7 @@ function initApp() {
   APP.db = firebase.firestore();
   APP.configStatus = {};
   listenResultados(); listenApostadores(); listenPalpites(); listenConfigStatus();
+  listenModelo();
   atualizarBracket();
   iniciarRoteador();
 }
@@ -71,6 +76,47 @@ function listenConfigStatus() {
   });
   APP._unsubs.push(u);
 }
+
+function listenModelo() {
+  const u = APP.db.collection("modelo").doc("dados").onSnapshot(doc => {
+    if (!doc.exists) {
+      APP.modelo = null;
+      APP.palpitesModelo = {};
+      APP._modeloCarregado = true;
+      renderAbaAtiva();
+      return;
+    }
+    // Armazena apenas os dados crus do Firestore; getModelo() compõe o objeto final
+    APP.modelo = doc.data();
+
+    if (!APP._modeloPalpitesUnsub) {
+      const innerUnsub = doc.ref.collection("palpites_modelo").onSnapshot(snap => {
+        APP.palpitesModelo = {};
+        snap.forEach(d => { APP.palpitesModelo[d.id] = d.data(); });
+        renderAbaAtiva();
+      });
+      APP._modeloPalpitesUnsub = innerUnsub;
+      APP._unsubs.push(innerUnsub); // Bug 3: registrar para cleanup
+    }
+    APP._modeloCarregado = true;
+    renderAbaAtiva();
+  });
+  APP._unsubs.push(u);
+}
+
+function getModelo() {
+  if (!APP.modelo) return null;
+  // Bug 1: campos fixos vêm APÓS o spread para não serem sobrescritos pelo Firestore
+  return {
+    ...APP.modelo,
+    id: "MODELO",
+    apelido: "MODELO",
+    nome: "Modelo Estatístico",
+    isModelo: true,
+    especiais: APP.modelo.especiais || {},
+  };
+}
+window.getModelo = getModelo;
 
 // ---- Gravar resultado -------------------------------------------------------
 async function gravarResultadoOficial(gameId, homeGoals, awayGoals, foiPen, penVenc, extraData) {
