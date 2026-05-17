@@ -207,8 +207,6 @@ window.renderClassificacao = function () {
 
   h += '</tbody></table></div>';
 
-  // Guardar ranking para mostrar movimento (incluindo modelo)
-  rankingComModelo.forEach(item => { _rankingAnterior[item.participante.id || item.participante.token || 'MODELO'] = item.posicao; });
 
   el.innerHTML = h;
 };
