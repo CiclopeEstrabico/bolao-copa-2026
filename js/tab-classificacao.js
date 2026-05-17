@@ -90,8 +90,8 @@ window.renderClassificacao = function () {
     const isModelo = !!item.isModelo;
     const p = item.participante; const st = item.stats;
     const pos = item.posicao;
-    const posAnterior = _rankingAnterior[p.id || p.token];
-    const mov = (!isModelo && posAnterior) ? (posAnterior > pos ? '▲' : posAnterior < pos ? '▼' : '—') : '—';
+    const posAnterior = _rankingAnterior[p.id || p.token || 'MODELO'];
+    const mov = (posAnterior) ? (posAnterior > pos ? '▲' : posAnterior < pos ? '▼' : '—') : '—';
     const movCor = mov === '▲' ? 'var(--verde-ok)' : mov === '▼' ? '#f87171' : 'var(--texto2)';
     const medalhao = isModelo ? '🤖' : _getMedalhao(pos);
 
@@ -130,7 +130,7 @@ window.renderClassificacao = function () {
     h += '<tr style="cursor:pointer;' + rowBg + '" onclick="_toggleRankingDetalhe(\'rd-' + i + '\')">';
     h += '<td style="text-align:center;font-weight:900;font-size:.95rem">';
     if (isModelo) {
-      h += '<span style="font-size:1.1rem">🤖</span>';
+      h += '<span style="font-size:1.1rem">🤖</span><span style="font-size:.65rem;color:' + movCor + '"> ' + mov + '</span>';
     } else {
       h += (medalhao !== null ? medalhao : '<span style="font-size:.88rem">' + pos + '</span>') + '<span style="font-size:.65rem;color:' + movCor + '"> ' + mov + '</span>';
     }
@@ -172,8 +172,8 @@ window.renderClassificacao = function () {
 
   h += '</tbody></table></div>';
 
-  // Guardar ranking para mostrar movimento (apenas apostadores reais)
-  ranking.forEach(item => { _rankingAnterior[item.participante.id || item.participante.token] = item.posicao; });
+  // Guardar ranking para mostrar movimento (incluindo modelo)
+  rankingComModelo.forEach(item => { _rankingAnterior[item.participante.id || item.participante.token || 'MODELO'] = item.posicao; });
 
   el.innerHTML = h;
 };
