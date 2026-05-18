@@ -166,7 +166,6 @@ function renderAdmin() {
   h += '<button class="btn btn-sm" onclick="gerarCachePalpites(\'grupos\')" style="font-size:.65rem;background:var(--borda)">📦 Cache grupos</button>';
   h += '<button class="btn btn-sm" onclick="gerarCachePalpites(\'eliminatorias\')" style="font-size:.65rem;background:var(--borda)">📦 Cache elim.</button>';
   h += '<button class="btn btn-sm" onclick="gerarCacheResultados()" style="font-size:.65rem;background:var(--borda)">📦 Cache resultados</button>';
-  h += '<button class="btn btn-sm" onclick="migrarPalpitesParaDocCompacto()" style="font-size:.65rem;background:#5a3e00;color:#ffd;border:1px solid #a07000">🗜 Migrar palpites → compacto</button>';
   h += '</div></details>';
 
   h += renderJogosComToggle(res, tg, true, null);
@@ -597,8 +596,8 @@ async function limparFaseApostador(id) {
   if (!confirm("🗑 EXCLUIR PALPITES DO APOSTADOR\n\nVocê vai deletar " + desc + " pertencentes a " + nome + ".\nOs dados serão apagados definitivamente do banco de dados e a pontuação dele será reduzida.\n\nDeseja CONFIRMAR a exclusão?")) return;
 
   if (fase === "especiais") {
-    if (a) { 
-      a.especiais = {}; 
+    if (a) {
+      a.especiais = {};
       await APP.db.collection("apostadores").doc(id).collection("dados").doc("palpites").set({ especiais: {} }, { merge: true });
     }
   } else {
@@ -629,11 +628,11 @@ async function limparFaseApostador(id) {
     // Mantém limpeza da subcollection antiga (dual-write — remover após migração)
     for (const j of jogosParaLimpar) {
       await APP.db.collection("apostadores").doc(id)
-        .collection("palpites_jogos").doc(j.id).delete().catch(() => {});
+        .collection("palpites_jogos").doc(j.id).delete().catch(() => { });
     }
 
-    if (fase === "todas" && a) { 
-      a.especiais = {}; 
+    if (fase === "todas" && a) {
+      a.especiais = {};
       await APP.db.collection("apostadores").doc(id).collection("dados").doc("palpites").set({ especiais: {} }, { merge: true });
     }
   }
@@ -655,7 +654,7 @@ async function deletarApostadorId(id) {
   try {
     // Deletar documento compacto de palpites
     await APP.db.collection("apostadores").doc(id)
-      .collection("dados").doc("palpites").delete().catch(() => {});
+      .collection("dados").doc("palpites").delete().catch(() => { });
 
     // Deletar subcoleção antiga (dual-write — remover após migração)
     const palpitesSnap = await APP.db.collection("apostadores").doc(id)
@@ -801,7 +800,7 @@ function _tokenCard(t, apt, tipo) {
   }
 
   h += '<div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">';
-  
+
   // Botão PAGO para tokens Em Uso e Enviados
   if (tipo === "usado" || tipo === "enviado") {
     const isPago = t.pago === true;
@@ -835,10 +834,10 @@ async function marcarEnviado(tokenDocId) {
       enviado_em: new Date().toISOString()
     };
     await APP.db.collection("tokens").doc(tokenDocId).update(updateData);
-    
+
     // Auto-save cirúrgico no Dicionário
     await APP.db.collection("cache").doc("tokens").set({ [tokenDocId]: updateData }, { merge: true });
-    
+
     renderTokens();
   } catch (e) { alert("Erro: " + e.message); }
 }
@@ -854,23 +853,23 @@ async function reverterEnviado(tokenDocId) {
     };
     await APP.db.collection("tokens").doc(tokenDocId).update(updateData);
     await APP.db.collection("cache").doc("tokens").set({ [tokenDocId]: updateData }, { merge: true });
-    
+
     renderTokens();
   } catch (e) { alert("Erro: " + e.message); }
 }
 
 async function togglePago(tokenDocId, isPago) {
   if (!_adminAutenticado()) return alert("Não autorizado.");
-  
+
   if (!isPago) {
     if (!confirm("💰 REMOVER PAGAMENTO\n\nEste token estava marcado como PAGO.\nTem certeza que deseja reverter o status para NÃO PAGO?\n\nDeseja CONFIRMAR?")) return;
   }
-  
+
   try {
     const updateData = { pago: isPago ? true : "" };
     await APP.db.collection("tokens").doc(tokenDocId).update(updateData);
     await APP.db.collection("cache").doc("tokens").set({ [tokenDocId]: updateData }, { merge: true });
-    
+
     renderTokens();
   } catch (e) { alert("Erro ao atualizar status de pagamento: " + e.message); }
 }
@@ -889,12 +888,12 @@ function copiarLink(url, btn) {
 
 async function criarToken() {
   if (!_adminAutenticado()) return alert("Não autorizado.");
-  
+
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
   const token = Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-  
+
   if (!confirm("Criar token: " + token + "?")) return;
-  
+
   try {
     const snap = await APP.db.collection("tokens").orderBy("numero", "desc").limit(1).get();
     let proxNumero = 1;
@@ -902,15 +901,15 @@ async function criarToken() {
       const maxAtual = snap.docs[0].data().numero || 0;
       proxNumero = maxAtual + 1;
     }
-    
+
     const novoDocId = "tok_" + proxNumero;
     const docRef = APP.db.collection("tokens").doc(novoDocId);
-    
+
     const docVerifica = await docRef.get();
     if (docVerifica.exists) {
       throw new Error("Conflito de ID (" + novoDocId + "). Tente novamente.");
     }
-    
+
     const newObj = {
       id: novoDocId,
       numero: proxNumero,
@@ -921,13 +920,13 @@ async function criarToken() {
       criado_em: new Date().toISOString()
     };
     await docRef.set(newObj);
-    
+
     // Auto-save da nova chave no Dicionário
     await APP.db.collection("cache").doc("tokens").set({ [novoDocId]: newObj }, { merge: true });
-    
+
     renderTokens();
-  } catch (e) { 
-    alert("Erro ao criar token: " + e.message); 
+  } catch (e) {
+    alert("Erro ao criar token: " + e.message);
   }
 }
 
@@ -937,8 +936,8 @@ async function deletarToken(tokenDocId) {
   try {
     await APP.db.collection("tokens").doc(tokenDocId).delete();
     // Remove a chave do dicionário sem precisar reler o banco
-    await APP.db.collection("cache").doc("tokens").update({ 
-      [tokenDocId]: firebase.firestore.FieldValue.delete() 
+    await APP.db.collection("cache").doc("tokens").update({
+      [tokenDocId]: firebase.firestore.FieldValue.delete()
     });
     renderTokens();
   } catch (e) { alert("Erro: " + e.message); }
@@ -978,11 +977,11 @@ async function gerarCachePalpites(tipo) {
   if (!_adminAutenticado()) return alert("Não autorizado.");
 
   const FASES_GRUPOS = ["grupos"];
-  const FASES_ELIM   = ["32avos", "oitavas", "quartas", "semis", "final", "terceiro"];
-  const fasesAlvo    = tipo === "grupos" ? FASES_GRUPOS : FASES_ELIM;
+  const FASES_ELIM = ["32avos", "oitavas", "quartas", "semis", "final", "terceiro"];
+  const fasesAlvo = tipo === "grupos" ? FASES_GRUPOS : FASES_ELIM;
 
   const jogosDaFase = (window.SCHEDULE || []).filter(j => fasesAlvo.includes(j.fase));
-  const gameIds     = new Set(jogosDaFase.map(j => j.id));
+  const gameIds = new Set(jogosDaFase.map(j => j.id));
 
   if (gameIds.size === 0) { alert("Nenhum jogo encontrado para a fase: " + tipo); return; }
 
@@ -1037,7 +1036,7 @@ async function gerarCachePalpites(tipo) {
   }));
 
   // ── 3. Monta e grava payload ─────────────────────────────────────────────────
-  const ts    = new Date().toISOString();
+  const ts = new Date().toISOString();
   const docId = tipo === "grupos" ? "palpites_grupos" : "palpites_eliminatorias";
   const payload = { gerado_em: ts, palpites };
   if (tipo === "grupos") payload.apostadores = apostadoresCompactos;
@@ -1047,7 +1046,7 @@ async function gerarCachePalpites(tipo) {
     const tsKey = tipo === "grupos" ? "cache_grupos_ts" : "cache_elim_ts";
     await APP.db.collection("config").doc("status").set({ [tsKey]: ts }, { merge: true });
     const nApost = Object.keys(palpites).length;
-    const nPals  = Object.values(palpites).reduce((s, j) => s + Object.keys(j).length, 0);
+    const nPals = Object.values(palpites).reduce((s, j) => s + Object.keys(j).length, 0);
     adicionarLog("✅ cache/" + docId + " — " + nApost + " apostadores, " + nPals + " palpites");
     alert("✅ Cache de " + (tipo === "grupos" ? "Grupos" : "Eliminatórias") + " gerado com sucesso!\nForam registrados " + nApost + " apostadores e " + nPals + " palpites.");
   } catch (e) {
@@ -1078,7 +1077,7 @@ async function gerarCacheResultados() {
     if (r && r.homeGoals !== undefined && r.awayGoals !== undefined) {
       const entry = { hg: r.homeGoals, ag: r.awayGoals };
       if (r.foi_penaltis) {
-        entry.pen   = true;
+        entry.pen = true;
         entry.pen_v = r.penaltis_vencedor || null;
       }
       compacto[gameId] = entry;
@@ -1117,129 +1116,4 @@ function adicionarLog(msg) {
 // MIGRAÇÃO: subcollection palpites_jogos → documento compacto dados/palpites
 //
 // Rodar UMA vez. Após confirmar que todos os apostadores têm doc compacto,
-// remover o dual-write de salvarTodosPalpites() e os fallbacks de
-// _carregarPalpitesPropriosDoFirestore() e gerarCachePalpites().
-// ═══════════════════════════════════════════════════════════════════════════════
 
-async function migrarPalpitesParaDocCompacto() {
-  if (!_adminAutenticado()) return alert("Não autorizado.");
-  if (!confirm(
-    "🗜 MIGRAÇÃO DE PALPITES\n\n" +
-    "Vai ler a subcollection palpites_jogos de cada apostador e consolidar " +
-    "num único documento por apostador (dados/palpites).\n\n" +
-    "• Operação segura — não apaga dados originais\n" +
-    "• Pode demorar ~30s com muitos apostadores\n" +
-    "• Rodar apenas UMA vez\n\n" +
-    "Continuar?"
-  )) return;
-
-  let apostadores = APP.apostadores || [];
-  if (apostadores.length === 0) {
-    try {
-      const snap = await APP.db.collection("apostadores").get();
-      apostadores = snap.docs.map(d => d.data());
-    } catch (e) {
-      alert("Erro ao buscar apostadores do Firebase: " + e.message);
-      return;
-    }
-  }
-
-  if (apostadores.length === 0) {
-    alert("Nenhum apostador encontrado no banco de dados.");
-    return;
-  }
-
-  let ok = 0, erros = 0;
-  const erroIds = [];
-
-  for (const a of apostadores) {
-    try {
-      // 1. Verifica se já tem doc compacto
-      const docRef = APP.db
-        .collection("apostadores").doc(a.id)
-        .collection("dados").doc("palpites");
-      const snapExistente = await docRef.get();
-
-      // 2. Lê subcollection antiga
-      const oldSnap = await APP.db
-        .collection("apostadores").doc(a.id)
-        .collection("palpites_jogos").get();
-
-      if (oldSnap.empty) {
-        // Nada a migrar — garante que o doc compacto existe (mesmo vazio)
-        if (!snapExistente.exists) await docRef.set({});
-        ok++;
-        continue;
-      }
-
-      // 3. Monta mapa compacto mesclando existente + subcollection
-      const mapaAtual = snapExistente.exists ? (snapExistente.data() || {}) : {};
-      const mapaNovo  = { ...mapaAtual };
-      
-      if (a.especiais) {
-        mapaNovo.especiais = a.especiais;
-      }
-
-      oldSnap.forEach(d => {
-        const data = d.data();
-        if (data.homeGoals !== undefined && data.awayGoals !== undefined) {
-          // Só sobrescreve se ainda não está no doc compacto
-          // (preserva palpites salvos pelo novo formato que sejam mais recentes)
-          if (!(d.id in mapaNovo)) {
-            mapaNovo[d.id] = data.homeGoals + "-" + data.awayGoals;
-          }
-        }
-      });
-
-      await docRef.set(mapaNovo);
-      ok++;
-    } catch (e) {
-      console.error("[migração] Erro em", a.id, e);
-      erros++;
-      erroIds.push(a.id);
-    }
-  }
-
-  // --- MIGRAÇÃO DO MODELO ESTATÍSTICO ---
-  try {
-    const snapModelo = await APP.db.collection("modelo").doc("dados").get();
-    if (snapModelo.exists) {
-      const dataModelo = snapModelo.data();
-      const mapModelo = {};
-      if (dataModelo.especiais) mapModelo.especiais = dataModelo.especiais;
-
-      const snapPalpitesModelo = await APP.db.collection("modelo").doc("dados").collection("palpites_modelo").get();
-      snapPalpitesModelo.forEach(d => {
-        const p = d.data();
-        if (p.homeGoals !== undefined && p.awayGoals !== undefined) {
-          mapModelo[d.id] = p.homeGoals + "-" + p.awayGoals;
-        }
-      });
-
-      // Cria/Atualiza o perfil na coleção apostadores
-      await APP.db.collection("apostadores").doc("MODELO").set({
-        id: "MODELO", nome: "Modelo Estatístico", apelido: "MODELO",
-        isModelo: true, ordem: 9999,
-        especial: true, criadoAutomaticamente: true
-      }, { merge: true });
-
-      // Salva o documento compacto na subcollection de palpites do MODELO
-      await APP.db.collection("apostadores").doc("MODELO")
-        .collection("dados").doc("palpites").set(mapModelo);
-        
-      console.log("[migração] MODELO migrado para formato compacto com sucesso.");
-    }
-  } catch (e) {
-    console.error("[migração] Erro ao migrar MODELO:", e);
-  }
-
-  adicionarLog("🗜 Migração concluída: " + ok + " ok, " + erros + " erros");
-
-  const msg = erros === 0
-    ? "✅ Migração concluída!\n" + ok + " apostadores migrados (incluindo o MODELO).\n\n" +
-      "Próximo passo: regenerar os caches (botões 📦) e verificar no console do Firebase " +
-      "que cada apostador tem apostadores/{id}/dados/palpites."
-    : "⚠️ Migração parcial: " + ok + " ok, " + erros + " com erro.\nIDs com erro: " + erroIds.join(", ");
-
-  alert(msg);
-}

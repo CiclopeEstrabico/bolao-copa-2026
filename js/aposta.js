@@ -96,7 +96,7 @@ async function _carregarPalpitesPropriosDoFirestore(apostadorId) {
       if (data.especiais) _apostador.especiais = data.especiais;
       return _expandirDocCompacto(data, apostadorId);
     }
-    
+
     return {};
   } catch (e) {
     console.error("[aposta] Erro ao carregar palpites:", e);
@@ -479,9 +479,9 @@ function renderEspeciaisAposta(res) {
   const cfgExtra = window.CONFIG?.pontuacao?.extras || {};
   // jogoOficial: qual jogo define oficialmente aquela posição no pódio
   const fases = [
-    { key: "campeao",  label: "🏆 Campeão",   pts: (cfgExtra.primeiro_lugar || 0) + "pts", jogoOficial: "FNL" },
-    { key: "vice",     label: "🥈 Vice",       pts: (cfgExtra.segundo_lugar  || 0) + "pts", jogoOficial: "FNL" },
-    { key: "terceiro", label: "🥉 3° Lugar",   pts: (cfgExtra.terceiro_lugar || 0) + "pts", jogoOficial: "TPL" },
+    { key: "campeao", label: "🏆 Campeão", pts: (cfgExtra.primeiro_lugar || 0) + "pts", jogoOficial: "FNL" },
+    { key: "vice", label: "🥈 Vice", pts: (cfgExtra.segundo_lugar || 0) + "pts", jogoOficial: "FNL" },
+    { key: "terceiro", label: "🥉 3° Lugar", pts: (cfgExtra.terceiro_lugar || 0) + "pts", jogoOficial: "TPL" },
   ];
   const times = [...new Set((window.SCHEDULE || []).filter(j => j.grupo).map(j => [j.home, j.away]).flat())];
   const liberadoGrupos = window.APP?.configStatus?.liberado_grupos === true;
@@ -502,7 +502,7 @@ function renderEspeciaisAposta(res) {
     h += '<div style="background:var(--fundo2);border-radius:var(--radius-sm);padding:10px">';
     // Label com indicador visual do motivo do bloqueio
     h += '<div style="font-size:.78rem;font-weight:700;margin-bottom:6px">' + f.label +
-         ' <span style="color:var(--dourado);font-size:.65rem">' + f.pts + '</span>';
+      ' <span style="color:var(--dourado);font-size:.65rem">' + f.pts + '</span>';
     if (bloqueadoPorResultado) {
       h += ' <span style="font-size:.58rem;color:var(--verde-light);opacity:.9;margin-left:2px">✓ oficial</span>';
     } else if (bloqueadoPorFase) {
@@ -523,8 +523,8 @@ function renderEspeciaisAposta(res) {
         const t = window.TEAMS_BY_CODE?.[c];
         const jaEscolhido = outrasEscolhas.includes(c);
         h += '<option value="' + c + '"' + (val === c ? " selected" : "") +
-             (jaEscolhido ? ' disabled style="color:var(--texto2);opacity:.4"' : '') + '>' +
-             (t?.name || c) + (jaEscolhido ? ' ✕' : '') + '</option>';
+          (jaEscolhido ? ' disabled style="color:var(--texto2);opacity:.4"' : '') + '>' +
+          (t?.name || c) + (jaEscolhido ? ' ✕' : '') + '</option>';
       }
       h += '</select>';
     }
@@ -654,7 +654,7 @@ async function salvarTodosPalpites(silencioso = false) {
   if (houveMudanca) {
     // ── Novo formato: 1 documento compacto (1 write) ──────────────────────────
     mapaCompacto.especiais = _apostador.especiais || {};
-    
+
     const docRef = APP.db
       .collection("apostadores").doc(_apostador.id)
       .collection("dados").doc("palpites");
@@ -686,9 +686,9 @@ function renderEspeciaisModeloReadOnly() {
   const esp = modelo?.especiais || {};
   const cfgExtra = window.CONFIG?.pontuacao?.extras || {};
   const fases = [
-    { key: "campeao",  label: "🏆 Campeão",  pts: (cfgExtra.primeiro_lugar || 0) + "pts" },
-    { key: "vice",     label: "🥈 Vice",      pts: (cfgExtra.segundo_lugar  || 0) + "pts" },
-    { key: "terceiro", label: "🥉 3° Lugar",  pts: (cfgExtra.terceiro_lugar || 0) + "pts" },
+    { key: "campeao", label: "🏆 Campeão", pts: (cfgExtra.primeiro_lugar || 0) + "pts" },
+    { key: "vice", label: "🥈 Vice", pts: (cfgExtra.segundo_lugar || 0) + "pts" },
+    { key: "terceiro", label: "🥉 3° Lugar", pts: (cfgExtra.terceiro_lugar || 0) + "pts" },
   ];
 
   let h = '<div class="card" style="margin-bottom:20px"><div class="card-titulo">⭐ Palpites Especiais — MODELO</div>';
@@ -698,7 +698,7 @@ function renderEspeciaisModeloReadOnly() {
     const info = window.TEAMS_BY_CODE?.[val];
     h += '<div style="background:var(--fundo2);border-radius:var(--radius-sm);padding:10px">';
     h += '<div style="font-size:.78rem;font-weight:700;margin-bottom:6px">' + f.label +
-         ' <span style="color:var(--dourado);font-size:.65rem">' + f.pts + '</span></div>';
+      ' <span style="color:var(--dourado);font-size:.65rem">' + f.pts + '</span></div>';
     h += '<div style="display:flex;align-items:center;gap:6px">' + htmlBandeira(val, 24);
     h += '<span style="font-size:.82rem;font-weight:600">' + (info?.name || (val ? val : "Não definido")) + '</span></div>';
     h += '</div>';
