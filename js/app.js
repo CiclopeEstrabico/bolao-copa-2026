@@ -67,6 +67,7 @@ function _expandirCacheParaAppState(gruposDoc, elimDoc, resDoc) {
         especiais: a.especiais || {},
         isModelo: a.isModelo || false,
         ativo:    true,
+        token:    a.token    || "",
       }))
       // MODELO não entra no array principal de apostadores humanos —
       // é tratado separadamente via getModelo() para compatibilidade.

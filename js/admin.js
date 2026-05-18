@@ -952,6 +952,7 @@ async function gerarCachePalpites(tipo) {
   const apostadoresCompactos = apostadores.map(a => ({
     id: a.id, apelido: a.apelido || a.nome || "",
     nome: a.nome || "", ordem: a.ordem || 0, especiais: a.especiais || {},
+    token: a.token || "",
   }));
   const modeloRaw = APP.modelo;
   if (modeloRaw) {
