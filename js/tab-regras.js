@@ -171,7 +171,6 @@ window.renderRegras = function () {
       "Se o prazo já encerrou, não é possível mais alterar — os palpites não preenchidos valem <strong>zero pontos</strong> naquele jogo."],
     ["Perdi meu token. E agora?",
       "Fale com um dos <strong>administradores do bolão</strong>. Eles conseguem acessar o painel admin e recuperar o link da sua aposta com o seu token."],
-    // --- PARTICIPAÇÃO ---
     ["Todos veem os palpites dos outros?",
       "Sim! Na aba Compilação você vê os palpites de todos — mas apenas dos jogos cujas apostas <strong>já foram encerradas</strong>. Enquanto as apostas estão abertas, os palpites ficam ocultos (🔒) para manter o jogo justo."],
     // --- COPA 2026 ---
