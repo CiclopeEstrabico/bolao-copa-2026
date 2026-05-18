@@ -235,8 +235,16 @@ window.MODELO_MANAGER = {
     APP.palpitesModelo = APP.palpitesModelo || {};
     for (const p of palpitesGerados) APP.palpitesModelo[p.gameId] = p;
 
-    alert(`✅ MODELO atualizado!\n\nFase: ${faseKey}\nJogos: ${palpitesGerados.length}${especiais ? `\nEspeciais: ✅ ${especiais.campeao} / ${especiais.vice} / ${especiais.terceiro}` : ""}`);
-    renderAbaAtiva();
+    // Dispara auto-save do cache para que a UI global veja imediatamente as mudanças
+    if (window.gerarCachePalpites) {
+      setTimeout(() => {
+        const tipoCache = faseKey === "grupos" ? "grupos" : "eliminatorias";
+        window.gerarCachePalpites(tipoCache);
+      }, 500);
+    } else {
+      alert(`✅ MODELO atualizado!\n\nFase: ${faseKey}\nJogos: ${palpitesGerados.length}${especiais ? `\nEspeciais: ✅ ${especiais.campeao} / ${especiais.vice} / ${especiais.terceiro}` : ""}\n\n⚠️ Lembre-se de clicar em "Cache ${faseKey}" para publicar.`);
+      renderAbaAtiva();
+    }
   },
 
   limparFase: async function(faseKey) {
@@ -270,8 +278,15 @@ window.MODELO_MANAGER = {
       alert("❌ Erro ao limpar: " + e.message);
       return;
     }
-    alert("✅ Palpites do MODELO apagados.");
-    renderAbaAtiva();
+    
+    if (window.gerarCachePalpites) {
+      setTimeout(() => {
+        window.gerarCachePalpites(faseKey === "grupos" ? "grupos" : "eliminatorias");
+      }, 500);
+    } else {
+      alert("✅ Palpites do MODELO apagados.\n\n⚠️ Lembre-se de atualizar o cache.");
+      renderAbaAtiva();
+    }
   },
 
   limparTodas: async function() {
@@ -279,14 +294,22 @@ window.MODELO_MANAGER = {
     if (!confirm("🗑 LIMPAR TUDO DO MODELO\n\nIsso apaga TODOS os palpites e especiais do MODELO.\n\nConfirmar?")) return;
     const db = APP.db;
     try {
-      await db.collection("apostadores").doc("MODELO").collection("dados").doc("palpites").set({ especiais: {} });
+      await db.collection("apostadores").doc("MODELO").collection("dados").doc("palpites").set({});
+      if (APP.palpitesModelo) APP.palpitesModelo = {};
+      if (APP.modelo) APP.modelo.especiais = {};
     } catch (e) {
-      alert("❌ Erro ao limpar: " + e.message);
+      alert("❌ Erro: " + e.message);
       return;
     }
-    APP.palpitesModelo = {};
-    if (APP.modelo) APP.modelo.especiais = {};
-    alert("✅ Todos os palpites do MODELO foram apagados.");
-    renderAbaAtiva();
+    
+    if (window.gerarCachePalpites) {
+      setTimeout(() => {
+        window.gerarCachePalpites("grupos");
+        setTimeout(() => window.gerarCachePalpites("eliminatorias"), 3000);
+      }, 500);
+    } else {
+      alert("✅ TUDO apagado.\n\n⚠️ Lembre-se de atualizar o cache.");
+      renderAbaAtiva();
+    }
   },
 };
