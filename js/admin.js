@@ -946,14 +946,13 @@ async function gerarCachePalpites(tipo) {
 
   if (gameIds.size === 0) { alert("Nenhum jogo encontrado para a fase: " + tipo); return; }
 
-  let apostadores = APP.apostadores || [];
-  if (apostadores.length === 0) {
-    try {
-      const snap = await APP.db.collection("apostadores").get();
-      apostadores = snap.docs.map(d => d.data());
-    } catch (e) {
-      console.warn("[cache] Erro ao buscar apostadores:", e);
-    }
+  let apostadores = [];
+  try {
+    const snap = await APP.db.collection("apostadores").get();
+    apostadores = snap.docs.map(d => d.data());
+  } catch (e) {
+    console.warn("[cache] Erro ao buscar apostadores:", e);
+    return;
   }
 
   const modeloRaw = APP.modelo;
