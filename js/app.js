@@ -186,10 +186,13 @@ async function listenCache() {
     if (!precisaRecarregar) {
       try {
         const sg = sessionStorage.getItem(_SS_GRUPOS);
+        const se = sessionStorage.getItem(_SS_ELIM);
         const sr = sessionStorage.getItem(_SS_RES);
         const gLocal = sg ? JSON.parse(sg).gerado_em : null;
+        const eLocal = se ? JSON.parse(se).gerado_em : null;
         const rLocal = sr ? JSON.parse(sr).gerado_em : null;
         if (tsG && gLocal !== tsG) precisaRecarregar = true;
+        if (tsE && eLocal !== tsE) precisaRecarregar = true;
         if (tsR && rLocal !== tsR) precisaRecarregar = true;
       } catch (e) {
         precisaRecarregar = true;
