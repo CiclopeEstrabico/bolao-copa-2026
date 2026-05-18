@@ -160,6 +160,15 @@ function renderAdmin() {
   h += '<button class="btn btn-sm" onclick="logoutAdmin()" style="background:var(--borda)">Sair</button>';
   h += '</div></div></div>';
 
+  // Botões de regeneração de cache (emergência)
+  h += '<details style="margin-bottom:8px"><summary style="font-size:.72rem;color:var(--texto2);cursor:pointer;padding:4px 0">🔄 Regenerar cache manualmente</summary>';
+  h += '<div style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 0">';
+  h += '<button class="btn btn-sm" onclick="gerarCachePalpites(\'grupos\')" style="font-size:.65rem;background:var(--borda)">📦 Cache grupos</button>';
+  h += '<button class="btn btn-sm" onclick="gerarCachePalpites(\'eliminatorias\')" style="font-size:.65rem;background:var(--borda)">📦 Cache elim.</button>';
+  h += '<button class="btn btn-sm" onclick="gerarCacheResultados()" style="font-size:.65rem;background:var(--borda)">📦 Cache resultados</button>';
+  h += '<button class="btn btn-sm" onclick="migrarPalpitesParaDocCompacto()" style="font-size:.65rem;background:#5a3e00;color:#ffd;border:1px solid #a07000">🗜 Migrar palpites → compacto</button>';
+  h += '</div></details>';
+
   h += renderJogosComToggle(res, tg, true, null);
 
   // Pódio automático (visível assim que FNL ou TPL tiverem resultado)
@@ -264,6 +273,8 @@ async function gravarTudoAdmin() {
   atualizarBracket();
   renderAdmin();
   alert("✅ " + pendentes.length + " jogos gravados.");
+  // Gera cache de resultados automaticamente
+  await gerarCacheResultados();
 }
 
 function toggleStatusFase(fase) {
@@ -276,7 +287,15 @@ function toggleStatusFase(fase) {
 
   APP.db.collection("config").doc("status")
     .set({ [key]: novo }, { merge: true })
-    .then(() => alert("Fase " + fase.toUpperCase() + " " + (novo ? "LIBERADA ✅" : "TRAVADA 🔒")))
+    .then(async () => {
+      alert("Fase " + fase.toUpperCase() + " " + (novo ? "LIBERADA ✅" : "TRAVADA 🔒"));
+      // Ao TRAVAR: gera cache automático dos palpites desta fase
+      if (!novo) {
+        const tipoCache = fase === "grupos" ? "grupos" : "eliminatorias";
+        await gerarCachePalpites(tipoCache);
+        renderAdmin();
+      }
+    })
     .catch(e => alert("Erro: " + e.message));
 }
 
@@ -581,11 +600,33 @@ async function limparFaseApostador(id) {
     const fasesFiltro = fase === "todas" ? ["grupos", "32avos", "oitavas", "quartas", "semis", "final", "terceiro"] :
       (fase === "finais" ? ["final", "terceiro"] : [fase]);
     const jogosParaLimpar = (window.SCHEDULE || []).filter(j => fasesFiltro.includes(j.fase));
+
+    // Remove do estado local
     for (const j of jogosParaLimpar) {
       if (APP.palpites[id]) delete APP.palpites[id][j.id];
-      await APP.db.collection("apostadores").doc(id)
-        .collection("palpites_jogos").doc(j.id).delete().catch(() => { });
     }
+
+    // Remove do documento compacto (lê, filtra, regrava)
+    try {
+      const docRef = APP.db.collection("apostadores").doc(id).collection("dados").doc("palpites");
+      const snap = await docRef.get();
+      if (snap.exists) {
+        const mapa = snap.data() || {};
+        const idsParaLimpar = new Set(jogosParaLimpar.map(j => j.id));
+        const mapaFiltrado = {};
+        for (const [k, v] of Object.entries(mapa)) {
+          if (!idsParaLimpar.has(k)) mapaFiltrado[k] = v;
+        }
+        await docRef.set(mapaFiltrado);
+      }
+    } catch (e) { console.warn("[admin] Erro ao limpar doc compacto:", e); }
+
+    // Mantém limpeza da subcollection antiga (dual-write — remover após migração)
+    for (const j of jogosParaLimpar) {
+      await APP.db.collection("apostadores").doc(id)
+        .collection("palpites_jogos").doc(j.id).delete().catch(() => {});
+    }
+
     if (fase === "todas" && a) { a.especiais = {}; await gravarApostador(a); }
   }
 
@@ -604,7 +645,11 @@ async function deletarApostadorId(id) {
   const apelidoDoApostador = a?.apelido || "";
 
   try {
-    // Deletar subcoleção de palpites antes do documento pai
+    // Deletar documento compacto de palpites
+    await APP.db.collection("apostadores").doc(id)
+      .collection("dados").doc("palpites").delete().catch(() => {});
+
+    // Deletar subcoleção antiga (dual-write — remover após migração)
     const palpitesSnap = await APP.db.collection("apostadores").doc(id)
       .collection("palpites_jogos").get();
     await Promise.all(palpitesSnap.docs.map(doc => doc.ref.delete()));
@@ -864,4 +909,244 @@ async function deletarToken(tokenDocId) {
     await APP.db.collection("tokens").doc(tokenDocId).delete();
     renderTokens();
   } catch (e) { alert("Erro: " + e.message); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GERAÇÃO DE CACHE
+// Chamado automaticamente ao travar fase e ao gravar resultados oficiais.
+// Também exposto via botões manuais de emergência no painel admin.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Gera cache/palpites_grupos ou cache/palpites_eliminatorias.
+ * Lê os dados atuais de APP.apostadores, APP.palpites e APP.palpitesModelo
+ * e salva um documento compacto com hg/ag em vez de homeGoals/awayGoals.
+ * Também atualiza o timestamp em config/status para invalidar sessionStorage
+ * nos clientes.
+ *
+ * @param {"grupos"|"eliminatorias"} tipo
+ */
+async function gerarCachePalpites(tipo) {
+  if (!_adminAutenticado()) return alert("Não autorizado.");
+
+  const FASES_GRUPOS = ["grupos"];
+  const FASES_ELIM   = ["32avos", "oitavas", "quartas", "semis", "final", "terceiro"];
+  const fasesAlvo    = tipo === "grupos" ? FASES_GRUPOS : FASES_ELIM;
+
+  const jogosDaFase = (window.SCHEDULE || []).filter(j => fasesAlvo.includes(j.fase));
+  const gameIds     = new Set(jogosDaFase.map(j => j.id));
+
+  if (gameIds.size === 0) { alert("Nenhum jogo encontrado para a fase: " + tipo); return; }
+
+  // ── 1. Lista compacta de apostadores (só no doc de grupos) ──────────────────
+  const apostadoresCompactos = (APP.apostadores || []).map(a => ({
+    id: a.id, apelido: a.apelido || a.nome || "",
+    nome: a.nome || "", ordem: a.ordem || 0, especiais: a.especiais || {},
+  }));
+  const modeloRaw = APP.modelo;
+  if (modeloRaw) {
+    apostadoresCompactos.push({
+      id: "MODELO", apelido: "MODELO", nome: "Modelo Estatístico",
+      ordem: 9999, especiais: modeloRaw.especiais || {}, isModelo: true,
+    });
+  } else {
+    console.warn("[cache] MODELO não encontrado — omitido do cache.");
+  }
+
+  // ── 2. Lê palpites de cada apostador do doc compacto (1 read/apostador) ─────
+  // Fallback automático para subcollection antiga se doc compacto não existir.
+  const palpites = {};
+
+  const reads = (APP.apostadores || []).map(async a => {
+    try {
+      const snap = await APP.db
+        .collection("apostadores").doc(a.id)
+        .collection("dados").doc("palpites").get();
+
+      let mapaLocal = {};
+      if (snap.exists) {
+        mapaLocal = snap.data() || {};
+      } else {
+        // Fallback: subcollection antiga — remover após migração completa
+        const oldSnap = await APP.db
+          .collection("apostadores").doc(a.id)
+          .collection("palpites_jogos").get();
+        oldSnap.forEach(d => {
+          const data = d.data();
+          if (data.homeGoals !== undefined)
+            mapaLocal[d.id] = data.homeGoals + "-" + data.awayGoals;
+        });
+      }
+
+      const compacto = {};
+      for (const gameId of gameIds) {
+        const val = mapaLocal[gameId];
+        if (!val || typeof val !== "string") continue;
+        const [hStr, aStr] = val.split("-");
+        const hg = parseInt(hStr), ag = parseInt(aStr);
+        if (!isNaN(hg) && !isNaN(ag)) compacto[gameId] = { hg, ag };
+      }
+      if (Object.keys(compacto).length > 0) palpites[a.id] = compacto;
+    } catch (e) {
+      console.warn("[cache] Erro ao ler palpites de", a.id, e);
+    }
+  });
+
+  // MODELO lido de APP.palpitesModelo (já em memória via listenModelo legado ou cache)
+  if (modeloRaw) {
+    reads.push((async () => {
+      const palsModelo = APP.palpitesModelo || {};
+      const compactoModelo = {};
+      for (const gameId of gameIds) {
+        const p = palsModelo[gameId];
+        if (p && p.homeGoals !== undefined)
+          compactoModelo[gameId] = { hg: p.homeGoals, ag: p.awayGoals };
+      }
+      if (Object.keys(compactoModelo).length > 0) palpites["MODELO"] = compactoModelo;
+    })());
+  }
+
+  await Promise.all(reads);
+
+  // ── 3. Monta e grava payload ─────────────────────────────────────────────────
+  const ts    = new Date().toISOString();
+  const docId = tipo === "grupos" ? "palpites_grupos" : "palpites_eliminatorias";
+  const payload = { gerado_em: ts, palpites };
+  if (tipo === "grupos") payload.apostadores = apostadoresCompactos;
+
+  try {
+    await APP.db.collection("cache").doc(docId).set(payload);
+    const tsKey = tipo === "grupos" ? "cache_grupos_ts" : "cache_elim_ts";
+    await APP.db.collection("config").doc("status").set({ [tsKey]: ts }, { merge: true });
+    const nApost = Object.keys(palpites).length;
+    const nPals  = Object.values(palpites).reduce((s, j) => s + Object.keys(j).length, 0);
+    adicionarLog("✅ cache/" + docId + " — " + nApost + " apostadores, " + nPals + " palpites");
+  } catch (e) {
+    alert("❌ Erro ao gerar cache " + docId + ":\n" + e.message);
+  }
+}
+
+async function gerarCacheResultados() {
+  if (!_adminAutenticado()) return alert("Não autorizado.");
+
+  const compacto = {};
+  for (const [gameId, r] of Object.entries(APP.resultados || {})) {
+    if (r && r.homeGoals !== undefined && r.awayGoals !== undefined) {
+      const entry = { hg: r.homeGoals, ag: r.awayGoals };
+      if (r.foi_penaltis) {
+        entry.pen   = true;
+        entry.pen_v = r.penaltis_vencedor || null;
+      }
+      compacto[gameId] = entry;
+    }
+  }
+
+  const ts = new Date().toISOString();
+  try {
+    await APP.db.collection("cache").doc("resultados").set({
+      gerado_em: ts,
+      resultados: compacto,
+    });
+
+    await APP.db.collection("config").doc("status").set(
+      { cache_res_ts: ts }, { merge: true }
+    );
+
+    adicionarLog("✅ cache/resultados — " + Object.keys(compacto).length + " jogos");
+    console.log("[cache] resultados gerado:", Object.keys(compacto).length, "jogos");
+  } catch (e) {
+    alert("❌ Erro ao gerar cache de resultados:\n" + e.message);
+    console.error("[cache]", e);
+  }
+}
+
+/** Helper: adiciona linha ao log persistido em localStorage */
+function adicionarLog(msg) {
+  const log = JSON.parse(localStorage.getItem("bolao_admin_log") || "[]");
+  log.push(new Date().toLocaleString("pt-BR") + " | " + msg);
+  localStorage.setItem("bolao_admin_log", JSON.stringify(log.slice(-50)));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MIGRAÇÃO: subcollection palpites_jogos → documento compacto dados/palpites
+//
+// Rodar UMA vez. Após confirmar que todos os apostadores têm doc compacto,
+// remover o dual-write de salvarTodosPalpites() e os fallbacks de
+// _carregarPalpitesPropriosDoFirestore() e gerarCachePalpites().
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function migrarPalpitesParaDocCompacto() {
+  if (!_adminAutenticado()) return alert("Não autorizado.");
+  if (!confirm(
+    "🗜 MIGRAÇÃO DE PALPITES\n\n" +
+    "Vai ler a subcollection palpites_jogos de cada apostador e consolidar " +
+    "num único documento por apostador (dados/palpites).\n\n" +
+    "• Operação segura — não apaga dados originais\n" +
+    "• Pode demorar ~30s com muitos apostadores\n" +
+    "• Rodar apenas UMA vez\n\n" +
+    "Continuar?"
+  )) return;
+
+  const apostadores = APP.apostadores || [];
+  if (apostadores.length === 0) {
+    alert("Nenhum apostador carregado. Aguarde o carregamento e tente novamente.");
+    return;
+  }
+
+  let ok = 0, erros = 0;
+  const erroIds = [];
+
+  for (const a of apostadores) {
+    try {
+      // 1. Verifica se já tem doc compacto
+      const docRef = APP.db
+        .collection("apostadores").doc(a.id)
+        .collection("dados").doc("palpites");
+      const snapExistente = await docRef.get();
+
+      // 2. Lê subcollection antiga
+      const oldSnap = await APP.db
+        .collection("apostadores").doc(a.id)
+        .collection("palpites_jogos").get();
+
+      if (oldSnap.empty) {
+        // Nada a migrar — garante que o doc compacto existe (mesmo vazio)
+        if (!snapExistente.exists) await docRef.set({});
+        ok++;
+        continue;
+      }
+
+      // 3. Monta mapa compacto mesclando existente + subcollection
+      const mapaAtual = snapExistente.exists ? (snapExistente.data() || {}) : {};
+      const mapaNovo  = { ...mapaAtual };
+
+      oldSnap.forEach(d => {
+        const data = d.data();
+        if (data.homeGoals !== undefined && data.awayGoals !== undefined) {
+          // Só sobrescreve se ainda não está no doc compacto
+          // (preserva palpites salvos pelo novo formato que sejam mais recentes)
+          if (!(d.id in mapaNovo)) {
+            mapaNovo[d.id] = data.homeGoals + "-" + data.awayGoals;
+          }
+        }
+      });
+
+      await docRef.set(mapaNovo);
+      ok++;
+    } catch (e) {
+      console.error("[migração] Erro em", a.id, e);
+      erros++;
+      erroIds.push(a.id);
+    }
+  }
+
+  adicionarLog("🗜 Migração concluída: " + ok + " ok, " + erros + " erros");
+
+  const msg = erros === 0
+    ? "✅ Migração concluída!\n" + ok + " apostadores migrados.\n\n" +
+      "Próximo passo: regenerar os caches (botões 📦) e verificar no console do Firebase " +
+      "que cada apostador tem apostadores/{id}/dados/palpites."
+    : "⚠️ Migração parcial: " + ok + " ok, " + erros + " com erro.\nIDs com erro: " + erroIds.join(", ");
+
+  alert(msg);
 }

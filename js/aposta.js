@@ -74,6 +74,65 @@ window._onBlurPen = function (id) {
 
 document.addEventListener("DOMContentLoaded", iniciarAposta);
 
+/**
+ * Lê os palpites do próprio apostador do documento compacto:
+ *   apostadores/{id}/dados/palpites  →  { G001: "2-1", G002: "0-0", ... }
+ *
+ * Fallback automático para a subcollection palpites_jogos (dados antigos
+ * ainda não migrados). Após a migração completa o fallback pode ser removido.
+ *
+ * Retorna: { [gameId]: { homeGoals: N, awayGoals: N } }
+ */
+async function _carregarPalpitesPropriosDoFirestore(apostadorId) {
+  try {
+    // Tenta documento compacto primeiro (novo formato — 1 read)
+    const docRef = APP.db
+      .collection("apostadores").doc(apostadorId)
+      .collection("dados").doc("palpites");
+    const snap = await docRef.get();
+
+    if (snap.exists) {
+      return _expandirDocCompacto(snap.data(), apostadorId);
+    }
+
+    // Fallback: subcollection antiga (N reads) — remover após migração
+    console.warn("[aposta] doc compacto não encontrado, usando subcollection (fallback)");
+    const oldSnap = await APP.db
+      .collection("apostadores").doc(apostadorId)
+      .collection("palpites_jogos")
+      .get();
+    const palpites = {};
+    oldSnap.forEach(d => {
+      const data = d.data();
+      if (data.homeGoals !== undefined && data.awayGoals !== undefined) {
+        palpites[d.id] = { homeGoals: data.homeGoals, awayGoals: data.awayGoals };
+      }
+    });
+    return palpites;
+  } catch (e) {
+    console.error("[aposta] Erro ao carregar palpites:", e);
+    return {};
+  }
+}
+
+/**
+ * Converte o mapa compacto { G001: "2-1", ... } para o formato interno
+ * { [gameId]: { homeGoals: N, awayGoals: N } } usado por toda a lógica.
+ */
+function _expandirDocCompacto(mapa, apostadorId) {
+  const palpites = {};
+  for (const [gameId, val] of Object.entries(mapa || {})) {
+    if (typeof val !== "string") continue;
+    const partes = val.split("-");
+    if (partes.length !== 2) continue;
+    const hg = parseInt(partes[0]);
+    const ag = parseInt(partes[1]);
+    if (isNaN(hg) || isNaN(ag)) continue;
+    palpites[gameId] = { homeGoals: hg, awayGoals: ag };
+  }
+  return palpites;
+}
+
 async function iniciarAposta() {
   const params = new URLSearchParams(location.search);
   const token = params.get("token");
@@ -148,7 +207,12 @@ async function iniciarAposta() {
     }
   }
 
-  _palpitesLocais = JSON.parse(JSON.stringify(APP.palpites[_apostador.id] || {}));
+  _palpitesLocais = await _carregarPalpitesPropriosDoFirestore(_apostador.id);
+
+  // Mantém APP.palpites sincronizado para que salvarTodosPalpites()
+  // consiga comparar com o estado anterior e detectar mudanças.
+  if (!APP.palpites[_apostador.id]) APP.palpites[_apostador.id] = {};
+  Object.assign(APP.palpites[_apostador.id], _palpitesLocais);
 
   // Cadastro se novo
   if (_apostador.novo && !_modoVer) {
@@ -580,32 +644,58 @@ async function salvarTodosPalpites(silencioso = false) {
   if (_modoVer) return;
   if (!_apostador?.id) return;
 
-  const batch = APP.db.batch();
-  let cont = 0;
-
-  const refBase = APP.db.collection("apostadores").doc(_apostador.id).collection("palpites_jogos");
+  // Detecta quais palpites mudaram
+  const anterior = APP.palpites[_apostador.id] || {};
+  let houveMudanca = false;
+  const mapaCompacto = {};
 
   for (const [gameId, p] of Object.entries(_palpitesLocais)) {
-    // Só salva se mudou algo em relação ao que já temos no APP.palpites
-    const pAnterior = APP.palpites[_apostador.id]?.[gameId];
-    if (pAnterior?.homeGoals === p.homeGoals && pAnterior?.awayGoals === p.awayGoals) continue;
-
-    if (p?.homeGoals !== undefined && p?.awayGoals !== undefined && jogoAceita(gameId)) {
-      const jogo = window.SCHEDULE_BY_ID[gameId];
-      const fase = (jogo.fase === "final" || jogo.fase === "terceiro") ? "finais" : jogo.fase;
-      const data = {
-        apostadorId: _apostador.id, gameId, homeGoals: p.homeGoals, awayGoals: p.awayGoals, fase,
-        token: _apostador.token || null,
-        atualizado_em: new Date().toISOString()
-      };
-      batch.set(refBase.doc(gameId), data, { merge: true });
-      cont++;
+    if (p?.homeGoals === undefined || p?.awayGoals === undefined) continue;
+    if (!jogoAceita(gameId)) continue;
+    // Inclui no mapa compacto independente de mudança — é o estado completo
+    mapaCompacto[gameId] = p.homeGoals + "-" + p.awayGoals;
+    // Detecta mudança para saber se vale chamar o servidor
+    const ant = anterior[gameId];
+    if (!ant || ant.homeGoals !== p.homeGoals || ant.awayGoals !== p.awayGoals) {
+      houveMudanca = true;
     }
   }
 
-  if (cont > 0) {
+  if (houveMudanca) {
+    // ── Novo formato: 1 documento compacto (1 write) ──────────────────────────
+    const docRef = APP.db
+      .collection("apostadores").doc(_apostador.id)
+      .collection("dados").doc("palpites");
+    await docRef.set(mapaCompacto);
+
+    // ── Dual-write legado: mantém palpites_jogos enquanto não migrar tudo ──────
+    // Remover este bloco após rodar o botão de migração e confirmar que
+    // gerarCachePalpites() já lê do documento compacto.
+    const batch = APP.db.batch();
+    const refBase = APP.db
+      .collection("apostadores").doc(_apostador.id)
+      .collection("palpites_jogos");
+    for (const [gameId, p] of Object.entries(_palpitesLocais)) {
+      const ant = anterior[gameId];
+      if (!p || p.homeGoals === undefined || !jogoAceita(gameId)) continue;
+      if (ant && ant.homeGoals === p.homeGoals && ant.awayGoals === p.awayGoals) continue;
+      const jogo = window.SCHEDULE_BY_ID[gameId];
+      const fase = (jogo.fase === "final" || jogo.fase === "terceiro") ? "finais" : jogo.fase;
+      batch.set(refBase.doc(gameId), {
+        apostadorId: _apostador.id, gameId,
+        homeGoals: p.homeGoals, awayGoals: p.awayGoals,
+        fase, token: _apostador.token || null,
+        atualizado_em: new Date().toISOString()
+      }, { merge: true });
+    }
     await batch.commit();
+    // ── fim do bloco legado ───────────────────────────────────────────────────
+
+    // Atualiza estado local para comparação futura
+    if (!APP.palpites[_apostador.id]) APP.palpites[_apostador.id] = {};
+    Object.assign(APP.palpites[_apostador.id], _palpitesLocais);
   }
+
   if (!silencioso) {
     let toast = document.getElementById('toast-salvo');
     if (!toast) {

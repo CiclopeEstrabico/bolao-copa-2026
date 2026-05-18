@@ -1,15 +1,30 @@
 /**
  * app.js - Init Firebase + estado global + roteador de abas
+ *
+ * CACHE v2: em vez de 4+ listeners que disparam 15k+ reads por visita,
+ * usamos 3 documentos de cache + sessionStorage anti-F5.
+ *
+ * Reads por visita:
+ *   - Primeira visita na sessão: 1 (config/status) + 3 (cache docs) = 4 reads
+ *   - F5 subsequente na mesma sessão: 1 read (config/status valida timestamps)
+ *   - Quando admin regera cache: 1 + 3 = 4 reads (invalida sessionStorage)
  */
 window.APP = {
   db: null, modoSimulacao: false,
   resultados: {}, resultadosSim: null,
   palpites: {}, apostadores: [], bracket: {}, _unsubs: [],
-  modelo: null,           // metadados do MODELO (ou null se não existir)
-  palpitesModelo: {},     // { gameId: { homeGoals, awayGoals, ... } }
+  // Campos legados mantidos para compatibilidade com aposta.js e tab-*.js
+  modelo: null,
+  palpitesModelo: {},
   _modeloCarregado: false,
   _modeloPalpitesUnsub: null,
+  _apostadoresCarregados: false,
 };
+
+// Chaves de sessionStorage
+const _SS_GRUPOS = "bolao_cache_grupos";
+const _SS_ELIM   = "bolao_cache_elim";
+const _SS_RES    = "bolao_cache_res";
 
 function initApp() {
   if (!window.FIREBASE_CONFIG || !window.FIREBASE_CONFIG.apiKey) {
@@ -28,133 +43,218 @@ function initApp() {
   }
   APP.db = firebase.firestore();
   APP.configStatus = {};
-  listenResultados(); listenApostadores(); listenPalpites(); listenConfigStatus();
-  listenModelo();
+  listenCache();
   atualizarBracket();
   iniciarRoteador();
 }
 
-// ---- Firestore listeners ----------------------------------------------------
-function listenResultados() {
-  const u = APP.db.collection("resultados_oficiais").onSnapshot(snap => {
-    // Limpa para garantir que deletados sumam
-    APP.resultados = {};
-    snap.forEach(d => { APP.resultados[d.id] = d.data(); });
-    atualizarBracket(); renderAbaAtiva();
-  });
-  APP._unsubs.push(u);
-}
-function listenApostadores() {
-  const u = APP.db.collection("apostadores").onSnapshot(snap => {
-    APP.apostadores = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      .filter(a => a.ativo !== false)
+// ─── Cache: expansão do formato compacto para APP state ──────────────────────
+
+/**
+ * Recebe os 3 documentos de cache e popula APP.apostadores, APP.palpites,
+ * APP.resultados e os campos legados APP.modelo / APP.palpitesModelo.
+ * Chamado tanto ao ler do Firestore quanto ao restaurar do sessionStorage.
+ */
+function _expandirCacheParaAppState(gruposDoc, elimDoc, resDoc) {
+  // 1. Apostadores (vêm do doc de grupos)
+  if (gruposDoc && gruposDoc.apostadores) {
+    APP.apostadores = gruposDoc.apostadores
+      .map(a => ({
+        id:       a.id,
+        apelido:  a.apelido  || "",
+        nome:     a.nome     || "",
+        ordem:    a.ordem    || 0,
+        especiais: a.especiais || {},
+        isModelo: a.isModelo || false,
+        ativo:    true,
+      }))
+      // MODELO não entra no array principal de apostadores humanos —
+      // é tratado separadamente via getModelo() para compatibilidade.
+      .filter(a => !a.isModelo)
       .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
     APP._apostadoresCarregados = true;
-    renderAbaAtiva();
-  });
-  APP._unsubs.push(u);
-}
-function listenPalpites() {
-  const u = APP.db.collectionGroup("palpites_jogos").onSnapshot(snap => {
-    // Limpa para garantir que deletados sumam
-    APP.palpites = {};
-    snap.forEach(d => {
-      const data = d.data();
-      if (!APP.palpites[data.apostadorId]) APP.palpites[data.apostadorId] = {};
-      APP.palpites[data.apostadorId][data.gameId] = data;
-    });
-    renderAbaAtiva();
-  });
-  APP._unsubs.push(u);
-}
-function listenConfigStatus() {
-  const u = APP.db.collection("config").doc("status").onSnapshot(doc => {
-    if (doc.exists) {
-      APP.configStatus = doc.data();
-    }
-    renderAbaAtiva();
-  });
-  APP._unsubs.push(u);
-}
+  }
 
-function listenModelo() {
-  const u = APP.db.collection("modelo").doc("dados").onSnapshot(doc => {
-    if (!doc.exists) {
-      APP.modelo = null;
-      APP.palpitesModelo = {};
-      APP._modeloCarregado = true;
-      if (!window._estaDigitando) renderAbaAtiva();
-      return;
+  // 2. Palpites — expande hg/ag → homeGoals/awayGoals
+  function _expandirPalpites(doc) {
+    if (!doc || !doc.palpites) return;
+    for (const [apostadorId, jogos] of Object.entries(doc.palpites)) {
+      if (!APP.palpites[apostadorId]) APP.palpites[apostadorId] = {};
+      for (const [gameId, v] of Object.entries(jogos)) {
+        const entry = {
+          homeGoals:  v.hg,
+          awayGoals:  v.ag,
+          apostadorId,
+          gameId,
+        };
+        if (v.pen_h !== undefined) {
+          entry.penaltis_home = v.pen_h;
+          entry.penaltis_away = v.pen_a;
+        }
+        APP.palpites[apostadorId][gameId] = entry;
+      }
     }
-    // Armazena apenas os dados crus do Firestore; getModelo() compõe o objeto final
-    APP.modelo = doc.data();
+  }
 
-    if (!APP._modeloPalpitesUnsub) {
-      const innerUnsub = doc.ref.collection("palpites_modelo").onSnapshot(snap => {
-        APP.palpitesModelo = {};
-        snap.forEach(d => { APP.palpitesModelo[d.id] = d.data(); });
-        if (!window._estaDigitando) renderAbaAtiva();
-      });
-      APP._modeloPalpitesUnsub = innerUnsub;
-      APP._unsubs.push(innerUnsub);
+  // Limpa antes de expandir (evita dados obsoletos de sessão anterior)
+  APP.palpites = {};
+  _expandirPalpites(gruposDoc);
+  _expandirPalpites(elimDoc);
+
+  // 3. Resultados
+  if (resDoc && resDoc.resultados) {
+    APP.resultados = {};
+    for (const [gameId, v] of Object.entries(resDoc.resultados)) {
+      APP.resultados[gameId] = {
+        gameId,
+        homeGoals:         v.hg,
+        awayGoals:         v.ag,
+        foi_penaltis:      v.pen  || false,
+        penaltis_vencedor: v.pen_v || null,
+      };
+    }
+  }
+
+  // 4. Compatibilidade legada: APP.modelo / APP.palpitesModelo
+  // O MODELO é incluído no cache como entrada especial em palpites["MODELO"].
+  // Aqui extraímos de volta para os campos legados que aposta.js e tab-*.js consomem.
+  const modeloEntry = gruposDoc && gruposDoc.apostadores
+    ? gruposDoc.apostadores.find(a => a.isModelo)
+    : null;
+
+  if (modeloEntry) {
+    APP.modelo = {
+      nome:      "Modelo Estatístico",
+      apelido:   "MODELO",
+      especiais: modeloEntry.especiais || {},
+      tipo:      "modelo",
+    };
+    APP.palpitesModelo = {};
+    // Palpites do MODELO estão em APP.palpites["MODELO"] após a expansão acima
+    const palModelo = APP.palpites["MODELO"] || {};
+    for (const [gameId, p] of Object.entries(palModelo)) {
+      APP.palpitesModelo[gameId] = p;
     }
     APP._modeloCarregado = true;
-    if (!window._estaDigitando) renderAbaAtiva();
-  });
-  APP._unsubs.push(u);
+  } else {
+    // Sem MODELO no cache → limpa campos legados
+    APP.modelo = null;
+    APP.palpitesModelo = {};
+    APP._modeloCarregado = true; // true = "já tentou carregar, não existe"
+  }
 }
-function listenConfigStatus() {
-  const u = APP.db.collection("config").doc("status").onSnapshot(doc => {
+
+// ─── Cache: leitura com sessionStorage anti-F5 ───────────────────────────────
+
+async function listenCache() {
+  // Tenta restaurar do sessionStorage imediatamente (zero reads Firestore)
+  let carregouDoSession = false;
+  try {
+    const sg = sessionStorage.getItem(_SS_GRUPOS);
+    const se = sessionStorage.getItem(_SS_ELIM);
+    const sr = sessionStorage.getItem(_SS_RES);
+    if (sg && sr) {
+      const gDoc = JSON.parse(sg);
+      const eDoc = se ? JSON.parse(se) : null;
+      const rDoc = JSON.parse(sr);
+      _expandirCacheParaAppState(gDoc, eDoc, rDoc);
+      atualizarBracket();
+      renderAbaAtiva();
+      carregouDoSession = true;
+    }
+  } catch (e) {
+    console.warn("[cache] sessionStorage inválido, descartando.", e);
+    sessionStorage.removeItem(_SS_GRUPOS);
+    sessionStorage.removeItem(_SS_ELIM);
+    sessionStorage.removeItem(_SS_RES);
+  }
+
+  // Listener leve em config/status (1 doc) — detecta invalidação de cache
+  // e atualiza APP.configStatus para jogoAceita() e controles de fase.
+  const u = APP.db.collection("config").doc("status").onSnapshot(async doc => {
     if (doc.exists) {
       APP.configStatus = doc.data();
     }
-    renderAbaAtiva();
-  });
-  APP._unsubs.push(u);
-}
 
-function listenModelo() {
-  const u = APP.db.collection("modelo").doc("dados").onSnapshot(doc => {
-    if (!doc.exists) {
-      APP.modelo = null;
-      APP.palpitesModelo = {};
-      APP._modeloCarregado = true;
+    const tsG = (APP.configStatus && APP.configStatus.cache_grupos_ts) || null;
+    const tsE = (APP.configStatus && APP.configStatus.cache_elim_ts)   || null;
+    const tsR = (APP.configStatus && APP.configStatus.cache_res_ts)    || null;
+
+    // Verifica se o sessionStorage ainda é válido comparando timestamps
+    let precisaRecarregar = !carregouDoSession;
+    if (!precisaRecarregar) {
+      try {
+        const sg = sessionStorage.getItem(_SS_GRUPOS);
+        const sr = sessionStorage.getItem(_SS_RES);
+        const gLocal = sg ? JSON.parse(sg).gerado_em : null;
+        const rLocal = sr ? JSON.parse(sr).gerado_em : null;
+        if (tsG && gLocal !== tsG) precisaRecarregar = true;
+        if (tsR && rLocal !== tsR) precisaRecarregar = true;
+      } catch (e) {
+        precisaRecarregar = true;
+      }
+    }
+
+    if (!precisaRecarregar) {
+      // Cache ainda válido — apenas re-renderiza com configStatus atualizado
       renderAbaAtiva();
       return;
     }
-    // Armazena apenas os dados crus do Firestore; getModelo() compõe o objeto final
-    APP.modelo = doc.data();
 
-    if (!APP._modeloPalpitesUnsub) {
-      const innerUnsub = doc.ref.collection("palpites_modelo").onSnapshot(snap => {
-        APP.palpitesModelo = {};
-        snap.forEach(d => { APP.palpitesModelo[d.id] = d.data(); });
-        renderAbaAtiva();
-      });
-      APP._modeloPalpitesUnsub = innerUnsub;
-      APP._unsubs.push(innerUnsub); // Bug 3: registrar para cleanup
+    // Lê os 3 docs de cache do Firestore (3 reads)
+    try {
+      const [snapG, snapE, snapR] = await Promise.all([
+        APP.db.collection("cache").doc("palpites_grupos").get(),
+        APP.db.collection("cache").doc("palpites_eliminatorias").get(),
+        APP.db.collection("cache").doc("resultados").get(),
+      ]);
+
+      const gDoc = snapG.exists ? snapG.data() : null;
+      const eDoc = snapE.exists ? snapE.data() : null;
+      const rDoc = snapR.exists ? snapR.data() : null;
+
+      // Salva no sessionStorage para F5 subsequentes
+      try {
+        if (gDoc) sessionStorage.setItem(_SS_GRUPOS, JSON.stringify(gDoc));
+        if (eDoc) sessionStorage.setItem(_SS_ELIM,   JSON.stringify(eDoc));
+        if (rDoc) sessionStorage.setItem(_SS_RES,    JSON.stringify(rDoc));
+      } catch (e) {
+        console.warn("[cache] Falha ao salvar sessionStorage (quota?).", e);
+      }
+
+      _expandirCacheParaAppState(gDoc, eDoc, rDoc);
+      carregouDoSession = true;
+    } catch (e) {
+      console.error("[cache] Erro ao ler cache do Firestore:", e);
+      // Fallback: se o cache ainda não existe (sistema novo), seta apostadores
+      // como carregados para desbloquear aposta.js
+      if (!APP._apostadoresCarregados) {
+        APP._apostadoresCarregados = true;
+      }
     }
-    APP._modeloCarregado = true;
+
+    atualizarBracket();
     renderAbaAtiva();
   });
+
   APP._unsubs.push(u);
 }
 
+// ─── getModelo: compatibilidade com tab-*.js e aposta.js ─────────────────────
 function getModelo() {
   if (!APP.modelo) return null;
-  // Bug 1: campos fixos vêm APÓS o spread para não serem sobrescritos pelo Firestore
   return {
     ...APP.modelo,
-    id: "MODELO",
+    id:      "MODELO",
     apelido: "MODELO",
-    nome: "Modelo Estatístico",
+    nome:    "Modelo Estatístico",
     isModelo: true,
     especiais: APP.modelo.especiais || {},
   };
 }
 window.getModelo = getModelo;
 
-// ---- Gravar resultado -------------------------------------------------------
+// ─── Gravar resultado ─────────────────────────────────────────────────────────
 async function gravarResultadoOficial(gameId, homeGoals, awayGoals, foiPen, penVenc, extraData) {
   const data = Object.assign({
     gameId, homeGoals, awayGoals, foi_penaltis: !!foiPen,
@@ -180,10 +280,10 @@ async function gravarPalpite(apostadorId, gameId, homeGoals, awayGoals, token) {
     .collection("palpites_jogos").doc(gameId).set(data, { merge: true });
 }
 
-// ---- Modo Simulacao ---------------------------------------------------------
+// ─── Modo Simulação ───────────────────────────────────────────────────────────
 function ativarSimulacao() {
   APP.modoSimulacao = true;
-  APP.resultadosSim = {}; // apenas inputs do usuário — oficiais ficam em APP.resultados
+  APP.resultadosSim = {};
   atualizarBracket(); renderAbaAtiva();
   document.getElementById("banner-simulacao")?.classList.remove("hidden");
   const btn = document.getElementById("btn-simulacao");
@@ -207,22 +307,20 @@ function simularResultado(gameId, hg, ag, foiPen, penVenc, ph, pa) {
 }
 function getResultados() {
   if (APP.modoSimulacao && APP.resultadosSim) {
-    // merge: oficiais primeiro, simulados sobrepõem apenas os jogos digitados
     return Object.assign({}, APP.resultados, APP.resultadosSim);
   }
   return APP.resultados;
 }
-// Retorna true SOMENTE para jogos que o usuário digitou na simulação (não oficiais)
 function jogoEhSimulado(gameId) {
   return APP.modoSimulacao && APP.resultadosSim != null && APP.resultadosSim[gameId]?.simulado === true;
 }
 
-// ---- Bracket ----------------------------------------------------------------
+// ─── Bracket ──────────────────────────────────────────────────────────────────
 function atualizarBracket() {
   APP.bracket = window.BRACKET.preencherBracket(getResultados());
 }
 
-// ---- Roteador ---------------------------------------------------------------
+// ─── Roteador ─────────────────────────────────────────────────────────────────
 const ABAS = ["resultados", "classificacao", "tabela", "compilacao", "estatisticas", "grafico", "regras"];
 let _abaAtiva = "resultados";
 
@@ -248,7 +346,6 @@ function renderAbaAtiva(resetScroll = false) {
     grafico: window.renderGrafico, estatisticas: window.renderEstatisticas, regras: window.renderRegras
   };
 
-  // Salva scroll e foco
   const activeId = resetScroll ? null : document.activeElement?.id;
   const sy = resetScroll ? 0 : window.scrollY;
   const sStart = document.activeElement?.selectionStart;
@@ -259,7 +356,6 @@ function renderAbaAtiva(resetScroll = false) {
 
   fn[_abaAtiva]?.();
 
-  // Restaura scroll e foco
   if (activeId) {
     const el = document.getElementById(activeId);
     if (el) {
@@ -271,7 +367,7 @@ function renderAbaAtiva(resetScroll = false) {
   requestAnimationFrame(() => document.body.style.minHeight = oldHeight);
 }
 
-// ---- Utilitarios ------------------------------------------------------------
+// ─── Utilitários ──────────────────────────────────────────────────────────────
 function formatarDataBRT(utcStr, soHora) {
   const opts = soHora
     ? { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }
@@ -302,24 +398,20 @@ function jogoAceita(jogoId) {
   const jogo = window.SCHEDULE_BY_ID[jogoId];
   if (!jogo) return false;
   const status = APP.configStatus || {};
-  if (jogo.fase === "grupos") return !!status.liberado_grupos;
-  if (jogo.fase === "32avos") return !!status.liberado_32avos;
-  if (jogo.fase === "oitavas") return !!status.liberado_oitavas;
-  if (jogo.fase === "quartas") return !!status.liberado_quartas;
-  if (jogo.fase === "semis") return !!status.liberado_semis;
+  if (jogo.fase === "grupos")   return !!status.liberado_grupos;
+  if (jogo.fase === "32avos")   return !!status.liberado_32avos;
+  if (jogo.fase === "oitavas")  return !!status.liberado_oitavas;
+  if (jogo.fase === "quartas")  return !!status.liberado_quartas;
+  if (jogo.fase === "semis")    return !!status.liberado_semis;
   if (jogo.fase === "final" || jogo.fase === "terceiro") return !!status.liberado_finais;
   return false;
 }
 
-// Reage a rotação/redimensionamento de tela para layouts que dependem de isMobile.
-// No mobile, abrir o teclado virtual dispara resize (janela encolhe na altura).
-// Ignoramos resizes que só mudam a altura — esses são causados pelo teclado.
-// Só re-renderizamos quando a LARGURA muda (rotação real ou redimensionamento de janela).
 let _resizeTimer;
 let _lastInnerWidth = window.innerWidth;
 window.addEventListener("resize", () => {
   const newWidth = window.innerWidth;
-  if (newWidth === _lastInnerWidth) return; // altura mudou, largura não → teclado virtual
+  if (newWidth === _lastInnerWidth) return;
   _lastInnerWidth = newWidth;
   clearTimeout(_resizeTimer);
   _resizeTimer = setTimeout(() => renderAbaAtiva(), 250);
