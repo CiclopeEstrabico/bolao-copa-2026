@@ -1018,15 +1018,8 @@ async function gerarCachePalpites(tipo) {
     id: a.id, apelido: a.apelido || a.nome || "",
     nome: a.nome || "", ordem: a.ordem || 0, especiais: a.especiais || {},
     token: a.token || "",
+    isModelo: a.isModelo || false,
   }));
-  if (modeloRaw) {
-    apostadoresCompactos.push({
-      id: "MODELO", apelido: "MODELO", nome: "Modelo Estatístico",
-      ordem: 9999, especiais: modeloRaw.especiais || {}, isModelo: true,
-    });
-  } else {
-    console.warn("[cache] MODELO não encontrado — omitido do cache.");
-  }
 
   // ── 3. Monta e grava payload ─────────────────────────────────────────────────
   const ts    = new Date().toISOString();
@@ -1049,8 +1042,23 @@ async function gerarCachePalpites(tipo) {
 async function gerarCacheResultados() {
   if (!_adminAutenticado()) return alert("Não autorizado.");
 
+  let resultadosFonte = APP.resultados || {};
+
+  // Se a lista local estiver vazia (primeiro load no admin sem cache existente), busca do Firestore
+  if (Object.keys(resultadosFonte).length === 0) {
+    try {
+      const snap = await APP.db.collection("resultados_oficiais").get();
+      const resTemp = {};
+      snap.forEach(d => { resTemp[d.id] = d.data(); });
+      resultadosFonte = resTemp;
+      APP.resultados = resTemp; // Preenche em memória também para a renderização local
+    } catch (e) {
+      console.warn("[cache] Erro ao buscar fallback de resultados_oficiais:", e);
+    }
+  }
+
   const compacto = {};
-  for (const [gameId, r] of Object.entries(APP.resultados || {})) {
+  for (const [gameId, r] of Object.entries(resultadosFonte)) {
     if (r && r.homeGoals !== undefined && r.awayGoals !== undefined) {
       const entry = { hg: r.homeGoals, ag: r.awayGoals };
       if (r.foi_penaltis) {
@@ -1174,10 +1182,43 @@ async function migrarPalpitesParaDocCompacto() {
     }
   }
 
+  // --- MIGRAÇÃO DO MODELO ESTATÍSTICO ---
+  try {
+    const snapModelo = await APP.db.collection("modelo").doc("dados").get();
+    if (snapModelo.exists) {
+      const dataModelo = snapModelo.data();
+      const mapModelo = {};
+      if (dataModelo.especiais) mapModelo.especiais = dataModelo.especiais;
+
+      const snapPalpitesModelo = await APP.db.collection("modelo").doc("dados").collection("palpites_modelo").get();
+      snapPalpitesModelo.forEach(d => {
+        const p = d.data();
+        if (p.homeGoals !== undefined && p.awayGoals !== undefined) {
+          mapModelo[d.id] = p.homeGoals + "-" + p.awayGoals;
+        }
+      });
+
+      // Cria/Atualiza o perfil na coleção apostadores
+      await APP.db.collection("apostadores").doc("MODELO").set({
+        id: "MODELO", nome: "Modelo Estatístico", apelido: "MODELO",
+        isModelo: true, ordem: 9999,
+        especial: true, criadoAutomaticamente: true
+      }, { merge: true });
+
+      // Salva o documento compacto na subcollection de palpites do MODELO
+      await APP.db.collection("apostadores").doc("MODELO")
+        .collection("dados").doc("palpites").set(mapModelo);
+        
+      console.log("[migração] MODELO migrado para formato compacto com sucesso.");
+    }
+  } catch (e) {
+    console.error("[migração] Erro ao migrar MODELO:", e);
+  }
+
   adicionarLog("🗜 Migração concluída: " + ok + " ok, " + erros + " erros");
 
   const msg = erros === 0
-    ? "✅ Migração concluída!\n" + ok + " apostadores migrados.\n\n" +
+    ? "✅ Migração concluída!\n" + ok + " apostadores migrados (incluindo o MODELO).\n\n" +
       "Próximo passo: regenerar os caches (botões 📦) e verificar no console do Firebase " +
       "que cada apostador tem apostadores/{id}/dados/palpites."
     : "⚠️ Migração parcial: " + ok + " ok, " + erros + " com erro.\nIDs com erro: " + erroIds.join(", ");

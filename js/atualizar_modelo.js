@@ -202,22 +202,29 @@ window.MODELO_MANAGER = {
     }
 
     const db = APP.db;
-    const modeloRef = db.collection("modelo").doc("dados");
     try {
+      // Cria/Atualiza o perfil na coleção apostadores
       const dadosModelo = {
-        nome: "MODELO", apelido: "MODELO", tipo: "modelo",
-        especial: true, criadoAutomaticamente: true,
+        id: "MODELO", nome: "Modelo Estatístico", apelido: "MODELO", tipo: "modelo",
+        especial: true, criadoAutomaticamente: true, isModelo: true, ordem: 9999,
         ultimaAtualizacao: new Date().toISOString(),
         faseAtualizada: faseKey,
       };
-      if (especiais) dadosModelo.especiais = especiais;
-      await modeloRef.set(dadosModelo, { merge: true });
+      await db.collection("apostadores").doc("MODELO").set(dadosModelo, { merge: true });
 
-      const batch = db.batch();
+      // Atualiza o documento compacto
+      const docRef = db.collection("apostadores").doc("MODELO").collection("dados").doc("palpites");
+      const snap = await docRef.get();
+      const mapaCompacto = snap.exists ? snap.data() : {};
+      
       for (const p of palpitesGerados) {
-        batch.set(modeloRef.collection("palpites_modelo").doc(p.gameId), p);
+        mapaCompacto[p.gameId] = p.homeGoals + "-" + p.awayGoals;
       }
-      await batch.commit();
+      if (especiais) {
+        mapaCompacto.especiais = especiais;
+      }
+
+      await docRef.set(mapaCompacto);
     } catch (e) {
       alert("❌ Erro ao salvar no banco: " + e.message);
       return;
@@ -239,17 +246,25 @@ window.MODELO_MANAGER = {
     if (!confirm(`🗑 LIMPAR MODELO\n\nApagar palpites do MODELO para "${faseKey}" (${jogos.length} jogo(s))?\n\nConfirmar?`)) return;
 
     const db = APP.db;
-    const modeloRef = db.collection("modelo").doc("dados");
     try {
-      const batch = db.batch();
-      for (const j of jogos) {
-        batch.delete(modeloRef.collection("palpites_modelo").doc(j.id));
-        if (APP.palpitesModelo) delete APP.palpitesModelo[j.id];
+      const docRef = db.collection("apostadores").doc("MODELO").collection("dados").doc("palpites");
+      const snap = await docRef.get();
+      if (snap.exists) {
+        const mapa = snap.data();
+        const idsParaLimpar = new Set(jogos.map(j => j.id));
+        const mapaFiltrado = {};
+        for (const [k, v] of Object.entries(mapa)) {
+          if (!idsParaLimpar.has(k)) mapaFiltrado[k] = v;
+        }
+        if (faseKey === "grupos") {
+           mapaFiltrado.especiais = {};
+           if (APP.modelo) APP.modelo.especiais = {};
+        }
+        await docRef.set(mapaFiltrado);
       }
-      await batch.commit();
-      if (faseKey === "grupos") {
-        await modeloRef.update({ especiais: {} });
-        if (APP.modelo) APP.modelo.especiais = {};
+      
+      for (const j of jogos) {
+        if (APP.palpitesModelo) delete APP.palpitesModelo[j.id];
       }
     } catch (e) {
       alert("❌ Erro ao limpar: " + e.message);
@@ -263,13 +278,8 @@ window.MODELO_MANAGER = {
     if (!_adminAutenticado()) return alert("Não autorizado.");
     if (!confirm("🗑 LIMPAR TUDO DO MODELO\n\nIsso apaga TODOS os palpites e especiais do MODELO.\n\nConfirmar?")) return;
     const db = APP.db;
-    const modeloRef = db.collection("modelo").doc("dados");
     try {
-      const snap = await modeloRef.collection("palpites_modelo").get();
-      const batch = db.batch();
-      snap.docs.forEach(d => batch.delete(d.ref));
-      await batch.commit();
-      await modeloRef.update({ especiais: {} });
+      await db.collection("apostadores").doc("MODELO").collection("dados").doc("palpites").set({ especiais: {} });
     } catch (e) {
       alert("❌ Erro ao limpar: " + e.message);
       return;
