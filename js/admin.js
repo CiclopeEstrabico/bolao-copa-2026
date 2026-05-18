@@ -938,8 +938,18 @@ async function gerarCachePalpites(tipo) {
 
   if (gameIds.size === 0) { alert("Nenhum jogo encontrado para a fase: " + tipo); return; }
 
+  let apostadores = APP.apostadores || [];
+  if (apostadores.length === 0) {
+    try {
+      const snap = await APP.db.collection("apostadores").get();
+      apostadores = snap.docs.map(d => d.data());
+    } catch (e) {
+      console.warn("[cache] Erro ao buscar apostadores:", e);
+    }
+  }
+
   // ── 1. Lista compacta de apostadores (só no doc de grupos) ──────────────────
-  const apostadoresCompactos = (APP.apostadores || []).map(a => ({
+  const apostadoresCompactos = apostadores.map(a => ({
     id: a.id, apelido: a.apelido || a.nome || "",
     nome: a.nome || "", ordem: a.ordem || 0, especiais: a.especiais || {},
   }));
@@ -957,7 +967,7 @@ async function gerarCachePalpites(tipo) {
   // Fallback automático para subcollection antiga se doc compacto não existir.
   const palpites = {};
 
-  const reads = (APP.apostadores || []).map(async a => {
+  const reads = apostadores.map(async a => {
     try {
       const snap = await APP.db
         .collection("apostadores").doc(a.id)
@@ -1087,9 +1097,19 @@ async function migrarPalpitesParaDocCompacto() {
     "Continuar?"
   )) return;
 
-  const apostadores = APP.apostadores || [];
+  let apostadores = APP.apostadores || [];
   if (apostadores.length === 0) {
-    alert("Nenhum apostador carregado. Aguarde o carregamento e tente novamente.");
+    try {
+      const snap = await APP.db.collection("apostadores").get();
+      apostadores = snap.docs.map(d => d.data());
+    } catch (e) {
+      alert("Erro ao buscar apostadores do Firebase: " + e.message);
+      return;
+    }
+  }
+
+  if (apostadores.length === 0) {
+    alert("Nenhum apostador encontrado no banco de dados.");
     return;
   }
 
