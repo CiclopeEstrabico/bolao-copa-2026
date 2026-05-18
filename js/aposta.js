@@ -83,6 +83,7 @@ document.addEventListener("DOMContentLoaded", iniciarAposta);
  *
  * Retorna: { [gameId]: { homeGoals: N, awayGoals: N } }
  */
+async function _carregarPalpitesPropriosDoFirestore(apostadorId) {
   try {
     // Lê apenas do documento compacto (novo formato — 1 read)
     const docRef = APP.db
