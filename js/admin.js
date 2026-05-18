@@ -704,14 +704,21 @@ async function renderTokens() {
 
   el.innerHTML = '<div class="loading"><div class="spinner"></div>Buscando tokens...</div>';
 
-  let tokens = [];
+  let tokensObj = {};
   try {
-    const snap = await APP.db.collection("tokens").get();
-    tokens = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const snap = await APP.db.collection("cache").doc("tokens").get();
+    if (snap.exists) {
+      tokensObj = snap.data();
+    } else {
+      tokensObj = await gerarCacheTokens() || {};
+    }
   } catch (e) {
     el.innerHTML = '<div class="card" style="color:var(--vermelho)">Erro ao carregar tokens: ' + _esc(e.message) + '</div>';
     return;
   }
+
+  // Converte dicionário em array pra desenhar a UI igualzinho antes
+  let tokens = Object.keys(tokensObj).map(id => ({ id, ...tokensObj[id] }));
 
   const tokensUsados = new Set(APP.apostadores.map(a => a.token).filter(Boolean));
   const usados = tokens.filter(t => tokensUsados.has(t.token));
@@ -822,11 +829,16 @@ async function marcarEnviado(tokenDocId) {
   const apelido = prompt("Nome ou apelido de quem vai receber este token (opcional):");
   if (apelido === null) return; // cancelou
   try {
-    await APP.db.collection("tokens").doc(tokenDocId).update({
+    const updateData = {
       enviado: true,
       apelido: apelido.trim(),
       enviado_em: new Date().toISOString()
-    });
+    };
+    await APP.db.collection("tokens").doc(tokenDocId).update(updateData);
+    
+    // Auto-save cirúrgico no Dicionário
+    await APP.db.collection("cache").doc("tokens").set({ [tokenDocId]: updateData }, { merge: true });
+    
     renderTokens();
   } catch (e) { alert("Erro: " + e.message); }
 }
@@ -835,11 +847,14 @@ async function reverterEnviado(tokenDocId) {
   if (!_adminAutenticado()) return alert("Não autorizado.");
   if (!confirm("↩️ REVERTER STATUS DO TOKEN\n\nO token voltará a ficar 'Disponível'. O nome ou apelido provisório anotado nele será apagado e qualquer pessoa que acessar esse link poderá utilizá-lo.\n\nDeseja CONFIRMAR a reversão?")) return;
   try {
-    await APP.db.collection("tokens").doc(tokenDocId).update({
+    const updateData = {
       enviado: false,
       apelido: "",
       enviado_em: null
-    });
+    };
+    await APP.db.collection("tokens").doc(tokenDocId).update(updateData);
+    await APP.db.collection("cache").doc("tokens").set({ [tokenDocId]: updateData }, { merge: true });
+    
     renderTokens();
   } catch (e) { alert("Erro: " + e.message); }
 }
@@ -854,6 +869,8 @@ async function togglePago(tokenDocId, isPago) {
   try {
     const updateData = { pago: isPago ? true : "" };
     await APP.db.collection("tokens").doc(tokenDocId).update(updateData);
+    await APP.db.collection("cache").doc("tokens").set({ [tokenDocId]: updateData }, { merge: true });
+    
     renderTokens();
   } catch (e) { alert("Erro ao atualizar status de pagamento: " + e.message); }
 }
@@ -894,7 +911,7 @@ async function criarToken() {
       throw new Error("Conflito de ID (" + novoDocId + "). Tente novamente.");
     }
     
-    await docRef.set({
+    const newObj = {
       id: novoDocId,
       numero: proxNumero,
       token: token,
@@ -902,7 +919,11 @@ async function criarToken() {
       nome: "",
       apelido: "",
       criado_em: new Date().toISOString()
-    });
+    };
+    await docRef.set(newObj);
+    
+    // Auto-save da nova chave no Dicionário
+    await APP.db.collection("cache").doc("tokens").set({ [novoDocId]: newObj }, { merge: true });
     
     renderTokens();
   } catch (e) { 
@@ -915,8 +936,27 @@ async function deletarToken(tokenDocId) {
   if (!confirm("🗑 DELEÇÃO DE TOKEN\n\nVocê vai deletar este token do banco de dados permanentemente.\n\nDeseja CONFIRMAR a exclusão deste token?")) return;
   try {
     await APP.db.collection("tokens").doc(tokenDocId).delete();
+    // Remove a chave do dicionário sem precisar reler o banco
+    await APP.db.collection("cache").doc("tokens").update({ 
+      [tokenDocId]: firebase.firestore.FieldValue.delete() 
+    });
     renderTokens();
   } catch (e) { alert("Erro: " + e.message); }
+}
+
+// Função de emergência para montar o cache do zero, caso seja limpo/perdido
+async function gerarCacheTokens() {
+  if (!_adminAutenticado()) return null;
+  try {
+    const snap = await APP.db.collection("tokens").get();
+    const dicionario = {};
+    snap.docs.forEach(d => { dicionario[d.id] = d.data(); });
+    await APP.db.collection("cache").doc("tokens").set(dicionario);
+    return dicionario;
+  } catch (e) {
+    console.error("Erro ao gerar cache de tokens", e);
+    return null;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
