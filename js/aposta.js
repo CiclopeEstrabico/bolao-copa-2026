@@ -83,9 +83,8 @@ document.addEventListener("DOMContentLoaded", iniciarAposta);
  *
  * Retorna: { [gameId]: { homeGoals: N, awayGoals: N } }
  */
-async function _carregarPalpitesPropriosDoFirestore(apostadorId) {
   try {
-    // Tenta documento compacto primeiro (novo formato — 1 read)
+    // Lê apenas do documento compacto (novo formato — 1 read)
     const docRef = APP.db
       .collection("apostadores").doc(apostadorId)
       .collection("dados").doc("palpites");
@@ -96,21 +95,8 @@ async function _carregarPalpitesPropriosDoFirestore(apostadorId) {
       if (data.especiais) _apostador.especiais = data.especiais;
       return _expandirDocCompacto(data, apostadorId);
     }
-
-    // Fallback: subcollection antiga (N reads) — remover após migração
-    console.warn("[aposta] doc compacto não encontrado, usando subcollection (fallback)");
-    const oldSnap = await APP.db
-      .collection("apostadores").doc(apostadorId)
-      .collection("palpites_jogos")
-      .get();
-    const palpites = {};
-    oldSnap.forEach(d => {
-      const data = d.data();
-      if (data.homeGoals !== undefined && data.awayGoals !== undefined) {
-        palpites[d.id] = { homeGoals: data.homeGoals, awayGoals: data.awayGoals };
-      }
-    });
-    return palpites;
+    
+    return {};
   } catch (e) {
     console.error("[aposta] Erro ao carregar palpites:", e);
     return {};
@@ -672,29 +658,6 @@ async function salvarTodosPalpites(silencioso = false) {
       .collection("apostadores").doc(_apostador.id)
       .collection("dados").doc("palpites");
     await docRef.set(mapaCompacto);
-
-    // ── Dual-write legado: mantém palpites_jogos enquanto não migrar tudo ──────
-    // Remover este bloco após rodar o botão de migração e confirmar que
-    // gerarCachePalpites() já lê do documento compacto.
-    const batch = APP.db.batch();
-    const refBase = APP.db
-      .collection("apostadores").doc(_apostador.id)
-      .collection("palpites_jogos");
-    for (const [gameId, p] of Object.entries(_palpitesLocais)) {
-      const ant = anterior[gameId];
-      if (!p || p.homeGoals === undefined || !jogoAceita(gameId)) continue;
-      if (ant && ant.homeGoals === p.homeGoals && ant.awayGoals === p.awayGoals) continue;
-      const jogo = window.SCHEDULE_BY_ID[gameId];
-      const fase = (jogo.fase === "final" || jogo.fase === "terceiro") ? "finais" : jogo.fase;
-      batch.set(refBase.doc(gameId), {
-        apostadorId: _apostador.id, gameId,
-        homeGoals: p.homeGoals, awayGoals: p.awayGoals,
-        fase, token: _apostador.token || null,
-        atualizado_em: new Date().toISOString()
-      }, { merge: true });
-    }
-    await batch.commit();
-    // ── fim do bloco legado ───────────────────────────────────────────────────
 
     // Atualiza estado local para comparação futura
     if (!APP.palpites[_apostador.id]) APP.palpites[_apostador.id] = {};

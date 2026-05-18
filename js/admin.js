@@ -969,16 +969,6 @@ async function gerarCachePalpites(tipo) {
       if (snap.exists) {
         mapaLocal = snap.data() || {};
         if (mapaLocal.especiais) a.especiais = mapaLocal.especiais;
-      } else {
-        // Fallback: subcollection antiga — remover após migração completa
-        const oldSnap = await APP.db
-          .collection("apostadores").doc(a.id)
-          .collection("palpites_jogos").get();
-        oldSnap.forEach(d => {
-          const data = d.data();
-          if (data.homeGoals !== undefined)
-            mapaLocal[d.id] = data.homeGoals + "-" + data.awayGoals;
-        });
       }
 
       const compacto = {};
