@@ -955,8 +955,6 @@ async function gerarCachePalpites(tipo) {
     return;
   }
 
-  const modeloRaw = APP.modelo;
-
   // ── 2. Lê palpites de cada apostador do doc compacto (1 read/apostador) ─────
   // Fallback automático para subcollection antiga se doc compacto não existir.
   const palpites = {};
@@ -996,20 +994,6 @@ async function gerarCachePalpites(tipo) {
       console.warn("[cache] Erro ao ler palpites de", a.id, e);
     }
   });
-
-  // MODELO lido de APP.palpitesModelo (já em memória via listenModelo legado ou cache)
-  if (modeloRaw) {
-    reads.push((async () => {
-      const palsModelo = APP.palpitesModelo || {};
-      const compactoModelo = {};
-      for (const gameId of gameIds) {
-        const p = palsModelo[gameId];
-        if (p && p.homeGoals !== undefined)
-          compactoModelo[gameId] = { hg: p.homeGoals, ag: p.awayGoals };
-      }
-      if (Object.keys(compactoModelo).length > 0) palpites["MODELO"] = compactoModelo;
-    })());
-  }
 
   await Promise.all(reads);
 
