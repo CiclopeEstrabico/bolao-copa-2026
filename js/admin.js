@@ -219,6 +219,8 @@ async function gravarTudoAdmin() {
 
   // Coleta todos os jogos que mudaram antes de tocar no estado local
   const pendentes = [];
+  if (!APP.resultados) APP.resultados = {};
+
   for (const j of window.SCHEDULE) {
     const hg = parseInt(document.getElementById("sim-hg-" + j.id)?.value);
     const ag = parseInt(document.getElementById("sim-ag-" + j.id)?.value);
