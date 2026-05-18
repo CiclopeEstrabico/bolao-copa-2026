@@ -92,7 +92,9 @@ async function _carregarPalpitesPropriosDoFirestore(apostadorId) {
     const snap = await docRef.get();
 
     if (snap.exists) {
-      return _expandirDocCompacto(snap.data(), apostadorId);
+      const data = snap.data();
+      if (data.especiais) _apostador.especiais = data.especiais;
+      return _expandirDocCompacto(data, apostadorId);
     }
 
     // Fallback: subcollection antiga (N reads) — remover após migração
@@ -550,7 +552,8 @@ async function gravarEspecialAposta(sel) {
   if (!_apostador.especiais) _apostador.especiais = {};
   _apostador.especiais[key] = sel.value;
 
-  await gravarApostador(_apostador);
+  const docRef = APP.db.collection("apostadores").doc(_apostador.id).collection("dados").doc("palpites");
+  await docRef.set({ especiais: _apostador.especiais }, { merge: true });
 
   // Re-renderiza o bloco de especiais para atualizar validação cruzada dos dropdowns
   const espContainer = document.getElementById("especiais-container");
@@ -663,6 +666,8 @@ async function salvarTodosPalpites(silencioso = false) {
 
   if (houveMudanca) {
     // ── Novo formato: 1 documento compacto (1 write) ──────────────────────────
+    mapaCompacto.especiais = _apostador.especiais || {};
+    
     const docRef = APP.db
       .collection("apostadores").doc(_apostador.id)
       .collection("dados").doc("palpites");

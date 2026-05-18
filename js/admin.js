@@ -595,7 +595,10 @@ async function limparFaseApostador(id) {
   if (!confirm("🗑 EXCLUIR PALPITES DO APOSTADOR\n\nVocê vai deletar " + desc + " pertencentes a " + nome + ".\nOs dados serão apagados definitivamente do banco de dados e a pontuação dele será reduzida.\n\nDeseja CONFIRMAR a exclusão?")) return;
 
   if (fase === "especiais") {
-    if (a) { a.especiais = {}; await gravarApostador(a); }
+    if (a) { 
+      a.especiais = {}; 
+      await APP.db.collection("apostadores").doc(id).collection("dados").doc("palpites").set({ especiais: {} }, { merge: true });
+    }
   } else {
     const fasesFiltro = fase === "todas" ? ["grupos", "32avos", "oitavas", "quartas", "semis", "final", "terceiro"] :
       (fase === "finais" ? ["final", "terceiro"] : [fase]);
@@ -627,7 +630,10 @@ async function limparFaseApostador(id) {
         .collection("palpites_jogos").doc(j.id).delete().catch(() => {});
     }
 
-    if (fase === "todas" && a) { a.especiais = {}; await gravarApostador(a); }
+    if (fase === "todas" && a) { 
+      a.especiais = {}; 
+      await APP.db.collection("apostadores").doc(id).collection("dados").doc("palpites").set({ especiais: {} }, { merge: true });
+    }
   }
 
   toggleEditApostador(id);
@@ -948,21 +954,7 @@ async function gerarCachePalpites(tipo) {
     }
   }
 
-  // ── 1. Lista compacta de apostadores (só no doc de grupos) ──────────────────
-  const apostadoresCompactos = apostadores.map(a => ({
-    id: a.id, apelido: a.apelido || a.nome || "",
-    nome: a.nome || "", ordem: a.ordem || 0, especiais: a.especiais || {},
-    token: a.token || "",
-  }));
   const modeloRaw = APP.modelo;
-  if (modeloRaw) {
-    apostadoresCompactos.push({
-      id: "MODELO", apelido: "MODELO", nome: "Modelo Estatístico",
-      ordem: 9999, especiais: modeloRaw.especiais || {}, isModelo: true,
-    });
-  } else {
-    console.warn("[cache] MODELO não encontrado — omitido do cache.");
-  }
 
   // ── 2. Lê palpites de cada apostador do doc compacto (1 read/apostador) ─────
   // Fallback automático para subcollection antiga se doc compacto não existir.
@@ -977,6 +969,7 @@ async function gerarCachePalpites(tipo) {
       let mapaLocal = {};
       if (snap.exists) {
         mapaLocal = snap.data() || {};
+        if (mapaLocal.especiais) a.especiais = mapaLocal.especiais;
       } else {
         // Fallback: subcollection antiga — remover após migração completa
         const oldSnap = await APP.db
@@ -1018,6 +1011,22 @@ async function gerarCachePalpites(tipo) {
   }
 
   await Promise.all(reads);
+
+  // ── 1. Lista compacta de apostadores (só no doc de grupos) ──────────────────
+  // Gerada após as leituras para garantir que a.especiais esteja atualizado.
+  const apostadoresCompactos = apostadores.map(a => ({
+    id: a.id, apelido: a.apelido || a.nome || "",
+    nome: a.nome || "", ordem: a.ordem || 0, especiais: a.especiais || {},
+    token: a.token || "",
+  }));
+  if (modeloRaw) {
+    apostadoresCompactos.push({
+      id: "MODELO", apelido: "MODELO", nome: "Modelo Estatístico",
+      ordem: 9999, especiais: modeloRaw.especiais || {}, isModelo: true,
+    });
+  } else {
+    console.warn("[cache] MODELO não encontrado — omitido do cache.");
+  }
 
   // ── 3. Monta e grava payload ─────────────────────────────────────────────────
   const ts    = new Date().toISOString();
@@ -1140,6 +1149,10 @@ async function migrarPalpitesParaDocCompacto() {
       // 3. Monta mapa compacto mesclando existente + subcollection
       const mapaAtual = snapExistente.exists ? (snapExistente.data() || {}) : {};
       const mapaNovo  = { ...mapaAtual };
+      
+      if (a.especiais) {
+        mapaNovo.especiais = a.especiais;
+      }
 
       oldSnap.forEach(d => {
         const data = d.data();
