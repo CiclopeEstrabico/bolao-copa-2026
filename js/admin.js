@@ -1035,6 +1035,7 @@ async function gerarCachePalpites(tipo) {
     const nApost = Object.keys(palpites).length;
     const nPals  = Object.values(palpites).reduce((s, j) => s + Object.keys(j).length, 0);
     adicionarLog("✅ cache/" + docId + " — " + nApost + " apostadores, " + nPals + " palpites");
+    alert("✅ Cache de " + (tipo === "grupos" ? "Grupos" : "Eliminatórias") + " gerado com sucesso!\nForam registrados " + nApost + " apostadores e " + nPals + " palpites.");
   } catch (e) {
     alert("❌ Erro ao gerar cache " + docId + ":\n" + e.message);
   }
@@ -1081,8 +1082,10 @@ async function gerarCacheResultados() {
       { cache_res_ts: ts }, { merge: true }
     );
 
-    adicionarLog("✅ cache/resultados — " + Object.keys(compacto).length + " jogos");
-    console.log("[cache] resultados gerado:", Object.keys(compacto).length, "jogos");
+    const numResultados = Object.keys(compacto).length;
+    adicionarLog("✅ cache/resultados — " + numResultados + " jogos");
+    console.log("[cache] resultados gerado:", numResultados, "jogos");
+    alert("✅ Cache de Resultados gerado com sucesso!\nForam registrados " + numResultados + " jogos oficiais.");
   } catch (e) {
     alert("❌ Erro ao gerar cache de resultados:\n" + e.message);
     console.error("[cache]", e);
