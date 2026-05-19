@@ -265,6 +265,10 @@ async function gravarResultadoOficial(gameId, homeGoals, awayGoals, foiPen, penV
   await APP.db.collection("resultados_oficiais").doc("dados").set({
     [gameId]: data
   }, { merge: true });
+  
+  // Invalida cache local das sessões abertas de todos os usuários
+  const ts = new Date().toISOString();
+  await APP.db.collection("config").doc("status").set({ cache_res_ts: ts }, { merge: true });
 }
 
 async function gravarApostador(apostador) {

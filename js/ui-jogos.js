@@ -50,6 +50,10 @@ async function limparResultadoAdmin(id) {
     await APP.db.collection("resultados_oficiais").doc("dados").update({
       [id]: firebase.firestore.FieldValue.delete()
     });
+    
+    // Invalida cache local das sessões abertas de todos os usuários
+    const ts = new Date().toISOString();
+    await APP.db.collection("config").doc("status").set({ cache_res_ts: ts }, { merge: true });
   } catch (e) {
     alert("Erro ao deletar no servidor: " + e.message + "\nNenhum dado foi alterado.");
     return;
