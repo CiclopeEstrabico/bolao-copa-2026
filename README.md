@@ -10,9 +10,9 @@ Plataforma profissional para gerenciamento de bolão da Copa do Mundo 2026, com 
 
 ## 🔗 Páginas Principais
 
-| Página                    | Descrição                                                     | Link                    |
-| :------------------------- | :-------------------------------------------------------------- | :---------------------- |
-| **Dashboard**        | Painel público com resultados, classificação e compilação. | [index.html](https://ciclopeestrabico.github.io/bolao-copa-2026/)   |
+| Página                    | Descrição                                                     | Link                                                                       |
+| :------------------------- | :-------------------------------------------------------------- | :------------------------------------------------------------------------- |
+| **Dashboard**        | Painel público com resultados, classificação e compilação. | [index.html](https://ciclopeestrabico.github.io/bolao-copa-2026/)             |
 | **Área de Apostas** | Espaço personalizado para o apostador preencher palpites.      | [aposta.html](https://ciclopeestrabico.github.io/bolao-copa-2026/aposta.html) |
 | **Painel Admin**     | Controle de resultados, tokens e liberação de fases.          | [admin.html](https://ciclopeestrabico.github.io/bolao-copa-2026/admin.html)   |
 
@@ -32,6 +32,7 @@ Plataforma profissional para gerenciamento de bolão da Copa do Mundo 2026, com 
 - `app.js`: Núcleo do sistema, listeners do Firestore e persistência `localStorage`.
 - `admin.js`: Gerenciamento de resultados, usuários e controle de travas.
 - `aposta.js`: Interface do apostador para entrada de palpites.
+- `atualizar_modelo.js`: Pipeline de atualização e simulação automática do apostador Modelo (rodado via Cron/Node).
 - `bracket.js`: Lógica de chaveamento (fases eliminatórias) e standings.
 - `prognose.js`: Motor Dixon-Coles para cálculo de probabilidades de jogos.
 - `scoring.js`: Motor de pontuação e regras de bônus não cumulativos.
@@ -68,57 +69,75 @@ Plataforma profissional para gerenciamento de bolão da Copa do Mundo 2026, com 
 
 ## 🗄️ Banco de Dados (Firebase Firestore)
 
-O sistema utiliza o Firestore como banco NoSQL em tempo real (SDK v8). Estrutura das coleções:
+O sistema utiliza o Firestore como banco NoSQL em tempo real (SDK v10.12.0 em Compatibility Mode). Estrutura das coleções e documentos exatos:
 
 ### `resultados_oficiais` (Coleção)
 
-Documentos identificados pelo `gameId` (ex: `j1`).
-
-- `homeGoals` / `awayGoals` (number): Gols oficiais.
-- `foi_penaltis` (boolean): Indica se houve decisão por pênaltis.
-- `penaltis_vencedor` (string): `home` ou `away`.
-- `penaltis_home` / `penaltis_away` (number): Placar dos pênaltis.
+- Documento `dados`: Único documento (CQRS-lite) contendo o mapa de todos os resultados oficiais.
+  - Chave `[gameId]` (ex: `J001`): `{ gameId, homeGoals, awayGoals, foi_penaltis, penaltis_vencedor, penaltis_home, penaltis_away, inserido_em, inserido_por }`
 
 ### `apostadores` (Coleção)
 
-Documentos identificados pelo ID do apostador.
+Documentos raiz identificados pelo ID do apostador (ex: `tok_1716...` ou `MODELO`).
 
-- `nome` / `apelido` (string): Identificação do usuário.
-- `token` (string): Chave de acesso única.
-- `especiais` (map): `{ campeao, vice, terceiro }`.
-- `pontos_total` / `saldo_gols` (number): Agregados para o ranking.
-- **`palpites_jogos`** (Sub-coleção):
-  - Documento ID: `gameId`.
-  - `homeGoals` / `awayGoals` (number): Palpite do placar.
-  - `fase` (string): Identificador da fase para filtros.
-  - `apostadorId` / `atualizado_em` (string): Metadados.
+- `id` (string): ID único do participante (mesmo do documento).
+- `nome` (string): Nome completo do usuário.
+- `apelido` (string): Apelido de exibição pública.
+- `token` (string): Chave de acesso única vinculada.
+- `criado_em` (string): ISOString do momento de cadastro.
+- `isModelo` (boolean, opcional): `true` se for o Apostador Modelo da IA.
+  *(Nota: Pontuações, acertos e ranking não são salvos individualmente no documento para evitar redundâncias, sendo calculados em tempo real no cliente).*
+- **`dados`** (Sub-coleção):
+  - Documento `palpites`: Único documento consolidado com todas as apostas do usuário.
+    - `especiais` (map): `{ campeao, vice, terceiro }`.
+    - Chave `[gameId]`: Salvo compactado como string `"homeGoals-awayGoals"` (ex: `"2-1"`). Pênaltis **nunca** são salvos nos palpites do apostador (são calculados on-demand apenas locais na interface para a simulação do bracket).
+- **`palpites_jogos`** (Sub-coleção Legada / Em Depreciação):
+  - Mantida por dual-write em fase de transição. Documentos identificados por `[gameId]` contendo `{ apostadorId, gameId, homeGoals, awayGoals, fase, token, atualizado_em }`.
+
+### `cache` (Coleção)
+
+- Documento `palpites_grupos`: Snapshot consolidado contendo a matriz de todos os palpites da fase de grupos de todos os apostadores.
+  - Campos: `{ gerado_em, palpites: { [apostadorId]: { [gameId]: { hg, ag } } }, apostadores: [ { id, nome, apelido, ordem, especiais, token, isModelo } ] }`
+- Documento `palpites_eliminatorias`: Snapshot consolidado contendo a matriz de todos os palpites da fase eliminatória de todos os apostadores.
+  - Campos: `{ gerado_em, palpites: { [apostadorId]: { [gameId]: { hg, ag } } } }`
+- Documento `tokens`: Mapa consolidado de todos os tokens e metadados de autenticação rápida.
+  - Campos: `{ [tokenDocId]: { id, numero, token, ativo, nome, apelido, criado_em, pago } }`
 
 ### `config` (Coleção)
 
-- Documento `status`: `{ liberado_grupos, liberado_32avos, ..., liberado_finais }`.
+- Documento `status`: Configurações de liberação de fases e metadados.
+  - Campos: `{ liberado_grupos, liberado_32avos, liberado_oitavas, liberado_quartas, liberado_semis, liberado_final, liberado_terceiro, cache_res_ts, cache_grupos_ts, cache_elim_ts }`.
 
 ### `tokens` (Coleção)
 
-- Documento ID: `auto-ID`.
-- `token` (string): O código alfanumérico.
+Documentos identificados por ID único (auto-ID).
+- `token` (string): O código alfanumérico de login.
 - `ativo` (boolean): Se o token é válido para uso.
+- `pago` (boolean/string): Indica se o token está pago (`true` ou `""`).
 - `criado_em` (string): Timestamp de criação.
+- `apelido` (string): Apelido associado para sincronização.
 
 ---
 
 ## 📊 Regras Detalhadas de Pontuação
 
+> [!IMPORTANT]
+> **REGRAS DE PRORROGAÇÃO E PÊNALTIS:**
+> - O placar oficial que conta para a pontuação de um jogo é **estritamente o placar do Tempo Regulamentar + Prorrogação (se houver)**.
+> - **A disputa de Pênaltis NUNCA é computada para o placar de pontuação dos palpites!** Se o jogo terminar em empate e ir para os pênaltis, os pontos do palpite serão computados sobre o placar de empate (ex: 1x1 ou 2x2).
+> - Em jogos de mata-mata, os pênaltis oficiais servem **única e exclusivamente** para o sistema decidir quem avança no chaveamento (bracket) do torneio.
+
 O sistema utiliza uma lógica de **pontos brutos** que são posteriormente multiplicados pelo peso da fase. Os bônus **não são cumulativos** entre si (aplica-se apenas o maior bônus alcançado).
 
 ### 1. Pontuação por Jogo (Fase de Grupos)
 
-|   Pontos   | Critério de Acerto          | Descrição Detalhada                                                                                                                  |
-| :---------: | :--------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
-| **8** | **Placar Exato Alto**  | Acerto do placar exato em jogos com 4 ou mais gols (ex: 2x2, 3x1, 4x0).                                                                |
-| **6** | **Placar Exato Baixo** | Acerto do placar exato em jogos com menos de 4 gols (ex: 1x0, 2x1, 0x0).                                                               |
-| **4** | **Resultado + Bônus** | Acertou o vencedor ou empate, errou o placar, mas acertou a **Diferença de Gols** OU acertou os **Gols de um dos times**. |
-| **3** | **Apenas Resultado**   | Acertou apenas o vencedor ou que seria empate, errando o placar e os bônus acima.                                                     |
-| **0** | **Erro Total**         | Errou o vencedor ou o fato de ser empate.                                                                                              |
+|   Pontos   | Critério de Acerto          | Descrição Detalhada                                                                                                                    |
+| :---------: | :--------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
+| **8** | **Placar Exato Alto**  | Acerto do placar exato em jogos com 4 ou mais gols (ex: 2x2, 3x1, 4x0).                                                                  |
+| **6** | **Placar Exato Baixo** | Acerto do placar exato em jogos com menos de 4 gols (ex: 1x0, 2x1, 0x0).                                                                 |
+| **4** | **Resultado + Bônus** | Acertou o vencedor ou empate, errou o placar, mas acertou a **Diferença de Gols** OU acertou os **Gols de um dos times**. |
+| **3** | **Apenas Resultado**   | Acertou apenas o vencedor ou que seria empate, errando o placar e os bônus acima.                                                       |
+| **0** | **Erro Total**         | Errou o vencedor ou o fato de ser empate.                                                                                                |
 
 ### 2. Multiplicadores de Fase
 
