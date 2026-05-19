@@ -162,9 +162,9 @@ function renderAdmin() {
 
   // Botões de regeneração de cache (emergência)
   h += '<details style="margin-bottom:8px"><summary style="font-size:.72rem;color:var(--texto2);cursor:pointer;padding:4px 0">🔄 Regenerar cache manualmente</summary>';
-  h += '<div style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 0">';
-  h += '<button class="btn btn-sm" onclick="gerarCachePalpites(\'grupos\')" style="font-size:.65rem;background:var(--borda)">📦 Cache grupos</button>';
-  h += '<button class="btn btn-sm" onclick="gerarCachePalpites(\'eliminatorias\')" style="font-size:.65rem;background:var(--borda)">📦 Cache elim.</button>';
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0">';
+  h += '<button class="btn btn-sm" onclick="gerarCachePalpites(\'grupos\')" style="font-size:.75rem;font-weight:800;background:rgba(245,166,35,0.12);color:var(--dourado);border:1px solid rgba(245,166,35,0.3);flex:1;min-width:140px;padding:8px 12px;border-radius:6px;white-space:normal">🔄 Gerar Cache dos Grupos</button>';
+  h += '<button class="btn btn-sm" onclick="gerarCachePalpites(\'eliminatorias\')" style="font-size:.75rem;font-weight:800;background:rgba(245,166,35,0.12);color:var(--dourado);border:1px solid rgba(245,166,35,0.3);flex:1;min-width:140px;padding:8px 12px;border-radius:6px;white-space:normal">🔄 Gerar Cache das Eliminatórias</button>';
   h += '</div></details>';
 
   h += renderJogosComToggle(res, tg, true, null);
@@ -291,11 +291,14 @@ function toggleStatusFase(fase) {
   APP.db.collection("config").doc("status")
     .set({ [key]: novo }, { merge: true })
     .then(async () => {
-      alert("Fase " + fase.toUpperCase() + " " + (novo ? "LIBERADA ✅" : "TRAVADA 🔒"));
-      // Ao TRAVAR: gera cache automático dos palpites desta fase
+      // Ao TRAVAR: gera cache automático dos palpites desta fase de forma silenciosa e depois alerta consolidado
       if (!novo) {
         const tipoCache = fase === "grupos" ? "grupos" : "eliminatorias";
-        await gerarCachePalpites(tipoCache);
+        await gerarCachePalpites(tipoCache, true);
+        alert("🔒 FASE TRAVADA COM SUCESSO!\n\nA fase " + fase.toUpperCase() + " foi bloqueada para palpites e os dados de todos os apostadores foram salvos em cache.");
+        renderAdmin();
+      } else {
+        alert("🔓 FASE LIBERADA COM SUCESSO!\n\nA fase " + fase.toUpperCase() + " está liberada para palpites.");
         renderAdmin();
       }
     })
@@ -976,7 +979,7 @@ async function gerarCacheTokens() {
  *
  * @param {"grupos"|"eliminatorias"} tipo
  */
-async function gerarCachePalpites(tipo) {
+async function gerarCachePalpites(tipo, silencioso = false) {
   if (!_adminAutenticado()) return alert("Não autorizado.");
 
   const FASES_GRUPOS = ["grupos"];
@@ -1051,7 +1054,9 @@ async function gerarCachePalpites(tipo) {
     const nApost = Object.keys(palpites).length;
     const nPals = Object.values(palpites).reduce((s, j) => s + Object.keys(j).length, 0);
     adicionarLog("✅ cache/" + docId + " — " + nApost + " apostadores, " + nPals + " palpites");
-    alert("✅ Cache de " + (tipo === "grupos" ? "Grupos" : "Eliminatórias") + " gerado com sucesso!\nForam registrados " + nApost + " apostadores e " + nPals + " palpites.");
+    if (!silencioso) {
+      alert("✅ Cache de " + (tipo === "grupos" ? "Grupos" : "Eliminatórias") + " gerado com sucesso!\nForam registrados " + nApost + " apostadores e " + nPals + " palpites.");
+    }
   } catch (e) {
     alert("❌ Erro ao gerar cache " + docId + ":\n" + e.message);
   }
