@@ -103,16 +103,13 @@ function _expandirCacheParaAppState(gruposDoc, elimDoc, resDoc) {
   _expandirPalpites(elimDoc);
 
   // 3. Resultados
-  if (resDoc && resDoc.resultados) {
+  if (resDoc) {
     APP.resultados = {};
-    for (const [gameId, v] of Object.entries(resDoc.resultados)) {
-      APP.resultados[gameId] = {
-        gameId,
-        homeGoals:         v.hg,
-        awayGoals:         v.ag,
-        foi_penaltis:      v.pen  || false,
-        penaltis_vencedor: v.pen_v || null,
-      };
+    for (const [gameId, v] of Object.entries(resDoc)) {
+      // Filtra chaves internas como gerado_em
+      if (typeof v === "object" && v.homeGoals !== undefined) {
+        APP.resultados[gameId] = v;
+      }
     }
   }
 
@@ -210,7 +207,7 @@ async function listenCache() {
       const [snapG, snapE, snapR] = await Promise.all([
         APP.db.collection("cache").doc("palpites_grupos").get(),
         APP.db.collection("cache").doc("palpites_eliminatorias").get(),
-        APP.db.collection("cache").doc("resultados").get(),
+        APP.db.collection("resultados_oficiais").doc("dados").get(),
       ]);
 
       const gDoc = snapG.exists ? snapG.data() : null;
@@ -265,7 +262,9 @@ async function gravarResultadoOficial(gameId, homeGoals, awayGoals, foiPen, penV
     penaltis_vencedor: penVenc || null, inserido_em: new Date().toISOString(), inserido_por: "admin"
   },
     extraData || {});
-  await APP.db.collection("resultados_oficiais").doc(gameId).set(data);
+  await APP.db.collection("resultados_oficiais").doc("dados").set({
+    [gameId]: data
+  }, { merge: true });
 }
 
 async function gravarApostador(apostador) {

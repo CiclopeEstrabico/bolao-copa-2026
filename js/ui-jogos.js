@@ -47,7 +47,9 @@ function _onBlurPen(id) {
 function limparSimulacao(id) { delete APP.resultadosSim[id]; atualizarBracket(); renderAbaAtiva(); }
 async function limparResultadoAdmin(id) {
   try {
-    await APP.db.collection("resultados_oficiais").doc(id).delete();
+    await APP.db.collection("resultados_oficiais").doc("dados").update({
+      [id]: firebase.firestore.FieldValue.delete()
+    });
   } catch (e) {
     alert("Erro ao deletar no servidor: " + e.message + "\nNenhum dado foi alterado.");
     return;

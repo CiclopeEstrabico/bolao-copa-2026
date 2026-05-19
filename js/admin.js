@@ -165,7 +165,6 @@ function renderAdmin() {
   h += '<div style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 0">';
   h += '<button class="btn btn-sm" onclick="gerarCachePalpites(\'grupos\')" style="font-size:.65rem;background:var(--borda)">📦 Cache grupos</button>';
   h += '<button class="btn btn-sm" onclick="gerarCachePalpites(\'eliminatorias\')" style="font-size:.65rem;background:var(--borda)">📦 Cache elim.</button>';
-  h += '<button class="btn btn-sm" onclick="gerarCacheResultados()" style="font-size:.65rem;background:var(--borda)">📦 Cache resultados</button>';
   h += '</div></details>';
 
   h += renderJogosComToggle(res, tg, true, null);
@@ -198,8 +197,8 @@ async function limparTudoAdmin() {
 
   // Bug 3: aguarda a deleção no servidor ANTES de alterar estado local.
   try {
-    const snap = await APP.db.collection("resultados_oficiais").get();
-    await Promise.all(snap.docs.map(d => d.ref.delete()));
+    // Apaga de uma vez só a fonte de verdade consolidada
+    await APP.db.collection("resultados_oficiais").doc("dados").delete().catch(() => {});
   } catch (e) {
     alert("Erro ao limpar no servidor: " + e.message + "\nNenhum dado foi alterado.");
     return;
@@ -252,13 +251,18 @@ async function gravarTudoAdmin() {
 
   if (pendentes.length === 0) { alert("Nenhum novo placar para gravar."); return; }
 
-  // Persiste no Firestore ANTES de atualizar o estado local.
+  // Persiste no Firestore em um único doc (CQRS / Dicionário)
   try {
-    await Promise.all(
-      pendentes.map(p =>
-        APP.db.collection("resultados_oficiais").doc(p.id).set(p.data, { merge: true })
-      )
-    );
+    const payload = {};
+    for (const p of pendentes) {
+      payload[p.id] = p.data;
+    }
+    
+    await APP.db.collection("resultados_oficiais").doc("dados").set(payload, { merge: true });
+    
+    // Invalida cache local das sessões abertas
+    const ts = new Date().toISOString();
+    await APP.db.collection("config").doc("status").set({ cache_res_ts: ts }, { merge: true });
   } catch (e) {
     alert("❌ Erro ao gravar no servidor:\n" + e.message + "\n\nNenhum dado foi alterado localmente.");
     return;
@@ -273,9 +277,7 @@ async function gravarTudoAdmin() {
   localStorage.setItem("bolao_admin_log", JSON.stringify(log.slice(-50)));
   atualizarBracket();
   renderAdmin();
-  alert("✅ " + pendentes.length + " jogos gravados.");
-  // Gera cache de resultados automaticamente
-  await gerarCacheResultados();
+  alert("✅ " + pendentes.length + " jogos gravados com sucesso!");
 }
 
 function toggleStatusFase(fase) {
@@ -1055,57 +1057,6 @@ async function gerarCachePalpites(tipo) {
   }
 }
 
-async function gerarCacheResultados() {
-  if (!_adminAutenticado()) return alert("Não autorizado.");
-
-  let resultadosFonte = {};
-
-  // Força SEMPRE a leitura do servidor (resultados_oficiais) para evitar Race Condition
-  // Caso 2 admins salvem jogos quase simultaneamente, o cache terá o trabalho de ambos.
-  try {
-    const snap = await APP.db.collection("resultados_oficiais").get();
-    const resTemp = {};
-    snap.forEach(d => { resTemp[d.id] = d.data(); });
-    resultadosFonte = resTemp;
-    APP.resultados = resTemp; // Atualiza a memória local com a verdade absoluta do servidor
-  } catch (e) {
-    console.warn("[cache] Erro ao buscar resultados_oficiais para gerar cache:", e);
-    // Fallback: se a rede cair na hora de puxar, usa a memória local do admin como último recurso
-    resultadosFonte = APP.resultados || {};
-  }
-
-  const compacto = {};
-  for (const [gameId, r] of Object.entries(resultadosFonte)) {
-    if (r && r.homeGoals !== undefined && r.awayGoals !== undefined) {
-      const entry = { hg: r.homeGoals, ag: r.awayGoals };
-      if (r.foi_penaltis) {
-        entry.pen = true;
-        entry.pen_v = r.penaltis_vencedor || null;
-      }
-      compacto[gameId] = entry;
-    }
-  }
-
-  const ts = new Date().toISOString();
-  try {
-    await APP.db.collection("cache").doc("resultados").set({
-      gerado_em: ts,
-      resultados: compacto,
-    });
-
-    await APP.db.collection("config").doc("status").set(
-      { cache_res_ts: ts }, { merge: true }
-    );
-
-    const numResultados = Object.keys(compacto).length;
-    adicionarLog("✅ cache/resultados — " + numResultados + " jogos");
-    console.log("[cache] resultados gerado:", numResultados, "jogos");
-    alert("✅ Cache de Resultados gerado com sucesso!\nForam registrados " + numResultados + " jogos oficiais.");
-  } catch (e) {
-    alert("❌ Erro ao gerar cache de resultados:\n" + e.message);
-    console.error("[cache]", e);
-  }
-}
 
 /** Helper: adiciona linha ao log persistido em localStorage */
 function adicionarLog(msg) {
