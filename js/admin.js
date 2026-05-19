@@ -982,6 +982,13 @@ async function gerarCacheTokens() {
 async function gerarCachePalpites(tipo, silencioso = false) {
   if (!_adminAutenticado()) return alert("Não autorizado.");
 
+  if (!silencioso) {
+    const nomeFase = tipo === "grupos" ? "Grupos e Perfis" : "Fases Eliminatórias";
+    if (!confirm(`🔄 CONFIRMAR REGENERAÇÃO DE CACHE — ${nomeFase.toUpperCase()}\n\nVocê vai re-compilar e salvar em um documento único todos os palpites e perfis de todos os participantes para exibição rápida no painel dos usuários (index.html).\n\n⚠️ AVISO DE COTAS DE LEITURA:\n- Esse processo lê o banco de dados de cada participante individualmente.\n- EVITE CLICAR VÁRIAS VEZES seguidas neste botão para não consumir desnecessariamente a cota diária de leitura (Reads) do Firebase Firestore.\n\nDeseja prosseguir com a geração do cache?`)) {
+      return;
+    }
+  }
+
   const FASES_GRUPOS = ["grupos"];
   const FASES_ELIM = ["32avos", "oitavas", "quartas", "semis", "final", "terceiro"];
   const fasesAlvo = tipo === "grupos" ? FASES_GRUPOS : FASES_ELIM;

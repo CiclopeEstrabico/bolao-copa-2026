@@ -239,7 +239,7 @@ window.MODELO_MANAGER = {
     if (window.gerarCachePalpites) {
       setTimeout(() => {
         const tipoCache = faseKey === "grupos" ? "grupos" : "eliminatorias";
-        window.gerarCachePalpites(tipoCache);
+        window.gerarCachePalpites(tipoCache, true);
       }, 500);
     } else {
       alert(`✅ MODELO atualizado!\n\nFase: ${faseKey}\nJogos: ${palpitesGerados.length}${especiais ? `\nEspeciais: ✅ ${especiais.campeao} / ${especiais.vice} / ${especiais.terceiro}` : ""}\n\n⚠️ Lembre-se de clicar em "Cache ${faseKey}" para publicar.`);
