@@ -165,6 +165,7 @@ function renderAdmin() {
   h += '<div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0">';
   h += '<button class="btn btn-sm" onclick="gerarCachePalpites(\'grupos\')" style="font-size:.75rem;font-weight:800;background:rgba(245,166,35,0.12);color:var(--dourado);border:1px solid rgba(245,166,35,0.3);flex:1;min-width:140px;padding:8px 12px;border-radius:6px;white-space:normal">🔄 Gerar Cache dos Grupos</button>';
   h += '<button class="btn btn-sm" onclick="gerarCachePalpites(\'eliminatorias\')" style="font-size:.75rem;font-weight:800;background:rgba(245,166,35,0.12);color:var(--dourado);border:1px solid rgba(245,166,35,0.3);flex:1;min-width:140px;padding:8px 12px;border-radius:6px;white-space:normal">🔄 Gerar Cache das Eliminatórias</button>';
+  h += '<button class="btn btn-sm" onclick="manualGerarCacheTokens()" style="font-size:.75rem;font-weight:800;background:rgba(245,166,35,0.12);color:var(--dourado);border:1px solid rgba(245,166,35,0.3);flex:1;min-width:140px;padding:8px 12px;border-radius:6px;white-space:normal">🔄 Gerar Cache dos Tokens</button>';
   h += '</div></details>';
 
   h += renderJogosComToggle(res, tg, true, null);
@@ -679,11 +680,15 @@ async function deletarApostadorId(id) {
         if (!tokenSnap.empty) {
           const tokenDoc = tokenSnap.docs[0];
           const dadosAtuais = tokenDoc.data();
-          await tokenDoc.ref.update({
+          const tokenUpdate = {
             enviado: true,
             apelido: dadosAtuais.apelido || apelidoDoApostador,
             enviado_em: dadosAtuais.enviado_em || new Date().toISOString()
-          });
+          };
+          await tokenDoc.ref.update(tokenUpdate);
+
+          // Auto-save cirúrgico no Dicionário de cache de tokens
+          await APP.db.collection("cache").doc("tokens").set({ [tokenDoc.id]: tokenUpdate }, { merge: true });
         }
       } catch (_) { /* falha no token não impede a deleção */ }
     }
@@ -696,6 +701,16 @@ async function deletarApostadorId(id) {
   APP.apostadores = APP.apostadores.filter(x => x.id !== id);
   delete APP.palpites[id];
   renderApostadores();
+
+  // Regenerar caches compactos silenciosamente para refletir a deleção na UI pública imediatamente
+  try {
+    await Promise.all([
+      gerarCachePalpites("grupos", true),
+      gerarCachePalpites("eliminatorias", true)
+    ]);
+  } catch (e) {
+    console.error("[admin] Erro ao regenerar caches compactos pós-deleção:", e);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -961,6 +976,19 @@ async function gerarCacheTokens() {
   } catch (e) {
     console.error("Erro ao gerar cache de tokens", e);
     return null;
+  }
+}
+
+async function manualGerarCacheTokens() {
+  if (!_adminAutenticado()) return alert("Não autorizado.");
+  if (!confirm("🔄 CONFIRMAR REGENERAÇÃO DE CACHE — TOKENS\n\nVocê vai re-compilar e salvar em um documento único todos os tokens cadastrados para exibição rápida no painel.\n\nDeseja prosseguir?")) return;
+
+  const res = await gerarCacheTokens();
+  if (res) {
+    alert("✅ Cache de tokens gerado com sucesso!");
+    renderTokens();
+  } else {
+    alert("❌ Erro ao gerar cache de tokens.");
   }
 }
 
