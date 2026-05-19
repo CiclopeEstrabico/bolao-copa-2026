@@ -548,6 +548,9 @@ async function gravarEspecialAposta(sel) {
     const res = getResultados();
     espContainer.innerHTML = renderEspeciaisAposta(res);
   }
+
+  // Atualiza instantaneamente a tabela de progresso no topo (sem custo de Reads)
+  atualizarMiniTabelasAposta();
 }
 
 function atualizarMiniTabelasAposta() {
@@ -664,6 +667,9 @@ async function salvarTodosPalpites(silencioso = false) {
     if (!APP.palpites[_apostador.id]) APP.palpites[_apostador.id] = {};
     Object.assign(APP.palpites[_apostador.id], _palpitesLocais);
   }
+
+  // Atualiza instantaneamente a tabela de progresso e pódio simulado na tela (custo zero de Reads!)
+  atualizarMiniTabelasAposta();
 
   if (!silencioso) {
     let toast = document.getElementById('toast-salvo');
