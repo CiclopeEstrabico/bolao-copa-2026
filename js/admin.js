@@ -716,8 +716,9 @@ async function renderTokens() {
     return;
   }
 
-  // Converte dicionário em array pra desenhar a UI igualzinho antes
-  let tokens = Object.keys(tokensObj).map(id => ({ id, ...tokensObj[id] }));
+  // Converte dicionário em array pra desenhar a UI igualzinho antes e ORDENA por número
+  let tokens = Object.keys(tokensObj).map(id => ({ id, ...tokensObj[id] }))
+                 .sort((a, b) => (a.numero || 0) - (b.numero || 0));
 
   const tokensUsados = new Set(APP.apostadores.map(a => a.token).filter(Boolean));
   const usados = tokens.filter(t => tokensUsados.has(t.token));
@@ -1057,19 +1058,20 @@ async function gerarCachePalpites(tipo) {
 async function gerarCacheResultados() {
   if (!_adminAutenticado()) return alert("Não autorizado.");
 
-  let resultadosFonte = APP.resultados || {};
+  let resultadosFonte = {};
 
-  // Se a lista local estiver vazia (primeiro load no admin sem cache existente), busca do Firestore
-  if (Object.keys(resultadosFonte).length === 0) {
-    try {
-      const snap = await APP.db.collection("resultados_oficiais").get();
-      const resTemp = {};
-      snap.forEach(d => { resTemp[d.id] = d.data(); });
-      resultadosFonte = resTemp;
-      APP.resultados = resTemp; // Preenche em memória também para a renderização local
-    } catch (e) {
-      console.warn("[cache] Erro ao buscar fallback de resultados_oficiais:", e);
-    }
+  // Força SEMPRE a leitura do servidor (resultados_oficiais) para evitar Race Condition
+  // Caso 2 admins salvem jogos quase simultaneamente, o cache terá o trabalho de ambos.
+  try {
+    const snap = await APP.db.collection("resultados_oficiais").get();
+    const resTemp = {};
+    snap.forEach(d => { resTemp[d.id] = d.data(); });
+    resultadosFonte = resTemp;
+    APP.resultados = resTemp; // Atualiza a memória local com a verdade absoluta do servidor
+  } catch (e) {
+    console.warn("[cache] Erro ao buscar resultados_oficiais para gerar cache:", e);
+    // Fallback: se a rede cair na hora de puxar, usa a memória local do admin como último recurso
+    resultadosFonte = APP.resultados || {};
   }
 
   const compacto = {};
