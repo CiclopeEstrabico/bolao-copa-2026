@@ -111,6 +111,7 @@ Documentos raiz identificados pelo ID do apostador (ex: `tok_1716...` ou `MODELO
 ### `tokens` (Coleção)
 
 Documentos identificados por ID único (auto-ID).
+
 - `token` (string): O código alfanumérico de login.
 - `ativo` (boolean): Se o token é válido para uso.
 - `pago` (boolean/string): Indica se o token está pago (`true` ou `""`).
@@ -123,6 +124,7 @@ Documentos identificados por ID único (auto-ID).
 
 > [!IMPORTANT]
 > **REGRAS DE PRORROGAÇÃO E PÊNALTIS:**
+>
 > - O placar oficial que conta para a pontuação de um jogo é **estritamente o placar do Tempo Regulamentar + Prorrogação (se houver)**.
 > - **A disputa de Pênaltis NUNCA é computada para o placar de pontuação dos palpites!** Se o jogo terminar em empate e ir para os pênaltis, os pontos do palpite serão computados sobre o placar de empate (ex: 1x1 ou 2x2).
 > - Em jogos de mata-mata, os pênaltis oficiais servem **única e exclusivamente** para o sistema decidir quem avança no chaveamento (bracket) do torneio.
