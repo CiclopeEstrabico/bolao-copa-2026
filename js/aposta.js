@@ -540,7 +540,7 @@ async function gravarEspecialAposta(sel) {
   _apostador.especiais[key] = sel.value;
 
   const docRef = APP.db.collection("apostadores").doc(_apostador.id).collection("dados").doc("palpites");
-  await docRef.set({ especiais: _apostador.especiais }, { merge: true });
+  await docRef.set({ especiais: _apostador.especiais, token: _apostador.token || "" }, { merge: true });
 
   // Re-renderiza o bloco de especiais para atualizar validação cruzada dos dropdowns
   const espContainer = document.getElementById("especiais-container");
@@ -656,12 +656,15 @@ async function salvarTodosPalpites(silencioso = false) {
 
   if (houveMudanca) {
     // ── Novo formato: 1 documento compacto (1 write) ──────────────────────────
-    mapaCompacto.especiais = _apostador.especiais || {};
+    mapaCompacto.token = _apostador.token || "";
+    if (window.APP?.configStatus?.liberado_grupos === true) {
+      mapaCompacto.especiais = _apostador.especiais || {};
+    }
 
     const docRef = APP.db
       .collection("apostadores").doc(_apostador.id)
       .collection("dados").doc("palpites");
-    await docRef.set(mapaCompacto);
+    await docRef.set(mapaCompacto, { merge: true });
 
     // Atualiza estado local para comparação futura
     if (!APP.palpites[_apostador.id]) APP.palpites[_apostador.id] = {};

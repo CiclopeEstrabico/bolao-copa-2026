@@ -56,6 +56,9 @@ function initApp() {
  * Chamado tanto ao ler do Firestore quanto ao restaurar do sessionStorage.
  */
 function _expandirCacheParaAppState(gruposDoc, elimDoc, resDoc) {
+  const params = new URLSearchParams(window.location.search);
+  const userToken = params.get("token") || "";
+
   // 1. Apostadores (vêm do doc de grupos)
   if (gruposDoc && gruposDoc.apostadores) {
     APP.apostadores = gruposDoc.apostadores
@@ -67,7 +70,7 @@ function _expandirCacheParaAppState(gruposDoc, elimDoc, resDoc) {
         especiais: a.especiais || {},
         isModelo: a.isModelo || false,
         ativo:    true,
-        token:    a.token    || "",
+        token:    (window._isAdminView === true || (userToken && a.token === userToken)) ? (a.token || "") : "",
       }))
       // MODELO não entra no array principal de apostadores humanos —
       // é tratado separadamente via getModelo() para compatibilidade.
