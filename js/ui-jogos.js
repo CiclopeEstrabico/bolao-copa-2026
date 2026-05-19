@@ -46,6 +46,16 @@ function _onBlurPen(id) {
 }
 function limparSimulacao(id) { delete APP.resultadosSim[id]; atualizarBracket(); renderAbaAtiva(); }
 async function limparResultadoAdmin(id) {
+  const jogo = (window.SCHEDULE || []).find(j => j.id === id);
+  const b = APP.bracket?.[id] || {};
+  const hC = b.home || jogo?.home || "";
+  const aC = b.away || jogo?.away || "";
+  const hN = window.TEAMS_BY_CODE?.[hC]?.name || hC;
+  const aN = window.TEAMS_BY_CODE?.[aC]?.name || aC;
+  const desc = hN && aN ? `${hN} x ${aN}` : `jogo ${id}`;
+
+  if (!confirm("🗑 EXCLUIR RESULTADO OFICIAL\n\nVocê está prestes a deletar definitivamente o resultado oficial de:\n👉 " + desc.toUpperCase() + " (" + (jogo?.fase.toUpperCase() || "FASE") + ")\n\nIsso recalculará imediatamente as classificações de todos os apostadores.\n\nDeseja CONFIRMAR a exclusão?")) return;
+
   try {
     await APP.db.collection("resultados_oficiais").doc("dados").update({
       [id]: firebase.firestore.FieldValue.delete()
