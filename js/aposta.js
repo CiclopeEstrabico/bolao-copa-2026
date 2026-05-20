@@ -582,6 +582,21 @@ function _registrarInputsAposta() {
   // A lógica é tratada pelo window._onInputPlacar sobrescrito acima
 }
 
+function exibirToastAposta(msg, sucesso = true) {
+  let toast = document.getElementById('toast-salvo');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast-salvo';
+    document.body.appendChild(toast);
+  }
+  const bg = sucesso ? '#22c55e' : '#ef4444';
+  toast.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);background:' + bg + ';color:#fff;font-weight:800;font-size:.9rem;padding:10px 24px;border-radius:999px;z-index:9999;box-shadow:0 4px 15px rgba(0,0,0,0.4);transition:opacity 0.4s ease;pointer-events:none;white-space:nowrap';
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => { toast.style.opacity = '0'; }, 2200);
+}
+
 async function salvarTodosPalpites(silencioso = false) {
   if (_modoVer) return;
   if (!_apostador?.id) return;
@@ -613,28 +628,26 @@ async function salvarTodosPalpites(silencioso = false) {
     const docRef = APP.db
       .collection("apostadores").doc(_apostador.id)
       .collection("dados").doc("palpites");
-    await docRef.set(mapaCompacto, { merge: true });
+    try {
+      await docRef.set(mapaCompacto, { merge: true });
 
-    // Atualiza estado local para comparação futura
-    if (!APP.palpites[_apostador.id]) APP.palpites[_apostador.id] = {};
-    Object.assign(APP.palpites[_apostador.id], _palpitesLocais);
+      // Atualiza estado local para comparação futura
+      if (!APP.palpites[_apostador.id]) APP.palpites[_apostador.id] = {};
+      Object.assign(APP.palpites[_apostador.id], _palpitesLocais);
+    } catch (e) {
+      console.error("[aposta] Erro ao salvar palpites no Firestore:", e);
+      if (!silencioso) {
+        exibirToastAposta("❌ Erro ao salvar: Fase encerrada ou sem permissão", false);
+      }
+      return;
+    }
   }
 
   // Atualiza instantaneamente a tabela de progresso e pódio simulado na tela (custo zero de Reads!)
   atualizarMiniTabelasAposta();
 
   if (!silencioso) {
-    let toast = document.getElementById('toast-salvo');
-    if (!toast) {
-      toast = document.createElement('div');
-      toast.id = 'toast-salvo';
-      toast.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;font-weight:800;font-size:.9rem;padding:10px 24px;border-radius:999px;z-index:9999;box-shadow:0 4px 15px rgba(0,0,0,0.4);transition:opacity 0.4s ease;pointer-events:none;white-space:nowrap';
-      document.body.appendChild(toast);
-    }
-    toast.textContent = '✓ Palpites salvos!';
-    toast.style.opacity = '1';
-    clearTimeout(window._toastTimer);
-    window._toastTimer = setTimeout(() => { toast.style.opacity = '0'; }, 2200);
+    exibirToastAposta("✓ Palpites salvos!", true);
   }
 }
 
