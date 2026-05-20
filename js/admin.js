@@ -160,14 +160,6 @@ function renderAdmin() {
   h += '<button class="btn btn-sm" onclick="logoutAdmin()" style="background:var(--borda)">Sair</button>';
   h += '</div></div></div>';
 
-  // Botões de regeneração de cache (emergência)
-  h += '<details style="margin-bottom:8px"><summary style="font-size:.72rem;color:var(--texto2);cursor:pointer;padding:4px 0">🔄 Regenerar cache manualmente</summary>';
-  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0">';
-  h += '<button class="btn btn-sm" onclick="gerarCachePalpites(\'grupos\')" style="font-size:.75rem;font-weight:800;background:rgba(245,166,35,0.12);color:var(--dourado);border:1px solid rgba(245,166,35,0.3);flex:1;min-width:140px;padding:8px 12px;border-radius:6px;white-space:normal">🔄 Gerar Cache dos Grupos</button>';
-  h += '<button class="btn btn-sm" onclick="gerarCachePalpites(\'eliminatorias\')" style="font-size:.75rem;font-weight:800;background:rgba(245,166,35,0.12);color:var(--dourado);border:1px solid rgba(245,166,35,0.3);flex:1;min-width:140px;padding:8px 12px;border-radius:6px;white-space:normal">🔄 Gerar Cache das Eliminatórias</button>';
-  h += '<button class="btn btn-sm" onclick="manualGerarCacheTokens()" style="font-size:.75rem;font-weight:800;background:rgba(245,166,35,0.12);color:var(--dourado);border:1px solid rgba(245,166,35,0.3);flex:1;min-width:140px;padding:8px 12px;border-radius:6px;white-space:normal">🔄 Gerar Cache dos Tokens</button>';
-  h += '</div></details>';
-
   h += renderJogosComToggle(res, tg, true, null);
 
   // Pódio automático (visível assim que FNL ou TPL tiverem resultado)
@@ -433,6 +425,15 @@ function renderApostadores() {
   h += '<div style="font-size:.9rem;font-weight:800">👥 Apostadores';
   h += ' <span style="font-size:.74rem;font-weight:400;color:var(--texto2)">(' + apostadores.length + ' cadastrados)</span>';
   h += '</div></div>';
+
+  // Painel de Ferramentas, Cache e Backup
+  h += '<details style="margin-bottom:12px"><summary style="font-size:.72rem;color:var(--texto2);cursor:pointer;padding:4px 0">⚙️ Ferramentas, Cache e Backup</summary>';
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0">';
+  h += '<button class="btn btn-sm" onclick="gerarCachePalpites(\'grupos\')" style="font-size:.75rem;font-weight:800;background:rgba(245,166,35,0.12);color:var(--dourado);border:1px solid rgba(245,166,35,0.3);flex:1;min-width:140px;padding:8px 12px;border-radius:6px;white-space:normal">🔄 Gerar Cache dos Grupos</button>';
+  h += '<button class="btn btn-sm" onclick="gerarCachePalpites(\'eliminatorias\')" style="font-size:.75rem;font-weight:800;background:rgba(245,166,35,0.12);color:var(--dourado);border:1px solid rgba(245,166,35,0.3);flex:1;min-width:140px;padding:8px 12px;border-radius:6px;white-space:normal">🔄 Gerar Cache das Eliminatórias</button>';
+  h += '<button class="btn btn-sm" onclick="manualGerarCacheTokens()" style="font-size:.75rem;font-weight:800;background:rgba(245,166,35,0.12);color:var(--dourado);border:1px solid rgba(245,166,35,0.3);flex:1;min-width:140px;padding:8px 12px;border-radius:6px;white-space:normal">🔄 Gerar Cache dos Tokens</button>';
+  h += '<button class="btn btn-sm" onclick="exportarPalpitesCSV()" style="font-size:.75rem;font-weight:800;background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.3);flex:1;min-width:140px;padding:8px 12px;border-radius:6px;white-space:normal">📥 Exportar Backup CSV</button>';
+  h += '</div></details>';
 
   if (!apostadores.length) {
     h += '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador cadastrado ainda.</div>';
@@ -1102,6 +1103,136 @@ function adicionarLog(msg) {
   const log = JSON.parse(localStorage.getItem("bolao_admin_log") || "[]");
   log.push(new Date().toLocaleString("pt-BR") + " | " + msg);
   localStorage.setItem("bolao_admin_log", JSON.stringify(log.slice(-50)));
+}
+
+async function exportarPalpitesCSV() {
+  if (!_adminAutenticado()) return alert("Não autorizado.");
+
+  // Filtra apostadores excluindo o MODELO (referência estatística)
+  const apostadoresHumanos = APP.apostadores.filter(a => a.id !== "MODELO" && !a.isModelo);
+  const numApostadores = apostadoresHumanos.length;
+
+  // Estimativa de Reads: 
+  // - 1 read para buscar o documento consolidado do cache de tokens (/cache/tokens)
+  // - 1 read por apostador para carregar palpites em tempo real
+  // Total: numApostadores + 1 reads (~201 reads para 200 participantes)
+  const readsEstimados = numApostadores + 1;
+
+  if (!confirm(`📥 CONFIRMAR EXPORTAÇÃO DE BACKUP CSV (APOSTADORES HUMANOS)\n\nIsso gerará um arquivo CSV com todos os dados dos participantes e seus palpites de todos os 104 jogos.\n\nO apostador estatístico (MODELO) NÃO será incluído.\n\n⚠️ AVISO DE COTAS DE LEITURA (Firestore):\n- Esse processo usará o cache de tokens atualizado (1 leitura).\n- Lerá os palpites em tempo real de cada participante direto do banco de dados (sem usar cache).\n- Isso consumirá aproximadamente ${readsEstimados} Leituras (Reads) no Firestore.\n\n💡 Dica: Se você fez alterações manuais de pagamento diretamente no console do Firebase recentemente, certifique-se de clicar em "Gerar Cache dos Tokens" antes para garantir a sincronia.\n\nDeseja prosseguir?`)) {
+    return;
+  }
+
+  adicionarLog("🔄 Iniciando exportação de CSV...");
+
+  try {
+    // 1. Busca os tokens diretamente do cache consolidado (apenas 1 read!)
+    const cacheSnap = await APP.db.collection("cache").doc("tokens").get();
+    const cacheTokens = cacheSnap.exists ? cacheSnap.data() : {};
+
+    // Mapeia token -> pago baseado no cache
+    const mapaTokenPago = {};
+    for (const tData of Object.values(cacheTokens)) {
+      if (tData.token) {
+        mapaTokenPago[tData.token] = tData.pago === true;
+      }
+    }
+
+    // 2. Busca palpites em tempo real para cada apostador humano (1 read por apostador)
+    const backupDados = [];
+    const promises = apostadoresHumanos.map(async (a) => {
+      try {
+        const snap = await APP.db
+          .collection("apostadores").doc(a.id)
+          .collection("dados").doc("palpites").get();
+
+        let palpites = {};
+        if (snap.exists) {
+          palpites = snap.data() || {};
+        }
+
+        const estaPago = mapaTokenPago[a.token] ? "Pago" : "A Pagar";
+
+        backupDados.push({
+          nome: a.nome || "",
+          apelido: a.apelido || "",
+          id: a.id,
+          token: a.token || "",
+          pagoStatus: estaPago,
+          palpites: palpites
+        });
+      } catch (err) {
+        console.error("Erro ao ler palpites para backup de", a.id, err);
+        backupDados.push({
+          nome: a.nome || "",
+          apelido: a.apelido || "",
+          id: a.id,
+          token: a.token || "",
+          pagoStatus: "Erro Leitura",
+          palpites: {}
+        });
+      }
+    });
+
+    await Promise.all(promises);
+
+    // Ordena pelo apelido (ou nome)
+    backupDados.sort((a, b) => (a.apelido || a.nome).localeCompare(b.apelido || b.nome));
+
+    // 6. Monta o arquivo CSV
+    const jogos = window.SCHEDULE || [];
+    const headers = ["Nome", "Apelido", "ID", "Token", "Status Pagamento"];
+    
+    // Adiciona o cabeçalho dos 104 jogos usando seus IDs
+    jogos.forEach(j => {
+      headers.push(j.id);
+    });
+
+    const rows = [headers];
+
+    backupDados.forEach(b => {
+      const row = [
+        b.nome,
+        b.apelido,
+        b.id,
+        b.token,
+        b.pagoStatus
+      ];
+
+      jogos.forEach(j => {
+        const palpiteVal = b.palpites[j.id] || ""; // formato "2-1" ou vazio
+        row.push(palpiteVal);
+      });
+
+      rows.push(row);
+    });
+
+    // Converte para string CSV formatada
+    const csvContent = rows.map(r =>
+      r.map(val => {
+        const text = (val === undefined || val === null) ? "" : String(val);
+        // Escapa aspas e vírgulas para evitar quebra de colunas no Excel
+        if (text.includes(",") || text.includes('"') || text.includes("\n")) {
+          return `"${text.replace(/"/g, '""')}"`;
+        }
+        return text;
+      }).join(",")
+    ).join("\n");
+
+    // 7. Faz o download do arquivo no navegador com UTF-8 BOM
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `backup_apostas_copa_2026_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    adicionarLog("✅ Backup CSV de apostas humanas exportado com sucesso");
+  } catch (e) {
+    console.error("Erro na exportação do CSV:", e);
+    alert("❌ Erro ao exportar o CSV:\n" + e.message);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
