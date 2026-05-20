@@ -144,8 +144,8 @@ window.BRACKET = (() => {
             winner = res.penaltis_vencedor === "home" ? jogoRef.home : jogoRef.away;
             loser = res.penaltis_vencedor === "home" ? jogoRef.away : jogoRef.home;
           } else {
-            winner = res.homeGoals > res.awayGoals ? jogoRef.home : jogoRef.away;
-            loser = res.homeGoals > res.awayGoals ? jogoRef.away : jogoRef.home;
+            winner = res.homeGoals >= res.awayGoals ? jogoRef.home : jogoRef.away;
+            loser = res.homeGoals >= res.awayGoals ? jogoRef.away : jogoRef.home;
           }
           return { code: prefix === "W" ? winner : loser, resolved: true };
         }

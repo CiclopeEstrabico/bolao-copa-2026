@@ -1036,7 +1036,6 @@ async function gerarCachePalpites(tipo, silencioso = false) {
   }
 
   // ── 2. Lê palpites de cada apostador do doc compacto (1 read/apostador) ─────
-  // Fallback automático para subcollection antiga se doc compacto não existir.
   const palpites = {};
 
   const reads = apostadores.map(async a => {
