@@ -663,10 +663,6 @@ async function deletarApostadorId(id) {
     await APP.db.collection("apostadores").doc(id)
       .collection("dados").doc("palpites").delete().catch(() => { });
 
-    // Deletar subcoleção antiga (dual-write — remover após migração)
-    const palpitesSnap = await APP.db.collection("apostadores").doc(id)
-      .collection("palpites_jogos").get();
-    await Promise.all(palpitesSnap.docs.map(doc => doc.ref.delete()));
 
     // Deletar o documento do apostador
     await APP.db.collection("apostadores").doc(id).delete();
@@ -674,19 +670,30 @@ async function deletarApostadorId(id) {
     // Token volta para "Enviado" — operação secundária
     if (tokenDoApostador) {
       try {
-        const tokenSnap = await APP.db.collection("tokens")
-          .where("token", "==", tokenDoApostador)
-          .limit(1)
-          .get();
-        if (!tokenSnap.empty) {
-          const tokenDoc = tokenSnap.docs[0];
-          const dadosAtuais = tokenDoc.data();
+        let tokenDoc = APP.db.collection("tokens").doc(tokenDoApostador);
+        let tokenSnap = await tokenDoc.get();
+        if (!tokenSnap.exists) {
+          // Fallback formato antigo (onde o ID do doc é tok_X)
+          const snap = await APP.db.collection("tokens")
+            .where("token", "==", tokenDoApostador)
+            .limit(1)
+            .get();
+          if (!snap.empty) {
+            tokenDoc = snap.docs[0].ref;
+            tokenSnap = snap.docs[0];
+          } else {
+            tokenDoc = null;
+          }
+        }
+
+        if (tokenDoc) {
+          const dadosAtuais = tokenSnap.data();
           const tokenUpdate = {
             enviado: true,
             apelido: dadosAtuais.apelido || apelidoDoApostador,
             enviado_em: dadosAtuais.enviado_em || new Date().toISOString()
           };
-          await tokenDoc.ref.update(tokenUpdate);
+          await tokenDoc.update(tokenUpdate);
 
           // Auto-save cirúrgico no Dicionário de cache de tokens
           await APP.db.collection("cache").doc("tokens").set({ [tokenDoc.id]: tokenUpdate }, { merge: true });
@@ -749,6 +756,7 @@ async function renderTokens() {
 
   let h = '<div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">';
   h += '<div style="font-size:.9rem;font-weight:800">🔑 Tokens</div>';
+  h += '<button class="btn btn-sm" onclick="migrarTokensParaNovoFormato(this)" style="background:var(--dourado);color:#000;border:none;font-size:.65rem;font-weight:800;padding:4px 8px;border-radius:4px;cursor:pointer">⚠️ Migrar Tokens Legados</button>';
   h += '<span style="font-size:.71rem;padding:2px 8px;border-radius:10px;background:var(--verde-ok);color:#fff">' + usados.length + ' em uso</span>';
   h += '<span style="font-size:.71rem;padding:2px 8px;border-radius:10px;background:var(--dourado);color:#000">' + enviados.length + ' enviados</span>';
   h += '<span style="font-size:.71rem;padding:2px 8px;border-radius:10px;border:1px solid var(--verde-light);color:var(--verde-light)">' + livres.length + ' disponíveis</span>';
@@ -920,16 +928,17 @@ async function criarToken() {
     const snap = await APP.db.collection("tokens").orderBy("numero", "desc").limit(1).get();
     let proxNumero = 1;
     if (!snap.empty) {
+      // Como agora temos mistura de IDs (tok_X e tokens reais), podemos ter que vasculhar ou ordernar pelo campo "numero"
       const maxAtual = snap.docs[0].data().numero || 0;
       proxNumero = maxAtual + 1;
     }
 
-    const novoDocId = "tok_" + proxNumero;
-    const docRef = APP.db.collection("tokens").doc(novoDocId);
+    const novoDocId = "tok_" + proxNumero; // ID do apostador interno (sequencial)
+    const docRef = APP.db.collection("tokens").doc(token); // O ID do doc é o próprio token secreto!
 
     const docVerifica = await docRef.get();
     if (docVerifica.exists) {
-      throw new Error("Conflito de ID (" + novoDocId + "). Tente novamente.");
+      throw new Error("Conflito de ID (" + token + "). Tente novamente.");
     }
 
     const newObj = {
@@ -944,7 +953,7 @@ async function criarToken() {
     await docRef.set(newObj);
 
     // Auto-save da nova chave no Dicionário
-    await APP.db.collection("cache").doc("tokens").set({ [novoDocId]: newObj }, { merge: true });
+    await APP.db.collection("cache").doc("tokens").set({ [token]: newObj }, { merge: true });
 
     renderTokens();
   } catch (e) {
@@ -990,6 +999,57 @@ async function manualGerarCacheTokens() {
     renderTokens();
   } else {
     alert("❌ Erro ao gerar cache de tokens.");
+  }
+}
+
+async function migrarTokensParaNovoFormato(btn) {
+  if (!_adminAutenticado()) return alert("Não autorizado.");
+  if (!confirm("⚠️ CONFIRMAR MIGRAÇÃO DE TOKENS LEGADOS\n\nEste processo migrará todos os tokens antigos (cujos IDs começam com 'tok_') para o novo formato onde o ID do documento é a própria string secreta do token.\n\nIsso impedirá qualquer invasor de adivinhar tokens alheios de forma sequencial.\n\nDeseja iniciar a migração?")) return;
+
+  const originalText = btn ? btn.textContent : "Migrar";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "⏳ Migrando...";
+  }
+
+  try {
+    const snap = await APP.db.collection("tokens").get();
+    const legacyDocs = snap.docs.filter(d => d.id.startsWith("tok_"));
+
+    if (legacyDocs.length === 0) {
+      alert("✅ Nenhum token legado encontrado para migração!");
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+      return;
+    }
+
+    let migrados = 0;
+    for (const d of legacyDocs) {
+      const data = d.data();
+      const tokenVal = data.token;
+      if (tokenVal) {
+        // Salva com ID = token
+        await APP.db.collection("tokens").doc(tokenVal).set(data);
+        // Exclui o antigo com ID = tok_X
+        await APP.db.collection("tokens").doc(d.id).delete();
+        migrados++;
+      }
+    }
+
+    // Regera o cache completo do zero
+    await gerarCacheTokens();
+
+    alert(`🎉 Sucesso! ${migrados} tokens legados foram migrados para o novo formato com sucesso.`);
+    renderTokens();
+  } catch (e) {
+    alert("❌ Erro durante a migração: " + e.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
   }
 }
 

@@ -144,18 +144,29 @@ async function iniciarAposta() {
   // Se não encontrou, valida o token no Firestore
   if (!_apostador) {
     try {
-      const snap = await APP.db.collection("tokens")
-        .where("token", "==", token)
-        .where("ativo", "==", true)
-        .limit(1)
-        .get();
+      let info = null;
 
-      if (snap.empty) {
+      // 1. Tenta carregar diretamente pelo ID (novo formato: ID do doc é o próprio token)
+      const directSnap = await APP.db.collection("tokens").doc(token).get();
+      if (directSnap.exists && directSnap.data().ativo === true) {
+        info = directSnap.data();
+      } else {
+        // 2. Fallback temporário para tokens legados (onde ID do doc é tok_X)
+        const snap = await APP.db.collection("tokens")
+          .where("token", "==", token)
+          .where("ativo", "==", true)
+          .limit(1)
+          .get();
+        if (!snap.empty) {
+          info = snap.docs[0].data();
+        }
+      }
+
+      if (!info) {
         mostrarErroAposta("Token inválido ou expirado. Solicite seu link ao organizador.");
         return;
       }
 
-      const info = snap.docs[0].data();
       _apostador = { ...info, nome: "", apelido: "", novo: true };
       APP.apostadores.push(_apostador);
     } catch (e) {
@@ -280,14 +291,24 @@ async function salvarCadastro() {
   // Sincroniza apelido no doc do token (se estava vazio)
   if (_apostador.token && _apostador.apelido) {
     try {
-      const snap = await APP.db.collection("tokens")
-        .where("token", "==", _apostador.token)
-        .limit(1)
-        .get();
-      if (!snap.empty) {
-        const tokenDoc = snap.docs[0];
-        if (!tokenDoc.data().apelido) {
-          await tokenDoc.ref.update({ apelido: _apostador.apelido });
+      // Tenta primeiro carregar diretamente (novo formato: ID do doc é o próprio token)
+      const docRef = APP.db.collection("tokens").doc(_apostador.token);
+      const docSnap = await docRef.get();
+      if (docSnap.exists) {
+        if (!docSnap.data().apelido) {
+          await docRef.update({ apelido: _apostador.apelido });
+        }
+      } else {
+        // Fallback antigo por query (caso o token ainda não tenha sido migrado)
+        const snap = await APP.db.collection("tokens")
+          .where("token", "==", _apostador.token)
+          .limit(1)
+          .get();
+        if (!snap.empty) {
+          const tokenDoc = snap.docs[0];
+          if (!tokenDoc.data().apelido) {
+            await tokenDoc.ref.update({ apelido: _apostador.apelido });
+          }
         }
       }
     } catch (e) { /* silencioso */ }
