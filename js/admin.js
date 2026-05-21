@@ -745,7 +745,8 @@ async function renderTokens() {
   }
 
   // Converte dicionário em array pra desenhar a UI igualzinho antes e ORDENA por número
-  let tokens = Object.keys(tokensObj).map(id => ({ id, ...tokensObj[id] }))
+  // docId mapeia a chave do documento real (o token secreto para novos, ou tok_X para legados)
+  let tokens = Object.keys(tokensObj).map(key => ({ docId: key, ...tokensObj[key] }))
                  .sort((a, b) => (a.numero || 0) - (b.numero || 0));
 
   const tokensUsados = new Set(APP.apostadores.map(a => a.token).filter(Boolean));
@@ -836,17 +837,17 @@ function _tokenCard(t, apt, tipo) {
     const isPago = t.pago === true;
     const btnText = isPago ? "✅ PAGO" : "A PAGAR";
     const btnStyle = isPago ? "background:var(--verde-ok);color:#fff;border:none" : "background:transparent;color:var(--texto2);border:1px solid var(--borda)";
-    h += '<button class="btn btn-sm" onclick="togglePago(\'' + t.id + '\', ' + !isPago + ')" style="font-size:.62rem;padding:2px 6px;' + btnStyle + '">' + btnText + '</button>';
+    h += '<button class="btn btn-sm" onclick="togglePago(\'' + t.docId + '\', ' + !isPago + ')" style="font-size:.62rem;padding:2px 6px;' + btnStyle + '">' + btnText + '</button>';
   }
 
   if (tipo === "livre") {
     h += '<button class="btn btn-sm" onclick="copiarLink(\'' + link + '\',this)" style="font-size:.62rem;padding:2px 6px">🔗 Link</button>';
-    h += '<button class="btn btn-sm" onclick="marcarEnviado(\'' + t.id + '\')" style="font-size:.62rem;padding:2px 6px;background:var(--dourado);color:#000;border:none">✉️ Enviar</button>';
-    h += '<button class="btn btn-perigo btn-sm" onclick="deletarToken(\'' + t.id + '\')" style="font-size:.62rem;padding:2px 6px">🗑</button>';
+    h += '<button class="btn btn-sm" onclick="marcarEnviado(\'' + t.docId + '\')" style="font-size:.62rem;padding:2px 6px;background:var(--dourado);color:#000;border:none">✉️ Enviar</button>';
+    h += '<button class="btn btn-perigo btn-sm" onclick="deletarToken(\'' + t.docId + '\')" style="font-size:.62rem;padding:2px 6px">🗑</button>';
   } else if (tipo === "enviado") {
     h += '<button class="btn btn-sm" onclick="copiarLink(\'' + link + '\',this)" style="font-size:.62rem;padding:2px 6px">🔗 Link</button>';
-    h += '<button class="btn btn-sm" onclick="reverterEnviado(\'' + t.id + '\')" style="font-size:.62rem;padding:2px 6px;background:var(--borda)">↩️ Reverter</button>';
-    h += '<button class="btn btn-perigo btn-sm" onclick="deletarToken(\'' + t.id + '\')" style="font-size:.62rem;padding:2px 6px">🗑</button>';
+    h += '<button class="btn btn-sm" onclick="reverterEnviado(\'' + t.docId + '\')" style="font-size:.62rem;padding:2px 6px;background:var(--borda)">↩️ Reverter</button>';
+    h += '<button class="btn btn-perigo btn-sm" onclick="deletarToken(\'' + t.docId + '\')" style="font-size:.62rem;padding:2px 6px">🗑</button>';
   }
   h += '</div>';
   h += '</div>';
