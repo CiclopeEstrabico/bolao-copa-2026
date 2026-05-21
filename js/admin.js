@@ -670,23 +670,9 @@ async function deletarApostadorId(id) {
     // Token volta para "Enviado" — operação secundária
     if (tokenDoApostador) {
       try {
-        let tokenDoc = APP.db.collection("tokens").doc(tokenDoApostador);
-        let tokenSnap = await tokenDoc.get();
-        if (!tokenSnap.exists) {
-          // Fallback formato antigo (onde o ID do doc é tok_X)
-          const snap = await APP.db.collection("tokens")
-            .where("token", "==", tokenDoApostador)
-            .limit(1)
-            .get();
-          if (!snap.empty) {
-            tokenDoc = snap.docs[0].ref;
-            tokenSnap = snap.docs[0];
-          } else {
-            tokenDoc = null;
-          }
-        }
-
-        if (tokenDoc) {
+        const tokenDoc = APP.db.collection("tokens").doc(tokenDoApostador);
+        const tokenSnap = await tokenDoc.get();
+        if (tokenSnap.exists) {
           const dadosAtuais = tokenSnap.data();
           const tokenUpdate = {
             enviado: true,
@@ -757,7 +743,6 @@ async function renderTokens() {
 
   let h = '<div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">';
   h += '<div style="font-size:.9rem;font-weight:800">🔑 Tokens</div>';
-  h += '<button class="btn btn-sm" onclick="migrarTokensParaNovoFormato(this)" style="background:var(--dourado);color:#000;border:none;font-size:.65rem;font-weight:800;padding:4px 8px;border-radius:4px;cursor:pointer">⚠️ Migrar Tokens Legados</button>';
   h += '<span style="font-size:.71rem;padding:2px 8px;border-radius:10px;background:var(--verde-ok);color:#fff">' + usados.length + ' em uso</span>';
   h += '<span style="font-size:.71rem;padding:2px 8px;border-radius:10px;background:var(--dourado);color:#000">' + enviados.length + ' enviados</span>';
   h += '<span style="font-size:.71rem;padding:2px 8px;border-radius:10px;border:1px solid var(--verde-light);color:var(--verde-light)">' + livres.length + ' disponíveis</span>';
@@ -1000,57 +985,6 @@ async function manualGerarCacheTokens() {
     renderTokens();
   } else {
     alert("❌ Erro ao gerar cache de tokens.");
-  }
-}
-
-async function migrarTokensParaNovoFormato(btn) {
-  if (!_adminAutenticado()) return alert("Não autorizado.");
-  if (!confirm("⚠️ CONFIRMAR MIGRAÇÃO DE TOKENS LEGADOS\n\nEste processo migrará todos os tokens antigos (cujos IDs começam com 'tok_') para o novo formato onde o ID do documento é a própria string secreta do token.\n\nIsso impedirá qualquer invasor de adivinhar tokens alheios de forma sequencial.\n\nDeseja iniciar a migração?")) return;
-
-  const originalText = btn ? btn.textContent : "Migrar";
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = "⏳ Migrando...";
-  }
-
-  try {
-    const snap = await APP.db.collection("tokens").get();
-    const legacyDocs = snap.docs.filter(d => d.id.startsWith("tok_"));
-
-    if (legacyDocs.length === 0) {
-      alert("✅ Nenhum token legado encontrado para migração!");
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = originalText;
-      }
-      return;
-    }
-
-    let migrados = 0;
-    for (const d of legacyDocs) {
-      const data = d.data();
-      const tokenVal = data.token;
-      if (tokenVal) {
-        // Salva com ID = token
-        await APP.db.collection("tokens").doc(tokenVal).set(data);
-        // Exclui o antigo com ID = tok_X
-        await APP.db.collection("tokens").doc(d.id).delete();
-        migrados++;
-      }
-    }
-
-    // Regera o cache completo do zero
-    await gerarCacheTokens();
-
-    alert(`🎉 Sucesso! ${migrados} tokens legados foram migrados para o novo formato com sucesso.`);
-    renderTokens();
-  } catch (e) {
-    alert("❌ Erro durante a migração: " + e.message);
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = originalText;
-    }
   }
 }
 
