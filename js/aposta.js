@@ -286,6 +286,22 @@ async function salvarCadastro() {
   _apostador.novo = false;
   _apostador.token = _apostador.token;
   if (!_apostador.id) _apostador.id = "tok_" + Date.now();
+
+  // Limpa campos extras (como numero, pago, enviado) vindos do token para
+  // respeitar as regras de segurança estritas do Firestore (hasOnly)
+  const apostadorLimpo = {
+    id: _apostador.id,
+    nome: _apostador.nome,
+    apelido: _apostador.apelido,
+    token: _apostador.token || "",
+    ativo: _apostador.ativo !== undefined ? _apostador.ativo : true,
+    novo: false,
+    criado_em: _apostador.criado_em || new Date().toISOString()
+  };
+  if (_apostador.especiais) apostadorLimpo.especiais = _apostador.especiais;
+  if (_apostador.ordem !== undefined) apostadorLimpo.ordem = _apostador.ordem;
+
+  _apostador = apostadorLimpo;
   await gravarApostador(_apostador);
 
   // Sincroniza apelido no doc do token (se estava vazio)
