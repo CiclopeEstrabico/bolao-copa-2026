@@ -255,55 +255,64 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
 
   // ── Dimensões responsivas ──
   const n = ranking.length;
-  const isMobile = window.innerWidth <= 768;
+  const isMobile    = window.innerWidth <= 768;
+  const isLandscape = window.innerWidth > window.innerHeight;
+
+  // Três modos:
+  //  1. PORTRAIT MOBILE  → tamanhos fixos confortáveis, scroll se necessário
+  //  2. LANDSCAPE MOBILE → como desktop (sem scroll), mas margem menor
+  //  3. DESKTOP          → sem scroll, gap comprimido antes do barWidth
 
   let gap, barWidth, valFontSize, nameFontSize, needsScroll;
 
-  if (isMobile) {
-    // MOBILE: tamanhos confortáveis e fixos; habilita scroll horizontal se necessário
+  if (isMobile && !isLandscape) {
+    // ── PORTRAIT MOBILE: barras generosas, scroll se não couber ──
     barWidth     = n <= 8 ? 32 : 28;
     gap          = n <= 8 ? 10 : 8;
     valFontSize  = '.72rem';
     nameFontSize = '.74rem';
 
-    // Largura mínima do gráfico = n colunas * (barWidth + gap)
     const minPx   = n * (barWidth + gap) + gap;
-    const screenPx = window.innerWidth - 40; // desconta padding do card
+    const screenPx = window.innerWidth - 40;
     needsScroll   = minPx > screenPx;
 
   } else {
-    // DESKTOP: cabe numa tela sem scroll — reduz gap ANTES de barWidth
+    // ── LANDSCAPE MOBILE + DESKTOP: tudo numa tela, sem scroll ──
     needsScroll = false;
 
-    // Área útil estimada: desconta ~80px de margens totais do layout
-    const disponivelPx = window.innerWidth - 80;
+    // Margem lateral: mobile landscape tem menos padding que desktop completo
+    const margemPx     = isMobile ? 40 : 80;
+    const disponivelPx = window.innerWidth - margemPx;
 
-    // barWidth desejado por número de apostadores (generoso mas razoável)
-    if      (n <= 6)  barWidth = 38;
-    else if (n <= 10) barWidth = 32;
-    else if (n <= 15) barWidth = 26;
-    else if (n <= 20) barWidth = 20;
-    else if (n <= 28) barWidth = 16;
-    else              barWidth = 12;
+    // barWidth preferido por faixa de apostadores
+    if      (n <= 6)  barWidth = 36;
+    else if (n <= 10) barWidth = 30;
+    else if (n <= 15) barWidth = 24;
+    else if (n <= 20) barWidth = 18;
+    else if (n <= 28) barWidth = 14;
+    else              barWidth = 10;
 
-    // gap é o que sobra após distribuir barWidth; mínimo 2px, máximo 18px
+    // gap = sobra por coluna; mínimo 2px, máximo 18px
     const perColuna = disponivelPx / n;
     gap = Math.min(18, Math.max(2, Math.floor(perColuna - barWidth)));
 
-    // Fontes: mantém confortáveis, só reduz para n grandes
-    if      (n <= 8)  { valFontSize = '.78rem'; nameFontSize = '.80rem'; }
-    else if (n <= 12) { valFontSize = '.73rem'; nameFontSize = '.75rem'; }
-    else if (n <= 18) { valFontSize = '.68rem'; nameFontSize = '.70rem'; }
-    else if (n <= 24) { valFontSize = '.64rem'; nameFontSize = '.66rem'; }
-    else              { valFontSize = '.60rem'; nameFontSize = '.62rem'; }
+    // Fontes: landscape mobile ligeiramente menores (tela mais curta em altura)
+    const fScale = (isMobile && isLandscape) ? 0.92 : 1.0;
+    const fv = (base) => (base * fScale).toFixed(2) + 'rem';
+
+    if      (n <= 8)  { valFontSize = fv(0.78); nameFontSize = fv(0.80); }
+    else if (n <= 12) { valFontSize = fv(0.73); nameFontSize = fv(0.75); }
+    else if (n <= 18) { valFontSize = fv(0.68); nameFontSize = fv(0.70); }
+    else if (n <= 24) { valFontSize = fv(0.64); nameFontSize = fv(0.66); }
+    else              { valFontSize = fv(0.60); nameFontSize = fv(0.62); }
   }
 
   // ── Monta o HTML ──
   let h = '<div class="card" style="padding:20px 10px;">';
 
-  // Wrapper com scroll apenas em mobile quando necessário
+  // Wrapper com scroll apenas em portrait mobile quando necessário
   let minWidthStyle = '';
-  if (isMobile && needsScroll) {
+  if (needsScroll) {
     const minPx = n * (barWidth + gap) + gap;
     h += `<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">`;
     minWidthStyle = `min-width:${minPx}px;`;
@@ -334,7 +343,7 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
   }
 
   h += '</div>';
-  if (isMobile && needsScroll) h += '</div>'; // fecha wrapper scroll
+  if (needsScroll) h += '</div>'; // fecha wrapper scroll
   h += '</div>';
   return h;
 }
