@@ -184,32 +184,38 @@ select{appearance:none;cursor:pointer}
 /* ── Scrollbar horizontal da compilação — PREMIUM, em todos os breakpoints ── */
 
 /* Firefox */
-.compilacao-wrap{
+.compilacao-wrap,
+.compilacao-top-scroll {
   scrollbar-width:thin;
   scrollbar-color:var(--verde) rgba(255,255,255,.06);
 }
 
 /* WebKit/Blink (Chrome, Safari, Edge, iOS Safari) */
 /* Barra superior E inferior são a mesma scrollbar horizontal — height controla a espessura */
-.compilacao-wrap::-webkit-scrollbar{
+.compilacao-wrap::-webkit-scrollbar,
+.compilacao-top-scroll::-webkit-scrollbar {
   height:8px;         /* espessura generosa — bem visível e clicável */
 }
-.compilacao-wrap::-webkit-scrollbar-track{
+.compilacao-wrap::-webkit-scrollbar-track,
+.compilacao-top-scroll::-webkit-scrollbar-track {
   background:rgba(255,255,255,.05);
   border-radius:99px;
   margin:0 4px;       /* pequeno recuo nas pontas para ficar mais elegante */
 }
-.compilacao-wrap::-webkit-scrollbar-thumb{
+.compilacao-wrap::-webkit-scrollbar-thumb,
+.compilacao-top-scroll::-webkit-scrollbar-thumb {
   background:linear-gradient(90deg, var(--verde-dark), var(--verde-light));
   border-radius:99px;
   border:2px solid rgba(13,17,23,.6);   /* "padding" visual — deixa o thumb mais fino que o track */
   box-shadow:0 0 6px rgba(0,200,120,.35); /* brilho verde sutil */
 }
-.compilacao-wrap::-webkit-scrollbar-thumb:hover{
+.compilacao-wrap::-webkit-scrollbar-thumb:hover,
+.compilacao-top-scroll::-webkit-scrollbar-thumb:hover {
   background:linear-gradient(90deg, var(--verde), #00ffaa);
   box-shadow:0 0 10px rgba(0,200,120,.6);
 }
-.compilacao-wrap::-webkit-scrollbar-thumb:active{
+.compilacao-wrap::-webkit-scrollbar-thumb:active,
+.compilacao-top-scroll::-webkit-scrollbar-thumb:active {
   background:var(--verde-light);
 }
 .compilacao-table{width:max-content;min-width:100%;border-collapse:collapse;font-size:.7rem}
