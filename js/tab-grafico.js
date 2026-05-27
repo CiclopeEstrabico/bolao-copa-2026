@@ -255,10 +255,10 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
 
   // ── Dimensões responsivas baseadas no número de apostadores ──
   const n = ranking.length;
-  // Gap entre barras: reduz conforme cresce a quantidade
-  const gap = n <= 6 ? 12 : n <= 10 ? 8 : n <= 16 ? 4 : 2;
-  // Largura fixa da barra: reduz para caber todos na tela sem scroll
-  const barWidth = n <= 6 ? 28 : n <= 10 ? 22 : n <= 16 ? 16 : n <= 24 ? 12 : 8;
+  // Gap entre barras: reduz mais agressivamente para manter barras mais largas
+  const gap = n <= 6 ? 12 : n <= 10 ? 6 : n <= 16 ? 3 : n <= 24 ? 2 : 1;
+  // Largura fixa da barra: otimizada para aproveitar o gap reduzido
+  const barWidth = n <= 6 ? 28 : n <= 10 ? 24 : n <= 16 ? 18 : n <= 24 ? 12 : 8;
   // Tamanho de fonte do valor acima da barra
   const valFontSize = n <= 10 ? '.7rem' : n <= 16 ? '.62rem' : '.55rem';
   // Tamanho de fonte do nome abaixo da barra

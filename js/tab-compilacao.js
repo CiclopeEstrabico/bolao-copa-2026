@@ -5,18 +5,19 @@ window.abrirModalApostador = function (nome, apelido, pts) {
   const box = document.getElementById("modal-prog-body");
   if (!ov || !box) return;
 
+  const isMob = window.innerWidth <= 600;
   let h = '';
   h += '<button class="modal-close" onclick="(function(){document.getElementById(\'modal-prog\').classList.remove(\'aberto\');document.body.style.overflow=\'\'})()">✕</button>';
   
-  h += '<div style="text-align:center;padding:15px 10px">';
-  h += '  <div style="font-size:2.8rem;margin-bottom:12px;display:inline-block;padding:12px;background:var(--fundo2);border-radius:50%;border:1.5px solid var(--borda)">👤</div>';
-  h += '  <h3 style="margin:8px 0 4px 0;font-size:1.4rem;font-weight:800;color:var(--verde-light);letter-spacing:.02em">' + (apelido || nome) + '</h3>';
-  h += '  <p style="margin:0 0 24px 0;font-size:0.9rem;color:var(--texto2);font-weight:500">' + nome + '</p>';
+  h += '<div style="text-align:center;padding:' + (isMob ? '8px 6px' : '15px 10px') + '">';
+  h += '  <div style="font-size:' + (isMob ? '1.8rem' : '2.8rem') + ';margin-bottom:' + (isMob ? '6px' : '12px') + ';display:inline-block;padding:' + (isMob ? '8px' : '12px') + ';background:var(--fundo2);border-radius:50%;border:1.5px solid var(--borda)">👤</div>';
+  h += '  <h3 style="margin:' + (isMob ? '4px 0 2px 0' : '8px 0 4px 0') + ';font-size:' + (isMob ? '1rem' : '1.4rem') + ';font-weight:800;color:var(--verde-light);letter-spacing:.02em">' + (apelido || nome) + '</h3>';
+  h += '  <p style="margin:0 0 ' + (isMob ? '12px' : '24px') + ' 0;font-size:' + (isMob ? '0.75rem' : '0.9rem') + ';color:var(--texto2);font-weight:500">' + nome + '</p>';
   
-  h += '  <div style="display:flex;justify-content:center;gap:16px;margin-top:10px">';
-  h += '    <div style="background:var(--fundo2);padding:14px 24px;border-radius:12px;border:1px solid var(--borda);min-width:140px;box-shadow:0 4px 12px rgba(0,0,0,0.15)">';
-  h += '      <div style="font-size:0.68rem;color:var(--texto2);text-transform:uppercase;letter-spacing:0.06em;font-weight:700">Pontos Totais</div>';
-  h += '      <div style="font-size:2rem;font-weight:900;color:var(--dourado);margin-top:4px;letter-spacing:-0.02em">' + Number(pts).toFixed(1) + '</div>';
+  h += '  <div style="display:flex;justify-content:center;gap:12px;margin-top:6px">';
+  h += '    <div style="background:var(--fundo2);padding:' + (isMob ? '10px 18px' : '14px 24px') + ';border-radius:12px;border:1px solid var(--borda);min-width:' + (isMob ? '100px' : '140px') + ';box-shadow:0 4px 12px rgba(0,0,0,0.15)">';
+  h += '      <div style="font-size:' + (isMob ? '0.6rem' : '0.68rem') + ';color:var(--texto2);text-transform:uppercase;letter-spacing:0.06em;font-weight:700">Pontos Totais</div>';
+  h += '      <div style="font-size:' + (isMob ? '1.4rem' : '2rem') + ';font-weight:900;color:var(--dourado);margin-top:4px;letter-spacing:-0.02em">' + Number(pts).toFixed(1) + '</div>';
   h += '    </div>';
   h += '  </div>';
   h += '</div>';
