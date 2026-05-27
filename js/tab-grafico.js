@@ -230,9 +230,13 @@ window._graficoIrEvolucao = function() {
 };
 
 // ── Labels de valor por métrica ────────────────────────────────────────────
-function _fmtVal(metricaAtiva, val) {
-  if (metricaAtiva === 'pct') return val + '%';
-  if (metricaAtiva === 'pts') return val.toFixed(1);
+function _fmtVal(metricaAtiva, val, shortFmt = false) {
+  if (metricaAtiva === 'pct') {
+    return shortFmt ? Math.round(parseFloat(val)) + '%' : val + '%';
+  }
+  if (metricaAtiva === 'pts') {
+    return shortFmt ? Math.round(val) : val.toFixed(1);
+  }
   return String(val);
 }
 
@@ -260,7 +264,7 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
 
   // Três modos:
   //  1. PORTRAIT MOBILE  → tamanhos fixos confortáveis, scroll se necessário
-  //  2. LANDSCAPE MOBILE → como desktop (sem scroll), mas margem menor
+  //  2. LANDSCAPE MOBILE → como desktop (sem scroll), mas margem menor e barras menores
   //  3. DESKTOP          → sem scroll, gap comprimido antes do barWidth
 
   let gap, barWidth, valFontSize, nameFontSize, needsScroll;
@@ -284,20 +288,29 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
     const margemPx     = isMobile ? 40 : 80;
     const disponivelPx = window.innerWidth - margemPx;
 
-    // barWidth preferido por faixa de apostadores
-    if      (n <= 6)  barWidth = 36;
-    else if (n <= 10) barWidth = 30;
-    else if (n <= 15) barWidth = 24;
-    else if (n <= 20) barWidth = 18;
-    else if (n <= 28) barWidth = 14;
-    else              barWidth = 10;
+    // barWidth preferido por faixa de apostadores (reduzido se mobile landscape)
+    if (isMobile && isLandscape) {
+      if      (n <= 6)  barWidth = 26;
+      else if (n <= 10) barWidth = 20;
+      else if (n <= 15) barWidth = 16;
+      else if (n <= 20) barWidth = 12;
+      else if (n <= 28) barWidth = 9;
+      else              barWidth = 7;
+    } else {
+      if      (n <= 6)  barWidth = 36;
+      else if (n <= 10) barWidth = 30;
+      else if (n <= 15) barWidth = 24;
+      else if (n <= 20) barWidth = 18;
+      else if (n <= 28) barWidth = 14;
+      else              barWidth = 10;
+    }
 
     // gap = sobra por coluna; mínimo 2px, máximo 18px
     const perColuna = disponivelPx / n;
     gap = Math.min(18, Math.max(2, Math.floor(perColuna - barWidth)));
 
     // Fontes: landscape mobile ligeiramente menores (tela mais curta em altura)
-    const fScale = (isMobile && isLandscape) ? 0.92 : 1.0;
+    const fScale = (isMobile && isLandscape) ? 0.90 : 1.0;
     const fv = (base) => (base * fScale).toFixed(2) + 'rem';
 
     if      (n <= 8)  { valFontSize = fv(0.78); nameFontSize = fv(0.80); }
@@ -318,12 +331,16 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
     minWidthStyle = `min-width:${minPx}px;`;
   }
 
-  h += `<div style="display:flex;align-items:flex-end;gap:${gap}px;height:280px;padding-bottom:10px;border-bottom:1px solid var(--borda);margin-bottom:80px;position:relative;${minWidthStyle}">`;
+  const chartHeight = (isMobile && isLandscape) ? '180px' : '280px';
+  const marginBot   = (isMobile && isLandscape) ? '65px' : '80px';
+  const shortFmt    = isMobile && isLandscape;
+
+  h += `<div style="display:flex;align-items:flex-end;gap:${gap}px;height:${chartHeight};padding-bottom:10px;border-bottom:1px solid var(--borda);margin-bottom:${marginBot};position:relative;${minWidthStyle}">`;
 
   // Linha da média
   const avgValFmt = metricaAtiva === 'pct'
-    ? avgVal.toFixed(1) + '%'
-    : avgVal.toFixed(1);
+    ? (shortFmt ? Math.round(avgVal) + '%' : avgVal.toFixed(1) + '%')
+    : (shortFmt ? Math.round(avgVal) : avgVal.toFixed(1));
   h += `<div style="position:absolute;bottom:10px;left:0;right:0;height:${avgPerc}%;border-top:1px dashed var(--texto2);opacity:0.6;pointer-events:none;z-index:0">`;
   h += `<span style="position:absolute;top:-18px;left:0;font-size:.65rem;color:var(--texto2);font-weight:700">Média: ${avgValFmt}</span></div>`;
 
@@ -335,8 +352,8 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
     const nomeBarra = a.isModelo
       ? `<span style='font-weight:normal;color:#b8cfe8'>${a.nome}</span>`
       : a.nome;
-    h += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;position:relative;height:100%;justify-content:flex-end;z-index:1">`;
-    h += `<div style="font-size:${valFontSize};font-weight:800;color:var(--texto);margin-bottom:4px;white-space:nowrap">${_fmtVal(metricaAtiva, val)}</div>`;
+    h += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative;height:100%;justify-content:flex-end;z-index:1">`;
+    h += `<div style="font-size:${valFontSize};font-weight:800;color:var(--texto);margin-bottom:4px;white-space:nowrap">${_fmtVal(metricaAtiva, val, shortFmt)}</div>`;
     h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2,perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
     h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${nomeBarra}</div>`;
     h += '</div>';
