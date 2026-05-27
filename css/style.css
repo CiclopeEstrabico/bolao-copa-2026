@@ -180,6 +180,26 @@ select{appearance:none;cursor:pointer}
 
 /* COMPILACAO */
 .compilacao-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--radius)}
+
+/* Scrollbar horizontal da compilação — desktop only */
+@media(min-width:851px){
+  .compilacao-wrap{
+    scrollbar-width:thin;
+    scrollbar-color:var(--verde-dark) rgba(255,255,255,.04);
+  }
+  .compilacao-wrap::-webkit-scrollbar{height:6px}
+  .compilacao-wrap::-webkit-scrollbar-track{
+    background:rgba(255,255,255,.04);
+    border-radius:99px;
+  }
+  .compilacao-wrap::-webkit-scrollbar-thumb{
+    background:linear-gradient(90deg,var(--verde-dark),var(--verde-light));
+    border-radius:99px;
+  }
+  .compilacao-wrap::-webkit-scrollbar-thumb:hover{
+    background:linear-gradient(90deg,var(--verde),var(--verde-light));
+  }
+}
 .compilacao-table{width:max-content;min-width:100%;border-collapse:collapse;font-size:.7rem}
 .compilacao-table th,.compilacao-table td{padding:5px 6px;border:1px solid var(--borda);white-space:nowrap;text-align:center}
 .compilacao-table th:first-child,.compilacao-table td:first-child{position:sticky;left:0;z-index:2;background:var(--fundo2)}
