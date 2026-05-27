@@ -158,12 +158,12 @@ window.renderEstatisticas = function () {
     h += '<div style="font-size:.7rem;font-weight:700;color:var(--verde-ok);text-transform:uppercase;letter-spacing:.05em">Mais acertados</div>';
     for (const s of top3) {
       const b = APP.bracket?.[s.jogo.id] || {}; const hC = b.home || s.jogo.home; const aC = b.away || s.jogo.away;
-      h += _jogoStatRow(hC, aC, res[s.jogo.id], s.acertos, apos.length, "var(--verde-ok)");
+      h += _jogoStatRow(s.jogo.id, hC, aC, res[s.jogo.id], s.acertos, apos.length, "var(--verde-ok)");
     }
     h += '<div style="font-size:.7rem;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:.05em;margin-top:8px">Menos acertados (mais difíceis)</div>';
     for (const s of bot3) {
       const b = APP.bracket?.[s.jogo.id] || {}; const hC = b.home || s.jogo.home; const aC = b.away || s.jogo.away;
-      h += _jogoStatRow(hC, aC, res[s.jogo.id], s.acertos, apos.length, "#f87171");
+      h += _jogoStatRow(s.jogo.id, hC, aC, res[s.jogo.id], s.acertos, apos.length, "#f87171");
     }
     h += '</div></div>';
   }
@@ -273,7 +273,7 @@ window.renderEstatisticas = function () {
     const faseLbl = getFaseLabel(jogo);
     const dataHoraLbl = dataHoraStr + (faseLbl ? ", " + faseLbl : "");
     h += `<tr style="${rowBg}">`;
-    h += `<td class="stat-col-jogo" style="text-align:left;position:sticky;left:0;background:var(--card2);padding:6px 8px;z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">
+    h += `<td class="stat-col-jogo" onclick="PROGNOSE.abrirModal('${jogo.id}')" style="text-align:left;position:sticky;left:0;background:var(--card2);padding:6px 8px;z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1);cursor:pointer">
             <div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">${dataHoraLbl}</div>
             <div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">
               ${htmlBandeira(hC, 14)} <span class="stat-time-nome${isMobile ? ' stat-sigla' : ''}" title="${hName}">${isMobile ? getSigla(hC) : hName}</span> <span style="color:var(--texto2)">×</span> <span class="stat-time-nome${isMobile ? ' stat-sigla' : ''}" title="${aName}">${isMobile ? getSigla(aC) : aName}</span> ${htmlBandeira(aC, 14)}
@@ -287,9 +287,9 @@ window.renderEstatisticas = function () {
         const ph = r.penaltis_home ?? 0; const pa = r.penaltis_away ?? 0;
         resHtml += `<div style="font-size:.58rem;color:var(--amber);margin-top:1px;font-weight:700">PEN ${ph}x${pa}</div>`;
       }
-      h += `<td class="col-resultado" style="color:var(--verde-ok);font-weight:800;vertical-align:middle">${resHtml}</td>`;
+      h += `<td class="col-resultado" onclick="PROGNOSE.abrirModal('${jogo.id}')" style="color:var(--verde-ok);font-weight:800;vertical-align:middle;cursor:pointer">${resHtml}</td>`;
     } else {
-      h += `<td class="col-resultado" style="color:var(--texto2)">–</td>`;
+      h += `<td class="col-resultado" onclick="PROGNOSE.abrirModal('${jogo.id}')" style="color:var(--texto2);cursor:pointer">–</td>`;
     }
 
     if (podeVer) {
@@ -382,9 +382,9 @@ window.renderHtH = function () {
     const b = APP.bracket?.[jogo.id] || {}; const hC = b.home || jogo.home; const aC = b.away || jogo.away;
     const cor1 = v1 > v2 ? "var(--verde-ok)" : v1 < v2 ? "#f87171" : "var(--texto2)";
     const cor2 = v2 > v1 ? "var(--verde-ok)" : v2 < v1 ? "#f87171" : "var(--texto2)";
-    rows += '<tr><td class="stat-col-jogo" style="text-align:left;font-size:.73rem;position:sticky;left:0;background:var(--fundo);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">' +
+    rows += '<tr><td class="stat-col-jogo" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="text-align:left;font-size:.73rem;position:sticky;left:0;background:var(--fundo);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1);cursor:pointer">' +
       '<div style="display:flex;align-items:center;gap:4px;width:100%"><span class="stat-time-nome">' + getShortName(hC) + '</span> <span style="color:var(--texto2)">×</span> <span class="stat-time-nome">' + getShortName(aC) + '</span></div></td>' +
-      '<td style="font-size:.72rem">' + r.homeGoals + '×' + r.awayGoals + '</td>' +
+      '<td onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="font-size:.72rem;cursor:pointer">' + r.homeGoals + '×' + r.awayGoals + '</td>' +
       '<td style="color:' + cor1 + ';font-weight:700">' + (p1 ? p1.homeGoals + '×' + p1.awayGoals + ' (' + v1 + 'pts)' : '—') + '</td>' +
       '<td style="color:' + cor2 + ';font-weight:700">' + (p2 ? p2.homeGoals + '×' + p2.awayGoals + ' (' + v2 + 'pts)' : '—') + '</td></tr>';
   }
@@ -414,9 +414,9 @@ function _dCard(icon, label, nome, sub, cor) {
   </div>`;
 }
 
-function _jogoStatRow(hC, aC, r, acertos, total, cor) {
+function _jogoStatRow(jogoId, hC, aC, r, acertos, total, cor) {
   const pct = total ? Math.round(acertos / total * 100) : 0;
-  return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0">' +
+  return '<div onclick="PROGNOSE.abrirModal(\'' + jogoId + '\')" onmouseover="this.style.background=\'rgba(255,255,255,0.04)\'" onmouseout="this.style.background=\'\'" style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;transition:background 0.15s">' +
     htmlBandeira(hC, 16) + ' <span class="stat-time-nome">' + getShortName(hC) + '</span>' +
     '<span style="font-size:.72rem;color:var(--texto2);font-weight:700">' + r.homeGoals + '×' + r.awayGoals + '</span>' +
     htmlBandeira(aC, 16) + ' <span class="stat-time-nome">' + getShortName(aC) + '</span>' +

@@ -138,7 +138,7 @@ window.renderCompilacao = function () {
     const dataHoraStr = formatarDataBRT(jogo.utc, false);
     const faseLbl = getFaseLabel(jogo);
     const dataHora = dataHoraStr + (faseLbl ? ", " + faseLbl : "");
-    h += '<tr><td class="col-jogo" style="position:sticky;left:0;background:var(--card2);padding:6px 8px;z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">';
+    h += '<tr><td class="col-jogo" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="position:sticky;left:0;background:var(--card2);padding:6px 8px;z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1);cursor:pointer">';
     h += '<div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">' + dataHora + '</div>';
     h += '<div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">' + htmlBandeira(hC, 14) + ' <span class="compilacao-time-nome' + (isMobile ? ' comp-sigla' : '') + '" title="' + hN + '">' + hDisplay + '</span> <span style="color:var(--texto2)">×</span> <span class="compilacao-time-nome' + (isMobile ? ' comp-sigla' : '') + '" title="' + aN + '">' + aDisplay + '</span> ' + htmlBandeira(aC, 14) + '</div></td>';
     // Resultado oficial
@@ -148,9 +148,9 @@ window.renderCompilacao = function () {
         const ph = r.penaltis_home ?? 0; const pa = r.penaltis_away ?? 0;
         resHtml += '<div style="font-size:.58rem;color:var(--amber);margin-top:1px;font-weight:700">PEN ' + ph + 'x' + pa + '</div>';
       }
-      h += '<td class="col-resultado" style="color:var(--verde-ok);vertical-align:middle">' + resHtml + '</td>';
+      h += '<td class="col-resultado" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="color:var(--verde-ok);vertical-align:middle;cursor:pointer">' + resHtml + '</td>';
     } else {
-      h += '<td class="col-resultado" style="color:var(--texto2)">–</td>';
+      h += '<td class="col-resultado" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="color:var(--texto2);cursor:pointer">–</td>';
     }
     // Palpites de cada apostador (incluindo MODELO)
     for (const a of ranking) {
