@@ -290,6 +290,39 @@ select{appearance:none;cursor:pointer}
   .tabela-mini td{padding:8px 4px; font-size:.78rem}
   .tabela-mini th{padding:8px 4px; font-size:.7rem}
   .jogos-lista, .jogos-toggle { max-width:860px; margin-left:auto; margin-right:auto; }
+
+  /* === ABA COMPILACAO — Desktop Full Width e Largura de Coluna === */
+  body.aba-compilacao-ativa .main {
+    max-width: 100% !important;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  body.aba-compilacao-ativa .compilacao-wrap {
+    overflow-x: auto;
+  }
+  /* Nomes nas headers: aumentar largura em 10% (de 50px para 55px) e quebra de linha permitida */
+  body.aba-compilacao-ativa .compilacao-table th:not(.col-jogo):not(.col-resultado) {
+    max-width: 55px !important;
+    min-width: 55px !important;
+    width: 55px !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    font-size: .66rem !important;
+    line-height: 1.2;
+    padding: 4px 2px;
+  }
+  body.aba-compilacao-ativa .compilacao-table td:not(.col-jogo):not(.col-resultado) {
+    max-width: 55px !important;
+    min-width: 55px !important;
+    width: 55px !important;
+  }
+
+  /* === ABA GRAFICO — Desktop Full Width === */
+  body.aba-grafico-ativa .main {
+    max-width: 100% !important;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
 }
 /* ===== BRACKET VISUAL ===== */
 .bracket-scroll{display:flex;gap:0;overflow-x:auto;padding:8px 0 16px;-webkit-overflow-scrolling:touch;min-height:300px;scroll-snap-type:x proximity}

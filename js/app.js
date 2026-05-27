@@ -347,6 +347,11 @@ function mudarAba(aba) {
     b.classList.toggle("ativa", b.dataset.tab === aba));
   document.querySelectorAll(".aba-conteudo").forEach(el =>
     el.classList.toggle("hidden", el.dataset.aba !== aba));
+
+  // Gerencia classes no body para customizações no modo desktop
+  document.body.classList.toggle("aba-compilacao-ativa", aba === "compilacao");
+  document.body.classList.toggle("aba-grafico-ativa", aba === "grafico");
+
   renderAbaAtiva(true);
 }
 function renderAbaAtiva(resetScroll = false) {

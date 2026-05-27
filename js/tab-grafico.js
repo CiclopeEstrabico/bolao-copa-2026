@@ -66,9 +66,9 @@ window.renderGrafico = function() {
     else rankingCompleto.splice(insertIdx, 0, itemMod);
   }
 
-  // Inicializar filtro com top 5
+  // Inicializar filtro com todos os apostadores por padrão
   if (!window._graficoFiltroApos) {
-    window._graficoFiltroApos = new Set(rankingCompleto.slice(0,5).map(a => a.id));
+    window._graficoFiltroApos = new Set(rankingCompleto.map(a => a.id));
   }
 
   // ── Toggle de métrica ──
@@ -94,8 +94,21 @@ window.renderGrafico = function() {
 
   el.innerHTML = h;
 
-  // Fechar dropdown ao clicar fora
-  document.addEventListener('click', _graficoFecharDropdown, { once: true });
+  // Reabrir dropdown se estava aberto para não interromper a seleção do usuário
+  if (window._graficoDropdownAberto) {
+    const dd = document.getElementById('grafico-dropdown');
+    if (dd) dd.style.display = 'block';
+    
+    // Configura o evento para fechar ao clicar fora, com pequeno timeout para não capturar o próprio clique
+    setTimeout(() => {
+      document.addEventListener('click', _graficoFecharDropdown, { once: true });
+    }, 0);
+    
+    window._graficoDropdownAberto = false;
+  } else {
+    // Fechar dropdown ao clicar fora
+    document.addEventListener('click', _graficoFecharDropdown, { once: true });
+  }
 };
 
 // ── Dropdown filtro ────────────────────────────────────────────────────────
@@ -176,43 +189,26 @@ window._graficoToggleApos = function(id) {
   } else {
     window._graficoFiltroApos.add(id);
   }
+  window._graficoDropdownAberto = true;
   renderAbaAtiva();
 };
 
 window._graficoSelecionarTodos = function() {
   const ids = (APP.apostadores||[]).map(a => a.id);
-  if (APP.modelo) ids.push("Modelo");
+  if (APP.modelo || (window.getModelo && window.getModelo())) ids.push("Modelo");
   window._graficoFiltroApos = new Set(ids);
+  window._graficoDropdownAberto = true;
   renderAbaAtiva();
 };
 
 window._graficoSelecionarNenhum = function() {
   window._graficoFiltroApos = new Set();
+  window._graficoDropdownAberto = true;
   renderAbaAtiva();
 };
 
 window._graficoIrEvolucao = function() {
   window._graficoMetrica = 'evolucao';
-  const res = getResultados();
-  const apos = APP.apostadores || [];
-  const pals = APP.palpites || {};
-  const espOficiaisIr = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
-  
-  const rankingTemp = apos.map(a => ({
-    id: a.id,
-    pts: calcularPontosApostador(pals[a.id]||{}, res, a, espOficiaisIr).total
-  }));
-
-  const mod = window.getModelo ? window.getModelo() : null;
-  if (mod && APP._modeloCarregado) {
-    rankingTemp.push({
-      id: "Modelo",
-      pts: calcularPontosApostador(APP.palpitesModelo||{}, res, mod, espOficiaisIr).total
-    });
-  }
-
-  const top5 = rankingTemp.sort((a,b) => b.pts - a.pts).slice(0,5).map(a => a.id);
-  window._graficoFiltroApos = new Set(top5);
   renderAbaAtiva();
 };
 
@@ -338,7 +334,9 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
   if (!series.length)
     return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador selecionado.</div>';
 
-  const W = 600, H = 280;
+  const isDesktop = window.innerWidth > 850;
+  const W = isDesktop ? Math.max(800, Math.min(window.innerWidth - 60, 1400)) : 600;
+  const H = isDesktop ? 340 : 280;
   const PAD = { top: 20, right: 100, bottom: 40, left: 48 };
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;

@@ -232,6 +232,47 @@ window.renderCompilacao = function () {
   h += '</div>';
 
   el.innerHTML = h;
+
+  // Injeta scrollbar espelho no topo (apenas modo desktop)
+  if (window.innerWidth > 850) {
+    setTimeout(() => {
+      const wrap = el.querySelector('.compilacao-wrap');
+      const table = el.querySelector('.compilacao-table');
+      if (wrap && table) {
+        const topScroll = document.createElement('div');
+        topScroll.className = 'compilacao-top-scroll';
+        topScroll.style.cssText = 'overflow-x:auto;overflow-y:hidden;height:12px;margin-bottom:4px;width:100%;';
+        const inner = document.createElement('div');
+        inner.style.height = '1px';
+        inner.style.width = table.scrollWidth + 'px';
+        topScroll.appendChild(inner);
+        wrap.parentNode.insertBefore(topScroll, wrap);
+
+        let isSyncing = false;
+        topScroll.addEventListener('scroll', () => {
+          if (!isSyncing) {
+            isSyncing = true;
+            wrap.scrollLeft = topScroll.scrollLeft;
+            isSyncing = false;
+          }
+        });
+        wrap.addEventListener('scroll', () => {
+          if (!isSyncing) {
+            isSyncing = true;
+            topScroll.scrollLeft = wrap.scrollLeft;
+            isSyncing = false;
+          }
+        });
+
+        if (window.ResizeObserver) {
+          const ro = new ResizeObserver(() => {
+            inner.style.width = table.scrollWidth + 'px';
+          });
+          ro.observe(table);
+        }
+      }
+    }, 0);
+  }
 };
 
 window.exportarCompilacaoJson = function () {
