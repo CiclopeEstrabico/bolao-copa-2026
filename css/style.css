@@ -305,8 +305,9 @@ select{appearance:none;cursor:pointer}
     max-width: 55px !important;
     min-width: 55px !important;
     width: 55px !important;
-    white-space: normal !important;
-    word-break: break-word !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: clip !important;
     font-size: .66rem !important;
     line-height: 1.2;
     padding: 4px 2px;

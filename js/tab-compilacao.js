@@ -1,4 +1,38 @@
 /** tab-compilacao.js - Heatmap de palpites */
+
+window.abrirModalApostador = function (nome, apelido, pts) {
+  const ov = document.getElementById("modal-prog");
+  const box = document.getElementById("modal-prog-body");
+  if (!ov || !box) return;
+
+  let h = '';
+  h += '<button class="modal-close" onclick="(function(){document.getElementById(\'modal-prog\').classList.remove(\'aberto\');document.body.style.overflow=\'\'})()">✕</button>';
+  
+  h += '<div style="text-align:center;padding:15px 10px">';
+  h += '  <div style="font-size:2.8rem;margin-bottom:12px;display:inline-block;padding:12px;background:var(--fundo2);border-radius:50%;border:1.5px solid var(--borda)">👤</div>';
+  h += '  <h3 style="margin:8px 0 4px 0;font-size:1.4rem;font-weight:800;color:var(--verde-light);letter-spacing:.02em">' + (apelido || nome) + '</h3>';
+  h += '  <p style="margin:0 0 24px 0;font-size:0.9rem;color:var(--texto2);font-weight:500">' + nome + '</p>';
+  
+  h += '  <div style="display:flex;justify-content:center;gap:16px;margin-top:10px">';
+  h += '    <div style="background:var(--fundo2);padding:14px 24px;border-radius:12px;border:1px solid var(--borda);min-width:140px;box-shadow:0 4px 12px rgba(0,0,0,0.15)">';
+  h += '      <div style="font-size:0.68rem;color:var(--texto2);text-transform:uppercase;letter-spacing:0.06em;font-weight:700">Pontos Totais</div>';
+  h += '      <div style="font-size:2rem;font-weight:900;color:var(--dourado);margin-top:4px;letter-spacing:-0.02em">' + Number(pts).toFixed(1) + '</div>';
+  h += '    </div>';
+  h += '  </div>';
+  h += '</div>';
+
+  box.innerHTML = h;
+  ov.classList.add("aberto");
+  document.body.style.overflow = "hidden";
+  
+  ov.onclick = function(e) {
+    if (e.target === ov) {
+      ov.classList.remove("aberto");
+      document.body.style.overflow = "";
+    }
+  };
+};
+
 window.renderCompilacao = function () {
   const el = document.getElementById("aba-compilacao");
   if (!el) return;
@@ -79,11 +113,13 @@ window.renderCompilacao = function () {
   h += '<th class="col-resultado" style="z-index:1">Resultado</th>';
   for (const a of ranking) {
     const nomeA = a.apelido || a.nome || "?";
+    const nomeEscaped = (a.nome || nomeA).replace(/'/g, "\\'");
+    const apelidoEscaped = (a.apelido || "").replace(/'/g, "\\'");
     if (a.isModelo) {
-      h += '<th title="Modelo — Referência Estatística" style="z-index:1;max-width:50px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:4px 2px;font-weight:normal;color:#7ba4c9">' +
+      h += '<th onclick="window.abrirModalApostador(\'Modelo Estatístico\', \'Modelo\', ' + a.pts + ')" title="Modelo — Referência Estatística (Clique para ver detalhes)" style="z-index:1;max-width:50px;overflow:hidden;text-overflow:clip;white-space:nowrap;padding:4px 2px;font-weight:normal;color:#7ba4c9;cursor:pointer">' +
            'Modelo' + '</th>';
     } else {
-      h += '<th title="' + (a.nome || nomeA) + '" style="z-index:1;max-width:50px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:4px 2px">' + nomeA + '</th>';
+      h += '<th onclick="window.abrirModalApostador(\'' + nomeEscaped + '\', \'' + apelidoEscaped + '\', ' + a.pts + ')" title="' + (a.nome || nomeA) + ' (Clique para ver detalhes)" style="z-index:1;max-width:50px;overflow:hidden;text-overflow:clip;white-space:nowrap;padding:4px 2px;cursor:pointer">' + nomeA + '</th>';
     }
   }
   h += '</tr></thead><tbody>';

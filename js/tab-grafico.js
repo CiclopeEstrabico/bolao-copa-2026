@@ -97,7 +97,12 @@ window.renderGrafico = function() {
   // Reabrir dropdown se estava aberto para não interromper a seleção do usuário
   if (window._graficoDropdownAberto) {
     const dd = document.getElementById('grafico-dropdown');
-    if (dd) dd.style.display = 'block';
+    if (dd) {
+      dd.style.display = 'block';
+      if (window._graficoDropdownScrollTop !== undefined) {
+        dd.scrollTop = window._graficoDropdownScrollTop;
+      }
+    }
     
     // Configura o evento para fechar ao clicar fora, com pequeno timeout para não capturar o próprio clique
     setTimeout(() => {
@@ -133,7 +138,7 @@ function _renderFiltroDropdown(rankingCompleto) {
   </button>`;
 
   // Painel dropdown
-  h += `<div id="grafico-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;
+  h += `<div id="grafico-dropdown" onclick="event.stopPropagation()" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;
     background:var(--card);border:1.5px solid var(--borda2);border-radius:var(--radius-sm);
     box-shadow:0 8px 24px rgba(0,0,0,.5);max-height:260px;overflow-y:auto;z-index:100">`;
 
@@ -183,6 +188,10 @@ window._graficoFecharDropdown = function() {
 };
 
 window._graficoToggleApos = function(id) {
+  const dd = document.getElementById('grafico-dropdown');
+  if (dd) {
+    window._graficoDropdownScrollTop = dd.scrollTop;
+  }
   if (!window._graficoFiltroApos) window._graficoFiltroApos = new Set();
   if (window._graficoFiltroApos.has(id)) {
     window._graficoFiltroApos.delete(id);
@@ -194,6 +203,10 @@ window._graficoToggleApos = function(id) {
 };
 
 window._graficoSelecionarTodos = function() {
+  const dd = document.getElementById('grafico-dropdown');
+  if (dd) {
+    window._graficoDropdownScrollTop = dd.scrollTop;
+  }
   const ids = (APP.apostadores||[]).map(a => a.id);
   if (APP.modelo || (window.getModelo && window.getModelo())) ids.push("Modelo");
   window._graficoFiltroApos = new Set(ids);
@@ -202,6 +215,10 @@ window._graficoSelecionarTodos = function() {
 };
 
 window._graficoSelecionarNenhum = function() {
+  const dd = document.getElementById('grafico-dropdown');
+  if (dd) {
+    window._graficoDropdownScrollTop = dd.scrollTop;
+  }
   window._graficoFiltroApos = new Set();
   window._graficoDropdownAberto = true;
   renderAbaAtiva();
@@ -236,8 +253,19 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
     coresMap[a.id] = a.isModelo ? '#b8cfe8' : _EVOLUCAO_CORES[i % _EVOLUCAO_CORES.length];
   });
 
-  let h = '<div class="card" style="padding:20px 10px;overflow-x:auto">';
-  h += '<div style="display:flex;align-items:flex-end;gap:12px;height:280px;min-width:min-content;padding-bottom:10px;border-bottom:1px solid var(--borda);margin-bottom:80px;position:relative">';
+  // ── Dimensões responsivas baseadas no número de apostadores ──
+  const n = ranking.length;
+  // Gap entre barras: reduz conforme cresce a quantidade
+  const gap = n <= 6 ? 12 : n <= 10 ? 8 : n <= 16 ? 4 : 2;
+  // Largura fixa da barra: reduz para caber todos na tela sem scroll
+  const barWidth = n <= 6 ? 28 : n <= 10 ? 22 : n <= 16 ? 16 : n <= 24 ? 12 : 8;
+  // Tamanho de fonte do valor acima da barra
+  const valFontSize = n <= 10 ? '.7rem' : n <= 16 ? '.62rem' : '.55rem';
+  // Tamanho de fonte do nome abaixo da barra
+  const nameFontSize = n <= 10 ? '.68rem' : n <= 16 ? '.60rem' : '.54rem';
+
+  let h = '<div class="card" style="padding:20px 10px;">';
+  h += `<div style="display:flex;align-items:flex-end;gap:${gap}px;height:280px;padding-bottom:10px;border-bottom:1px solid var(--borda);margin-bottom:80px;position:relative">`;
 
   // Linha da média
   const avgValFmt = metricaAtiva === 'pct'
@@ -254,10 +282,10 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
     const nomeBarra = a.isModelo
       ? `<span style='font-weight:normal;color:#b8cfe8'>${a.nome}</span>`
       : a.nome;
-    h += '<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:40px;position:relative;height:100%;justify-content:flex-end;z-index:1">';
-    h += `<div style="font-size:.7rem;font-weight:800;color:var(--texto);margin-bottom:4px">${_fmtVal(metricaAtiva, val)}</div>`;
-    h += `<div style="width:28px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2,perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
-    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:.68rem;color:var(--texto2);font-weight:600;white-space:nowrap">${nomeBarra}</div>`;
+    h += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;position:relative;height:100%;justify-content:flex-end;z-index:1">`;
+    h += `<div style="font-size:${valFontSize};font-weight:800;color:var(--texto);margin-bottom:4px;white-space:nowrap">${_fmtVal(metricaAtiva, val)}</div>`;
+    h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2,perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
+    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${nomeBarra}</div>`;
     h += '</div>';
   }
 
