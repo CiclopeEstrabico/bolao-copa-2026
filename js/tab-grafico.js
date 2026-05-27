@@ -253,19 +253,63 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
     coresMap[a.id] = a.isModelo ? '#b8cfe8' : _EVOLUCAO_CORES[i % _EVOLUCAO_CORES.length];
   });
 
-  // ── Dimensões responsivas baseadas no número de apostadores ──
+  // ── Dimensões responsivas ──
   const n = ranking.length;
-  // Gap entre barras: reduz mais agressivamente para manter barras mais largas
-  const gap = n <= 6 ? 12 : n <= 10 ? 6 : n <= 16 ? 3 : n <= 24 ? 2 : 1;
-  // Largura fixa da barra: otimizada para aproveitar o gap reduzido
-  const barWidth = n <= 6 ? 28 : n <= 10 ? 24 : n <= 16 ? 18 : n <= 24 ? 12 : 8;
-  // Tamanho de fonte do valor acima da barra
-  const valFontSize = n <= 10 ? '.7rem' : n <= 16 ? '.62rem' : '.55rem';
-  // Tamanho de fonte do nome abaixo da barra
-  const nameFontSize = n <= 10 ? '.68rem' : n <= 16 ? '.60rem' : '.54rem';
+  const isMobile = window.innerWidth <= 768;
 
+  let gap, barWidth, valFontSize, nameFontSize, needsScroll;
+
+  if (isMobile) {
+    // MOBILE: tamanhos confortáveis e fixos; habilita scroll horizontal se necessário
+    barWidth     = n <= 8 ? 32 : 28;
+    gap          = n <= 8 ? 10 : 8;
+    valFontSize  = '.72rem';
+    nameFontSize = '.74rem';
+
+    // Largura mínima do gráfico = n colunas * (barWidth + gap)
+    const minPx   = n * (barWidth + gap) + gap;
+    const screenPx = window.innerWidth - 40; // desconta padding do card
+    needsScroll   = minPx > screenPx;
+
+  } else {
+    // DESKTOP: cabe numa tela sem scroll — reduz gap ANTES de barWidth
+    needsScroll = false;
+
+    // Área útil estimada: desconta ~80px de margens totais do layout
+    const disponivelPx = window.innerWidth - 80;
+
+    // barWidth desejado por número de apostadores (generoso mas razoável)
+    if      (n <= 6)  barWidth = 38;
+    else if (n <= 10) barWidth = 32;
+    else if (n <= 15) barWidth = 26;
+    else if (n <= 20) barWidth = 20;
+    else if (n <= 28) barWidth = 16;
+    else              barWidth = 12;
+
+    // gap é o que sobra após distribuir barWidth; mínimo 2px, máximo 18px
+    const perColuna = disponivelPx / n;
+    gap = Math.min(18, Math.max(2, Math.floor(perColuna - barWidth)));
+
+    // Fontes: mantém confortáveis, só reduz para n grandes
+    if      (n <= 8)  { valFontSize = '.78rem'; nameFontSize = '.80rem'; }
+    else if (n <= 12) { valFontSize = '.73rem'; nameFontSize = '.75rem'; }
+    else if (n <= 18) { valFontSize = '.68rem'; nameFontSize = '.70rem'; }
+    else if (n <= 24) { valFontSize = '.64rem'; nameFontSize = '.66rem'; }
+    else              { valFontSize = '.60rem'; nameFontSize = '.62rem'; }
+  }
+
+  // ── Monta o HTML ──
   let h = '<div class="card" style="padding:20px 10px;">';
-  h += `<div style="display:flex;align-items:flex-end;gap:${gap}px;height:280px;padding-bottom:10px;border-bottom:1px solid var(--borda);margin-bottom:80px;position:relative">`;
+
+  // Wrapper com scroll apenas em mobile quando necessário
+  let minWidthStyle = '';
+  if (isMobile && needsScroll) {
+    const minPx = n * (barWidth + gap) + gap;
+    h += `<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">`;
+    minWidthStyle = `min-width:${minPx}px;`;
+  }
+
+  h += `<div style="display:flex;align-items:flex-end;gap:${gap}px;height:280px;padding-bottom:10px;border-bottom:1px solid var(--borda);margin-bottom:80px;position:relative;${minWidthStyle}">`;
 
   // Linha da média
   const avgValFmt = metricaAtiva === 'pct'
@@ -289,7 +333,9 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
     h += '</div>';
   }
 
-  h += '</div></div>';
+  h += '</div>';
+  if (isMobile && needsScroll) h += '</div>'; // fecha wrapper scroll
+  h += '</div>';
   return h;
 }
 
