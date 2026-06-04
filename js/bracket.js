@@ -123,7 +123,30 @@ window.BRACKET = (() => {
         return b.GP - a.GP;
       });
       melhoresTerceiros = terceiros.slice(0, 8);
-      melhoresTerceiros.forEach((t, i) => { classificados[`3X${i + 1}`] = t.code; });
+
+      // Determine which 8 groups produced the best third-placed teams
+      const gruposDos8 = melhoresTerceiros.map(t => t.grupo).sort().join(",");
+
+      // Lookup FIFA Annex C allocation table
+      // Slots 3X1..3X8 correspond to R32 games: 3X1→R32_2(1E), 3X2→R32_5(1I),
+      // 3X3→R32_7(1A), 3X4→R32_8(1L), 3X5→R32_9(1D), 3X6→R32_10(1G),
+      // 3X7→R32_13(1B), 3X8→R32_15(1K)
+      const slotParaColuna = {
+        "3X1": "1E", "3X2": "1I", "3X3": "1A", "3X4": "1L",
+        "3X5": "1D", "3X6": "1G", "3X7": "1B", "3X8": "1K"
+      };
+      const alocacao = window.FIFA_THIRD_PLACE_COMBINATIONS && window.FIFA_THIRD_PLACE_COMBINATIONS[gruposDos8];
+      if (alocacao) {
+        for (const [slot, coluna] of Object.entries(slotParaColuna)) {
+          const grupoOrigem = alocacao[coluna]; // e.g. "3E"
+          const letraGrupo = grupoOrigem[1];    // "E"
+          const terceiroDoGrupo = melhoresTerceiros.find(t => t.grupo === letraGrupo);
+          if (terceiroDoGrupo) classificados[slot] = terceiroDoGrupo.code;
+        }
+      } else {
+        // Fallback: sequential assignment (should not occur with valid data)
+        melhoresTerceiros.forEach((t, i) => { classificados[`3X${i + 1}`] = t.code; });
+      }
     }
     return { grupos, classificados, terceiros, melhoresTerceiros };
   }
@@ -174,7 +197,20 @@ window.BRACKET = (() => {
     const grupoMatch = pos.match(/^([12])([A-L])$/);
     if (grupoMatch) return (grupoMatch[1] === "1" ? "1.°" : "2.°") + ` Grupo ${grupoMatch[2]}`;
     const tercMatch = pos.match(/^3X(\d+)$/);
-    if (tercMatch) return `${tercMatch[1]}.° melhor 3.° lugar`;
+    if (tercMatch) {
+      // Labels per FIFA regulations Art.12.6 / Annex C — each slot's eligible source groups
+      const tercLabels = {
+        "3X1": "3.° (Grupos A/B/C/D/F)",   // vs 1E
+        "3X2": "3.° (Grupos C/D/F/G/H)",   // vs 1I
+        "3X3": "3.° (Grupos C/E/F/H/I)",   // vs 1A
+        "3X4": "3.° (Grupos E/H/I/J/K)",   // vs 1L
+        "3X5": "3.° (Grupos B/E/F/I/J)",   // vs 1D
+        "3X6": "3.° (Grupos A/E/H/I/J)",   // vs 1G
+        "3X7": "3.° (Grupos E/F/G/I/J)",   // vs 1B
+        "3X8": "3.° (Grupos D/E/I/J/L)",   // vs 1K
+      };
+      return tercLabels[pos] || `3.° lugar #${tercMatch[1]}`;
+    }
     if (pos.startsWith("WR32_")) return `Venc. 32avos #${pos.slice(5)}`;
     if (pos.startsWith("WR16_")) return `Venc. Oitavas #${pos.slice(5)}`;
     if (pos.startsWith("WQF_")) return `Venc. Quartas #${pos.slice(4)}`;
