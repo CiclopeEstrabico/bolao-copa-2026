@@ -270,6 +270,9 @@ window.renderCompilacao = function () {
 
   el.innerHTML = h;
 
+  // Tooltip unificado (hover desktop + toque mobile) — cobre os <th> dos apostadores
+  window.injetarTooltipsMobile(el);
+
   // Injeta scrollbar espelho no topo (apenas modo desktop)
   if (window.innerWidth > 850) {
     setTimeout(() => {

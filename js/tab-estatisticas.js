@@ -441,7 +441,7 @@ window.renderEstatisticas = function () {
   }
   const sortedCamp = Object.entries(campVotos).sort((a, b) => b[1] - a[1]).slice(0, 8);
   if (sortedCamp.length) {
-    h += '<div class="card"><div class="card-titulo">🏆 Favoritos dos Apostadores</div>';
+    h += '<div class="card"><div class="card-titulo">🏆 Favoritos dos Apostadores <span title="Mostra para qual seleção cada apostador apostou como campeão do mundial. O ✓ dourado indica o campeão real já confirmado." style="font-size:.8rem;cursor:help;color:var(--texto2);font-weight:normal">ⓘ</span></div>';
     h += '<div style="display:grid;gap:6px">';
     const maxV = sortedCamp[0][1];
     for (const [code, ct] of sortedCamp) {
@@ -464,21 +464,21 @@ window.renderEstatisticas = function () {
   h += '<div class="card" style="padding:0;overflow:hidden"><div class="card-titulo" style="padding:16px 16px 0">📈 Estatísticas Avançadas por Jogo</div><div class="compilacao-wrap"><table class="compilacao-table stat-full-table" style="font-size:.7rem">';
   h += '<thead><tr>';
   h += '<th class="stat-col-jogo" style="text-align:left;position:sticky;left:0;background:var(--fundo2);z-index:2;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Jogo</th>';
-  h += '<th class="col-resultado">Resultado</th>';
-  h += '<th>Apostas T1</th>';
-  h += '<th>Apostas Emp</th>';
-  h += '<th>Apostas T2</th>';
-  h += '<th>Top Placar</th>';
-  h += '<th>Acertos Res</th>';
-  h += '<th>Acertos Plac</th>';
+  h += '<th class="col-resultado" title="Placar oficial do jogo">Resultado</th>';
+  h += '<th title="Nº de apostadores que apostaram na vitória do Time 1 (mandante)">Apostas T1</th>';
+  h += '<th title="Nº de apostadores que apostaram em empate">Apostas Emp</th>';
+  h += '<th title="Nº de apostadores que apostaram na vitória do Time 2 (visitante)">Apostas T2</th>';
+  h += '<th title="O placar mais apostado pelo grupo, com % dos que apostaram nele">Top Placar</th>';
+  h += '<th title="Quantos apostadores acertaram o resultado (vitória ou empate)">Acertos Res</th>';
+  h += '<th title="Quantos apostadores acertaram o placar exato">Acertos Plac</th>';
   h += '<th style="width:12px;background:var(--fundo);border-left:1px solid var(--borda);border-right:1px solid var(--borda)"></th>';
-  h += '<th title="Elo T1">Elo T1</th>';
-  h += '<th title="Elo T2">Elo T2</th>';
-  h += '<th title="xGols T1">xGols T1</th>';
-  h += '<th title="xGols T2">xGols T2</th>';
-  h += '<th>Prob T1</th>';
-  h += '<th>Prob E</th>';
-  h += '<th>Prob T2</th>';
+  h += '<th title="Rating ELO do Time 1 — mede a força histórica acumulada da seleção">Elo T1</th>';
+  h += '<th title="Rating ELO do Time 2 — mede a força histórica acumulada da seleção">Elo T2</th>';
+  h += '<th title="Gols esperados do Time 1 estimados pelo modelo Dixon-Coles">xGols T1</th>';
+  h += '<th title="Gols esperados do Time 2 estimados pelo modelo Dixon-Coles">xGols T2</th>';
+  h += '<th title="Probabilidade de vitória do Time 1 segundo o modelo">Prob T1</th>';
+  h += '<th title="Probabilidade de empate segundo o modelo">Prob E</th>';
+  h += '<th title="Probabilidade de vitória do Time 2 segundo o modelo">Prob T2</th>';
   h += '</tr></thead><tbody>';
 
   const formatPct = (val, tot) => tot > 0 ? `<div style="font-size:.6rem;color:var(--texto2);margin-top:1px;line-height:1">${((val / tot) * 100).toFixed(0)}%</div>` : '';
@@ -610,6 +610,9 @@ window.renderEstatisticas = function () {
   }
 
   el.innerHTML = h;
+
+  // Tooltip unificado (hover desktop + toque mobile) em todos os [title] da aba
+  window.injetarTooltipsMobile(el);
 };
 
 window.renderHtH = function () {

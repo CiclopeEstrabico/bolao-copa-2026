@@ -1,4 +1,4 @@
-﻿/** tab-tabela.js - Bracket visual do torneio */
+/** tab-tabela.js - Bracket visual do torneio */
 window.renderTabela = function() {
   const el = document.getElementById("aba-tabela");
   if (!el) return;
@@ -21,10 +21,10 @@ window.renderTabela = function() {
     const placarH = temRes ? r.homeGoals : "–";
     const placarA = temRes ? r.awayGoals : "–";
     const data = j.utc ? formatarDataBRT(j.utc,false) : "";
-    return `<div class="bracket-card" onclick="PROGNOSE.abrirModal('${gameId}')">
+    return `<div class="bracket-card" title="Ver prognose e detalhes do jogo" onclick="PROGNOSE.abrirModal('${gameId}')">
       <div class="bracket-data">${data}</div>
-      <div class="bracket-time ${hWin?'winner':aWin?'loser':''}">${htmlBandeira(hC,14)}<span>${hN}</span><span class="bracket-gol">${placarH}</span></div>
-      <div class="bracket-time ${aWin?'winner':hWin?'loser':''}">${htmlBandeira(aC,14)}<span>${aN}</span><span class="bracket-gol">${placarA}</span></div>
+      <div class="bracket-time ${hWin?'winner':aWin?'loser':''}">${htmlBandeira(hC,14)}<span title="${hN}">${hN}</span><span class="bracket-gol">${placarH}</span></div>
+      <div class="bracket-time ${aWin?'winner':hWin?'loser':''}">${htmlBandeira(aC,14)}<span title="${aN}">${aN}</span><span class="bracket-gol">${placarA}</span></div>
     </div>`;
   }
 
@@ -131,12 +131,15 @@ window.renderTabela = function() {
   h += '<div id="bracket-scroll-hint" style="display:none;text-align:center;font-size:.68rem;color:var(--texto2);padding:4px 0 8px;letter-spacing:.03em">← deslize para ver todas as fases →</div>';
 
   // Fase de grupos compacta acima
-  h = '<details style="margin-bottom:10px"><summary style="cursor:pointer;padding:8px 12px;background:var(--fundo2);border-radius:var(--radius-sm);font-size:.78rem;font-weight:700">Ver classificação dos grupos ▼</summary>' +
+  h = '<details style="margin-bottom:10px"><summary title="Expanda para ver a classificação atual de cada grupo da fase de grupos" style="cursor:pointer;padding:8px 12px;background:var(--fundo2);border-radius:var(--radius-sm);font-size:.78rem;font-weight:700">Ver classificação dos grupos ▼</summary>' +
     '<div class="card" style="margin-top:6px;padding:10px">' +
     renderGruposGrid(window.BRACKET.calcularTodosOsGrupos(res), res) +
     '</div></details>' + h;
 
   el.innerHTML = h;
+
+  // Tooltip unificado (hover desktop + toque mobile)
+  window.injetarTooltipsMobile(el);
 
   // Exibe hint só em mobile e esconde ao scrollar
   if (window.innerWidth < 768) {

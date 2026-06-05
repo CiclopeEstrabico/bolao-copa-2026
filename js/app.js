@@ -422,6 +422,88 @@ function jogoAceita(jogoId) {
   return false;
 }
 
+// ─── Tooltip unificado: hover desktop + toque mobile ─────────────────────────
+/**
+ * Ativa tooltips CSS (::after com content:attr(title)) e suporte a toque
+ * em todos os elementos que combinam com `seletor` dentro de `containerEl`.
+ * Chame após qualquer el.innerHTML = h para cobrir a aba inteira.
+ *
+ * @param {HTMLElement} containerEl  - Raiz da aba (ex: document.getElementById('aba-classificacao'))
+ * @param {string}      seletor      - CSS selector dos elementos com title (default: '[title]')
+ */
+window.injetarTooltipsMobile = function (containerEl, seletor) {
+  seletor = seletor || '[title]';
+
+  // Injeta CSS uma única vez no <head>
+  if (!document.getElementById('_tt-global-style')) {
+    const s = document.createElement('style');
+    s.id = '_tt-global-style';
+    s.textContent = `
+      ._tt { position: relative; cursor: help; }
+      ._tt::after {
+        content: attr(data-tt);
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(15,23,42,0.96);
+        color: #f1f5f9;
+        font-size: .72rem;
+        font-weight: 500;
+        line-height: 1.45;
+        white-space: normal;
+        max-width: 220px;
+        width: max-content;
+        padding: 7px 11px;
+        border-radius: 7px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity .15s;
+        z-index: 9999;
+        box-shadow: 0 4px 16px rgba(0,0,0,.45);
+        text-align: left;
+      }
+      ._tt:hover::after,
+      ._tt.tt-open::after { opacity: 1; }
+    `;
+    document.head.appendChild(s);
+  }
+
+  // Fecha todos os tooltips ao clicar fora
+  if (!document._ttGlobalClickActive) {
+    document._ttGlobalClickActive = true;
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('._tt')) {
+        document.querySelectorAll('._tt.tt-open').forEach(el => el.classList.remove('tt-open'));
+      }
+    }, { passive: true });
+  }
+
+  // Aplica ._tt em cada elemento com [title] dentro do container
+  containerEl.querySelectorAll(seletor).forEach(el => {
+    const txt = el.getAttribute('title');
+    if (!txt) return;
+    el.removeAttribute('title');         // Remove o nativo do browser
+    el.setAttribute('data-tt', txt);
+    el.classList.add('_tt');
+
+    // Toque: toggle (fecha os outros, abre este)
+    el.addEventListener('touchstart', function (e) {
+      e.preventDefault();
+      const isOpen = this.classList.contains('tt-open');
+      document.querySelectorAll('._tt.tt-open').forEach(o => o.classList.remove('tt-open'));
+      if (!isOpen) this.classList.add('tt-open');
+    }, { passive: false });
+
+    // Click (desktop também funciona por onclick se precisar)
+    el.addEventListener('click', function (e) {
+      const isOpen = this.classList.contains('tt-open');
+      document.querySelectorAll('._tt.tt-open').forEach(o => o.classList.remove('tt-open'));
+      if (!isOpen) this.classList.add('tt-open');
+    });
+  });
+};
+
 let _resizeTimer;
 let _lastInnerWidth = window.innerWidth;
 window.addEventListener("resize", () => {

@@ -111,7 +111,7 @@ window.renderClassificacao = function () {
   h += '<th title="Resultados que renderam Bônus+1" style="text-align:center">✨ Bônus+1</th>';
   h += '<th title="Placares exatos com menos de 4 gols" style="text-align:center">🎯 Placar+3</th>';
   h += '<th title="Placares exatos com 4 ou mais gols" style="text-align:center">🔥 Placar+5</th>';
-  h += '<th title="Últimos 5 jogos" style="text-align:center">Forma</th>';
+  h += '<th title="Últimos 5 jogos (esq=mais antigo → dir=mais recente). 🔥 Placar+5 · 🎯 Placar+3 · ✨ Resultado+Bônus · ✓ Resultado · ✗ Errou" style="text-align:center">Forma</th>';
   h += '</tr></thead><tbody>';
 
   const _renderCol = (val, pct, valCor) => {
@@ -198,10 +198,10 @@ window.renderClassificacao = function () {
     } else {
       h += '<div style="grid-column: 1 / -1; margin-bottom: 4px;"><div style="color:var(--texto2)">Nome Completo</div><div style="font-weight:700">' + (p.nome || "—") + '</div></div>';
     }
-    h += '<div><div style="color:var(--texto2)">Grupos</div><div style="font-weight:700">' + st.total_grupos.toFixed(1) + ' pts</div></div>';
-    h += '<div><div style="color:var(--texto2)">Eliminatórias</div><div style="font-weight:700">' + st.total_eliminatorias.toFixed(1) + ' pts</div></div>';
-    h += '<div><div style="color:var(--texto2)">Especiais</div><div style="font-weight:700">' + st.total_especiais + ' pts</div></div>';
-    h += '<div><div style="color:var(--texto2)">Sem palpite</div><div style="font-weight:700;color:var(--texto2)">' + st.sem_palpite + '</div></div>';
+    h += '<div><div style="color:var(--texto2)" title="Pontos acumulados somente nos jogos da fase de grupos">Grupos</div><div style="font-weight:700">' + st.total_grupos.toFixed(1) + ' pts</div></div>';
+    h += '<div><div style="color:var(--texto2)" title="Pontos dos jogos a partir dos 32 avos de final (fases eliminatórias)">Eliminatórias</div><div style="font-weight:700">' + st.total_eliminatorias.toFixed(1) + ' pts</div></div>';
+    h += '<div><div style="color:var(--texto2)" title="Pontos de palpites especiais: Campeão, Vice e 3º Lugar">Especiais</div><div style="font-weight:700">' + st.total_especiais + ' pts</div></div>';
+    h += '<div><div style="color:var(--texto2)" title="Jogos em que nenhum palpite foi registrado — valem 0 pts">Sem palpite</div><div style="font-weight:700;color:var(--texto2)">' + st.sem_palpite + '</div></div>';
     h += '</div></div></td></tr>';
   });
 
@@ -210,46 +210,8 @@ window.renderClassificacao = function () {
 
   el.innerHTML = h;
 
-  // Injetar CSS de tooltip mobile (uma vez)
-  if (!document.getElementById('cls-tooltip-style')) {
-    const s = document.createElement('style');
-    s.id = 'cls-tooltip-style';
-    s.textContent = `
-      .tabela-detalhe th[title] { position: relative; cursor: help; }
-      .tabela-detalhe th[title]::after {
-        content: attr(title);
-        position: absolute;
-        bottom: calc(100% + 6px);
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(15,23,42,0.95);
-        color: #f1f5f9;
-        font-size: .72rem;
-        font-weight: 500;
-        white-space: nowrap;
-        padding: 5px 10px;
-        border-radius: 6px;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity .15s;
-        z-index: 9999;
-        box-shadow: 0 4px 12px rgba(0,0,0,.4);
-      }
-      .tabela-detalhe th[title]:hover::after,
-      .tabela-detalhe th[title].tt-open::after { opacity: 1; }
-    `;
-    document.head.appendChild(s);
-  }
-
-  // Suporte a toque: toggle da classe tt-open
-  el.querySelectorAll('.tabela-detalhe th[title]').forEach(th => {
-    th.addEventListener('touchstart', e => {
-      e.preventDefault();
-      const isOpen = th.classList.contains('tt-open');
-      el.querySelectorAll('.tabela-detalhe th[title].tt-open').forEach(o => o.classList.remove('tt-open'));
-      if (!isOpen) th.classList.add('tt-open');
-    }, { passive: false });
-  });
+  // Tooltip unificado (hover desktop + toque mobile) em todos os [title] da aba
+  window.injetarTooltipsMobile(el);
 };
 
 window._toggleRankingDetalhe = function (id) {
