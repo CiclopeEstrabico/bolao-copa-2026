@@ -5,12 +5,13 @@ window.renderEstatisticas = function () {
   const res = getResultados();
   const apos = APP.apostadores || [];
   const pals = APP.palpites || {};
+  const schedule = window.SCHEDULE || [];
   // Fix #8: APP.especiais não existe — usar extrairEspeciaisOficiais, igual às outras abas.
   const esp = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
   if (!apos.length) { el.innerHTML = '<div class="card"><p style="color:var(--texto2)">Nenhum apostador cadastrado.</p></div>'; return; }
 
   const ranking = gerarRanking(pals, res, apos, esp);
-  const jogosFeitos = (window.SCHEDULE || [])
+  const jogosFeitos = schedule
     .filter(j => res[j.id]?.homeGoals !== undefined)
     .sort((a, b) => new Date(a.utc) - new Date(b.utc));
 
