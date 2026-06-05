@@ -83,9 +83,9 @@ window.renderClassificacao = function () {
     else rankingComModelo.splice(insertIdx, 0, itemModelo);
   }
 
-  // Jogos realizados recentes (ultimos 5)
+  // Jogos realizados recentes (ultimos 5) — mais antigo primeiro, mais recente à direita
   const jogosFeitosIds = (window.SCHEDULE || []).filter(j => res[j.id]?.homeGoals !== undefined)
-    .sort((a, b) => new Date(b.utc) - new Date(a.utc)).slice(0, 5).map(j => j.id);
+    .sort((a, b) => new Date(a.utc) - new Date(b.utc)).slice(-5).map(j => j.id);
 
   // Header stats
   const totalJogos = (window.SCHEDULE || []).filter(j => res[j.id]?.homeGoals !== undefined).length;
@@ -108,7 +108,7 @@ window.renderClassificacao = function () {
   h += '<thead><tr><th style="width:36px">Pos</th><th style="text-align:left;position:sticky;left:0;background:var(--card);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Apostador</th>';
   h += '<th title="Pontos Totais" style="text-align:center">🏆 Pts</th>';
   h += '<th title="Todos os resultados corretos" style="text-align:center">✓ Res.</th>';
-  h += '<th title="Resultados que renderam Bônus +1 ou +2" style="text-align:center">✨ Bônus+1</th>';
+  h += '<th title="Resultados que renderam Bônus+1" style="text-align:center">✨ Bônus+1</th>';
   h += '<th title="Placares exatos com menos de 4 gols" style="text-align:center">🎯 Placar+3</th>';
   h += '<th title="Placares exatos com 4 ou mais gols" style="text-align:center">🔥 Placar+5</th>';
   h += '<th title="Últimos 5 jogos" style="text-align:center">Forma</th>';
@@ -209,6 +209,47 @@ window.renderClassificacao = function () {
 
 
   el.innerHTML = h;
+
+  // Injetar CSS de tooltip mobile (uma vez)
+  if (!document.getElementById('cls-tooltip-style')) {
+    const s = document.createElement('style');
+    s.id = 'cls-tooltip-style';
+    s.textContent = `
+      .tabela-detalhe th[title] { position: relative; cursor: help; }
+      .tabela-detalhe th[title]::after {
+        content: attr(title);
+        position: absolute;
+        bottom: calc(100% + 6px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(15,23,42,0.95);
+        color: #f1f5f9;
+        font-size: .72rem;
+        font-weight: 500;
+        white-space: nowrap;
+        padding: 5px 10px;
+        border-radius: 6px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity .15s;
+        z-index: 9999;
+        box-shadow: 0 4px 12px rgba(0,0,0,.4);
+      }
+      .tabela-detalhe th[title]:hover::after,
+      .tabela-detalhe th[title].tt-open::after { opacity: 1; }
+    `;
+    document.head.appendChild(s);
+  }
+
+  // Suporte a toque: toggle da classe tt-open
+  el.querySelectorAll('.tabela-detalhe th[title]').forEach(th => {
+    th.addEventListener('touchstart', e => {
+      e.preventDefault();
+      const isOpen = th.classList.contains('tt-open');
+      el.querySelectorAll('.tabela-detalhe th[title].tt-open').forEach(o => o.classList.remove('tt-open'));
+      if (!isOpen) th.classList.add('tt-open');
+    }, { passive: false });
+  });
 };
 
 window._toggleRankingDetalhe = function (id) {
