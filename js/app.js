@@ -511,20 +511,25 @@ window.injetarTooltipsMobile = function (containerEl, seletor) {
     el.addEventListener('mouseenter', function () { _showTip(this); });
     el.addEventListener('mouseleave', _hideTip);
 
-    // Mobile: toque
-    el.addEventListener('touchstart', function (e) {
-      e.preventDefault();
+    // Se o elemento for clicável nativamente (tem onclick),
+    // ignoramos o tooltip via toque para não conflitar com a ação de clique,
+    // garantindo que continue funcionando na aba Compilação e Tabela.
+    if (el.hasAttribute('onclick')) {
+      return;
+    }
+
+    // Mobile: toque (usa touchend sem preventDefault para não bloquear)
+    el.addEventListener('touchend', function (e) {
       const isVisible = tipEl.style.opacity === '1' && tipEl._anchor === this;
       _hideTip();
       if (!isVisible) {
         tipEl._anchor = this;
         _showTip(this);
       }
-    }, { passive: false });
+    }, { passive: true });
 
-    // Click (cobre casos de teclado / foco)
+    // Click (para teclados ou outros dispositivos)
     el.addEventListener('click', function (e) {
-      e.stopPropagation();
       const isVisible = tipEl.style.opacity === '1' && tipEl._anchor === this;
       _hideTip();
       if (!isVisible) {
