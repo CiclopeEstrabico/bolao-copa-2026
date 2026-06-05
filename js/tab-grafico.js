@@ -275,11 +275,14 @@ function _renderChanceLoading() {
 /**
  * CDF plana (Float32Array) por par de times — computada uma vez por sessão.
  */
-const _cdfsCache = new Map();
+const _cdfsCacheFast = {};
 
 function _getCdf(homeCode, awayCode, jogoInfo) {
-  const key = homeCode + '|' + awayCode;
-  if (_cdfsCache.has(key)) return _cdfsCache.get(key);
+  let hcObj = _cdfsCacheFast[homeCode];
+  if (!hcObj) { hcObj = {}; _cdfsCacheFast[homeCode] = hcObj; }
+  let entry = hcObj[awayCode];
+  if (entry) return entry;
+  
   const isNeutral = jogoInfo ? (jogoInfo.pais !== homeCode && jogoInfo.pais !== awayCode) : true;
   const prog = window.PROGNOSE.calcular(homeCode, awayCode, isNeutral);
   const N = prog.N;
@@ -287,8 +290,8 @@ function _getCdf(homeCode, awayCode, jogoInfo) {
   let acc = 0;
   for (let i = 0; i < N; i++)
     for (let j = 0; j < N; j++) { acc += prog.matrix[i][j]; flat[i * N + j] = acc; }
-  const entry = { cdf: flat, N };
-  _cdfsCache.set(key, entry);
+  entry = { cdf: flat, N };
+  hcObj[awayCode] = entry;
   return entry;
 }
 
@@ -301,24 +304,7 @@ function _amostrar(cdfEntry) {
   return { homeGoals: N - 1, awayGoals: 0 };
 }
 
-/**
- * Pontos de um palpite contra resultado simulado — inline, sem alocação de objeto.
- * Mesmas regras de calcularPontosBrutos + aplicarFator.
- */
-function _pontosRapidoOt(palH, palA, resH, resA, foi_penaltis, fator, c) {
-  const resEf  = resH > resA ? 1 : resH < resA ? -1 : 0;
-  const resPal = palH > palA ? 1 : palH < palA ? -1 : 0;
-  if (resPal !== resEf) return 0;
-  if (palH === resH && palA === resA) {
-    const bonus = (resH + resA) >= c.limiar ? c.exatoAlto : c.exatoBaixo;
-    return Math.round((c.base + bonus) * fator * 10) / 10;
-  }
-  const diffPal = Math.abs(palH - palA), diffRes = Math.abs(resH - resA);
-  let bonus = 0;
-  if (diffPal === diffRes) bonus = c.diff;
-  else if (palH === resH || palA === resA) bonus = c.umTime;
-  return Math.round((c.base + bonus) * fator * 10) / 10;
-}
+// _pontosRapidoOt removida em favor de _pontosInteiros inline
 
 function _graficoRodarMonteCarlo() {
   const N_ITER = 20000;
@@ -331,15 +317,42 @@ function _graficoRodarMonteCarlo() {
   // Configurações e Fatores de Fase cacheados
   const cfgRaw = window.CONFIG && window.CONFIG.pontuacao;
   if (!cfgRaw) { _graficoExibirChance({}); return; }
+  // Lookup tables de pontuação pré-multiplicadas por 10 (inteiros)
   const cfgOt = {
-    base: cfgRaw.resultado_base || 0,
-    exatoAlto: cfgRaw.bonus_placar_exato_alto || 0,
-    exatoBaixo: cfgRaw.bonus_placar_exato_baixo || 0,
     limiar: cfgRaw.limiar_placar_alto || 4,
-    diff: cfgRaw.bonus_diferenca_gols || 0,
-    umTime: cfgRaw.bonus_gols_um_time || 0,
-    fator: cfgRaw.fatores_fase || {}
+    pts_exatoAlto: {}, pts_exatoBaixo: {}, pts_diff: {}, pts_umTime: {}, pts_base: {}
   };
+  const bExA = cfgRaw.bonus_placar_exato_alto || 0;
+  const bExB = cfgRaw.bonus_placar_exato_baixo || 0;
+  const bDif = cfgRaw.bonus_diferenca_gols || 0;
+  const bUmT = cfgRaw.bonus_gols_um_time || 0;
+  const base = cfgRaw.resultado_base || 0;
+
+  const FASES = ['grupos', '32avos', 'oitavas', 'quartas', 'semis', 'terceiro', 'final'];
+  for (const f of FASES) {
+    const ft = cfgRaw.fatores_fase[f] || 1;
+    cfgOt.pts_exatoAlto[f] = Math.round((base + bExA) * ft * 10);
+    cfgOt.pts_exatoBaixo[f] = Math.round((base + bExB) * ft * 10);
+    cfgOt.pts_diff[f] = Math.round((base + bDif) * ft * 10);
+    cfgOt.pts_umTime[f] = Math.round((base + bUmT) * ft * 10);
+    cfgOt.pts_base[f] = Math.round(base * ft * 10);
+  }
+
+  // Função super rápida e inlineável (retorna inteiros)
+  function _pontosInteiros(palH, palA, resH, resA, c, f) {
+    const resEf  = resH > resA ? 1 : resH < resA ? -1 : 0;
+    const resPal = palH > palA ? 1 : palH < palA ? -1 : 0;
+    if (resPal !== resEf) return 0;
+    if (palH === resH && palA === resA) {
+      return (resH + resA) >= c.limiar ? c.pts_exatoAlto[f] : c.pts_exatoBaixo[f];
+    }
+    const dPal = palH - palA, dRes = resH - resA;
+    const absPal = dPal < 0 ? -dPal : dPal;
+    const absRes = dRes < 0 ? -dRes : dRes;
+    if (absPal === absRes) return c.pts_diff[f];
+    if (palH === resH || palA === resA) return c.pts_umTime[f];
+    return c.pts_base[f];
+  }
 
   const todoParticipantes = [...apos];
   const modeloPart = window.getModelo ? window.getModelo() : null;
@@ -376,7 +389,7 @@ function _graficoRodarMonteCarlo() {
   const espOficiais = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
   const espJaOficializados = !!(espOficiais.campeao && espOficiais.vice && espOficiais.terceiro);
 
-  const ptBase = new Float64Array(nPart);
+  const ptBase = new Int32Array(nPart);
   for (let pi = 0; pi < nPart; pi++) {
     const p   = todoParticipantes[pi];
     const pid = partIds[pi];
@@ -387,30 +400,30 @@ function _graficoRodarMonteCarlo() {
       if (!r || r.homeGoals === undefined) continue;
       const pal = palP[j.id];
       if (!pal) continue;
-      acc += _pontosRapidoOt(
+      acc += _pontosInteiros(
         pal.h, pal.a,
         Number(r.homeGoals), Number(r.awayGoals),
-        r.foi_penaltis || false, (cfgOt.fator[j.fase] || 1), cfgOt
+        cfgOt, j.fase
       );
     }
     if (espOficiais.campeao || espOficiais.vice || espOficiais.terceiro)
-      acc += calcularPontosEspeciais(p, espOficiais.campeao, espOficiais.vice, espOficiais.terceiro).total_especiais;
+      acc += Math.round(calcularPontosEspeciais(p, espOficiais.campeao, espOficiais.vice, espOficiais.terceiro).total_especiais * 10);
     ptBase[pi] = acc;
   }
 
   // Especiais base por participante (para subtrair antes de somar os simulados)
-  const espBaseParticipante = new Float64Array(nPart);
+  const espBaseParticipante = new Int32Array(nPart);
   if (!espJaOficializados) {
     for (let pi = 0; pi < nPart; pi++) {
       const p = todoParticipantes[pi];
       if (espOficiais.campeao || espOficiais.vice || espOficiais.terceiro)
-        espBaseParticipante[pi] = calcularPontosEspeciais(p, espOficiais.campeao, espOficiais.vice, espOficiais.terceiro).total_especiais;
+        espBaseParticipante[pi] = Math.round(calcularPontosEspeciais(p, espOficiais.campeao, espOficiais.vice, espOficiais.terceiro).total_especiais * 10);
     }
   }
 
   // ── Buffers reutilizáveis ──
   const vitorias = new Float64Array(nPart);
-  const ptIter   = new Float64Array(nPart);
+  const ptIter   = new Int32Array(nPart);
 
   // Verifica se todos os jogos de grupo já acabaram no mundo real
   const gruposFinished = (jogosPorFase['grupos'].length === 0);
@@ -419,8 +432,9 @@ function _graficoRodarMonteCarlo() {
     classificadosBase = window.BRACKET.calcularTodosOsGrupos(res).classificados;
   }
 
-  // Objeto base para simulação reutilizável (evita Object.assign)
+  // Objeto base para simulação reutilizável (evita Object.assign e instâncias repetidas)
   const resSim = Object.assign({}, res);
+  const palSim = {};
 
   // ── Loop Monte Carlo ──
   for (let iter = 0; iter < N_ITER; iter++) {
@@ -482,7 +496,6 @@ function _graficoRodarMonteCarlo() {
     }
 
     // Passo 4: palpite simulado compartilhado para jogos sem aposta (1 roll/jogo)
-    const palSim = {};
     if (temPendentes) {
       for (const fase of FASES) {
         const jogos = jogosPorFase[fase];
@@ -517,10 +530,10 @@ function _graficoRodarMonteCarlo() {
               if (!pS) continue;
               p_h = pS.homeGoals; p_a = pS.awayGoals;
             }
-            acc += _pontosRapidoOt(
+            acc += _pontosInteiros(
               p_h, p_a,
               rSim.homeGoals, rSim.awayGoals,
-              rSim.foi_penaltis || false, (cfgOt.fator[jogo.fase] || 1), cfgOt
+              cfgOt, jogo.fase
             );
           }
         }
@@ -529,7 +542,7 @@ function _graficoRodarMonteCarlo() {
         if (!espJaOficializados) {
           acc -= espBaseParticipante[pi];
           if (espSim.campeao || espSim.vice || espSim.terceiro)
-            acc += calcularPontosEspeciais(p, espSim.campeao, espSim.vice, espSim.terceiro).total_especiais;
+            acc += Math.round(calcularPontosEspeciais(p, espSim.campeao, espSim.vice, espSim.terceiro).total_especiais * 10);
         }
       }
 
