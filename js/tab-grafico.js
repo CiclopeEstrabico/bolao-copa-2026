@@ -390,7 +390,7 @@ function _graficoRodarMonteCarlo() {
   }
 
   // ── Buffers reutilizáveis ──
-  const vitorias = new Int32Array(nPart);
+  const vitorias = new Float64Array(nPart);
   const ptIter   = new Float64Array(nPart);
 
   // ── Loop Monte Carlo ──
@@ -490,12 +490,21 @@ function _graficoRodarMonteCarlo() {
       ptIter[pi] = acc;
     }
 
-    // Registrar vencedor
-    let melhorPts = -Infinity, vencedorIdx = -1;
+    // Registrar vencedor com divisão de empate
+    let melhorPts = -Infinity;
+    let vencedores = [];
     for (let pi = 0; pi < nPart; pi++) {
-      if (ptIter[pi] > melhorPts) { melhorPts = ptIter[pi]; vencedorIdx = pi; }
+      if (ptIter[pi] > melhorPts) {
+        melhorPts = ptIter[pi];
+        vencedores = [pi];
+      } else if (ptIter[pi] === melhorPts) {
+        vencedores.push(pi);
+      }
     }
-    if (vencedorIdx >= 0) vitorias[vencedorIdx]++;
+    if (vencedores.length > 0) {
+      const frac = 1.0 / vencedores.length;
+      for (const idx of vencedores) vitorias[idx] += frac;
+    }
   }
 
   const chances = {};
