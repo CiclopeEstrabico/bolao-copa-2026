@@ -412,18 +412,31 @@ function _graficoRodarMonteCarlo() {
   const vitorias = new Float64Array(nPart);
   const ptIter   = new Float64Array(nPart);
 
+  // Verifica se todos os jogos de grupo já acabaram no mundo real
+  const gruposFinished = (jogosPorFase['grupos'].length === 0);
+  let classificadosBase = null;
+  if (gruposFinished) {
+    classificadosBase = window.BRACKET.calcularTodosOsGrupos(res).classificados;
+  }
+
   // Objeto base para simulação reutilizável (evita Object.assign)
   const resSim = Object.assign({}, res);
 
   // ── Loop Monte Carlo ──
   for (let iter = 0; iter < N_ITER; iter++) {
+    
+    let cachedClassificados = classificadosBase;
 
     // Passo 1: sortear resultados pendentes — UMA chamada ao bracket por fase
     for (const fase of FASES) {
       const jogos = jogosPorFase[fase];
       if (!jogos.length) continue;
 
-      const bracketFase = window.BRACKET.preencherBracket(resSim); // 1 chamada/fase
+      if (!cachedClassificados) {
+        cachedClassificados = window.BRACKET.calcularTodosOsGrupos(resSim).classificados;
+      }
+
+      const bracketFase = window.BRACKET.preencherBracket(resSim, cachedClassificados);
 
       for (const jogo of jogos) {
         const bEntry = bracketFase[jogo.id] || {};
@@ -439,10 +452,16 @@ function _graficoRodarMonteCarlo() {
         }
         resSim[jogo.id] = { homeGoals: placar.homeGoals, awayGoals: placar.awayGoals, foi_penaltis, penaltis_vencedor, _simulado: true };
       }
+
+      // Se simulamos jogos da fase de grupos, o cache de classificados precisa ser refeito para as próximas fases
+      if (fase === 'grupos') cachedClassificados = null;
     }
 
     // Passo 2: bracket final (1 chamada por iteração para especiais + palSim)
-    const bracketFinal = window.BRACKET.preencherBracket(resSim);
+    if (!cachedClassificados) {
+      cachedClassificados = window.BRACKET.calcularTodosOsGrupos(resSim).classificados;
+    }
+    const bracketFinal = window.BRACKET.preencherBracket(resSim, cachedClassificados);
 
     // Passo 3: especiais simulados
     let espSim = espOficiais;

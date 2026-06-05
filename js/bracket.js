@@ -224,8 +224,8 @@ window.BRACKET = (() => {
     return { grupos, classificados, terceiros, melhoresTerceiros };
   }
 
-  function preencherBracket(resultados) {
-    const { classificados } = calcularTodosOsGrupos(resultados);
+  function preencherBracket(resultados, optClassificados) {
+    const classificados = optClassificados || calcularTodosOsGrupos(resultados).classificados;
     const bracket = {};
 
     function resolverPos(pos, bracket) {
