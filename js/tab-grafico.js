@@ -432,9 +432,32 @@ function _graficoRodarMonteCarlo() {
     classificadosBase = window.BRACKET.calcularTodosOsGrupos(res).classificados;
   }
 
-  // Objeto base para simulação reutilizável (evita Object.assign e instâncias repetidas)
+  // Pré-resolve bracket oficial para ter times nos jogos reais no resSim
+  const bracketOficial = window.BRACKET.preencherBracket(res);
   const resSim = Object.assign({}, res);
+  for (const j of schedule) {
+    if (resSim[j.id] && bracketOficial[j.id]) {
+      resSim[j.id].homeTeam = bracketOficial[j.id].home;
+      resSim[j.id].awayTeam = bracketOficial[j.id].away;
+    }
+  }
   const palSim = {};
+
+  // Resolver rápido O(1) sem slice/startsWith complexo
+  function getTeamFast(pos, classificados) {
+    if (classificados[pos]) return classificados[pos];
+    if (pos[0] === 'W' || pos[0] === 'L') {
+      const gId = pos.substring(1);
+      const r = resSim[gId];
+      if (!r || r.homeGoals === undefined || !r.homeTeam) return null;
+      const isW = pos[0] === 'W';
+      let hWon;
+      if (r.foi_penaltis) hWon = r.penaltis_vencedor === 'home';
+      else hWon = r.homeGoals > r.awayGoals;
+      return (hWon === isW) ? r.homeTeam : r.awayTeam;
+    }
+    return pos;
+  }
 
   // ── Loop Monte Carlo ──
   for (let iter = 0; iter < N_ITER; iter++) {
@@ -450,12 +473,9 @@ function _graficoRodarMonteCarlo() {
         cachedClassificados = window.BRACKET.calcularTodosOsGrupos(resSim).classificados;
       }
 
-      const bracketFase = window.BRACKET.preencherBracket(resSim, cachedClassificados);
-
       for (const jogo of jogos) {
-        const bEntry = bracketFase[jogo.id] || {};
-        const hC = bEntry.home || jogo.home;
-        const aC = bEntry.away || jogo.away;
+        const hC = getTeamFast(jogo.home, cachedClassificados);
+        const aC = getTeamFast(jogo.away, cachedClassificados);
         if (!hC || !aC) continue;
 
         const placar = _amostrar(_getCdf(hC, aC, sById[jogo.id]));
@@ -464,45 +484,40 @@ function _graficoRodarMonteCarlo() {
           foi_penaltis = true;
           penaltis_vencedor = Math.random() < 0.5 ? 'home' : 'away';
         }
-        resSim[jogo.id] = { homeGoals: placar.homeGoals, awayGoals: placar.awayGoals, foi_penaltis, penaltis_vencedor, _simulado: true };
+        resSim[jogo.id] = { homeTeam: hC, awayTeam: aC, homeGoals: placar.homeGoals, awayGoals: placar.awayGoals, foi_penaltis, penaltis_vencedor, _simulado: true };
       }
 
       // Se simulamos jogos da fase de grupos, o cache de classificados precisa ser refeito para as próximas fases
       if (fase === 'grupos') cachedClassificados = null;
     }
 
-    // Passo 2: bracket final (1 chamada por iteração para especiais + palSim)
-    if (!cachedClassificados) {
-      cachedClassificados = window.BRACKET.calcularTodosOsGrupos(resSim).classificados;
-    }
-    const bracketFinal = window.BRACKET.preencherBracket(resSim, cachedClassificados);
-
     // Passo 3: especiais simulados
     let espSim = espOficiais;
     if (!espJaOficializados) {
-      const bFNL = bracketFinal['FNL'] || {}, bTPL = bracketFinal['TPL'] || {};
-      const rFNL = resSim['FNL'],             rTPL = resSim['TPL'];
+      const rFNL = resSim['FNL'], rTPL = resSim['TPL'];
       let campeao = espOficiais.campeao, vice = espOficiais.vice, terceiro = espOficiais.terceiro;
       if (!campeao && rFNL && rFNL.homeGoals !== undefined) {
         const hV = rFNL.foi_penaltis ? rFNL.penaltis_vencedor === 'home' : rFNL.homeGoals > rFNL.awayGoals;
-        campeao = hV ? bFNL.home : bFNL.away;
-        vice    = hV ? bFNL.away : bFNL.home;
+        campeao = hV ? rFNL.homeTeam : rFNL.awayTeam;
+        vice    = hV ? rFNL.awayTeam : rFNL.homeTeam;
       }
       if (!terceiro && rTPL && rTPL.homeGoals !== undefined) {
         const hV = rTPL.foi_penaltis ? rTPL.penaltis_vencedor === 'home' : rTPL.homeGoals > rTPL.awayGoals;
-        terceiro = hV ? bTPL.home : bTPL.away;
+        terceiro = hV ? rTPL.homeTeam : rTPL.awayTeam;
       }
       espSim = { campeao, vice, terceiro };
     }
 
     // Passo 4: palpite simulado compartilhado para jogos sem aposta (1 roll/jogo)
     if (temPendentes) {
+      if (!cachedClassificados) {
+        cachedClassificados = window.BRACKET.calcularTodosOsGrupos(resSim).classificados;
+      }
       for (const fase of FASES) {
         const jogos = jogosPorFase[fase];
         for (const jogo of jogos) {
-          const bEntry = bracketFinal[jogo.id] || {};
-          const hC = bEntry.home || jogo.home;
-          const aC = bEntry.away || jogo.away;
+          const hC = getTeamFast(jogo.home, cachedClassificados);
+          const aC = getTeamFast(jogo.away, cachedClassificados);
           if (hC && aC) palSim[jogo.id] = _amostrar(_getCdf(hC, aC, sById[jogo.id]));
         }
       }
