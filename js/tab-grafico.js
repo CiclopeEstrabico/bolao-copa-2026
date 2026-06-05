@@ -1,5 +1,11 @@
 /** tab-grafico.js - Gráfico de barras e evolução dos apostadores */
 
+const _EVOLUCAO_CORES_DISTINTAS = [
+  '#ff5252', '#4fc3f7', '#69f0ae', '#ffb74d', '#e040fb',
+  '#ffff00', '#8c9eff', '#1de9b6', '#f48fb1', '#cddc39',
+  '#ffab40', '#bcaaa4', '#90caf9', '#a5d6a7', '#ce93d8'
+];
+
 /**
  * Retorna uma cor do espectro arco-íris para o índice i dentro de n barras.
  * Vai de vermelho (1º) → laranja → verde → azul → violeta (último).
@@ -94,7 +100,7 @@ window.renderGrafico = function() {
   h += '</div>';
 
   // ── Filtro dropdown estilo Excel ──
-  h += _renderFiltroDropdown(rankingCompleto);
+  h += _renderFiltroDropdown(rankingCompleto, metricaAtiva);
 
   if (metricaAtiva === "evolucao") {
     h += _renderEvolucao(res, pals, apos, rankingCompleto);
@@ -134,7 +140,7 @@ window.renderGrafico = function() {
 };
 
 // ── Dropdown filtro ────────────────────────────────────────────────────────
-function _renderFiltroDropdown(rankingCompleto) {
+function _renderFiltroDropdown(rankingCompleto, metricaAtiva) {
   const filtro = window._graficoFiltroApos;
   const selecionados = rankingCompleto.filter(a => filtro.has(a.id));
   const label = selecionados.length === rankingCompleto.length
@@ -170,7 +176,12 @@ function _renderFiltroDropdown(rankingCompleto) {
   rankingCompleto.forEach((a, i) => {
     const ativo = filtro.has(a.id);
     const hIdx = humanos.indexOf(a);
-    const cor = a.isModelo ? '#b8cfe8' : _rainbowColor(hIdx, humanos.length);
+    let cor = '#b8cfe8';
+    if (!a.isModelo) {
+      cor = metricaAtiva === 'evolucao' 
+        ? _EVOLUCAO_CORES_DISTINTAS[hIdx % _EVOLUCAO_CORES_DISTINTAS.length] 
+        : _rainbowColor(hIdx, humanos.length);
+    }
     const nomeBadge = a.isModelo
       ? `<span style="font-weight:normal;color:#b8cfe8">${a.nome}</span>`
       : a.nome;
@@ -971,7 +982,7 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
 
   const series = aposFiltrados.map(a => {
     const hIdx = humanos.findIndex(r => r.id === a.id);
-    const cor = _rainbowColor(hIdx, humanos.length);
+    const cor = _EVOLUCAO_CORES_DISTINTAS[hIdx % _EVOLUCAO_CORES_DISTINTAS.length];
     const pal = pals[a.id] || {};
     let acumulado = 0;
     const pontos = [0];
