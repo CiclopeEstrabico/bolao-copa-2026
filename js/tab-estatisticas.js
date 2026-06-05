@@ -246,7 +246,7 @@ window.renderEstatisticas = function () {
     for (const a of apos) {
       const p = pals[a.id]?.[jogo.id];
       if (!p || p.homeGoals === undefined) continue;
-      const dist = Math.abs(parseInt(p.homeGoals) - r2.homeGoals) + Math.abs(parseInt(p.awayGoals) - r2.awayGoals);
+      const dist = Math.abs((parseInt(p.homeGoals) - parseInt(p.awayGoals)) - (r2.homeGoals - r2.awayGoals));
       if (dist > maiorDistancia) {
         maiorDistancia = dist;
         piorPalpite = a;
@@ -375,7 +375,7 @@ window.renderEstatisticas = function () {
   h += _dCard("💤", "Conservador", (jogosFeitos.length === 0 || !conservApo ? "—" : (conservApo?.apelido || conservApo?.nome || "—")), (jogosFeitos.length === 0 || !conservApo ? "—" : conservCount + " vezes no consenso"), "#94a3b8", "Quem mais apostou igual à maioria: o resultado escolhido tinha pelo menos 50% dos palpites do grupo naquela direção.");
   h += _dCard("🎲", "Anarquista", (anarqApo?.apelido || anarqApo?.nome || "—"), (anarqApo ? "Δ" + anarqMedia + " de distância média" : "—"), "#a78bfa", "Quem mais diverge do placar mais votado pelo grupo. Medida: |ΔH − ΔA|, onde ΔH e ΔA são as diferenças de gols em relação ao placar mais popular. Ex: consenso 1×0, chutou 0×4 → distância 5.");
   h += _dCard("⚖️", "Metrônomo", (jogosFeitos.length < 10 || !consistApo ? "—" : (consistApo?.apelido || consistApo?.nome || "—")), (jogosFeitos.length < 10 || !consistApo ? "— (< 10 jogos)" : (consistApo ? "DP " + menorDP.toFixed(2) + " pts" : "—")), "#34d399", "Quem pontua de forma mais consistente jogo a jogo, com menor variação entre rodadas boas e ruins. Calculado pelo desvio padrão dos pontos por jogo (mínimo 10 jogos).");
-  h += _dCard("🙈", "Pra fora!", (piorPalpite?.apelido || piorPalpite?.nome || "—"), (piorJogo && piorPalpite ? piorPlacarApostado + " (foi " + piorPlacarReal + ")" : "—"), "#fb923c", "O palpite mais distante do resultado real na Copa inteira, medido por |ΔH| + |ΔA|. Exibe o apostador, o que ele chutou e o que saiu.");
+  h += _dCard("🙈", "Pra fora!", (piorPalpite?.apelido || piorPalpite?.nome || "—"), (piorJogo && piorPalpite ? piorPlacarApostado + " (foi " + piorPlacarReal + ")" : "—"), "#fb923c", "O palpite mais distante do resultado real na Copa inteira, medido pela diferença de gols: |(palH−palA) − (resH−resA)|. Ex: resultado 1×0, chute 0×4 → |(−4) − 1| = 5.");
   h += _dCard("🥶", "Pé Frio", (peFrioApo?.apelido || peFrioApo?.nome || "—"), (peFrioApo && maiorSeqFria > 0 ? maiorSeqFria + " jogos seguidos zerado" : "—"), "#7dd3fc", "Quem teve a maior sequência seguida de jogos com zero pontos — o recorde de fase ruim da Copa.");
   h += _dCard("🔥", "Pé Quente", (peQuenteApo?.apelido || peQuenteApo?.nome || "—"), (peQuenteApo && maiorSeqQuente > 0 ? maiorSeqQuente + " resultados seguidos" : "—"), "#fdba74", "Quem teve a maior sequência seguida acertando pelo menos o resultado (vitória/empate) em cada jogo — o recorde de fase boa da Copa.");
   h += '</div>';
