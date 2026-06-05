@@ -424,85 +424,117 @@ function jogoAceita(jogoId) {
 
 // ─── Tooltip unificado: hover desktop + toque mobile ─────────────────────────
 /**
- * Ativa tooltips CSS (::after com content:attr(title)) e suporte a toque
- * em todos os elementos que combinam com `seletor` dentro de `containerEl`.
- * Chame após qualquer el.innerHTML = h para cobrir a aba inteira.
+ * Ativa tooltips via div flutuante no body (position:fixed) em todos os
+ * elementos com [title] dentro de containerEl.
+ * Funciona em hover (desktop) e toque (mobile).
+ * Evita o problema de overflow/clip em células de tabela.
  *
- * @param {HTMLElement} containerEl  - Raiz da aba (ex: document.getElementById('aba-classificacao'))
- * @param {string}      seletor      - CSS selector dos elementos com title (default: '[title]')
+ * @param {HTMLElement} containerEl - Raiz da aba
+ * @param {string}      seletor     - Selector CSS (default: '[title]')
  */
 window.injetarTooltipsMobile = function (containerEl, seletor) {
   seletor = seletor || '[title]';
 
-  // Injeta CSS uma única vez no <head>
-  if (!document.getElementById('_tt-global-style')) {
-    const s = document.createElement('style');
-    s.id = '_tt-global-style';
-    s.textContent = `
-      ._tt { position: relative; cursor: help; }
-      ._tt::after {
-        content: attr(data-tt);
-        position: absolute;
-        bottom: calc(100% + 8px);
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(15,23,42,0.96);
-        color: #f1f5f9;
-        font-size: .72rem;
-        font-weight: 500;
-        line-height: 1.45;
-        white-space: normal;
-        max-width: 220px;
-        width: max-content;
-        padding: 7px 11px;
-        border-radius: 7px;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity .15s;
-        z-index: 9999;
-        box-shadow: 0 4px 16px rgba(0,0,0,.45);
-        text-align: left;
-      }
-      ._tt:hover::after,
-      ._tt.tt-open::after { opacity: 1; }
-    `;
-    document.head.appendChild(s);
+  // Cria o div flutuante uma única vez no body
+  let tipEl = document.getElementById('_tt-float');
+  if (!tipEl) {
+    tipEl = document.createElement('div');
+    tipEl.id = '_tt-float';
+    tipEl.style.cssText = [
+      'position:fixed',
+      'background:rgba(15,23,42,0.96)',
+      'color:#f1f5f9',
+      'font-size:.72rem',
+      'font-weight:500',
+      'line-height:1.5',
+      'padding:7px 12px',
+      'border-radius:7px',
+      'max-width:240px',
+      'z-index:99999',
+      'pointer-events:none',
+      'opacity:0',
+      'transition:opacity .15s',
+      'box-shadow:0 4px 16px rgba(0,0,0,.5)',
+      'white-space:normal',
+      'word-break:break-word',
+      'text-align:left',
+    ].join(';');
+    document.body.appendChild(tipEl);
   }
 
-  // Fecha todos os tooltips ao clicar fora
-  if (!document._ttGlobalClickActive) {
-    document._ttGlobalClickActive = true;
+  function _showTip(el) {
+    const txt = el.getAttribute('data-tt');
+    if (!txt) return;
+    tipEl.textContent = txt;
+    tipEl.style.opacity = '1';
+    _posTip(el);
+  }
+  function _hideTip() {
+    tipEl.style.opacity = '0';
+  }
+  function _posTip(el) {
+    const r = el.getBoundingClientRect();
+    const tw = Math.min(240, window.innerWidth - 16);
+    tipEl.style.maxWidth = tw + 'px';
+
+    // Tenta posicionar acima; se não couber, coloca abaixo
+    const tipH = tipEl.offsetHeight || 40;
+    let top = r.top - tipH - 8;
+    if (top < 8) top = r.bottom + 8;
+
+    // Centraliza horizontalmente, mas não sai da tela
+    let left = r.left + r.width / 2 - tw / 2;
+    if (left < 8) left = 8;
+    if (left + tw > window.innerWidth - 8) left = window.innerWidth - tw - 8;
+
+    tipEl.style.top  = top  + 'px';
+    tipEl.style.left = left + 'px';
+  }
+
+  // Fecha ao clicar fora (uma única vez no document)
+  if (!document._ttGlobalActive) {
+    document._ttGlobalActive = true;
     document.addEventListener('click', function (e) {
-      if (!e.target.closest('._tt')) {
-        document.querySelectorAll('._tt.tt-open').forEach(el => el.classList.remove('tt-open'));
-      }
+      if (!e.target.closest('[data-tt]')) _hideTip();
     }, { passive: true });
+    document.addEventListener('scroll', _hideTip, { passive: true, capture: true });
   }
 
-  // Aplica ._tt em cada elemento com [title] dentro do container
-  containerEl.querySelectorAll(seletor).forEach(el => {
+  // Aplica listeners em cada [title] do container
+  containerEl.querySelectorAll(seletor).forEach(function (el) {
     const txt = el.getAttribute('title');
     if (!txt) return;
-    el.removeAttribute('title');         // Remove o nativo do browser
+    el.removeAttribute('title');     // Remove o tooltip nativo do browser
     el.setAttribute('data-tt', txt);
-    el.classList.add('_tt');
 
-    // Toque: toggle (fecha os outros, abre este)
+    // Desktop: hover
+    el.addEventListener('mouseenter', function () { _showTip(this); });
+    el.addEventListener('mouseleave', _hideTip);
+
+    // Mobile: toque
     el.addEventListener('touchstart', function (e) {
       e.preventDefault();
-      const isOpen = this.classList.contains('tt-open');
-      document.querySelectorAll('._tt.tt-open').forEach(o => o.classList.remove('tt-open'));
-      if (!isOpen) this.classList.add('tt-open');
+      const isVisible = tipEl.style.opacity === '1' && tipEl._anchor === this;
+      _hideTip();
+      if (!isVisible) {
+        tipEl._anchor = this;
+        _showTip(this);
+      }
     }, { passive: false });
 
-    // Click (desktop também funciona por onclick se precisar)
+    // Click (cobre casos de teclado / foco)
     el.addEventListener('click', function (e) {
-      const isOpen = this.classList.contains('tt-open');
-      document.querySelectorAll('._tt.tt-open').forEach(o => o.classList.remove('tt-open'));
-      if (!isOpen) this.classList.add('tt-open');
+      e.stopPropagation();
+      const isVisible = tipEl.style.opacity === '1' && tipEl._anchor === this;
+      _hideTip();
+      if (!isVisible) {
+        tipEl._anchor = this;
+        _showTip(this);
+      }
     });
   });
 };
+
 
 let _resizeTimer;
 let _lastInnerWidth = window.innerWidth;
