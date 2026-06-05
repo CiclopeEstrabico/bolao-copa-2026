@@ -35,17 +35,108 @@ window.BRACKET = (() => {
     TPL: { home: "LSF_1", away: "LSF_2" }, FNL: { home: "WSF_1", away: "WSF_2" },
   };
 
+  /**
+   * _calcularCD(subset, jogos)
+   * Calcula Pts_CD / SG_CD / GP_CD para cada time em `subset`
+   * considerando apenas os jogos entre os times do próprio subset.
+   * Não modifica os objetos — retorna um Map<code, {Pts_CD, SG_CD, GP_CD}>.
+   */
+  function _calcularCD(subset, jogos) {
+    const codes = new Set(subset.map(t => t.code));
+    const stats = new Map(subset.map(t => [t.code, { Pts_CD: 0, SG_CD: 0, GP_CD: 0 }]));
+    for (const jogo of jogos) {
+      if (!codes.has(jogo.home) || !codes.has(jogo.away)) continue;
+      const res = jogo._res;
+      if (!res) continue;
+      const hg = res.homeGoals, ag = res.awayGoals;
+      const h = stats.get(jogo.home), a = stats.get(jogo.away);
+      h.GP_CD += hg; h.SG_CD += (hg - ag);
+      a.GP_CD += ag; a.SG_CD += (ag - hg);
+      if (hg > ag)      { h.Pts_CD += 3; }
+      else if (hg < ag) { a.Pts_CD += 3; }
+      else              { h.Pts_CD += 1; a.Pts_CD += 1; }
+    }
+    return stats;
+  }
+
+  /**
+   * _ordenarEmpatados(subset, jogos, depth)
+   * Ordena `subset` (todos com mesmo Pts geral) aplicando Step 1→Step 2 do Art.13.
+   * - Step 1: critérios a/b/c no confronto direto entre TODOS do subset.
+   * - Step 2 (Art.13 iterativo): para os que ainda ficarem empatados após Step 1,
+   *   reaplica a/b/c entre ELES SOMENTE, recursivamente.
+   *   Só entra na recursão se o subgrupo tiver ≥2 times e for estritamente menor
+   *   que o conjunto atual (garantia de terminação).
+   * - Após esgotar os critérios de confronto direto, usa SG/GP gerais.
+   * - depth limita a recursão (máx 3 para 4 times; na prática nunca passa de 2).
+   *
+   * Retorna array ordenado (não modifica o original).
+   */
+  function _ordenarEmpatados(subset, jogos, depth) {
+    // Barreiras de segurança:
+    // - 1 time: trivial, devolve direto
+    // - profundidade > 3 ou subset >= 5: improvável em grupo de 4, mas protege
+    if (subset.length <= 1) return [...subset];
+    if (depth > 3 || subset.length > 4) {
+      // Fallback: SG geral → GP geral (estável)
+      return [...subset].sort((a, b) => b.SG - a.SG || b.GP - a.GP);
+    }
+
+    const cd = _calcularCD(subset, jogos);
+
+    // Comparador Step 1: Pts_CD → SG_CD → GP_CD
+    const cmpCD = (a, b) => {
+      const ca = cd.get(a.code), cb = cd.get(b.code);
+      return (cb.Pts_CD - ca.Pts_CD) || (cb.SG_CD - ca.SG_CD) || (cb.GP_CD - ca.GP_CD);
+    };
+
+    const sorted = [...subset].sort(cmpCD);
+
+    // Reagrupar times que ficaram empatados nos 3 critérios de confronto direto
+    const result = [];
+    let i = 0;
+    while (i < sorted.length) {
+      let j = i + 1;
+      // Avança j enquanto sorted[j] empatar com sorted[i] em todos os critérios CD
+      while (j < sorted.length && cmpCD(sorted[i], sorted[j]) === 0) j++;
+      const bloco = sorted.slice(i, j);
+      if (bloco.length === 1) {
+        // Já separado — sem recursão
+        result.push(bloco[0]);
+      } else if (bloco.length < subset.length) {
+        // Step 2: subgrupo é estritamente menor → recursão segura
+        const subOrdenados = _ordenarEmpatados(bloco, jogos, depth + 1);
+        result.push(...subOrdenados);
+      } else {
+        // bloco.length === subset.length: confronto direto não diferenciou ninguém.
+        // Step 2 não se aplica (reaplica sobre o mesmo conjunto = loop infinito).
+        // Cai direto para SG/GP gerais como desempate final.
+        const porGlobal = [...bloco].sort((a, b) => b.SG - a.SG || b.GP - a.GP);
+        result.push(...porGlobal);
+      }
+      i = j;
+    }
+    return result;
+  }
+
   function calcularClassificacaoGrupo(grupo, resultados) {
     const jogos = window.SCHEDULE.filter(j => j.grupo === grupo);
+
+    // Pré-anexa o resultado em cada jogo para evitar lookups repetidos
+    const jogosComRes = jogos.map(j => ({ ...j, _res: (() => {
+      const r = resultados[j.id];
+      return (r && r.homeGoals !== undefined) ? r : null;
+    })() }));
+
     const times = window.TEAMS.filter(t => t.group === grupo).map(t => ({
       code: t.code, name: t.name, flag: t.flag,
       J: 0, V: 0, E: 0, D: 0, GP: 0, GC: 0, SG: 0, Pts: 0
     }));
     const statsMap = Object.fromEntries(times.map(t => [t.code, t]));
 
-    for (const jogo of jogos) {
-      const res = resultados[jogo.id];
-      if (!res || res.homeGoals === undefined) continue;
+    for (const jogo of jogosComRes) {
+      const res = jogo._res;
+      if (!res) continue;
       const hStats = statsMap[jogo.home], aStats = statsMap[jogo.away];
       if (!hStats || !aStats) continue;
       const hg = res.homeGoals, ag = res.awayGoals;
@@ -57,41 +148,23 @@ window.BRACKET = (() => {
       else { hStats.E++; hStats.Pts += 1; aStats.E++; aStats.Pts += 1; }
     }
 
+    // Agrupa times por pontuação geral
     const timesByPts = {};
     for (const t of times) {
       if (!timesByPts[t.Pts]) timesByPts[t.Pts] = [];
       timesByPts[t.Pts].push(t);
     }
 
-    for (const pts of Object.keys(timesByPts)) {
+    // Ordena cada bolsão de empatados usando Step 1 + Step 2 iterativo (Art.13)
+    const sorted = [];
+    for (const pts of Object.keys(timesByPts).sort((a, b) => b - a)) {
       const tied = timesByPts[pts];
-      for (const t of tied) { t.Pts_CD = 0; t.SG_CD = 0; t.GP_CD = 0; }
-      if (tied.length > 1) {
-        const tiedCodes = tied.map(t => t.code);
-        const jogosMini = jogos.filter(j => tiedCodes.includes(j.home) && tiedCodes.includes(j.away));
-        for (const jogo of jogosMini) {
-          const res = resultados[jogo.id];
-          if (!res || res.homeGoals === undefined) continue;
-          const hg = res.homeGoals, ag = res.awayGoals;
-          const hT = tied.find(x => x.code === jogo.home), aT = tied.find(x => x.code === jogo.away);
-          hT.GP_CD += hg; hT.SG_CD += (hg - ag);
-          aT.GP_CD += ag; aT.SG_CD += (ag - hg);
-          if (hg > ag) { hT.Pts_CD += 3; }
-          else if (hg < ag) { aT.Pts_CD += 3; }
-          else { hT.Pts_CD += 1; aT.Pts_CD += 1; }
-        }
+      if (tied.length === 1) {
+        sorted.push(tied[0]);
+      } else {
+        sorted.push(..._ordenarEmpatados(tied, jogosComRes, 0));
       }
     }
-
-    const sorted = [...times].sort((a, b) => {
-      if (b.Pts !== a.Pts) return b.Pts - a.Pts;
-      if (b.Pts_CD !== a.Pts_CD) return b.Pts_CD - a.Pts_CD;
-      if (b.SG_CD !== a.SG_CD) return b.SG_CD - a.SG_CD;
-      if (b.GP_CD !== a.GP_CD) return b.GP_CD - a.GP_CD;
-      if (b.SG !== a.SG) return b.SG - a.SG;
-      if (b.GP !== a.GP) return b.GP - a.GP;
-      return 0;
-    });
 
     return sorted.map((t, i) => ({ ...t, posicao: i + 1, grupo }));
   }

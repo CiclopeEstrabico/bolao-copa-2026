@@ -9,6 +9,7 @@ const _EVOLUCAO_CORES = [
 const _METRICAS = [
   { id: 'pts',        label: 'Pontos' },
   { id: 'evolucao',   label: 'Evolução' },
+  { id: 'chance',     label: '🎲 Chance' },
   { id: 'pct',        label: 'Pontos %' },
   { id: 'res',        label: 'Resultados' },
   { id: 'bonus1',     label: 'Bônus+1' },
@@ -78,6 +79,8 @@ window.renderGrafico = function() {
     const ativo = metricaAtiva === m.id;
     const onclick = m.id === 'evolucao'
       ? 'onclick="_graficoIrEvolucao()"'
+      : m.id === 'chance'
+      ? 'onclick="_graficoIrChance()"'
       : `onclick="window._graficoMetrica='${m.id}';renderAbaAtiva()"`;
     h += `<button class="btn-toggle${ativo?' ativo':''}" ${onclick}>${m.label}</button>`;
   });
@@ -88,6 +91,8 @@ window.renderGrafico = function() {
 
   if (metricaAtiva === "evolucao") {
     h += _renderEvolucao(res, pals, apos, rankingCompleto);
+  } else if (metricaAtiva === "chance") {
+    h += _renderChanceLoading();
   } else {
     h += _renderBarras(rankingCompleto, metricaAtiva);
   }
@@ -238,6 +243,410 @@ function _fmtVal(metricaAtiva, val, shortFmt = false) {
     return shortFmt ? Math.round(val) : val.toFixed(1);
   }
   return String(val);
+}
+
+window._graficoIrChance = function() {
+  window._graficoMetrica = 'chance';
+  renderAbaAtiva();
+  // Despacha a simulação após o DOM mostrar o spinner
+  setTimeout(_graficoRodarMonteCarlo, 0);
+};
+
+function _renderChanceLoading() {
+  return `<div class="card" id="chance-loading" style="text-align:center;padding:40px 20px">
+    <div style="font-size:2rem;margin-bottom:10px">⚡</div>
+    <div style="font-size:.9rem;font-weight:700;color:var(--dourado)">Simulando 1.000 cenários…</div>
+    <div style="font-size:.75rem;color:var(--texto2);margin-top:6px">Resolvendo o bracket fase a fase via Poisson</div>
+  </div>`;
+}
+
+// ── Motor Monte Carlo ──────────────────────────────────────────────────────
+
+/**
+ * CDF plana (Float32Array) por par de times — computada uma vez por sessão.
+ */
+const _cdfsCache = new Map();
+
+function _getCdf(homeCode, awayCode, jogoInfo) {
+  const key = homeCode + '|' + awayCode;
+  if (_cdfsCache.has(key)) return _cdfsCache.get(key);
+  const isNeutral = jogoInfo ? (jogoInfo.pais !== homeCode && jogoInfo.pais !== awayCode) : true;
+  const prog = window.PROGNOSE.calcular(homeCode, awayCode, isNeutral);
+  const N = prog.N;
+  const flat = new Float32Array(N * N);
+  let acc = 0;
+  for (let i = 0; i < N; i++)
+    for (let j = 0; j < N; j++) { acc += prog.matrix[i][j]; flat[i * N + j] = acc; }
+  const entry = { cdf: flat, N };
+  _cdfsCache.set(key, entry);
+  return entry;
+}
+
+/** Amostra (homeGoals, awayGoals) de CDF pré-computada — O(49). */
+function _amostrar(cdfEntry) {
+  const { cdf, N } = cdfEntry;
+  const r = Math.random();
+  for (let k = 0; k < cdf.length; k++)
+    if (r <= cdf[k]) return { homeGoals: (k / N) | 0, awayGoals: k % N };
+  return { homeGoals: N - 1, awayGoals: 0 };
+}
+
+/**
+ * Pontos de um palpite contra resultado simulado — inline, sem alocação de objeto.
+ * Mesmas regras de calcularPontosBrutos + aplicarFator.
+ */
+function _pontosRapido(palH, palA, resH, resA, foi_penaltis, fase) {
+  const cfg = window.CONFIG && window.CONFIG.pontuacao;
+  if (!cfg) return 0;
+  const resEf  = resH > resA ? 1 : resH < resA ? -1 : 0;
+  const resPal = palH > palA ? 1 : palH < palA ? -1 : 0;
+  if (resPal !== resEf) return 0;
+  if (!foi_penaltis && palH === resH && palA === resA) {
+    const bonus = (resH + resA) >= (cfg.limiar_placar_alto || 4)
+      ? cfg.bonus_placar_exato_alto : cfg.bonus_placar_exato_baixo;
+    return aplicarFator(cfg.resultado_base + bonus, fase);
+  }
+  const diffPal = Math.abs(palH - palA), diffRes = Math.abs(resH - resA);
+  let bonus = 0;
+  if (diffPal === diffRes) bonus = cfg.bonus_diferenca_gols;
+  else if (palH === resH || palA === resA) bonus = cfg.bonus_gols_um_time;
+  return aplicarFator(cfg.resultado_base + bonus, fase);
+}
+
+function _graficoRodarMonteCarlo() {
+  const N_ITER = 1000;
+  const res      = getResultados();        // cache APP — zero Firebase
+  const apos     = APP.apostadores || [];
+  const pals     = APP.palpites    || {};
+  const schedule = window.SCHEDULE || [];
+  const sById    = window.SCHEDULE_BY_ID || {};
+
+  // ── Participantes ──
+  const todoParticipantes = [...apos];
+  const modeloPart = window.getModelo ? window.getModelo() : null;
+  if (modeloPart && APP._modeloCarregado) todoParticipantes.push(modeloPart);
+  if (!todoParticipantes.length) { _graficoExibirChance({}); return; }
+
+  const nPart  = todoParticipantes.length;
+  const partIds = todoParticipantes.map(p => p.id || 'Modelo');
+
+  // ── Jogos pendentes agrupados por fase (ordem cronológica do torneio) ──
+  const FASES = ['grupos', '32avos', 'oitavas', 'quartas', 'semis', 'terceiro', 'final'];
+  const jogosPorFase = {};
+  for (const f of FASES) jogosPorFase[f] = [];
+  let temPendentes = false;
+  for (const j of schedule) {
+    const r = res[j.id];
+    if (!r || r.homeGoals === undefined) {
+      jogosPorFase[j.fase].push(j);
+      temPendentes = true;
+    }
+  }
+
+  // ── Pontos base: jogos oficiais calculados UMA vez fora do loop ──
+  const espOficiais = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
+  const espJaOficializados = !!(espOficiais.campeao && espOficiais.vice && espOficiais.terceiro);
+
+  const ptBase = new Float64Array(nPart);
+  for (let pi = 0; pi < nPart; pi++) {
+    const p   = todoParticipantes[pi];
+    const pid = partIds[pi];
+    const palP = pals[pid] || {};
+    let acc = 0;
+    for (const j of schedule) {
+      const r = res[j.id];
+      if (!r || r.homeGoals === undefined) continue;
+      const pal = palP[j.id];
+      if (!pal || pal.homeGoals === undefined) continue;
+      acc += _pontosRapido(
+        Number(pal.homeGoals), Number(pal.awayGoals),
+        Number(r.homeGoals),   Number(r.awayGoals),
+        r.foi_penaltis || false, j.fase
+      );
+    }
+    if (espOficiais.campeao || espOficiais.vice || espOficiais.terceiro)
+      acc += calcularPontosEspeciais(p, espOficiais.campeao, espOficiais.vice, espOficiais.terceiro).total_especiais;
+    ptBase[pi] = acc;
+  }
+
+  // Especiais base por participante (para subtrair antes de somar os simulados)
+  const espBaseParticipante = new Float64Array(nPart);
+  if (!espJaOficializados) {
+    for (let pi = 0; pi < nPart; pi++) {
+      const p = todoParticipantes[pi];
+      if (espOficiais.campeao || espOficiais.vice || espOficiais.terceiro)
+        espBaseParticipante[pi] = calcularPontosEspeciais(p, espOficiais.campeao, espOficiais.vice, espOficiais.terceiro).total_especiais;
+    }
+  }
+
+  // ── Buffers reutilizáveis ──
+  const vitorias = new Int32Array(nPart);
+  const ptIter   = new Float64Array(nPart);
+
+  // ── Loop Monte Carlo ──
+  for (let iter = 0; iter < N_ITER; iter++) {
+
+    // Passo 1: sortear resultados pendentes — UMA chamada ao bracket por fase
+    const resSim = Object.assign({}, res);
+
+    for (const fase of FASES) {
+      const jogos = jogosPorFase[fase];
+      if (!jogos.length) continue;
+
+      const bracketFase = window.BRACKET.preencherBracket(resSim); // 1 chamada/fase
+
+      for (const jogo of jogos) {
+        const bEntry = bracketFase[jogo.id] || {};
+        const hC = bEntry.home || jogo.home;
+        const aC = bEntry.away || jogo.away;
+        if (!hC || !aC) continue;
+
+        const placar = _amostrar(_getCdf(hC, aC, sById[jogo.id]));
+        let foi_penaltis = false, penaltis_vencedor = null;
+        if (fase !== 'grupos' && placar.homeGoals === placar.awayGoals) {
+          foi_penaltis = true;
+          penaltis_vencedor = Math.random() < 0.5 ? 'home' : 'away';
+        }
+        resSim[jogo.id] = { homeGoals: placar.homeGoals, awayGoals: placar.awayGoals, foi_penaltis, penaltis_vencedor, _simulado: true };
+      }
+    }
+
+    // Passo 2: bracket final (1 chamada por iteração para especiais + palSim)
+    const bracketFinal = window.BRACKET.preencherBracket(resSim);
+
+    // Passo 3: especiais simulados
+    let espSim = espOficiais;
+    if (!espJaOficializados) {
+      const bFNL = bracketFinal['FNL'] || {}, bTPL = bracketFinal['TPL'] || {};
+      const rFNL = resSim['FNL'],             rTPL = resSim['TPL'];
+      let campeao = espOficiais.campeao, vice = espOficiais.vice, terceiro = espOficiais.terceiro;
+      if (!campeao && rFNL && rFNL.homeGoals !== undefined) {
+        const hV = rFNL.foi_penaltis ? rFNL.penaltis_vencedor === 'home' : rFNL.homeGoals > rFNL.awayGoals;
+        campeao = hV ? bFNL.home : bFNL.away;
+        vice    = hV ? bFNL.away : bFNL.home;
+      }
+      if (!terceiro && rTPL && rTPL.homeGoals !== undefined) {
+        const hV = rTPL.foi_penaltis ? rTPL.penaltis_vencedor === 'home' : rTPL.homeGoals > rTPL.awayGoals;
+        terceiro = hV ? bTPL.home : bTPL.away;
+      }
+      espSim = { campeao, vice, terceiro };
+    }
+
+    // Passo 4: palpite simulado compartilhado para jogos sem aposta (1 roll/jogo)
+    const palSim = {};
+    if (temPendentes) {
+      for (const fase of FASES) {
+        const jogos = jogosPorFase[fase];
+        for (const jogo of jogos) {
+          const bEntry = bracketFinal[jogo.id] || {};
+          const hC = bEntry.home || jogo.home;
+          const aC = bEntry.away || jogo.away;
+          if (hC && aC) palSim[jogo.id] = _amostrar(_getCdf(hC, aC, sById[jogo.id]));
+        }
+      }
+    }
+
+    // Passo 5: pontos incrementais (só jogos pendentes) + especiais simulados
+    for (let pi = 0; pi < nPart; pi++) {
+      const p   = todoParticipantes[pi];
+      const pid = partIds[pi];
+      const palP = pals[pid] || {};
+      let acc = ptBase[pi];
+
+      if (temPendentes) {
+        for (const fase of FASES) {
+          const jogos = jogosPorFase[fase];
+          for (const jogo of jogos) {
+            const rSim = resSim[jogo.id];
+            if (!rSim) continue;
+            const pal = palP[jogo.id] || palSim[jogo.id];
+            if (!pal || pal.homeGoals === undefined) continue;
+            acc += _pontosRapido(
+              Number(pal.homeGoals), Number(pal.awayGoals),
+              rSim.homeGoals, rSim.awayGoals,
+              rSim.foi_penaltis || false, jogo.fase
+            );
+          }
+        }
+
+        // Especiais: swap do parcial oficial → simulado
+        if (!espJaOficializados) {
+          acc -= espBaseParticipante[pi];
+          if (espSim.campeao || espSim.vice || espSim.terceiro)
+            acc += calcularPontosEspeciais(p, espSim.campeao, espSim.vice, espSim.terceiro).total_especiais;
+        }
+      }
+
+      ptIter[pi] = acc;
+    }
+
+    // Registrar vencedor
+    let melhorPts = -Infinity, vencedorIdx = -1;
+    for (let pi = 0; pi < nPart; pi++) {
+      if (ptIter[pi] > melhorPts) { melhorPts = ptIter[pi]; vencedorIdx = pi; }
+    }
+    if (vencedorIdx >= 0) vitorias[vencedorIdx]++;
+  }
+
+  const chances = {};
+  for (let pi = 0; pi < nPart; pi++)
+    chances[partIds[pi]] = parseFloat((vitorias[pi] / N_ITER * 100).toFixed(1));
+  _graficoExibirChance(chances);
+}
+
+function _graficoExibirChance(chances) {
+  // Rebuild rankingCompleto igual ao renderGrafico para cores consistentes
+  const res = getResultados();
+  const apos = APP.apostadores || [];
+  const pals = APP.palpites || {};
+  const espOficiaisGraf = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
+
+  let rankingCompleto = apos.map((a, idx) => {
+    const st = calcularPontosApostador(pals[a.id] || {}, res, a, espOficiaisGraf);
+    return {
+      id: a.id,
+      nome: (a.apelido || a.nome || '?').substring(0, 14),
+      pts: st.total,
+      chance: chances[a.id] || 0,
+      isModelo: false,
+    };
+  }).sort((a, b) => b.pts - a.pts);
+
+  const modeloGraf = window.getModelo ? window.getModelo() : null;
+  if (modeloGraf && APP._modeloCarregado) {
+    const stMod = calcularPontosApostador(APP.palpitesModelo || {}, res, modeloGraf, espOficiaisGraf);
+    const itemMod = {
+      id: 'Modelo',
+      nome: 'Modelo',
+      pts: stMod.total,
+      chance: chances['Modelo'] || 0,
+      isModelo: true,
+    };
+    const insertIdx = rankingCompleto.findIndex(a => a.pts < stMod.total);
+    if (insertIdx === -1) rankingCompleto.push(itemMod);
+    else rankingCompleto.splice(insertIdx, 0, itemMod);
+  }
+
+  // Injetar resultado no container sem rerender tudo
+  const el = document.getElementById('aba-grafico');
+  if (!el) return;
+
+  const loading = document.getElementById('chance-loading');
+  if (loading) {
+    loading.outerHTML = _renderChance(rankingCompleto, chances);
+  }
+}
+
+function _renderChance(rankingCompleto, chances) {
+  const filtro = window._graficoFiltroApos;
+  let ranking = rankingCompleto.filter(a => filtro.has(a.id));
+  if (!ranking.length) return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador selecionado.</div>';
+
+  ranking = [...ranking].sort((a, b) => (chances[b.id] || 0) - (chances[a.id] || 0));
+
+  const maxVal = Math.max(1, ...ranking.map(a => chances[a.id] || 0));
+  const avgVal = ranking.reduce((s, a) => s + (chances[a.id] || 0), 0) / ranking.length;
+  const avgPerc = (avgVal / maxVal) * 100;
+
+  const coresMap = {};
+  rankingCompleto.forEach((a, i) => {
+    coresMap[a.id] = a.isModelo ? '#b8cfe8' : _EVOLUCAO_CORES[i % _EVOLUCAO_CORES.length];
+  });
+
+  const n = ranking.length;
+  const isMobile    = window.innerWidth <= 768;
+  const isLandscape = window.innerWidth > window.innerHeight;
+
+  let gap, barWidth, valFontSize, nameFontSize, needsScroll;
+
+  if (isMobile && !isLandscape) {
+    barWidth     = n <= 8 ? 32 : 28;
+    gap          = n <= 8 ? 10 : 8;
+    valFontSize  = '.72rem';
+    nameFontSize = '.74rem';
+    const minPx   = n * (barWidth + gap) + gap;
+    const screenPx = window.innerWidth - 40;
+    needsScroll   = minPx > screenPx;
+  } else {
+    needsScroll = false;
+    const margemPx     = isMobile ? 40 : 80;
+    const disponivelPx = window.innerWidth - margemPx;
+    if (isMobile && isLandscape) {
+      if      (n <= 6)  barWidth = 26;
+      else if (n <= 10) barWidth = 20;
+      else if (n <= 15) barWidth = 16;
+      else if (n <= 20) barWidth = 12;
+      else if (n <= 28) barWidth = 9;
+      else              barWidth = 7;
+    } else {
+      if      (n <= 6)  barWidth = 36;
+      else if (n <= 10) barWidth = 30;
+      else if (n <= 15) barWidth = 24;
+      else if (n <= 20) barWidth = 18;
+      else if (n <= 28) barWidth = 14;
+      else              barWidth = 10;
+    }
+    const perColuna = disponivelPx / n;
+    gap = Math.min(18, Math.max(2, Math.floor(perColuna - barWidth)));
+    const fScale = (isMobile && isLandscape) ? 0.90 : 1.0;
+    const fv = (base) => (base * fScale).toFixed(2) + 'rem';
+    if      (n <= 8)  { valFontSize = fv(0.78); nameFontSize = fv(0.80); }
+    else if (n <= 12) { valFontSize = fv(0.73); nameFontSize = fv(0.75); }
+    else if (n <= 18) { valFontSize = fv(0.68); nameFontSize = fv(0.70); }
+    else if (n <= 24) { valFontSize = fv(0.64); nameFontSize = fv(0.66); }
+    else              { valFontSize = fv(0.60); nameFontSize = fv(0.62); }
+  }
+
+  const chartHeight = (isMobile && isLandscape) ? '180px' : '280px';
+  const marginBot   = (isMobile && isLandscape) ? '65px' : '80px';
+  const shortFmt    = isMobile && isLandscape;
+
+  let h = '<div class="card" style="padding:20px 10px;">';
+
+  // Cabeçalho com tooltip
+  h += `<div style="font-size:.72rem;color:var(--texto2);text-align:center;margin-bottom:12px;padding:0 8px">
+    🎲 <strong style="color:var(--dourado)">Chance de Ganhar o Bolão</strong>
+    — Probabilidade de terminar em 1.° ao final da Copa, estimada via 1.000 simulações Monte Carlo.
+    Resultados oficiais são fixos; jogos futuros são sorteados pelo modelo Poisson, resolvendo o bracket fase a fase.
+    Palpites não registrados são amostrados com a mesma distribuição do modelo.
+  </div>`;
+
+  let minWidthStyle = '';
+  if (needsScroll) {
+    const minPx = n * (barWidth + gap) + gap;
+    h += `<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">`;
+    minWidthStyle = `min-width:${minPx}px;`;
+  }
+
+  h += `<div style="display:flex;align-items:flex-end;gap:${gap}px;height:${chartHeight};padding-bottom:10px;border-bottom:1px solid var(--borda);margin-bottom:${marginBot};position:relative;${minWidthStyle}">`;
+
+  // Linha da média
+  const avgFmt = shortFmt ? Math.round(avgVal) + '%' : avgVal.toFixed(1) + '%';
+  h += `<div style="position:absolute;bottom:10px;left:0;right:0;height:${avgPerc}%;border-top:1px dashed var(--texto2);opacity:0.6;pointer-events:none;z-index:0">`;
+  h += `<span style="position:absolute;top:-18px;left:0;font-size:.65rem;color:var(--texto2);font-weight:700">Média: ${avgFmt}</span></div>`;
+
+  for (const a of ranking) {
+    const val = chances[a.id] || 0;
+    const perc = (val / maxVal) * 100;
+    const cor = coresMap[a.id] || '#4fc3f7';
+    const valFmt = shortFmt ? Math.round(val) + '%' : val.toFixed(1) + '%';
+    const subLabel = shortFmt ? '' : `<div style="font-size:.63rem;color:var(--texto2);margin-bottom:2px;white-space:nowrap">${Math.round(val * 10)}‰</div>`;
+    const nomeBarra = a.isModelo
+      ? `<span style='font-weight:normal;color:#b8cfe8'>${a.nome}</span>`
+      : a.nome;
+    h += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative;height:100%;justify-content:flex-end;z-index:1">`;
+    h += `<div style="font-size:${valFontSize};font-weight:800;color:var(--texto);margin-bottom:2px;white-space:nowrap">${valFmt}</div>`;
+    h += subLabel;
+    h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2, perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
+    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${nomeBarra}</div>`;
+    h += '</div>';
+  }
+
+  h += '</div>';
+  if (needsScroll) h += '</div>';
+  h += `<div style="text-align:center;font-size:.65rem;color:var(--texto2);margin-top:6px">1.000 simulações · modelo Poisson Dixon-Coles</div>`;
+  h += '</div>';
+  return h;
 }
 
 // ── Gráfico de Barras ──────────────────────────────────────────────────────
