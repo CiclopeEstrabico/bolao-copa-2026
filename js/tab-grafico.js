@@ -265,7 +265,7 @@ window._graficoIrChance = window._graficoIrProjecao;
 function _renderChanceLoading() {
   return `<div class="card" id="chance-loading" style="text-align:center;padding:40px 20px">
     <div style="font-size:2rem;margin-bottom:10px">⚡</div>
-    <div style="font-size:.9rem;font-weight:700;color:var(--dourado)">Simulando 5.000 cenários…</div>
+    <div style="font-size:.9rem;font-weight:700;color:var(--dourado)">Simulando 10.000 cenários…</div>
     <div style="font-size:.75rem;color:var(--texto2);margin-top:6px">Resolvendo o bracket fase a fase via Poisson</div>
   </div>`;
 }
@@ -305,33 +305,42 @@ function _amostrar(cdfEntry) {
  * Pontos de um palpite contra resultado simulado — inline, sem alocação de objeto.
  * Mesmas regras de calcularPontosBrutos + aplicarFator.
  */
-function _pontosRapido(palH, palA, resH, resA, foi_penaltis, fase) {
-  const cfg = window.CONFIG && window.CONFIG.pontuacao;
-  if (!cfg) return 0;
+function _pontosRapidoOt(palH, palA, resH, resA, foi_penaltis, fator, c) {
   const resEf  = resH > resA ? 1 : resH < resA ? -1 : 0;
   const resPal = palH > palA ? 1 : palH < palA ? -1 : 0;
   if (resPal !== resEf) return 0;
   if (palH === resH && palA === resA) {
-    const bonus = (resH + resA) >= (cfg.limiar_placar_alto || 4)
-      ? cfg.bonus_placar_exato_alto : cfg.bonus_placar_exato_baixo;
-    return aplicarFator(cfg.resultado_base + bonus, fase);
+    const bonus = (resH + resA) >= c.limiar ? c.exatoAlto : c.exatoBaixo;
+    return Math.round((c.base + bonus) * fator * 10) / 10;
   }
   const diffPal = Math.abs(palH - palA), diffRes = Math.abs(resH - resA);
   let bonus = 0;
-  if (diffPal === diffRes) bonus = cfg.bonus_diferenca_gols;
-  else if (palH === resH || palA === resA) bonus = cfg.bonus_gols_um_time;
-  return aplicarFator(cfg.resultado_base + bonus, fase);
+  if (diffPal === diffRes) bonus = c.diff;
+  else if (palH === resH || palA === resA) bonus = c.umTime;
+  return Math.round((c.base + bonus) * fator * 10) / 10;
 }
 
 function _graficoRodarMonteCarlo() {
-  const N_ITER = 5000;
-  const res      = getResultados();        // cache APP — zero Firebase
+  const N_ITER = 10000;
+  const res      = getResultados();
   const apos     = APP.apostadores || [];
   const pals     = APP.palpites    || {};
   const schedule = window.SCHEDULE || [];
   const sById    = window.SCHEDULE_BY_ID || {};
 
-  // ── Participantes ──
+  // Configurações e Fatores de Fase cacheados
+  const cfgRaw = window.CONFIG && window.CONFIG.pontuacao;
+  if (!cfgRaw) { _graficoExibirChance({}); return; }
+  const cfgOt = {
+    base: cfgRaw.resultado_base || 0,
+    exatoAlto: cfgRaw.bonus_placar_exato_alto || 0,
+    exatoBaixo: cfgRaw.bonus_placar_exato_baixo || 0,
+    limiar: cfgRaw.limiar_placar_alto || 4,
+    diff: cfgRaw.bonus_diferenca_gols || 0,
+    umTime: cfgRaw.bonus_gols_um_time || 0,
+    fator: cfgRaw.fatores_fase || {}
+  };
+
   const todoParticipantes = [...apos];
   const modeloPart = window.getModelo ? window.getModelo() : null;
   if (modeloPart && APP._modeloCarregado) todoParticipantes.push(modeloPart);
@@ -340,7 +349,18 @@ function _graficoRodarMonteCarlo() {
   const nPart  = todoParticipantes.length;
   const partIds = todoParticipantes.map(p => p.id || 'Modelo');
 
-  // ── Jogos pendentes agrupados por fase (ordem cronológica do torneio) ──
+  // Pré-parse dos palpites para evitar Number() no loop
+  const parsedPals = {};
+  for (const pid of partIds) {
+    parsedPals[pid] = {};
+    const palP = pals[pid] || {};
+    for (const [jid, pal] of Object.entries(palP)) {
+      if (pal.homeGoals !== undefined) {
+        parsedPals[pid][jid] = { h: Number(pal.homeGoals), a: Number(pal.awayGoals) };
+      }
+    }
+  }
+
   const FASES = ['grupos', '32avos', 'oitavas', 'quartas', 'semis', 'terceiro', 'final'];
   const jogosPorFase = {};
   for (const f of FASES) jogosPorFase[f] = [];
@@ -353,7 +373,6 @@ function _graficoRodarMonteCarlo() {
     }
   }
 
-  // ── Pontos base: jogos oficiais calculados UMA vez fora do loop ──
   const espOficiais = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
   const espJaOficializados = !!(espOficiais.campeao && espOficiais.vice && espOficiais.terceiro);
 
@@ -361,17 +380,17 @@ function _graficoRodarMonteCarlo() {
   for (let pi = 0; pi < nPart; pi++) {
     const p   = todoParticipantes[pi];
     const pid = partIds[pi];
-    const palP = pals[pid] || {};
+    const palP = parsedPals[pid];
     let acc = 0;
     for (const j of schedule) {
       const r = res[j.id];
       if (!r || r.homeGoals === undefined) continue;
       const pal = palP[j.id];
-      if (!pal || pal.homeGoals === undefined) continue;
-      acc += _pontosRapido(
-        Number(pal.homeGoals), Number(pal.awayGoals),
-        Number(r.homeGoals),   Number(r.awayGoals),
-        r.foi_penaltis || false, j.fase
+      if (!pal) continue;
+      acc += _pontosRapidoOt(
+        pal.h, pal.a,
+        Number(r.homeGoals), Number(r.awayGoals),
+        r.foi_penaltis || false, (cfgOt.fator[j.fase] || 1), cfgOt
       );
     }
     if (espOficiais.campeao || espOficiais.vice || espOficiais.terceiro)
@@ -393,12 +412,13 @@ function _graficoRodarMonteCarlo() {
   const vitorias = new Float64Array(nPart);
   const ptIter   = new Float64Array(nPart);
 
+  // Objeto base para simulação reutilizável (evita Object.assign)
+  const resSim = Object.assign({}, res);
+
   // ── Loop Monte Carlo ──
   for (let iter = 0; iter < N_ITER; iter++) {
 
     // Passo 1: sortear resultados pendentes — UMA chamada ao bracket por fase
-    const resSim = Object.assign({}, res);
-
     for (const fase of FASES) {
       const jogos = jogosPorFase[fase];
       if (!jogos.length) continue;
@@ -469,12 +489,19 @@ function _graficoRodarMonteCarlo() {
           for (const jogo of jogos) {
             const rSim = resSim[jogo.id];
             if (!rSim) continue;
-            const pal = palP[jogo.id] || palSim[jogo.id];
-            if (!pal || pal.homeGoals === undefined) continue;
-            acc += _pontosRapido(
-              Number(pal.homeGoals), Number(pal.awayGoals),
+            let p_h = 0, p_a = 0;
+            const pal = palP[jogo.id];
+            if (pal) {
+              p_h = pal.h; p_a = pal.a;
+            } else {
+              const pS = palSim[jogo.id];
+              if (!pS) continue;
+              p_h = pS.homeGoals; p_a = pS.awayGoals;
+            }
+            acc += _pontosRapidoOt(
+              p_h, p_a,
               rSim.homeGoals, rSim.awayGoals,
-              rSim.foi_penaltis || false, jogo.fase
+              rSim.foi_penaltis || false, (cfgOt.fator[jogo.fase] || 1), cfgOt
             );
           }
         }
@@ -667,7 +694,7 @@ function _renderChance(rankingCompleto, chances) {
 
   h += '</div>';
   if (needsScroll) h += '</div>';
-  h += `<div style="text-align:center;font-size:.65rem;color:var(--texto2);margin-top:6px">5.000 simulações · modelo Poisson Dixon-Coles</div>`;
+  h += `<div style="text-align:center;font-size:.65rem;color:var(--texto2);margin-top:6px">10.000 simulações · modelo Poisson Dixon-Coles</div>`;
   h += '</div>';
   return h;
 }
