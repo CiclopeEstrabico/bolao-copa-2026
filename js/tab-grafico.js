@@ -265,7 +265,7 @@ window._graficoIrChance = window._graficoIrProjecao;
 function _renderChanceLoading() {
   return `<div class="card" id="chance-loading" style="text-align:center;padding:40px 20px">
     <div style="font-size:2rem;margin-bottom:10px">⚡</div>
-    <div style="font-size:.9rem;font-weight:700;color:var(--dourado)">Simulando 1.000 cenários…</div>
+    <div style="font-size:.9rem;font-weight:700;color:var(--dourado)">Simulando 5.000 cenários…</div>
     <div style="font-size:.75rem;color:var(--texto2);margin-top:6px">Resolvendo o bracket fase a fase via Poisson</div>
   </div>`;
 }
@@ -324,7 +324,7 @@ function _pontosRapido(palH, palA, resH, resA, foi_penaltis, fase) {
 }
 
 function _graficoRodarMonteCarlo() {
-  const N_ITER = 1000;
+  const N_ITER = 5000;
   const res      = getResultados();        // cache APP — zero Firebase
   const apos     = APP.apostadores || [];
   const pals     = APP.palpites    || {};
@@ -667,7 +667,7 @@ function _renderChance(rankingCompleto, chances) {
 
   h += '</div>';
   if (needsScroll) h += '</div>';
-  h += `<div style="text-align:center;font-size:.65rem;color:var(--texto2);margin-top:6px">1.000 simulações · modelo Poisson Dixon-Coles</div>`;
+  h += `<div style="text-align:center;font-size:.65rem;color:var(--texto2);margin-top:6px">5.000 simulações · modelo Poisson Dixon-Coles</div>`;
   h += '</div>';
   return h;
 }
