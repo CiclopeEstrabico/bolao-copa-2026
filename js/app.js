@@ -518,9 +518,9 @@ window.injetarTooltipsMobile = function (containerEl, seletor) {
       return;
     }
 
-    // Para o iOS disparar o evento de 'click' em elementos normais (como <th>, <span>),
-    // precisamos de cursor pointer ou um listener vazio.
-    el.style.cursor = 'help';
+    // Para o iOS disparar o evento de 'click' rápido em elementos normais (como <th>, <span>),
+    // é OBRIGATÓRIO usar cursor: pointer (help não funciona para habilitar o click delegation no Safari).
+    el.style.cursor = 'pointer';
 
     // Mobile/Teclado: clique único para fazer toggle do tooltip
     el.addEventListener('click', function (e) {
