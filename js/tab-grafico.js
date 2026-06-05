@@ -5,11 +5,23 @@ const _EVOLUCAO_CORES = [
   '#80cbc4', '#fff176', '#ff8a65', '#90caf9', '#a5d6a7'
 ];
 
+/**
+ * Retorna uma cor do espectro arco-íris para o índice i dentro de n barras.
+ * Vai de dourado (1º) → verde → ciano → azul → roxo → vermelho/rosa (último).
+ * Saturação e luminosidade fixas para ficar bonito no fundo escuro.
+ */
+function _rainbowColor(i, n) {
+  if (n <= 1) return 'hsl(45,100%,60%)';
+  // Hue: 45° (dourado) até 300° (magenta), passando pelo arco-íris
+  const hue = Math.round(45 + (i / (n - 1)) * 255);
+  return `hsl(${hue},90%,60%)`;
+}
+
 // Métricas disponíveis
 const _METRICAS = [
   { id: 'pts',        label: 'Pontos' },
   { id: 'evolucao',   label: 'Evolução' },
-  { id: 'chance',     label: '🎲 Projeção' },
+  { id: 'chance',     label: 'Projeção' },
   { id: 'pct',        label: 'Pontos %' },
   { id: 'res',        label: 'Resultados' },
   { id: 'bonus1',     label: 'Bônus+1' },
@@ -647,7 +659,13 @@ function _renderChance(rankingCompleto, chances) {
   let ranking = rankingCompleto.filter(a => filtro.has(a.id));
   if (!ranking.length) return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador selecionado.</div>';
 
-  ranking = [...ranking].sort((a, b) => (chances[b.id] || 0) - (chances[a.id] || 0));
+  // Ordenação: 'rank' (por chance, default) ou 'az' (A-Z)
+  const _chanceOrdem = window._graficoOrdem || 'rank';
+  if (_chanceOrdem === 'az') {
+    ranking = [...ranking].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  } else {
+    ranking = [...ranking].sort((a, b) => (chances[b.id] || 0) - (chances[a.id] || 0));
+  }
 
   const maxVal = Math.max(1, ...ranking.map(a => chances[a.id] || 0));
 
@@ -663,41 +681,41 @@ function _renderChance(rankingCompleto, chances) {
   let gap, barWidth, valFontSize, nameFontSize, needsScroll;
 
   if (isMobile && !isLandscape) {
-    barWidth     = n <= 8 ? 32 : 28;
-    gap          = n <= 8 ? 10 : 8;
-    valFontSize  = '.72rem';
-    nameFontSize = '.74rem';
-    const minPx   = n * (barWidth + gap) + gap;
+    // ── PORTRAIT MOBILE: barras menores (~12 visíveis), scroll permitido ──
+    const targetVisible = 12;
     const screenPx = window.innerWidth - 40;
+    const targetColW = Math.floor(screenPx / targetVisible);
+    barWidth     = Math.max(14, Math.min(24, targetColW - 2));
+    gap          = 2;
+    valFontSize  = '.64rem'; // menor pois XX.X% é mais largo
+    nameFontSize = '.68rem';
+
+    const minPx   = n * (barWidth + gap) + gap;
     needsScroll   = minPx > screenPx;
   } else {
     needsScroll = false;
     const margemPx     = isMobile ? 40 : 80;
     const disponivelPx = window.innerWidth - margemPx;
+    const perColuna = disponivelPx / n;
     if (isMobile && isLandscape) {
-      if      (n <= 6)  barWidth = 26;
-      else if (n <= 10) barWidth = 20;
-      else if (n <= 15) barWidth = 16;
-      else if (n <= 20) barWidth = 12;
-      else if (n <= 28) barWidth = 9;
-      else              barWidth = 7;
+      barWidth = Math.max(4, Math.floor(perColuna - 1));
     } else {
       if      (n <= 6)  barWidth = 36;
       else if (n <= 10) barWidth = 30;
       else if (n <= 15) barWidth = 24;
       else if (n <= 20) barWidth = 18;
       else if (n <= 28) barWidth = 14;
-      else              barWidth = 10;
+      else              barWidth = Math.max(6, Math.floor(perColuna - 1));
     }
-    const perColuna = disponivelPx / n;
-    gap = Math.min(18, Math.max(2, Math.floor(perColuna - barWidth)));
+    gap = Math.max(1, Math.floor(perColuna - barWidth));
     const fScale = (isMobile && isLandscape) ? 0.90 : 1.0;
     const fv = (base) => (base * fScale).toFixed(2) + 'rem';
-    if      (n <= 8)  { valFontSize = fv(0.78); nameFontSize = fv(0.80); }
-    else if (n <= 12) { valFontSize = fv(0.73); nameFontSize = fv(0.75); }
-    else if (n <= 18) { valFontSize = fv(0.68); nameFontSize = fv(0.70); }
-    else if (n <= 24) { valFontSize = fv(0.64); nameFontSize = fv(0.66); }
-    else              { valFontSize = fv(0.60); nameFontSize = fv(0.62); }
+    if      (n <= 8)  { valFontSize = fv(0.72); nameFontSize = fv(0.78); }
+    else if (n <= 12) { valFontSize = fv(0.67); nameFontSize = fv(0.73); }
+    else if (n <= 18) { valFontSize = fv(0.62); nameFontSize = fv(0.68); }
+    else if (n <= 24) { valFontSize = fv(0.58); nameFontSize = fv(0.63); }
+    else if (n <= 40) { valFontSize = fv(0.54); nameFontSize = fv(0.58); }
+    else              { valFontSize = fv(0.50); nameFontSize = fv(0.54); }
   }
 
   const chartHeight = (isMobile && isLandscape) ? '180px' : '280px';
@@ -707,7 +725,7 @@ function _renderChance(rankingCompleto, chances) {
   let h = '<div class="card" style="padding:20px 10px;">';
 
   // Cabeçalho com tooltip ao clicar
-  const _tipText = "Probabilidade de terminar em 1.º ao final da Copa, estimada via 1.000 simulações Monte Carlo. Resultados oficiais são fixos; jogos futuros são sorteados pelo modelo Poisson, resolvendo o bracket fase a fase. Palpites não registrados são amostrados com a mesma distribuição do modelo.";
+  const _tipText = "Probabilidade de terminar em 1.º ao final da Copa, estimada via 20.000 simulações Monte Carlo. Resultados oficiais são fixos; jogos futuros são sorteados pelo modelo Poisson, resolvendo o bracket fase a fase. Palpites não registrados são amostrados com a mesma distribuição do modelo.";
   h += `<div style="text-align:center;margin-bottom:14px;position:relative">
     <span id="proj-label" onclick="_toggleProjecaoTooltip(event)" style="cursor:pointer;font-size:.85rem;font-weight:700;color:var(--dourado);border-bottom:1px dashed var(--dourado);padding-bottom:1px">Chance de ganhar o bolão</span>
     <div id="proj-tooltip" style="display:none;position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1e293b;color:#e2e8f0;font-size:.72rem;line-height:1.5;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);max-width:280px;text-align:left;z-index:999;box-shadow:0 6px 20px rgba(0,0,0,0.5)">
@@ -724,24 +742,35 @@ function _renderChance(rankingCompleto, chances) {
 
   h += `<div style="display:flex;align-items:flex-end;gap:${gap}px;height:${chartHeight};padding-bottom:10px;border-bottom:1px solid var(--borda);margin-bottom:${marginBot};position:relative;${minWidthStyle}">`;
 
+  const rankingHumanosC = ranking.filter(a => !a.isModelo);
   for (const a of ranking) {
+    if (a.isModelo) continue; // Modelo não tem chance calculada vs humanos — não exibir
     const val = chances[a.id] || 0;
     const perc = (val / maxVal) * 100;
-    const cor = coresMap[a.id] || '#4fc3f7';
+    const cor = _rainbowColor(rankingHumanosC.indexOf(a), rankingHumanosC.length);
     const valFmt = shortFmt ? Math.round(val) + '%' : val.toFixed(1) + '%';
-    const nomeBarra = a.isModelo
-      ? `<span style='font-weight:normal;color:#b8cfe8'>${a.nome}</span>`
-      : a.nome;
     h += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative;height:100%;justify-content:flex-end;z-index:1">`;
     h += `<div style="font-size:${valFontSize};font-weight:800;color:var(--texto);margin-bottom:2px;white-space:nowrap">${valFmt}</div>`;
     h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2, perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
-    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${nomeBarra}</div>`;
+    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${a.nome}</div>`;
     h += '</div>';
   }
 
   h += '</div>';
   if (needsScroll) h += '</div>';
   h += `<div style="text-align:center;font-size:.65rem;color:var(--texto2);margin-top:6px">20.000 simulações · modelo Poisson Dixon-Coles</div>`;
+
+  // ── Botões de ação: ordenação + exportar ──
+  const _ordemC = window._graficoOrdem || 'rank';
+  const _btnBaseC = 'background:var(--fundo2);border:1.5px solid var(--borda2);border-radius:var(--radius-sm);padding:8px 14px;color:var(--texto);font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit';
+  const _btnAtivoC = 'background:var(--fundo2);border:1.5px solid var(--dourado);border-radius:var(--radius-sm);padding:8px 14px;color:var(--dourado);font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit';
+  h += `<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;flex-wrap:wrap">`;
+  h += `<div style="display:flex;gap:4px;background:rgba(255,255,255,0.04);border-radius:var(--radius-sm);padding:3px">`;
+  h += `<button onclick="window._graficoOrdem='rank';renderAbaAtiva()" style="${_ordemC==='rank'?_btnAtivoC:_btnBaseC}">🏆 Classificação</button>`;
+  h += `<button onclick="window._graficoOrdem='az';renderAbaAtiva()" style="${_ordemC==='az'?_btnAtivoC:_btnBaseC}">A → Z</button>`;
+  h += `</div>`;
+  h += `<button onclick="_graficoExportarJPG()" style="${_btnBaseC}">📷 Exportar JPG</button>`;
+  h += `</div>`;
   h += '</div>';
   return h;
 }
@@ -771,16 +800,28 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
   let ranking = rankingCompleto.filter(a => filtro.has(a.id));
   if (!ranking.length) return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador selecionado.</div>';
 
-  ranking = [...ranking].sort((a,b) => b[metricaAtiva] - a[metricaAtiva]);
+  // Ordenação: 'rank' (por valor, default) ou 'az' (A-Z)
+  const ordemAtiva = window._graficoOrdem || 'rank';
+  if (ordemAtiva === 'az') {
+    ranking = [...ranking].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  } else {
+    ranking = [...ranking].sort((a,b) => b[metricaAtiva] - a[metricaAtiva]);
+  }
 
   const maxVal = Math.max(1, ...ranking.map(a => a[metricaAtiva]));
-  const avgVal = ranking.reduce((s, a) => s + a[metricaAtiva], 0) / ranking.length;
-  const avgPerc = (avgVal / maxVal) * 100;
 
   const coresMap = {};
   rankingCompleto.forEach((a, i) => {
     coresMap[a.id] = a.isModelo ? '#b8cfe8' : _EVOLUCAO_CORES[i % _EVOLUCAO_CORES.length];
   });
+
+  // ── IC: média ± 1σ para bigodeira de referência ──
+  const vals = ranking.map(a => a[metricaAtiva]);
+  const mean = vals.reduce((s, v) => s + v, 0) / (vals.length || 1);
+  const variance = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / (vals.length || 1);
+  const sigma = Math.sqrt(variance);
+  const ciLow  = Math.max(0, mean - sigma);
+  const ciHigh = mean + sigma;
 
   // ── Dimensões responsivas ──
   const n = ranking.length;
@@ -788,53 +829,51 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
   const isLandscape = window.innerWidth > window.innerHeight;
 
   // Três modos:
-  //  1. PORTRAIT MOBILE  → tamanhos fixos confortáveis, scroll se necessário
-  //  2. LANDSCAPE MOBILE → como desktop (sem scroll), mas margem menor e barras menores
+  //  1. PORTRAIT MOBILE  → barras menores (~12 visíveis), scroll se necessário
+  //  2. LANDSCAPE MOBILE → sem scroll, barra ocupa espaço disponível, 70 apostadores
   //  3. DESKTOP          → sem scroll, gap comprimido antes do barWidth
 
   let gap, barWidth, valFontSize, nameFontSize, needsScroll;
 
   if (isMobile && !isLandscape) {
-    // ── PORTRAIT MOBILE: barras generosas, scroll se não couber ──
-    barWidth     = n <= 8 ? 32 : 28;
-    gap          = n <= 8 ? 10 : 8;
-    valFontSize  = '.72rem';
-    nameFontSize = '.74rem';
+    // ── PORTRAIT MOBILE: barras menores para ~12 visíveis, scroll permitido ──
+    // Alvo: ~12 barras visíveis em ~360px úteis → ~28px por coluna
+    const targetVisible = 12;
+    const screenPx = window.innerWidth - 40;
+    const targetColW = Math.floor(screenPx / targetVisible);
+    barWidth     = Math.max(14, Math.min(24, targetColW - 2));
+    gap          = 2; // gap mínimo — barras quase encostadas
+    valFontSize  = '.68rem';
+    nameFontSize = '.70rem';
 
     const minPx   = n * (barWidth + gap) + gap;
-    const screenPx = window.innerWidth - 40;
     needsScroll   = minPx > screenPx;
 
   } else {
     // ── LANDSCAPE MOBILE + DESKTOP: tudo numa tela, sem scroll ──
     needsScroll = false;
 
-    // Margem lateral: mobile landscape tem menos padding que desktop completo
     const margemPx     = isMobile ? 40 : 80;
     const disponivelPx = window.innerWidth - margemPx;
 
-    // barWidth preferido por faixa de apostadores (reduzido se mobile landscape)
+    // gap mínimo de 1px — barras quase encostadas para caber 70 apostadores
+    // barWidth = (disponível / n) - 1, com piso por legibilidade
+    const perColuna = disponivelPx / n;
     if (isMobile && isLandscape) {
-      if      (n <= 6)  barWidth = 26;
-      else if (n <= 10) barWidth = 20;
-      else if (n <= 15) barWidth = 16;
-      else if (n <= 20) barWidth = 12;
-      else if (n <= 28) barWidth = 9;
-      else              barWidth = 7;
+      barWidth = Math.max(4, Math.floor(perColuna - 1));
     } else {
+      // Desktop: barras um pouco maiores, mas comprimem se necessário
       if      (n <= 6)  barWidth = 36;
       else if (n <= 10) barWidth = 30;
       else if (n <= 15) barWidth = 24;
       else if (n <= 20) barWidth = 18;
       else if (n <= 28) barWidth = 14;
-      else              barWidth = 10;
+      else              barWidth = Math.max(6, Math.floor(perColuna - 1));
     }
 
-    // gap = sobra por coluna; mínimo 2px, máximo 18px
-    const perColuna = disponivelPx / n;
-    gap = Math.min(18, Math.max(2, Math.floor(perColuna - barWidth)));
+    gap = Math.max(1, Math.floor(perColuna - barWidth));
 
-    // Fontes: landscape mobile ligeiramente menores (tela mais curta em altura)
+    // Fontes adaptativas
     const fScale = (isMobile && isLandscape) ? 0.90 : 1.0;
     const fv = (base) => (base * fScale).toFixed(2) + 'rem';
 
@@ -842,7 +881,8 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
     else if (n <= 12) { valFontSize = fv(0.73); nameFontSize = fv(0.75); }
     else if (n <= 18) { valFontSize = fv(0.68); nameFontSize = fv(0.70); }
     else if (n <= 24) { valFontSize = fv(0.64); nameFontSize = fv(0.66); }
-    else              { valFontSize = fv(0.60); nameFontSize = fv(0.62); }
+    else if (n <= 40) { valFontSize = fv(0.58); nameFontSize = fv(0.60); }
+    else              { valFontSize = fv(0.52); nameFontSize = fv(0.54); }
   }
 
   // ── Monta o HTML ──
@@ -860,20 +900,35 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
   const marginBot   = (isMobile && isLandscape) ? '65px' : '80px';
   const shortFmt    = isMobile && isLandscape;
 
+  // Posições IC em percentual do container (invertido: 0% = topo, 100% = base)
+  // chartHeight em px para cálculo das linhas IC overlay
+  const chartHeightPx = (isMobile && isLandscape) ? 180 : 280;
+  const ciHighPerc = Math.max(0, Math.min(100, (1 - ciHigh / maxVal) * 100));
+  const ciLowPerc  = Math.max(0, Math.min(100, (1 - ciLow  / maxVal) * 100));
+  const meanPerc   = Math.max(0, Math.min(100, (1 - mean   / maxVal) * 100));
+  // Mostrar IC apenas quando há variância significativa (σ > 5% da média)
+  const showCI = sigma > 0.05 * mean && ranking.length >= 3;
+
   h += `<div style="display:flex;align-items:flex-end;gap:${gap}px;height:${chartHeight};padding-bottom:10px;border-bottom:1px solid var(--borda);margin-bottom:${marginBot};position:relative;${minWidthStyle}">`;
 
-  // Linha da média
-  const avgValFmt = metricaAtiva === 'pct'
-    ? (shortFmt ? Math.round(avgVal) + '%' : avgVal.toFixed(1) + '%')
-    : (shortFmt ? Math.round(avgVal) : avgVal.toFixed(1));
-  h += `<div style="position:absolute;bottom:10px;left:0;right:0;height:${avgPerc}%;border-top:1px dashed var(--texto2);opacity:0.6;pointer-events:none;z-index:0">`;
-  h += `<span style="position:absolute;top:-18px;left:0;font-size:.65rem;color:var(--texto2);font-weight:700">Média: ${avgValFmt}</span></div>`;
+  // ── Overlay IC (bigodeira horizontal discreta) ──
+  if (showCI) {
+    // Faixa ±1σ — fundo levíssimo
+    h += `<div style="position:absolute;left:0;right:0;top:${ciHighPerc.toFixed(1)}%;bottom:${(100 - ciLowPerc).toFixed(1)}%;background:rgba(255,255,255,0.03);pointer-events:none;z-index:0"></div>`;
+    // Linha da média — tracejada, muito sutil
+    h += `<div style="position:absolute;left:0;right:0;top:${meanPerc.toFixed(1)}%;height:1px;background:rgba(255,255,255,0.18);pointer-events:none;z-index:0" title="Média: ${_fmtVal(metricaAtiva, parseFloat(mean.toFixed(1)), false)}"></div>`;
+    // Linha superior IC (+1σ)
+    h += `<div style="position:absolute;left:0;right:0;top:${ciHighPerc.toFixed(1)}%;height:1px;border-top:1px dashed rgba(255,255,255,0.10);pointer-events:none;z-index:0"></div>`;
+    // Linha inferior IC (−1σ)
+    h += `<div style="position:absolute;left:0;right:0;top:${ciLowPerc.toFixed(1)}%;height:1px;border-top:1px dashed rgba(255,255,255,0.10);pointer-events:none;z-index:0"></div>`;
+  }
 
+  // Índice arco-íris apenas entre apostadores não-Modelo (ordem no ranking filtrado)
+  const rankingHumanos = ranking.filter(a => !a.isModelo);
   for (const a of ranking) {
     const val = a[metricaAtiva];
     const perc = (val / maxVal) * 100;
-    const cor = coresMap[a.id] || '#4fc3f7';
-
+    const cor = a.isModelo ? '#b8cfe8' : _rainbowColor(rankingHumanos.indexOf(a), rankingHumanos.length);
     const nomeBarra = a.isModelo
       ? `<span style='font-weight:normal;color:#b8cfe8'>${a.nome}</span>`
       : a.nome;
@@ -886,6 +941,17 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
 
   h += '</div>';
   if (needsScroll) h += '</div>'; // fecha wrapper scroll
+
+  // ── Botões de ação: ordenação + exportar ──
+  const btnBase = 'background:var(--fundo2);border:1.5px solid var(--borda2);border-radius:var(--radius-sm);padding:8px 14px;color:var(--texto);font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit';
+  const btnAtivo = 'background:var(--fundo2);border:1.5px solid var(--dourado);border-radius:var(--radius-sm);padding:8px 14px;color:var(--dourado);font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit';
+  h += `<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;flex-wrap:wrap">`;
+  h += `<div style="display:flex;gap:4px;background:rgba(255,255,255,0.04);border-radius:var(--radius-sm);padding:3px">`;
+  h += `<button onclick="window._graficoOrdem='rank';renderAbaAtiva()" style="${ordemAtiva==='rank'?btnAtivo:btnBase}">🏆 Classificação</button>`;
+  h += `<button onclick="window._graficoOrdem='az';renderAbaAtiva()" style="${ordemAtiva==='az'?btnAtivo:btnBase}">A → Z</button>`;
+  h += `</div>`;
+  h += `<button onclick="_graficoExportarJPG()" style="${btnBase}">📷 Exportar JPG</button>`;
+  h += `</div>`;
   h += '</div>';
   return h;
 }
@@ -1023,3 +1089,146 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
 
   return `<div class="card" style="padding:16px;overflow-x:auto">${svg}${legenda}</div>`;
 }
+
+// ── Exportar JPG ───────────────────────────────────────────────────────────
+/**
+ * Gera um JPG com TODOS os apostadores (ignorando filtro) em formato paisagem,
+ * sem cortes, pronto para compartilhar ou imprimir.
+ * Usa Canvas 2D puro — sem dependências externas.
+ */
+window._graficoExportarJPG = function() {
+  const res    = getResultados();
+  const apos   = APP.apostadores || [];
+  const pals   = APP.palpites || {};
+  const metricaAtiva = window._graficoMetrica || 'pts';
+
+  // Não exportar evolução como barras
+  if (metricaAtiva === 'evolucao') {
+    alert('Exportação disponível para métricas de barra. Selecione uma métrica como Pontos, Projeção, etc.');
+    return;
+  }
+
+  const espOficiaisGraf = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
+
+  // Montar ranking completo (todos, sem filtro)
+  let rankingExp = apos.map((a, idx) => {
+    const st = calcularPontosApostador(pals[a.id] || {}, res, a, espOficiaisGraf);
+    return {
+      id: a.id,
+      nome: (a.apelido || a.nome || '?').substring(0, 14),
+      pts:         st.total,
+      pct:         st.pct_pontos,
+      res:         st.acertos_resultado,
+      bonus1:      st.acertos_bonus1,
+      placar:      st.acertos_placar_exato + st.acertos_placar_alto,
+      placar_alto: st.acertos_placar_alto,
+      isModelo: false,
+    };
+  });
+
+  if (metricaAtiva === 'chance') {
+    const chances = window._graficoChanceCache || {};
+    rankingExp.forEach(a => { a.chance = chances[a.id] || 0; });
+    rankingExp = rankingExp.sort((a, b) => b.chance - a.chance);
+  } else {
+    rankingExp = rankingExp.sort((a, b) => b[metricaAtiva] - a[metricaAtiva]);
+  }
+
+  // Remover Modelo (não aparece na exportação conforme item 6)
+  rankingExp = rankingExp.filter(a => !a.isModelo);
+
+  const n = rankingExp.length;
+  if (!n) { alert('Nenhum apostador para exportar.'); return; }
+
+  // ── Dimensões do canvas (paisagem fixa) ──
+  const PADDING_LEFT   = 20;
+  const PADDING_RIGHT  = 20;
+  const PADDING_TOP    = 60;  // espaço para título
+  const PADDING_BOTTOM = 120; // espaço para nomes verticais
+  const CHART_HEIGHT   = 260;
+  const BAR_WIDTH      = Math.max(6, Math.min(28, Math.floor((Math.max(900, n * 14 + 40) - PADDING_LEFT - PADDING_RIGHT) / n - 1)));
+  const GAP            = Math.max(1, Math.floor(4));
+  const TOTAL_W        = Math.max(900, n * (BAR_WIDTH + GAP) + GAP + PADDING_LEFT + PADDING_RIGHT);
+  const TOTAL_H        = PADDING_TOP + CHART_HEIGHT + PADDING_BOTTOM;
+
+  const canvas  = document.createElement('canvas');
+  const DPR     = 2; // alta resolução
+  canvas.width  = TOTAL_W  * DPR;
+  canvas.height = TOTAL_H  * DPR;
+  canvas.style.width  = TOTAL_W  + 'px';
+  canvas.style.height = TOTAL_H  + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
+
+  // Fundo escuro
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0, 0, TOTAL_W, TOTAL_H);
+
+  // Título
+  const metricaLabel = { pts: 'Pontos', pct: 'Pontos %', res: 'Resultados', bonus1: 'Bônus+1', placar: 'Placar+3', placar_alto: 'Placar+5', chance: 'Projeção (chance de ganhar)' }[metricaAtiva] || metricaAtiva;
+  ctx.fillStyle = '#f1f5f9';
+  ctx.font = 'bold 16px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`Bolão Copa 2026 · ${metricaLabel}`, TOTAL_W / 2, 28);
+
+  const vals = rankingExp.map(a => metricaAtiva === 'chance' ? (a.chance || 0) : a[metricaAtiva]);
+  const maxVal = Math.max(1, ...vals);
+
+  const CHART_BOTTOM = PADDING_TOP + CHART_HEIGHT;
+
+  // Linha base
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PADDING_LEFT, CHART_BOTTOM);
+  ctx.lineTo(TOTAL_W - PADDING_RIGHT, CHART_BOTTOM);
+  ctx.stroke();
+
+  // Barras e labels
+  rankingExp.forEach((a, i) => {
+    const val   = vals[i];
+    const perc  = val / maxVal;
+    const barH  = Math.max(2, Math.floor(perc * CHART_HEIGHT));
+    const x     = PADDING_LEFT + i * (BAR_WIDTH + GAP) + GAP;
+    const y     = CHART_BOTTOM - barH;
+    const cor   = _rainbowColor(i, n);
+
+    // Barra
+    ctx.fillStyle = cor;
+    ctx.beginPath();
+    ctx.roundRect
+      ? ctx.roundRect(x, y, BAR_WIDTH, barH, [3, 3, 0, 0])
+      : ctx.rect(x, y, BAR_WIDTH, barH);
+    ctx.fill();
+
+    // Valor acima da barra
+    ctx.fillStyle = '#f1f5f9';
+    ctx.font = 'bold 9px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    const valLabel = metricaAtiva === 'pct'
+      ? val + '%'
+      : metricaAtiva === 'chance'
+      ? val.toFixed(1) + '%'
+      : metricaAtiva === 'pts'
+      ? val.toFixed(1)
+      : String(val);
+    ctx.fillText(valLabel, x + BAR_WIDTH / 2, y - 4);
+
+    // Nome vertical abaixo
+    ctx.save();
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '9px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.translate(x + BAR_WIDTH / 2 + 4, CHART_BOTTOM + 8);
+    ctx.rotate(Math.PI / 2); // texto de baixo pra cima
+    ctx.fillText(a.nome, 0, 0);
+    ctx.restore();
+  });
+
+  // Download
+  const link = document.createElement('a');
+  link.download = `bolao-copa-2026-${metricaAtiva}.jpg`;
+  link.href = canvas.toDataURL('image/jpeg', 0.92);
+  link.click();
+};
