@@ -140,8 +140,7 @@ window.renderEstatisticas = function () {
 
   // --- Chutador de Zebra (apostou em mais zebras, independente de acerto) ---
   const zebraApostas = {};
-  for (const jogo of jogosFeitos) {
-    const r2 = res[jogo.id];
+  for (const jogo of schedule) {
     let vH2 = 0, vD2 = 0, vA2 = 0, total2 = 0;
     for (const aId of Object.keys(pals)) {
       const p = pals[aId]?.[jogo.id];
@@ -168,7 +167,7 @@ window.renderEstatisticas = function () {
 
   // --- Conservador: mais apostas onde ≥50% do grupo apostou no mesmo resultado ---
   const conservScores = {};
-  for (const jogo of jogosFeitos) {
+  for (const jogo of schedule) {
     let cH = 0, cD = 0, cA = 0, cTotal = 0;
     for (const a of apos) {
       const p = pals[a.id]?.[jogo.id];
@@ -194,7 +193,7 @@ window.renderEstatisticas = function () {
   // --- Anarquista: maior distância média |ΔH - ΔA| do placar mais votado ---
   const anarqScores = {};
   const anarqJogos = {};
-  for (const jogo of jogosFeitos) {
+  for (const jogo of schedule) {
     const placCont = {};
     for (const a of apos) {
       const p = pals[a.id]?.[jogo.id];
@@ -371,9 +370,9 @@ window.renderEstatisticas = function () {
   h += _dCard("🕯️", "Lanterninha", lanterninha?.participante.apelido || lanterninha?.participante.nome || "—", lanterninha ? lanterninha.stats.total.toFixed(1) + " pts" : "—", "#94a3b8", "Quem está com menos pontos acumulados até agora. A lanterna da Copa.");
   h += _dCard("📉", "Queda Livre", (totalJogos < 5 ? "—" : (tombApo?.apelido || tombApo?.nome || "—")), (totalJogos < 5 ? "— (< 5 jogos)" : (tombApo && maiorTombo > 0 ? "−" + maiorTombo + " posições" : "—")), "#f87171", "Quem mais caiu no ranking nos últimos 5 jogos. Compara a posição atual com a de antes desses 5 jogos.");
   h += _dCard("🔄", "Fênix", (totalJogos < 15 ? "—" : (recuperApo?.apelido || recuperApo?.nome || "—")), (totalJogos < 15 ? "— (< 15 jogos)" : (recuperApo && maiorRecup > 0 ? "+" + maiorRecup + " posições" : "—")), "#38bdf8", "Quem mais subiu no ranking nos últimos 20 jogos. Começa a ser calculado a partir do 15º jogo da Copa.");
-  h += _dCard("🃏", "Destemido", (jogosFeitos.length === 0 || !chutZebraApo ? "—" : (chutZebraApo?.apelido || chutZebraApo?.nome || "—")), (jogosFeitos.length === 0 || !chutZebraApo ? "—" : chutZebraCount + " palpites improváveis"), "#f59e0b", "Quem mais apostou em resultados que menos de 20% do grupo escolheu — independente de acertar. Diferente da Zebra de Ouro, que só conta quando o palpite improvável estava certo.");
-  h += _dCard("💤", "Conservador", (jogosFeitos.length === 0 || !conservApo ? "—" : (conservApo?.apelido || conservApo?.nome || "—")), (jogosFeitos.length === 0 ? "— (sem jogos)" : (!conservApo ? "— (sem consenso)" : conservCount + " vezes no consenso")), "#94a3b8", "Quem mais apostou igual à maioria: o resultado escolhido tinha pelo menos 50% dos palpites do grupo naquela direção.");
-  h += _dCard("🎲", "Anarquista", (jogosFeitos.length < 3 ? "—" : (anarqApo?.apelido || anarqApo?.nome || "—")), (jogosFeitos.length < 3 ? "— (< 3 jogos)" : (anarqApo ? "Δ" + anarqMedia + " de distância média" : "—")), "#a78bfa", "Quem mais diverge do placar mais votado pelo grupo em cada jogo. A distância é medida por |(palH−palA) − (topH−topA)|, onde topH×topA é o placar mais chutado. Mínimo 3 jogos apostados.");
+  h += _dCard("🃏", "Destemido", (!chutZebraApo ? "—" : (chutZebraApo?.apelido || chutZebraApo?.nome || "—")), (!chutZebraApo ? "—" : chutZebraCount + " palpites improváveis"), "#f59e0b", "Quem mais apostou em resultados que menos de 20% do grupo escolheu — independente de acertar. Diferente da Zebra de Ouro, que só conta quando o palpite improvável estava certo.");
+  h += _dCard("💤", "Conservador", (!conservApo ? "—" : (conservApo?.apelido || conservApo?.nome || "—")), (!conservApo ? "— (sem consenso)" : conservCount + " vezes no consenso"), "#94a3b8", "Quem mais apostou igual à maioria: o resultado escolhido tinha pelo menos 50% dos palpites do grupo naquela direção.");
+  h += _dCard("🎲", "Anarquista", (!anarqApo ? "—" : (anarqApo?.apelido || anarqApo?.nome || "—")), (!anarqApo ? "— (< 3 apostas)" : "Δ" + anarqMedia + " de distância média"), "#a78bfa", "Quem mais diverge do placar mais votado pelo grupo em cada jogo apostado. A distância é medida por |(palH−palA) − (topH−topA)|, onde topH×topA é o placar mais chutado. Mínimo 3 apostas.");
   h += _dCard("⚖️", "Metrônomo", (jogosFeitos.length < 10 || !consistApo ? "—" : (consistApo?.apelido || consistApo?.nome || "—")), (jogosFeitos.length < 10 || !consistApo ? "— (< 10 jogos)" : (consistApo ? "DP " + menorDP.toFixed(2) + " pts" : "—")), "#34d399", "Quem pontua de forma mais consistente jogo a jogo, com menor variação entre rodadas boas e ruins. Calculado pelo desvio padrão dos pontos por jogo (mínimo 10 jogos).");
   h += _dCard("🙈", "Pra fora!", (piorPalpite?.apelido || piorPalpite?.nome || "—"), (piorJogo && piorPalpite ? piorPlacarApostado + " (foi " + piorPlacarReal + ")" : "—"), "#fb923c", "O palpite mais distante do resultado real na Copa inteira, medido pela diferença de gols: |(palH−palA) − (resH−resA)|. Ex: resultado 1×0, chute 0×4 → |(−4) − 1| = 5.");
   h += _dCard("🥶", "Pé Frio", (jogosFeitos.length === 0 || !peFrioApo ? "—" : (peFrioApo?.apelido || peFrioApo?.nome || "—")), (jogosFeitos.length === 0 ? "— (sem jogos)" : (!peFrioApo || maiorSeqFria === 0 ? "—" : maiorSeqFria + " jogos seguidos zerado")), "#7dd3fc", "Quem teve a maior sequência seguida de jogos com zero pontos — o recorde de fase ruim da Copa.");
