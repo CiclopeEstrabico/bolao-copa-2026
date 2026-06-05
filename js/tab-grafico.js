@@ -547,10 +547,10 @@ function _graficoExibirChance(chances) {
   if (modeloGraf && APP._modeloCarregado) {
     const stMod = calcularPontosApostador(APP.palpitesModelo || {}, res, modeloGraf, espOficiaisGraf);
     const itemMod = {
-      id: 'Modelo',
+      id: modeloGraf.id,           // usa o id real ('MODELO') para bater com o dict chances
       nome: 'Modelo',
       pts: stMod.total,
-      chance: chances['Modelo'] || 0,
+      chance: chances[modeloGraf.id] || 0,
       isModelo: true,
     };
     const insertIdx = rankingCompleto.findIndex(a => a.pts < stMod.total);

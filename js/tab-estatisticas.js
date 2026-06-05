@@ -402,14 +402,15 @@ window.renderEstatisticas = function () {
   // Jogo mais e menos acertado
   const jogoStats = jogosFeitos.map(jogo => {
     const r = res[jogo.id];
-    let acertos = 0;
+    let acertos = 0, totalApostas = 0;
     for (const a of apos) {
       const p = pals[a.id]?.[jogo.id];
       if (!p || p.homeGoals === undefined) continue;
+      totalApostas++;
       const br = calcularPontosBrutos(p, r);
       if (br.acertou) acertos++;
     }
-    return { jogo, acertos, pct: apos.length ? Math.round(acertos / apos.length * 100) : 0 };
+    return { jogo, acertos, totalApostas, pct: totalApostas ? Math.round(acertos / totalApostas * 100) : 0 };
   }).filter(x => x.acertos > 0).sort((a, b) => b.pct - a.pct);
 
   if (jogoStats.length) {
@@ -420,12 +421,12 @@ window.renderEstatisticas = function () {
     h += '<div style="font-size:.7rem;font-weight:700;color:var(--verde-ok);text-transform:uppercase;letter-spacing:.05em">Mais acertados</div>';
     for (const s of top3) {
       const b = APP.bracket?.[s.jogo.id] || {}; const hC = b.home || s.jogo.home; const aC = b.away || s.jogo.away;
-      h += _jogoStatRow(s.jogo.id, hC, aC, res[s.jogo.id], s.acertos, apos.length, "var(--verde-ok)");
+      h += _jogoStatRow(s.jogo.id, hC, aC, res[s.jogo.id], s.acertos, s.totalApostas, "var(--verde-ok)");
     }
     h += '<div style="font-size:.7rem;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:.05em;margin-top:8px">Menos acertados (mais difíceis)</div>';
     for (const s of bot3) {
       const b = APP.bracket?.[s.jogo.id] || {}; const hC = b.home || s.jogo.home; const aC = b.away || s.jogo.away;
-      h += _jogoStatRow(s.jogo.id, hC, aC, res[s.jogo.id], s.acertos, apos.length, "#f87171");
+      h += _jogoStatRow(s.jogo.id, hC, aC, res[s.jogo.id], s.acertos, s.totalApostas, "#f87171");
     }
     h += '</div></div>';
   }
