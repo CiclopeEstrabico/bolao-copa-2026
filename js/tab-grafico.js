@@ -1,19 +1,14 @@
 /** tab-grafico.js - Gráfico de barras e evolução dos apostadores */
 
-const _EVOLUCAO_CORES = [
-  '#4fc3f7', '#81c784', '#ffb74d', '#f06292', '#ce93d8',
-  '#80cbc4', '#fff176', '#ff8a65', '#90caf9', '#a5d6a7'
-];
-
 /**
  * Retorna uma cor do espectro arco-íris para o índice i dentro de n barras.
- * Vai de dourado (1º) → verde → ciano → azul → roxo → vermelho/rosa (último).
+ * Vai de vermelho (1º) → laranja → verde → azul → violeta (último).
  * Saturação e luminosidade fixas para ficar bonito no fundo escuro.
  */
 function _rainbowColor(i, n) {
-  if (n <= 1) return 'hsl(45,100%,60%)';
-  // Hue: 45° (dourado) até 300° (magenta), passando pelo arco-íris
-  const hue = Math.round(45 + (i / (n - 1)) * 255);
+  if (n <= 1) return 'hsl(0,90%,60%)';
+  // Hue: 0° (vermelho) até 280° (violeta), passando pelo arco-íris
+  const hue = Math.round(0 + (i / (n - 1)) * 280);
   return `hsl(${hue},90%,60%)`;
 }
 
@@ -171,9 +166,11 @@ function _renderFiltroDropdown(rankingCompleto) {
   h += `</div>`;
 
   // Lista de apostadores (incluindo Modelo)
+  const humanos = rankingCompleto.filter(x => !x.isModelo);
   rankingCompleto.forEach((a, i) => {
     const ativo = filtro.has(a.id);
-    const cor = a.isModelo ? '#b8cfe8' : _EVOLUCAO_CORES[i % _EVOLUCAO_CORES.length];
+    const hIdx = humanos.indexOf(a);
+    const cor = a.isModelo ? '#b8cfe8' : _rainbowColor(hIdx, humanos.length);
     const nomeBadge = a.isModelo
       ? `<span style="font-weight:normal;color:#b8cfe8">${a.nome}</span>`
       : a.nome;
@@ -220,6 +217,7 @@ window._graficoToggleApos = function(id) {
   } else {
     window._graficoFiltroApos.add(id);
   }
+  window._graficoFiltroCustomizado = true;
   window._graficoDropdownAberto = true;
   renderAbaAtiva();
 };
@@ -232,6 +230,7 @@ window._graficoSelecionarTodos = function() {
   const ids = (APP.apostadores||[]).map(a => a.id);
   if (APP.modelo || (window.getModelo && window.getModelo())) ids.push("Modelo");
   window._graficoFiltroApos = new Set(ids);
+  window._graficoFiltroCustomizado = true;
   window._graficoDropdownAberto = true;
   renderAbaAtiva();
 };
@@ -242,6 +241,7 @@ window._graficoSelecionarNenhum = function() {
     window._graficoDropdownScrollTop = dd.scrollTop;
   }
   window._graficoFiltroApos = new Set();
+  window._graficoFiltroCustomizado = true;
   window._graficoDropdownAberto = true;
   renderAbaAtiva();
 };
@@ -669,11 +669,6 @@ function _renderChance(rankingCompleto, chances) {
 
   const maxVal = Math.max(1, ...ranking.map(a => chances[a.id] || 0));
 
-  const coresMap = {};
-  rankingCompleto.forEach((a, i) => {
-    coresMap[a.id] = a.isModelo ? '#b8cfe8' : _EVOLUCAO_CORES[i % _EVOLUCAO_CORES.length];
-  });
-
   const n = ranking.length;
   const isMobile    = window.innerWidth <= 768;
   const isLandscape = window.innerWidth > window.innerHeight;
@@ -687,7 +682,7 @@ function _renderChance(rankingCompleto, chances) {
     const targetColW = Math.floor(screenPx / targetVisible);
     barWidth     = Math.max(14, Math.min(24, targetColW - 2));
     gap          = 2;
-    valFontSize  = '.64rem'; // menor pois XX.X% é mais largo
+    valFontSize  = '.52rem'; // menor pois XX.X% é mais largo
     nameFontSize = '.68rem';
 
     const minPx   = n * (barWidth + gap) + gap;
@@ -809,11 +804,6 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
   }
 
   const maxVal = Math.max(1, ...ranking.map(a => a[metricaAtiva]));
-
-  const coresMap = {};
-  rankingCompleto.forEach((a, i) => {
-    coresMap[a.id] = a.isModelo ? '#b8cfe8' : _EVOLUCAO_CORES[i % _EVOLUCAO_CORES.length];
-  });
 
   // ── IC: média ± 1σ para bigodeira de referência ──
   const vals = ranking.map(a => a[metricaAtiva]);
@@ -959,8 +949,13 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
 // ── Gráfico de Evolução ────────────────────────────────────────────────────
 function _renderEvolucao(res, pals, apos, rankingCompleto) {
   const filtro = window._graficoFiltroApos;
-  const aposFiltrados = apos.filter(a => filtro.has(a.id));
-  if (!aposFiltrados.length && !filtro.has("Modelo")) return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador selecionado.</div>';
+  const isDefault = !window._graficoFiltroCustomizado;
+  const top10Ids = isDefault ? new Set(rankingCompleto.slice(0, 10).map(r => r.id)) : null;
+  const modeloGrafEv = window.getModelo ? window.getModelo() : null;
+
+  const aposFiltrados = apos.filter(a => isDefault ? top10Ids.has(a.id) : filtro.has(a.id));
+  if (!isDefault && !aposFiltrados.length && !filtro.has("Modelo")) return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador selecionado.</div>';
+  if (isDefault && !aposFiltrados.length && (modeloGrafEv && !top10Ids.has("Modelo"))) return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador selecionado.</div>';
 
   const jogosComRes = (window.SCHEDULE || [])
     .filter(j => res[j.id] && res[j.id].homeGoals !== undefined)
@@ -972,9 +967,11 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
   if (!jogosComRes.length && !temEspeciais)
     return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum resultado oficial ainda.</div>';
 
+  const humanos = rankingCompleto.filter(x => !x.isModelo);
+
   const series = aposFiltrados.map(a => {
-    const idxGlobal = rankingCompleto.findIndex(r => r.id === a.id);
-    const cor = _EVOLUCAO_CORES[idxGlobal % _EVOLUCAO_CORES.length];
+    const hIdx = humanos.findIndex(r => r.id === a.id);
+    const cor = _rainbowColor(hIdx, humanos.length);
     const pal = pals[a.id] || {};
     let acumulado = 0;
     const pontos = [0];
@@ -998,10 +995,8 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
   });
 
   // Inserir Modelo se selecionado
-  const modeloGrafEv = window.getModelo ? window.getModelo() : null;
-  if (modeloGrafEv && filtro.has("Modelo") && APP._modeloCarregado) {
-    const idxMod = rankingCompleto.findIndex(r => r.id === "Modelo");
-    const corMod = idxMod >= 0 ? _EVOLUCAO_CORES[idxMod % _EVOLUCAO_CORES.length] : '#b8cfe8';
+  if (modeloGrafEv && (isDefault ? top10Ids.has("Modelo") : filtro.has("Modelo")) && APP._modeloCarregado) {
+    const corMod = '#b8cfe8';
     const palMod = APP.palpitesModelo || {};
     let acumuladoMod = 0;
     const pontosMod = [0];
