@@ -9,7 +9,7 @@ const _EVOLUCAO_CORES = [
 const _METRICAS = [
   { id: 'pts',        label: 'Pontos' },
   { id: 'evolucao',   label: 'Evolução' },
-  { id: 'chance',     label: '🎲 Chance' },
+  { id: 'chance',     label: '🎲 Projeção' },
   { id: 'pct',        label: 'Pontos %' },
   { id: 'res',        label: 'Resultados' },
   { id: 'bonus1',     label: 'Bônus+1' },
@@ -80,7 +80,7 @@ window.renderGrafico = function() {
     const onclick = m.id === 'evolucao'
       ? 'onclick="_graficoIrEvolucao()"'
       : m.id === 'chance'
-      ? 'onclick="_graficoIrChance()"'
+      ? 'onclick="_graficoIrProjecao()"'
       : `onclick="window._graficoMetrica='${m.id}';renderAbaAtiva()"`;
     h += `<button class="btn-toggle${ativo?' ativo':''}" ${onclick}>${m.label}</button>`;
   });
@@ -92,7 +92,12 @@ window.renderGrafico = function() {
   if (metricaAtiva === "evolucao") {
     h += _renderEvolucao(res, pals, apos, rankingCompleto);
   } else if (metricaAtiva === "chance") {
-    h += _renderChanceLoading();
+    // Se já temos cache, exibir direto; senão mostrar spinner e calcular
+    if (window._graficoChanceCache) {
+      h += _renderChance(rankingCompleto, window._graficoChanceCache);
+    } else {
+      h += _renderChanceLoading();
+    }
   } else {
     h += _renderBarras(rankingCompleto, metricaAtiva);
   }
@@ -245,12 +250,17 @@ function _fmtVal(metricaAtiva, val, shortFmt = false) {
   return String(val);
 }
 
-window._graficoIrChance = function() {
+window._graficoIrProjecao = function() {
   window._graficoMetrica = 'chance';
   renderAbaAtiva();
-  // Despacha a simulação após o DOM mostrar o spinner
-  setTimeout(_graficoRodarMonteCarlo, 0);
+  // Só rodar Monte Carlo se ainda não temos cache
+  if (!window._graficoChanceCache) {
+    setTimeout(_graficoRodarMonteCarlo, 0);
+  }
 };
+
+// Alias legacy
+window._graficoIrChance = window._graficoIrProjecao;
 
 function _renderChanceLoading() {
   return `<div class="card" id="chance-loading" style="text-align:center;padding:40px 20px">
@@ -491,6 +501,8 @@ function _graficoRodarMonteCarlo() {
   const chances = {};
   for (let pi = 0; pi < nPart; pi++)
     chances[partIds[pi]] = parseFloat((vitorias[pi] / N_ITER * 100).toFixed(1));
+  // Guardar cache para não recalcular ao voltar para a aba
+  window._graficoChanceCache = chances;
   _graficoExibirChance(chances);
 }
 
@@ -603,12 +615,13 @@ function _renderChance(rankingCompleto, chances) {
 
   let h = '<div class="card" style="padding:20px 10px;">';
 
-  // Cabeçalho com tooltip
-  h += `<div style="font-size:.72rem;color:var(--texto2);text-align:center;margin-bottom:12px;padding:0 8px">
-    🎲 <strong style="color:var(--dourado)">Chance de Ganhar o Bolão</strong>
-    — Probabilidade de terminar em 1.° ao final da Copa, estimada via 1.000 simulações Monte Carlo.
-    Resultados oficiais são fixos; jogos futuros são sorteados pelo modelo Poisson, resolvendo o bracket fase a fase.
-    Palpites não registrados são amostrados com a mesma distribuição do modelo.
+  // Cabeçalho com tooltip ao clicar
+  const _tipText = "Probabilidade de terminar em 1.º ao final da Copa, estimada via 1.000 simulações Monte Carlo. Resultados oficiais são fixos; jogos futuros são sorteados pelo modelo Poisson, resolvendo o bracket fase a fase. Palpites não registrados são amostrados com a mesma distribuição do modelo.";
+  h += `<div style="text-align:center;margin-bottom:14px;position:relative">
+    <span id="proj-label" onclick="_toggleProjecaoTooltip(event)" style="cursor:pointer;font-size:.85rem;font-weight:700;color:var(--dourado);border-bottom:1px dashed var(--dourado);padding-bottom:1px">Chance de ganhar o bolão</span>
+    <div id="proj-tooltip" style="display:none;position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1e293b;color:#e2e8f0;font-size:.72rem;line-height:1.5;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);max-width:280px;text-align:left;z-index:999;box-shadow:0 6px 20px rgba(0,0,0,0.5)">
+      ${_tipText}
+    </div>
   </div>`;
 
   let minWidthStyle = '';
@@ -630,13 +643,11 @@ function _renderChance(rankingCompleto, chances) {
     const perc = (val / maxVal) * 100;
     const cor = coresMap[a.id] || '#4fc3f7';
     const valFmt = shortFmt ? Math.round(val) + '%' : val.toFixed(1) + '%';
-    const subLabel = shortFmt ? '' : `<div style="font-size:.63rem;color:var(--texto2);margin-bottom:2px;white-space:nowrap">${Math.round(val * 10)}‰</div>`;
     const nomeBarra = a.isModelo
       ? `<span style='font-weight:normal;color:#b8cfe8'>${a.nome}</span>`
       : a.nome;
     h += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative;height:100%;justify-content:flex-end;z-index:1">`;
     h += `<div style="font-size:${valFontSize};font-weight:800;color:var(--texto);margin-bottom:2px;white-space:nowrap">${valFmt}</div>`;
-    h += subLabel;
     h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2, perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
     h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${nomeBarra}</div>`;
     h += '</div>';
@@ -648,6 +659,25 @@ function _renderChance(rankingCompleto, chances) {
   h += '</div>';
   return h;
 }
+
+// Toggle do tooltip de Projeção
+window._toggleProjecaoTooltip = function(e) {
+  e.stopPropagation();
+  const tip = document.getElementById('proj-tooltip');
+  if (!tip) return;
+  const visible = tip.style.display !== 'none';
+  tip.style.display = visible ? 'none' : 'block';
+  if (!visible) {
+    // Fechar ao clicar fora
+    setTimeout(() => {
+      document.addEventListener('click', function _closeTip() {
+        const t = document.getElementById('proj-tooltip');
+        if (t) t.style.display = 'none';
+        document.removeEventListener('click', _closeTip);
+      });
+    }, 0);
+  }
+};
 
 // ── Gráfico de Barras ──────────────────────────────────────────────────────
 function _renderBarras(rankingCompleto, metricaAtiva) {

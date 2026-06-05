@@ -104,7 +104,7 @@ window.renderEstatisticas = function () {
     }
     @media (min-width: 600px) {
       .stats-grid {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        grid-template-columns: repeat(8, 1fr);
         gap: 8px;
       }
     }
@@ -174,9 +174,11 @@ window.renderEstatisticas = function () {
 
   h += _dCard("💎", "Mestre dos Bônus", mestreBonus?.participante.apelido || mestreBonus?.participante.nome || "—", (mestreBonus?.jogosComBonus ?? 0) + " jogos com bônus", "#c084fc",
     "Quem somou mais jogos com algum bônus: placar exato (+3 ou +5 pts), diferença de gols correta (+1 pt) ou gols de um time corretos (+1 pt).");
-  h += _dCard("🧗", "Escalando", escalandoApo?.apelido || escalandoApo?.nome || "—", (maiorSalto > 0 ? "+" + maiorSalto : (maiorSalto === -999 ? "—" : maiorSalto)) + " posições", "#fb7185",
+  h += _dCard("🧗", "Escalando",
+    (totalJogos < 5 ? "—" : (escalandoApo?.apelido || escalandoApo?.nome || "—")),
+    (totalJogos < 5 ? "— (< 5 jogos)" : (maiorSalto > 0 ? "+" + maiorSalto + " posições" : "—")), "#fb7185",
     "Quem mais subiu no ranking nos últimos 5 jogos. Compara a posição atual com a de antes desses 5 jogos.");
-  h += _dCard("🕯️", "Lanterninha", lanterninha?.participante.apelido || lanterninha?.participante.nome || "—", lanterninha?.stats.total.toFixed(1) + " pts", "#94a3b8",
+  h += _dCard("🕯️", "Lanterninha", lanterninha?.participante.apelido || lanterninha?.participante.nome || "—", lanterninha ? lanterninha.stats.total.toFixed(1) + " pts" : "—", "#94a3b8",
     "Quem está com menos pontos acumulados até agora. A lanterna da Copa.");
   h += '</div>';
 
@@ -381,31 +383,40 @@ window.renderEstatisticas = function () {
 
   // Segunda grid — novos cards
   h += '<div class="stats-grid">';
-  h += _dCard("📉", "Queda Livre", tombApo?.apelido || tombApo?.nome || (totalJogos < 5 ? "Aguardando" : "—"),
-    (tombApo && maiorTombo > 0 ? "−" + maiorTombo + " posições" : (totalJogos < 5 ? "< 5 jogos" : "—")), "#f87171",
+  h += _dCard("📉", "Queda Livre",
+    (totalJogos < 5 ? "—" : (tombApo?.apelido || tombApo?.nome || "—")),
+    (totalJogos < 5 ? "— (< 5 jogos)" : (tombApo && maiorTombo > 0 ? "−" + maiorTombo + " posições" : "—")), "#f87171",
     "Quem mais caiu no ranking nos últimos 5 jogos. Compara a posição atual com a de antes desses 5 jogos.");
-  h += _dCard("🔄", "Fênix", recuperApo?.apelido || recuperApo?.nome || "Aguardando",
-    (recuperApo && maiorRecup > 0 ? "+" + maiorRecup + " posições" : (totalJogos < 15 ? "< 15 jogos" : "—")), "#38bdf8",
+  h += _dCard("🔄", "Fênix",
+    (totalJogos < 15 ? "—" : (recuperApo?.apelido || recuperApo?.nome || "—")),
+    (totalJogos < 15 ? "— (< 15 jogos)" : (recuperApo && maiorRecup > 0 ? "+" + maiorRecup + " posições" : "—")), "#38bdf8",
     "Quem mais subiu no ranking nos últimos 20 jogos. Começa a ser calculado a partir do 15º jogo da Copa.");
-  h += _dCard("🃏", "Destemido", chutZebraApo?.apelido || chutZebraApo?.nome || "—",
-    chutZebraCount + " palpites improváveis", "#f59e0b",
+  h += _dCard("🃏", "Destemido",
+    (jogosFeitos.length === 0 ? "—" : (chutZebraApo?.apelido || chutZebraApo?.nome || "—")),
+    (jogosFeitos.length === 0 ? "—" : chutZebraCount + " palpites improváveis"), "#f59e0b",
     "Quem mais apostou em resultados que menos de 20% do grupo escolheu — independente de acertar. Diferente da Zebra de Ouro, que só conta quando o palpite improvável estava certo.");
-  h += _dCard("💤", "Conservador", conservApo?.apelido || conservApo?.nome || "—",
-    conservCount + " vezes no consenso", "#94a3b8",
+  h += _dCard("💤", "Conservador",
+    (jogosFeitos.length === 0 ? "—" : (conservApo?.apelido || conservApo?.nome || "—")),
+    (jogosFeitos.length === 0 ? "—" : conservCount + " vezes no consenso"), "#94a3b8",
     "Quem mais apostou igual à maioria: o resultado escolhido tinha pelo menos 50% dos palpites do grupo naquela direção.");
-  h += _dCard("🎲", "Anarquista", anarqApo?.apelido || anarqApo?.nome || "—",
+  h += _dCard("🎲", "Anarquista",
+    (anarqApo?.apelido || anarqApo?.nome || "—"),
     (anarqApo ? "Δ" + anarqMedia + " de distância média" : "—"), "#a78bfa",
     "Quem mais diverge do placar mais votado pelo grupo. Medida: |ΔH − ΔA|, onde ΔH e ΔA são as diferenças de gols em relação ao placar mais popular. Ex: consenso 1×0, chutou 0×4 → distância 5.");
-  h += _dCard("⚖️", "Metrônomo", consistApo?.apelido || consistApo?.nome || (jogosFeitos.length < 10 ? "Aguardando" : "—"),
-    (consistApo ? "DP " + menorDP.toFixed(2) + " pts" : (jogosFeitos.length < 10 ? "< 10 jogos" : "—")), "#34d399",
+  h += _dCard("⚖️", "Metrônomo",
+    (jogosFeitos.length < 10 ? "—" : (consistApo?.apelido || consistApo?.nome || "—")),
+    (jogosFeitos.length < 10 ? "— (< 10 jogos)" : (consistApo ? "DP " + menorDP.toFixed(2) + " pts" : "—")), "#34d399",
     "Quem pontua de forma mais consistente jogo a jogo, com menor variação entre rodadas boas e ruins. Calculado pelo desvio padrão dos pontos por jogo (mínimo 10 jogos).");
-  h += _dCard("🙈", "Pra fora!", piorPalpite?.apelido || piorPalpite?.nome || "—",
+  h += _dCard("🙈", "Pra fora!",
+    (piorPalpite?.apelido || piorPalpite?.nome || "—"),
     (piorJogo ? piorPlacarApostado + " (foi " + piorPlacarReal + ")" : "—"), "#fb923c",
     "O palpite mais distante do resultado real na Copa inteira, medido por |ΔH| + |ΔA|. Exibe o apostador, o que ele chutou e o que saiu.");
-  h += _dCard("🥶", "Pé Frio", peFrioApo?.apelido || peFrioApo?.nome || "—",
+  h += _dCard("🥶", "Pé Frio",
+    (peFrioApo?.apelido || peFrioApo?.nome || "—"),
     (maiorSeqFria > 0 ? maiorSeqFria + " jogos seguidos zerado" : "—"), "#7dd3fc",
     "Quem teve a maior sequência seguida de jogos com zero pontos — o recorde de fase ruim da Copa.");
-  h += _dCard("🔥", "Pé Quente", peQuenteApo?.apelido || peQuenteApo?.nome || "—",
+  h += _dCard("🔥", "Pé Quente",
+    (peQuenteApo?.apelido || peQuenteApo?.nome || "—"),
     (maiorSeqQuente > 0 ? maiorSeqQuente + " resultados seguidos" : "—"), "#fdba74",
     "Quem teve a maior sequência seguida acertando pelo menos o resultado (vitória/empate) em cada jogo — o recorde de fase boa da Copa.");
   h += '</div>';
