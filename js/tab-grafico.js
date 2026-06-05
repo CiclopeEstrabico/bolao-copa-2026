@@ -374,7 +374,7 @@ function _graficoRodarMonteCarlo() {
     }
   }
 
-  const FASES = ['grupos', '32avos', 'oitavas', 'quartas', 'semis', 'terceiro', 'final'];
+
   const jogosPorFase = {};
   for (const f of FASES) jogosPorFase[f] = [];
   let temPendentes = false;
