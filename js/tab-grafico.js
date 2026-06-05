@@ -557,8 +557,6 @@ function _renderChance(rankingCompleto, chances) {
   ranking = [...ranking].sort((a, b) => (chances[b.id] || 0) - (chances[a.id] || 0));
 
   const maxVal = Math.max(1, ...ranking.map(a => chances[a.id] || 0));
-  const avgVal = ranking.reduce((s, a) => s + (chances[a.id] || 0), 0) / ranking.length;
-  const avgPerc = (avgVal / maxVal) * 100;
 
   const coresMap = {};
   rankingCompleto.forEach((a, i) => {
@@ -632,11 +630,6 @@ function _renderChance(rankingCompleto, chances) {
   }
 
   h += `<div style="display:flex;align-items:flex-end;gap:${gap}px;height:${chartHeight};padding-bottom:10px;border-bottom:1px solid var(--borda);margin-bottom:${marginBot};position:relative;${minWidthStyle}">`;
-
-  // Linha da média
-  const avgFmt = shortFmt ? Math.round(avgVal) + '%' : avgVal.toFixed(1) + '%';
-  h += `<div style="position:absolute;bottom:10px;left:0;right:0;height:${avgPerc}%;border-top:1px dashed var(--texto2);opacity:0.6;pointer-events:none;z-index:0">`;
-  h += `<span style="position:absolute;top:-18px;left:0;font-size:.65rem;color:var(--texto2);font-weight:700">Média: ${avgFmt}</span></div>`;
 
   for (const a of ranking) {
     const val = chances[a.id] || 0;
