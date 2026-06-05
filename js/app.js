@@ -514,22 +514,17 @@ window.injetarTooltipsMobile = function (containerEl, seletor) {
     // Se o elemento for clicável nativamente (tem onclick),
     // ignoramos o tooltip via toque para não conflitar com a ação de clique,
     // garantindo que continue funcionando na aba Compilação e Tabela.
-    if (el.hasAttribute('onclick')) {
+    if (el.hasAttribute('onclick') || el.tagName.toLowerCase() === 'a' || el.tagName.toLowerCase() === 'button') {
       return;
     }
 
-    // Mobile: toque (usa touchend sem preventDefault para não bloquear)
-    el.addEventListener('touchend', function (e) {
-      const isVisible = tipEl.style.opacity === '1' && tipEl._anchor === this;
-      _hideTip();
-      if (!isVisible) {
-        tipEl._anchor = this;
-        _showTip(this);
-      }
-    }, { passive: true });
+    // Para o iOS disparar o evento de 'click' em elementos normais (como <th>, <span>),
+    // precisamos de cursor pointer ou um listener vazio.
+    el.style.cursor = 'help';
 
-    // Click (para teclados ou outros dispositivos)
+    // Mobile/Teclado: clique único para fazer toggle do tooltip
     el.addEventListener('click', function (e) {
+      e.stopPropagation(); // Evita que o listener do document feche imediatamente
       const isVisible = tipEl.style.opacity === '1' && tipEl._anchor === this;
       _hideTip();
       if (!isVisible) {
