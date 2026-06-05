@@ -4,59 +4,59 @@
 
 #   Time                                ELO   K_att   K_def   %Camp     +-   %Final
 ---------------------------------------------------------------------------
-1   Spain                                  2182  0.9598  1.0897  19.89%  0.08%   31.00%
-2   Argentina                              2169  0.9626  1.0120  19.82%  0.08%   30.44%
-3   France                                 2120  0.9634  1.0338  11.79%  0.06%   20.55%
-4   Brazil                                 2061  0.9773  0.9607   6.66%  0.05%   12.94%
-5   Colombia                               2042  1.0070  0.9672   5.71%  0.05%   11.56%
-6   Mexico [H]                             1927  0.9580  0.9360   4.78%  0.04%   10.31%
-7   England                                2045  0.9554  0.9755   4.77%  0.04%   10.10%
-8   Portugal                               2025  0.9861  0.9831   3.89%  0.04%    8.65%
-9   Netherlands                            2010  0.9863  1.0112   2.74%  0.03%    6.56%
-10  Ecuador                                1999  0.9001  0.8951   2.72%  0.03%    6.53%
-11  Canada [H]                             1884  0.9474  0.9273   2.60%  0.03%    6.51%
-12  Germany                                1985  1.0084  1.0281   1.95%  0.03%    5.13%
-13  Japan                                  1983  0.9566  0.9683   1.82%  0.03%    4.74%
-14  Croatia                                1981  0.9696  1.0125   1.59%  0.02%    4.32%
-15  Uruguay                                1961  0.9248  0.9291   1.36%  0.02%    3.95%
-16  Switzerland                            1944  1.0140  1.0088   1.30%  0.02%    3.87%
-17  Belgium                                1944  1.0133  0.9968   1.28%  0.02%    3.78%
-18  Morocco                                1968  0.8865  0.9876   0.96%  0.02%    2.90%
-19  Norway                                 1932  1.0454  1.0505   0.72%  0.02%    2.31%
-20  United States [H]                      1809  1.0980  1.0510   0.63%  0.02%    2.10%
-21  Turkey                                 1928  0.9629  1.0212   0.57%  0.01%    1.92%
-22  Senegal                                1922  0.9626  0.9840   0.55%  0.01%    1.86%
-23  Paraguay                               1893  0.9604  0.9399   0.41%  0.01%    1.47%
-24  Iran                                   1880  0.9669  0.9610   0.32%  0.01%    1.22%
+1   Argentina                              2169  0.9254  0.9476  19.98%  0.08%   30.38%
+2   Spain                                  2182  0.9609  1.1068  18.68%  0.08%   29.73%
+3   France                                 2120  0.9534  1.0253  11.24%  0.06%   19.77%
+4   Brazil                                 2067  1.0274  0.9647   8.06%  0.05%   14.99%
+5   Colombia                               2045  1.0202  0.9721   5.83%  0.05%   11.83%
+6   Mexico [H]                             1941  0.9335  0.9062   5.69%  0.05%   11.66%
+7   England                                2045  0.9547  0.9892   4.31%  0.04%    9.25%
+8   Portugal                               2025  0.9678  0.9925   3.39%  0.04%    7.76%
+9   Ecuador                                2002  0.9112  0.8727   3.07%  0.03%    7.16%
+10  Canada [H]                             1894  0.9497  0.9269   2.90%  0.03%    7.01%
+11  Germany                                1988  1.0270  1.0482   1.93%  0.03%    5.02%
+12  Japan                                  1985  0.9590  0.9610   1.84%  0.03%    4.71%
+13  Belgium                                1970  1.0140  1.0119   1.79%  0.03%    4.91%
+14  Netherlands                            1990  0.9937  1.0299   1.68%  0.03%    4.46%
+15  Morocco                                1970  0.9354  0.9432   1.45%  0.02%    4.03%
+16  Switzerland                            1951  1.0450  1.0252   1.44%  0.02%    4.19%
+17  Uruguay                                1960  0.9171  0.9285   1.19%  0.02%    3.53%
+18  Croatia                                1955  0.9742  1.0109   0.95%  0.02%    2.87%
+19  Norway                                 1939  1.0746  1.0568   0.84%  0.02%    2.63%
+20  United States [H]                      1823  1.0902  1.0376   0.77%  0.02%    2.49%
+21  Turkey                                 1933  0.9784  1.0033   0.68%  0.02%    2.20%
+22  Senegal                                1909  0.9882  0.9954   0.40%  0.01%    1.43%
+23  Paraguay                               1893  0.9595  0.9338   0.38%  0.01%    1.36%
+24  Iran                                   1884  0.9622  0.9530   0.33%  0.01%    1.27%
 
 -- SANITY CHECKS --
-  Soma campeão: 99.99% (esperado ~100%)
-  OK Argentina: 19.82%  K_att=0.9626  K_def=1.0120
-  OK Brazil: 6.66%  K_att=0.9773  K_def=0.9607
-  OK France: 11.79%  K_att=0.9634  K_def=1.0338
-  OK Spain: 19.89%  K_att=0.9598  K_def=1.0897
-  OK England: 4.77%  K_att=0.9554  K_def=0.9755
+  Soma campeão: 100.00% (esperado ~100%)
+  OK Argentina: 19.98%  K_att=0.9254  K_def=0.9476
+  OK Brazil: 8.06%  K_att=1.0274  K_def=0.9647
+  OK France: 11.24%  K_att=0.9534  K_def=1.0253
+  OK Spain: 18.68%  K_att=0.9609  K_def=1.1068
+  OK England: 4.31%  K_att=0.9547  K_def=0.9892
 
 -- TOP 10 POR K_att (ataque acima do esperado) --
-  New Zealand                    K_att=1.1262  K_def=0.9742  ELO=1730
-  United States                  K_att=1.0980  K_def=1.0510  ELO=1809
-  Sweden                         K_att=1.0876  K_def=1.0779  ELO=1783
-  Jordan                         K_att=1.0615  K_def=1.0077  ELO=1763
-  Norway                         K_att=1.0454  K_def=1.0505  ELO=1932
-  Haiti                          K_att=1.0296  K_def=0.9933  ELO=1676
-  Curaçao                        K_att=1.0269  K_def=1.0280  ELO=1586
-  Qatar                          K_att=1.0263  K_def=1.0561  ELO=1553
-  Ghana                          K_att=1.0234  K_def=0.9977  ELO=1626
-  Switzerland                    K_att=1.0140  K_def=1.0088  ELO=1944
+  New Zealand                    K_att=1.1097  K_def=0.9906  ELO=1704
+  United States                  K_att=1.0902  K_def=1.0376  ELO=1823
+  Norway                         K_att=1.0746  K_def=1.0568  ELO=1939
+  Sweden                         K_att=1.0744  K_def=1.0875  ELO=1776
+  Haiti                          K_att=1.0713  K_def=0.9934  ELO=1703
+  Jordan                         K_att=1.0629  K_def=1.0425  ELO=1756
+  Switzerland                    K_att=1.0450  K_def=1.0252  ELO=1951
+  Brazil                         K_att=1.0274  K_def=0.9647  ELO=2067
+  Germany                        K_att=1.0270  K_def=1.0482  ELO=1988
+  Curaçao                        K_att=1.0261  K_def=1.0227  ELO=1580
 
 -- TOP 10 POR K_def (defesa abaixo do esperado = melhor) --
-  Ecuador                        K_def=0.8951  K_att=0.9001  ELO=1999
-  Canada                         K_def=0.9273  K_att=0.9474  ELO=1884
-  Uruguay                        K_def=0.9291  K_att=0.9248  ELO=1961
-  Ivory Coast                    K_def=0.9357  K_att=0.9496  ELO=1798
-  Mexico                         K_def=0.9360  K_att=0.9580  ELO=1927
-  Uzbekistan                     K_def=0.9393  K_att=0.9286  ELO=1817
-  Paraguay                       K_def=0.9399  K_att=0.9604  ELO=1893
-  Bosnia and Herzegovina         K_def=0.9442  K_att=0.9969  ELO=1651
-  Egypt                          K_def=0.9484  K_att=0.9102  ELO=1791
-  Scotland                       K_def=0.9502  K_att=0.9927  ELO=1791
+  Ecuador                        K_def=0.8727  K_att=0.9112  ELO=2002
+  Mexico                         K_def=0.9062  K_att=0.9335  ELO=1941
+  Egypt                          K_def=0.9203  K_att=0.9189  ELO=1802
+  Ivory Coast                    K_def=0.9238  K_att=0.9471  ELO=1798
+  Canada                         K_def=0.9269  K_att=0.9497  ELO=1894
+  Uzbekistan                     K_def=0.9275  K_att=0.9289  ELO=1807
+  Uruguay                        K_def=0.9285  K_att=0.9171  ELO=1960
+  Ghana                          K_def=0.9337  K_att=1.0147  ELO=1630
+  Paraguay                       K_def=0.9338  K_att=0.9595  ELO=1893
+  DR Congo                       K_def=0.9338  K_att=0.9170  ELO=1755

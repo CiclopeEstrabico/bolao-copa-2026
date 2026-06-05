@@ -39,7 +39,7 @@ SEQ_LEN = 20          # jogos na janela de forma
 # Decaimento por posição: w = exp(-DECAY_LAMBDA * pos_from_end)
 # pos_from_end=0 → jogo mais recente, pos_from_end=SEQ_LEN-1 → jogo mais antigo
 # Meia-vida de 7 jogos → lambda = ln(2)/7 ≈ 0.099
-DECAY_HALFLIFE_GAMES = 7
+DECAY_HALFLIFE_GAMES = 15
 DECAY_LAMBDA = np.log(2) / DECAY_HALFLIFE_GAMES   # ≈ 0.099
 
 K_FACTORS = {
