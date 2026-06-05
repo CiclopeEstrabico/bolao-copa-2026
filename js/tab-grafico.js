@@ -311,7 +311,7 @@ function _pontosRapido(palH, palA, resH, resA, foi_penaltis, fase) {
   const resEf  = resH > resA ? 1 : resH < resA ? -1 : 0;
   const resPal = palH > palA ? 1 : palH < palA ? -1 : 0;
   if (resPal !== resEf) return 0;
-  if (!foi_penaltis && palH === resH && palA === resA) {
+  if (palH === resH && palA === resA) {
     const bonus = (resH + resA) >= (cfg.limiar_placar_alto || 4)
       ? cfg.bonus_placar_exato_alto : cfg.bonus_placar_exato_baixo;
     return aplicarFator(cfg.resultado_base + bonus, fase);
@@ -490,20 +490,30 @@ function _graficoRodarMonteCarlo() {
       ptIter[pi] = acc;
     }
 
-    // Registrar vencedor com divisão de empate
-    let melhorPts = -Infinity;
-    let vencedores = [];
+    // Registrar vencedor entre HUMANOS com divisão de empate
+    let melhorPtsHumano = -Infinity;
+    let vencedoresHumanos = [];
     for (let pi = 0; pi < nPart; pi++) {
-      if (ptIter[pi] > melhorPts) {
-        melhorPts = ptIter[pi];
-        vencedores = [pi];
-      } else if (ptIter[pi] === melhorPts) {
-        vencedores.push(pi);
+      if (partIds[pi] === "MODELO") continue;
+      if (ptIter[pi] > melhorPtsHumano) {
+        melhorPtsHumano = ptIter[pi];
+        vencedoresHumanos = [pi];
+      } else if (ptIter[pi] === melhorPtsHumano) {
+        vencedoresHumanos.push(pi);
       }
     }
-    if (vencedores.length > 0) {
-      const frac = 1.0 / vencedores.length;
-      for (const idx of vencedores) vitorias[idx] += frac;
+    if (vencedoresHumanos.length > 0) {
+      const frac = 1.0 / vencedoresHumanos.length;
+      for (const idx of vencedoresHumanos) vitorias[idx] += frac;
+    }
+
+    // Calcular se o Modelo "venceria" o melhor humano
+    const idxModelo = partIds.indexOf("MODELO");
+    if (idxModelo !== -1) {
+      const ptsModelo = ptIter[idxModelo];
+      if (ptsModelo >= melhorPtsHumano) {
+        vitorias[idxModelo] += 1;
+      }
     }
   }
 
