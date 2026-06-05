@@ -480,7 +480,7 @@ function _graficoRodarMonteCarlo() {
     for (let pi = 0; pi < nPart; pi++) {
       const p   = todoParticipantes[pi];
       const pid = partIds[pi];
-      const palP = pals[pid] || {};
+      const palP = parsedPals[pid];
       let acc = ptBase[pi];
 
       if (temPendentes) {
