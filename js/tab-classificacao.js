@@ -116,10 +116,11 @@ window.renderClassificacao = function () {
   h += '</tr></thead><tbody>';
 
   const _renderCol = (val, pct, valCor) => {
-    return '<td class="col-stat-rank" style="text-align:center"><div class="stat-rank-inner">' +
+    return '<td class="col-stat-rank" style="text-align:center">' +
       '<span class="stat-rank-val" style="color:' + valCor + '">' + val + '</span>' +
+      '<span class="stat-rank-sep">   </span>' +
       '<span class="stat-rank-pct">' + pct + '%</span>' +
-      '</div></td>';
+      '</td>';
   };
 
   rankingComModelo.forEach((item, i) => {
@@ -177,7 +178,8 @@ window.renderClassificacao = function () {
     h += '<td class="col-apostador" style="text-align:left;font-weight:600;position:sticky;left:0;background:' + stickyBg + ';z-index:1">';
     if (isModelo) {
       h += '<span style="font-weight:normal;color:#94a3b8">Modelo</span>';
-      h += '<div style="font-size:.6rem;color:var(--texto2)">referência · fora do ranking</div>';
+      h += '<div style="font-size:.6rem;color:var(--texto2)" class="modelo-subtexto-full">referência · fora do ranking</div>';
+      h += '<div style="font-size:.6rem;color:var(--texto2)" class="modelo-subtexto-mob">referência</div>';
     } else {
       h += '<span class="apostador-nome" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (p.apelido || p.nome || p.token?.substring(0, 8) || "?") + '</span>';
     }

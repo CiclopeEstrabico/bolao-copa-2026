@@ -309,8 +309,11 @@ select{appearance:none;cursor:pointer}
   .tabs{min-width:unset;width:100%;padding:0}
   .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:6px 0 5px;min-width:0;border-bottom:2px solid transparent}
   .tab-btn .tab-txt{display:none}
-  .tab-btn .tab-mob{display:block;font-size:.62rem;font-weight:600;letter-spacing:.02em;text-transform:capitalize;line-height:1;color:var(--texto2)}
+  .tab-btn .tab-mob{display:block;font-size:.68rem;font-weight:600;letter-spacing:.02em;text-transform:capitalize;line-height:1;color:var(--texto2)}
   .tab-btn.ativa .tab-mob{color:var(--verde-light)}
+  /* Modelo subtexto: mobile mostra só 'referência' */
+  .modelo-subtexto-full{display:none}
+  .modelo-subtexto-mob{display:block}
   .tab-btn>svg{display:block;flex-shrink:0}
   .tab-btn:hover>svg{stroke:var(--texto)}
   .tab-btn.ativa{border-bottom-color:var(--verde-light)}
@@ -536,6 +539,14 @@ select{appearance:none;cursor:pointer}
 .celula-futuro{color:var(--texto2);font-style:italic}
 .celula-sem{color:rgba(255,255,255,.15)}
 .col-resultado{font-weight:800;font-size:.76rem;white-space:nowrap}
+
+/* ── RANK — valor + porcentagem nas colunas de stat ── */
+.stat-rank-val{font-weight:800;font-size:.85rem}
+.stat-rank-sep{white-space:pre;letter-spacing:0}
+.stat-rank-pct{font-weight:400;font-size:.68rem;color:var(--texto)}
+/* Subtexto do modelo: desktop mostra completo, mobile mostra curto */
+.modelo-subtexto-mob{display:none}
+.modelo-subtexto-full{display:block}
 
 /* details/summary nativo */
 details > summary::-webkit-details-marker { display: none; }
