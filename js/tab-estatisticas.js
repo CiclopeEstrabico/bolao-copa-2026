@@ -310,18 +310,18 @@ window.renderEstatisticas = function () {
       background: var(--card2);
       border: 1px solid var(--borda);
       border-radius: var(--radius-sm);
-      padding: 10px 4px;
+      padding: 12px 4px;
       text-align: center;
       display: flex;
       flex-direction: column;
       justify-content: center;
-      min-height: 90px;
+      min-height: 100px;
       position: relative;
       cursor: pointer;
     }
     .stat-d-icon { font-size: 1.2rem; margin-bottom: 2px; }
-    .stat-d-label { font-size: 0.58rem; color: var(--texto2); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 2px; line-height: 1.1; }
-    .stat-d-nome { font-size: 0.8rem; font-weight: 800; color: var(--cor-destaque); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
+    .stat-d-label { font-size: 0.64rem; color: var(--texto2); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 3px; line-height: 1.1; }
+    .stat-d-nome { font-size: 0.88rem; font-weight: 800; color: var(--cor-destaque); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
     .stat-d-sub { font-size: 0.62rem; color: var(--texto2); margin-top: 2px; }
     @media (max-width: 599px) {
       .stat-d-card {
@@ -342,7 +342,7 @@ window.renderEstatisticas = function () {
         display: flex;
         flex-direction: column;
         min-width: 0;
-        gap: 1px;
+        gap: 2px;
       }
       .stat-d-label { font-size: 0.52rem; margin-bottom: 0; }
       .stat-d-nome { font-size: 0.83rem; }
