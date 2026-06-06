@@ -27,8 +27,11 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--fundo);color:var(
 .tab-btn{padding:10px 12px;font-size:.76rem;font-weight:600;color:var(--texto2);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:var(--trans)}
 .tab-btn:hover{color:var(--texto)}
 .tab-btn.ativa{color:var(--verde-light);border-bottom-color:var(--verde-light)}
-/* SVG inside tab-btn: hidden by default (shown only in mobile portrait) */
-.tab-btn>svg{display:none;stroke:currentColor;transition:var(--trans)}
+/* Desktop/landscape: ícone + texto lado a lado */
+.tab-btn{display:inline-flex;align-items:center;gap:7px}
+.tab-btn>svg{display:block;stroke:currentColor;transition:var(--trans);flex-shrink:0}
+.tab-btn .tab-txt{display:inline}
+.tab-btn .tab-mob{display:none}
 
 /* SIMULAÇÃO - apenas badge pequeno */
 .badge-sim{display:inline-flex;align-items:center;gap:4px;background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.25);border-radius:20px;padding:2px 8px;font-size:.65rem;font-weight:700}
@@ -276,21 +279,18 @@ select{appearance:none;cursor:pointer}
   .header{padding:6px 12px}
   .header img[alt="Copa 2026"]{height:32px !important}
 
-  /* Tabs: icon-only, distributed equally, hide text content */
+  /* Tabs: ícone + micro-label, distribuídos igualmente */
   .tabs-wrap{top:45px;overflow-x:unset}
   .tabs-wrap::after{display:none}
   .tabs{min-width:unset;width:100%;padding:0}
-  .tab-btn{display:none}
-  .tab-btn:has(>svg){
-    flex:1;display:flex;align-items:center;justify-content:center;
-    padding:8px 0;min-width:0;
-    font-size:0;white-space:nowrap;
-    border-bottom:2px solid transparent
-  }
-  .tab-btn:has(>svg)>svg{display:block;flex-shrink:0}
-  .tab-btn:has(>svg):hover>svg{stroke:var(--texto)}
-  .tab-btn:has(>svg).ativa{border-bottom-color:var(--verde-light)}
-  .tab-btn:has(>svg).ativa>svg{stroke:var(--verde-light)}
+  .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 0 5px;min-width:0;border-bottom:2px solid transparent}
+  .tab-btn .tab-txt{display:none}
+  .tab-btn .tab-mob{display:block;font-size:.48rem;font-weight:600;letter-spacing:.02em;text-transform:uppercase;line-height:1;opacity:.7}
+  .tab-btn.ativa .tab-mob{opacity:1}
+  .tab-btn>svg{display:block;flex-shrink:0}
+  .tab-btn:hover>svg{stroke:var(--texto)}
+  .tab-btn.ativa{border-bottom-color:var(--verde-light)}
+  .tab-btn.ativa>svg{stroke:var(--verde-light)}
 
   .main{padding:6px 5px}
   .grupos-grid{grid-template-columns:1fr}
@@ -589,9 +589,7 @@ details[open] > summary span:last-child { content: "−"; }
   }
 }
 
-/* ── TAB APOSTAR — verde em qualquer contexto ── */
-.tab-btn-apostar{color:var(--verde-light) !important}
-.tab-btn-apostar>svg{stroke:var(--verde-light) !important}
+/* ── TAB APOSTAR — sem destaque especial de cor ── */
 .tab-btn-apostar.ativa{border-bottom-color:var(--verde-light)}
 
 
