@@ -290,7 +290,7 @@ select{appearance:none;cursor:pointer}
   .rank-table .col-apostador{width:90px;min-width:90px;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .rank-table th:not(.col-apostador):not(:first-child),
   .rank-table td:not(.col-apostador):not(:first-child){
-    width:86px;min-width:86px;max-width:86px;white-space:normal;word-break:break-word;line-height:1.2
+    width:86px;min-width:86px;max-width:86px;overflow:hidden;line-height:1.2
   }
 }
 /* Header Apostar icon: hidden by default, shown only on mobile portrait via @media below */
@@ -572,12 +572,6 @@ select{appearance:none;cursor:pointer}
 .stat-rank-val{font-weight:800;font-size:.85rem}
 .stat-rank-sep{display:inline-block;width:1em}
 .stat-rank-pct{font-weight:400;font-size:.68rem;color:var(--texto)}
-@media(max-width:600px) and (orientation:portrait){
-  .stat-rank-cell{flex-direction:column;align-items:flex-start;white-space:normal;gap:0}
-  .stat-rank-val{font-size:.8rem}
-  .stat-rank-sep{display:none}
-  .stat-rank-pct{font-size:.63rem}
-}
 
 
 /* details/summary nativo */
