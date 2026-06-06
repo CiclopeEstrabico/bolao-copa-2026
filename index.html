@@ -18,53 +18,104 @@
       <div class="header-titulo">Bolão Copa 2026<small>Aeronáutica · 48 Seleções · 104 Jogos</small></div>
     </div>
     <div id="sim-icon" style="display:none"></div>
-    <div id="btn-simulacao" onclick="desativarSimulacao()" title="Simulação ativa — clique para sair" style="display:none;cursor:pointer;padding:4px 8px;align-items:center;gap:5px;user-select:none;flex-shrink:0;margin-left:auto">
-      <svg width="18" height="22" viewBox="0 0 18 22" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 6px #f59e0b)"><path d="M10.5 1L1 13h7l-0.5 8L17 9h-7l1-8z" fill="#f59e0b" stroke="#fbbf24" stroke-width="1" stroke-linejoin="round"/></svg>
-      <span style="font-size:.65rem;font-weight:900;color:#f59e0b;letter-spacing:.08em;text-transform:uppercase;text-shadow:0 0 8px rgba(245,158,11,0.8)">SIM</span>
+    <div id="btn-simulacao" onclick="desativarSimulacao()" title="Simulação ativa — clique para sair"
+      style="display:none;cursor:pointer;padding:4px 8px;align-items:center;gap:5px;user-select:none;flex-shrink:0;margin-left:auto">
+      <svg width="18" height="22" viewBox="0 0 18 22" fill="none" xmlns="http://www.w3.org/2000/svg"
+        style="filter:drop-shadow(0 0 6px #f59e0b)">
+        <path d="M10.5 1L1 13h7l-0.5 8L17 9h-7l1-8z" fill="#f59e0b" stroke="#fbbf24" stroke-width="1"
+          stroke-linejoin="round" />
+      </svg>
+      <span
+        style="font-size:.60rem;font-weight:800;color:#f59e0b;letter-spacing:.08em;text-shadow:0 0 8px rgba(245,158,11,0.8)">SIM</span>
     </div>
   </header>
 
   <div class="tabs-wrap">
     <nav class="tabs" role="tablist">
       <button class="tab-btn" data-tab="resultados" role="tab">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></svg>
-        <span class="tab-txt">Resultados</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+          <polyline points="9 16 11 18 15 14" />
+        </svg>
+        <span class="tab-txt">Jogos</span>
         <span class="tab-mob">Jogos</span>
       </button>
       <button class="tab-btn" data-tab="tabela" role="tab">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h4v12H3z"/><path d="M17 6h4v4h-4z"/><path d="M17 14h4v4h-4z"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="17" x2="17" y2="17"/><line x1="7" y1="13" x2="12" y2="13"/><line x1="12" y1="9" x2="12" y2="17"/></svg>
-        <span class="tab-txt">Torneio</span>
-        <span class="tab-mob">Torneio</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 6h4v12H3z" />
+          <path d="M17 6h4v4h-4z" />
+          <path d="M17 14h4v4h-4z" />
+          <line x1="7" y1="9" x2="17" y2="9" />
+          <line x1="7" y1="17" x2="17" y2="17" />
+          <line x1="7" y1="13" x2="12" y2="13" />
+          <line x1="12" y1="9" x2="12" y2="17" />
+        </svg>
+        <span class="tab-txt">Chaves</span>
+        <span class="tab-mob">Chaves</span>
       </button>
       <button class="tab-btn" data-tab="classificacao" role="tab">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10" />
+          <line x1="12" y1="20" x2="12" y2="4" />
+          <line x1="6" y1="20" x2="6" y2="14" />
+        </svg>
         <span class="tab-txt">Classificação</span>
         <span class="tab-mob">Rank</span>
       </button>
       <button class="tab-btn" data-tab="grafico" role="tab">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        <span class="tab-txt">Gráfico</span>
-        <span class="tab-mob">Gráfico</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        </svg>
+        <span class="tab-txt">Gráficos</span>
+        <span class="tab-mob">Plots</span>
       </button>
       <button class="tab-btn" data-tab="compilacao" role="tab">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <line x1="3" y1="9" x2="21" y2="9" />
+          <line x1="3" y1="15" x2="21" y2="15" />
+          <line x1="9" y1="3" x2="9" y2="21" />
+        </svg>
         <span class="tab-txt">Compilação</span>
         <span class="tab-mob">Tabela</span>
       </button>
       <button class="tab-btn" data-tab="estatisticas" role="tab">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+          <path d="M22 12A10 10 0 0 0 12 2v10z" />
+        </svg>
         <span class="tab-txt">Estatísticas</span>
         <span class="tab-mob">Stats</span>
       </button>
       <button class="tab-btn" data-tab="regras" role="tab">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="12" y2="15"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+          <line x1="9" y1="7" x2="15" y2="7" />
+          <line x1="9" y1="11" x2="15" y2="11" />
+          <line x1="9" y1="15" x2="12" y2="15" />
+        </svg>
         <span class="tab-txt">Regras</span>
         <span class="tab-mob">Regras</span>
       </button>
       <button class="tab-btn tab-btn-apostar" onclick="window.location.href='aposta.html'">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+        </svg>
         <span class="tab-txt">Apostar</span>
-        <span class="tab-mob">Apostar</span>
+        <span class="tab-mob">Aposta</span>
       </button>
     </nav>
   </div>
