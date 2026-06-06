@@ -290,7 +290,7 @@ select{appearance:none;cursor:pointer}
   .rank-table .col-apostador{width:90px;min-width:90px;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .rank-table th:not(.col-apostador):not(:first-child),
   .rank-table td:not(.col-apostador):not(:first-child){
-    width:75px;min-width:75px;max-width:75px;white-space:normal;word-break:break-word;line-height:1.2
+    width:86px;min-width:86px;max-width:86px;white-space:normal;word-break:break-word;line-height:1.2
   }
 }
 /* Header Apostar icon: hidden by default, shown only on mobile portrait via @media below */
@@ -454,12 +454,18 @@ select{appearance:none;cursor:pointer}
   }
 }
 /* ===== BRACKET VISUAL ===== */
-.bracket-scroll{display:flex;gap:0;overflow-x:auto;padding:8px 0 16px;-webkit-overflow-scrolling:touch;min-height:300px;scroll-snap-type:x proximity}
+.bracket-scroll{display:flex;gap:0;overflow-x:auto;padding:8px 0 16px;-webkit-overflow-scrolling:touch;min-height:300px;scroll-snap-type:x proximity;align-items:stretch}
 .bracket-scroll::-webkit-scrollbar{height:4px}
 .bracket-scroll::-webkit-scrollbar-thumb{background:var(--borda2);border-radius:2px}
 .bracket-fase{display:flex;flex-direction:column;min-width:148px;scroll-snap-align:start}
 .bracket-fase-label{font-size:.65rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--verde-light);text-align:center;padding:4px 8px;background:var(--fundo2);border-radius:var(--radius-sm) var(--radius-sm) 0 0;margin:0 4px;border-bottom:1px solid var(--verde-dark)}
-.bracket-coluna{display:flex;flex-direction:column;justify-content:space-around;flex:1;padding:6px 4px;gap:8px}
+.bracket-coluna{display:flex;flex-direction:column;justify-content:space-around;flex:1;padding:6px 4px;gap:0}
+/* Quartas: 4 cards centered between 8 oitavas — space-around distributes evenly */
+.bracket-coluna-qf{justify-content:space-around;gap:0}
+/* Semis: 2 cards centered between 4 quartas */
+.bracket-coluna-sf{justify-content:space-around;gap:0}
+/* Final + 3° lugar: 1 card each, centered between the 2 semis */
+.bracket-coluna-final{justify-content:center;gap:0}
 .bracket-card{background:var(--card2);border:1px solid var(--borda);border-radius:var(--radius-sm);overflow:hidden;cursor:pointer;transition:border-color .15s;min-width:136px}
 .bracket-card:hover{border-color:var(--verde-light)}
 .bracket-data{font-size:.68rem;color:var(--texto2);text-align:center;padding:3px 6px;background:var(--fundo2);border-bottom:1px solid var(--borda)}
@@ -562,9 +568,11 @@ select{appearance:none;cursor:pointer}
 .col-resultado{font-weight:800;font-size:.76rem;white-space:nowrap}
 
 /* ── RANK — valor + porcentagem nas colunas de stat ── */
-.stat-rank-val{font-weight:800;font-size:.85rem}
-.stat-rank-sep{white-space:pre;letter-spacing:0}
-.stat-rank-pct{font-weight:400;font-size:.68rem;color:var(--texto)}
+.stat-rank-cell{display:flex;flex-direction:column;align-items:flex-start;line-height:1.25}
+.stat-rank-val{font-weight:800;font-size:.85rem;display:block;text-align:left}
+.stat-rank-pct{font-weight:400;font-size:.68rem;color:var(--texto);display:block;text-align:left}
+/* legacy sep kept for compatibility */
+.stat-rank-sep{display:none}
 
 
 /* details/summary nativo */

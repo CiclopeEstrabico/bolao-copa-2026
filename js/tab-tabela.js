@@ -85,9 +85,7 @@ window.renderTabela = function() {
     let h = '';
     for (let i = 0; i < sfOrder.length; i++) {
       const [qfa, qfb] = sfOrder[i];
-      if (i > 0) h += '<div class="bracket-spacer"></div>';
       h += card(qfa);
-      h += '<div class="bracket-spacer" style="height:4px"></div>';
       h += card(qfb);
     }
     return h;
@@ -106,14 +104,13 @@ window.renderTabela = function() {
   h += '</div></div>';
 
   // Quartas
-  h += '<div class="bracket-fase"><div class="bracket-fase-label">Quartas</div><div class="bracket-coluna">';
+  h += '<div class="bracket-fase"><div class="bracket-fase-label">Quartas</div><div class="bracket-coluna bracket-coluna-qf">';
   h += colQuartas();
   h += '</div></div>';
 
   // Semis
-  h += '<div class="bracket-fase"><div class="bracket-fase-label">Semis</div><div class="bracket-coluna">';
+  h += '<div class="bracket-fase"><div class="bracket-fase-label">Semis</div><div class="bracket-coluna bracket-coluna-sf">';
   h += card('SF_1');
-  h += '<div class="bracket-spacer"></div>';
   h += card('SF_2');
   h += '</div></div>';
 
