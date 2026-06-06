@@ -292,14 +292,19 @@ select{appearance:none;cursor:pointer}
   .tabs-wrap{top:45px;overflow-x:unset}
   .tabs-wrap::after{display:none}
   .tabs{min-width:unset;width:100%;padding:0}
-  .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 0 5px;min-width:0;border-bottom:2px solid transparent}
+  .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px 0 5px;min-width:0;border-bottom:2px solid transparent}
   .tab-btn .tab-txt{display:none}
-  .tab-btn .tab-mob{display:block;font-size:.56rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;line-height:1;color:var(--texto2)}
+  .tab-btn .tab-mob{display:block;font-size:.56rem;font-weight:600;letter-spacing:.03em;text-transform:capitalize;line-height:1;color:var(--texto2)}
   .tab-btn.ativa .tab-mob{color:var(--verde-light)}
   .tab-btn>svg{display:block;flex-shrink:0}
   .tab-btn:hover>svg{stroke:var(--texto)}
   .tab-btn.ativa{border-bottom-color:var(--verde-light)}
   .tab-btn.ativa>svg{stroke:var(--verde-light)}
+  /* Apostar sai dos tabs em mobile portrait */
+  .tab-btn-apostar{display:none !important}
+  /* Botão Apostar flutuante no header (mobile portrait only) */
+  .header-apostar-mob{display:flex;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;color:var(--verde-light);padding:6px;border-radius:8px;flex-shrink:0;transition:var(--trans)}
+  .header-apostar-mob:hover{color:#fff;background:rgba(0,200,120,.12)}
 
   .main{padding:6px 5px}
   .grupos-grid{grid-template-columns:1fr}
@@ -606,5 +611,9 @@ details[open] > summary span:last-child { content: "−"; }
 
 /* ── TAB APOSTAR — sem destaque especial de cor ── */
 .tab-btn-apostar.ativa{border-bottom-color:var(--verde-light)}
+/* Header Apostar icon: hidden by default, shown only on mobile portrait via @media */
+.header-apostar-mob{display:none}
+/* Right-side header action group (SIM + Apostar) */
+.header-actions-right{display:flex;align-items:center;gap:2px;margin-left:auto;flex-shrink:0}
 
 

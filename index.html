@@ -18,15 +18,26 @@
       <div class="header-titulo">Bolão Copa 2026<small>Aeronáutica · 48 Seleções · 104 Jogos</small></div>
     </div>
     <div id="sim-icon" style="display:none"></div>
-    <div id="btn-simulacao" onclick="desativarSimulacao()" title="Simulação ativa — clique para sair"
-      style="display:none;cursor:pointer;padding:4px 8px;align-items:center;gap:5px;user-select:none;flex-shrink:0;margin-left:auto">
-      <svg width="18" height="22" viewBox="0 0 18 22" fill="none" xmlns="http://www.w3.org/2000/svg"
-        style="filter:drop-shadow(0 0 6px #f59e0b)">
-        <path d="M10.5 1L1 13h7l-0.5 8L17 9h-7l1-8z" fill="#f59e0b" stroke="#fbbf24" stroke-width="1"
-          stroke-linejoin="round" />
-      </svg>
-      <span
-        style="font-size:.65rem;font-weight:900;color:#f59e0b;letter-spacing:.08em;text-transform:uppercase;text-shadow:0 0 8px rgba(245,158,11,0.8)">SIM</span>
+    <div class="header-actions-right">
+      <div id="btn-simulacao" onclick="desativarSimulacao()" title="Simulação ativa — clique para sair"
+        style="display:none;cursor:pointer;padding:4px 8px;align-items:center;gap:5px;user-select:none;flex-shrink:0">
+
+        <svg width="18" height="22" viewBox="0 0 18 22" fill="none" xmlns="http://www.w3.org/2000/svg"
+          style="filter:drop-shadow(0 0 6px #f59e0b)">
+          <path d="M10.5 1L1 13h7l-0.5 8L17 9h-7l1-8z" fill="#f59e0b" stroke="#fbbf24" stroke-width="1"
+            stroke-linejoin="round" />
+        </svg>
+        <span
+          style="font-size:.65rem;font-weight:900;color:#f59e0b;letter-spacing:.08em;text-transform:uppercase;text-shadow:0 0 8px rgba(245,158,11,0.8)">SIM</span>
+      </div>
+      <!-- Apostar icon: only visible on mobile portrait, lives in header -->
+      <button id="header-apostar-mob" class="header-apostar-mob" onclick="window.location.href='aposta.html'" title="Apostar" aria-label="Apostar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+        </svg>
+      </button>
     </div>
   </header>
 
