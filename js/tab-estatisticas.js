@@ -328,7 +328,7 @@ window.renderEstatisticas = function () {
         min-height: 0;
         padding: 7px 5px;
         flex-direction: row;
-        align-items: flex-start;
+        align-items: center;
         gap: 6px;
         text-align: left;
         justify-content: flex-start;
@@ -337,16 +337,16 @@ window.renderEstatisticas = function () {
         font-size: 1.1rem;
         margin-bottom: 0;
         flex-shrink: 0;
-        padding-top: 1px;
       }
       .stat-d-body {
         display: flex;
         flex-direction: column;
         min-width: 0;
+        gap: 1px;
       }
-      .stat-d-label { font-size: 0.52rem; margin-bottom: 1px; }
-      .stat-d-nome { font-size: 0.72rem; }
-      .stat-d-sub { font-size: 0.56rem; }
+      .stat-d-label { font-size: 0.52rem; margin-bottom: 0; }
+      .stat-d-nome { font-size: 0.83rem; }
+      .stat-d-sub { font-size: 0.56rem; margin-top: 0; }
     }
     .stat-tooltip {
       display: none;
