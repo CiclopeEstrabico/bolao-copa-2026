@@ -351,6 +351,7 @@ function mudarAba(aba) {
   // Gerencia classes no body para customizações no modo desktop
   document.body.classList.toggle("aba-compilacao-ativa", aba === "compilacao");
   document.body.classList.toggle("aba-grafico-ativa", aba === "grafico");
+  document.body.classList.toggle("aba-tabela-ativa", aba === "tabela");
 
   renderAbaAtiva(true);
 }

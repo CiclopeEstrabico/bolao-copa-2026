@@ -117,11 +117,12 @@ window.renderTabela = function() {
   h += card('SF_2');
   h += '</div></div>';
 
-  // Final + 3o
-  h += '<div class="bracket-fase"><div class="bracket-fase-label">Final</div><div class="bracket-coluna">';
+  // Final + 3o: duas colunas separadas, cada uma centralizada no meio das semis
+  h += '<div class="bracket-fase bracket-fase-final"><div class="bracket-fase-label">Final</div><div class="bracket-coluna bracket-coluna-final">';
   h += card('FNL');
-  h += '<div class="bracket-spacer"></div><div class="bracket-spacer"></div>';
-  h += '<div style="font-size:.65rem;color:var(--texto2);text-align:center;margin:4px 0">3° Lugar</div>';
+  h += '</div></div>';
+
+  h += '<div class="bracket-fase bracket-fase-terceiro"><div class="bracket-fase-label">3° Lugar</div><div class="bracket-coluna bracket-coluna-final">';
   h += card('TPL');
   h += '</div></div>';
 

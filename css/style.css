@@ -290,13 +290,16 @@ select{appearance:none;cursor:pointer}
   .rank-table .col-apostador{width:90px;min-width:90px;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .rank-table th:not(.col-apostador):not(:first-child),
   .rank-table td:not(.col-apostador):not(:first-child){
-    width:64px;min-width:64px;max-width:64px;white-space:normal;word-break:break-word;line-height:1.2
+    width:75px;min-width:75px;max-width:75px;white-space:normal;word-break:break-word;line-height:1.2
   }
 }
 /* Header Apostar icon: hidden by default, shown only on mobile portrait via @media below */
 .header-apostar-mob{display:none}
 /* Right-side header action group (SIM + Apostar) */
 .header-actions-right{display:flex;align-items:center;gap:2px;margin-left:auto;flex-shrink:0}
+/* Subtexto do modelo: desktop mostra completo, mobile mostra curto */
+.modelo-subtexto-mob{display:none}
+.modelo-subtexto-full{display:block}
 /* RESPONSIVE — mobile portrait only */
 @media(max-width:600px) and (orientation:portrait){
   /* Header compacto: logo menor + padding reduzido */
@@ -431,6 +434,24 @@ select{appearance:none;cursor:pointer}
     padding-left: 16px;
     padding-right: 16px;
   }
+  /* === ABA CHAVES — bracket ocupa tela inteira e fases crescem uniformemente === */
+  body.aba-tabela-ativa .main {
+    max-width: 100% !important;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  body.aba-tabela-ativa .bracket-scroll {
+    overflow-x: visible;
+    justify-content: stretch;
+  }
+  body.aba-tabela-ativa .bracket-fase {
+    flex: 1;
+    min-width: 0;
+  }
+  /* Final e 3° Lugar: cada card centralizado verticalmente no espaço das semis */
+  .bracket-coluna-final {
+    justify-content: center;
+  }
 }
 /* ===== BRACKET VISUAL ===== */
 .bracket-scroll{display:flex;gap:0;overflow-x:auto;padding:8px 0 16px;-webkit-overflow-scrolling:touch;min-height:300px;scroll-snap-type:x proximity}
@@ -544,9 +565,7 @@ select{appearance:none;cursor:pointer}
 .stat-rank-val{font-weight:800;font-size:.85rem}
 .stat-rank-sep{white-space:pre;letter-spacing:0}
 .stat-rank-pct{font-weight:400;font-size:.68rem;color:var(--texto)}
-/* Subtexto do modelo: desktop mostra completo, mobile mostra curto */
-.modelo-subtexto-mob{display:none}
-.modelo-subtexto-full{display:block}
+
 
 /* details/summary nativo */
 details > summary::-webkit-details-marker { display: none; }
