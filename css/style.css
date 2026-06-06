@@ -568,11 +568,10 @@ select{appearance:none;cursor:pointer}
 .col-resultado{font-weight:800;font-size:.76rem;white-space:nowrap}
 
 /* ── RANK — valor + porcentagem nas colunas de stat ── */
-.stat-rank-cell{display:flex;flex-direction:column;align-items:flex-start;line-height:1.25}
-.stat-rank-val{font-weight:800;font-size:.85rem;display:block;text-align:left}
-.stat-rank-pct{font-weight:400;font-size:.68rem;color:var(--texto);display:block;text-align:left}
-/* legacy sep kept for compatibility */
-.stat-rank-sep{display:none}
+.stat-rank-cell{display:inline-flex;flex-direction:row;align-items:baseline;white-space:nowrap}
+.stat-rank-val{font-weight:800;font-size:.85rem}
+.stat-rank-sep{display:inline-block;width:.35em}
+.stat-rank-pct{font-weight:400;font-size:.68rem;color:var(--texto)}
 
 
 /* details/summary nativo */

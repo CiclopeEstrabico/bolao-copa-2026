@@ -120,9 +120,10 @@ window.renderClassificacao = function () {
     return p.toFixed(1) + '%';
   };
   const _renderCol = (val, pct, valCor) => {
-    return '<td class="col-stat-rank" style="text-align:left;padding-left:6px;padding-right:4px">' +
+    return '<td class="col-stat-rank" style="text-align:left;padding-left:5px;padding-right:3px">' +
       '<div class="stat-rank-cell">' +
       '<span class="stat-rank-val" style="color:' + valCor + '">' + val + '</span>' +
+      '<span class="stat-rank-sep"></span>' +
       '<span class="stat-rank-pct">' + _fmtPct(pct) + '</span>' +
       '</div>' +
       '</td>';
