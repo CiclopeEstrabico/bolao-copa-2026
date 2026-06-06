@@ -302,32 +302,34 @@ window.PROGNOSE = {
     const pD = (c.draw * 100).toFixed(1);
     const pA = (c.away * 100).toFixed(1);
     h += '<div style="margin:12px 0 10px">';
-    // Percentuais em cima, alinhados com os segmentos via flex proporcional
-    h += '<div style="display:flex;gap:2px;margin-bottom:4px;align-items:center">';
-    // Segmento casa
-    h += '<div style="flex:' + c.home + ';min-width:0;display:flex;align-items:center;gap:3px;overflow:visible">';
-    h += htmlBandeira(hC, 14) + '<span style="color:#86efac;font-weight:900;font-size:.72rem;white-space:nowrap">' + pH + '%</span>';
-    h += '</div>';
-    // Segmento empate
-    h += '<div style="flex:' + c.draw + ';min-width:0;display:flex;justify-content:center;overflow:visible">';
-    h += '<span style="color:var(--texto2);font-weight:700;font-size:.72rem;white-space:nowrap">' + pD + '%</span>';
-    h += '</div>';
-    // Segmento visitante
-    h += '<div style="flex:' + c.away + ';min-width:0;display:flex;align-items:center;justify-content:flex-end;gap:3px;overflow:visible">';
-    h += '<span style="color:#fca5a5;font-weight:900;font-size:.72rem;white-space:nowrap">' + pA + '%</span>' + htmlBandeira(aC, 14);
-    h += '</div>';
-    h += '</div>';
-    // Barra segmentada
-    h += '<div style="display:flex;border-radius:6px;overflow:hidden;height:20px;gap:2px">';
+    // Linha principal: bandeira esquerda | barra | bandeira direita
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">';
+    h += '<div style="flex-shrink:0;width:20px;display:flex;align-items:center">' + htmlBandeira(hC, 20) + '</div>';
+    h += '<div style="flex:1;display:flex;border-radius:6px;overflow:hidden;height:20px;gap:2px">';
     h += '<div style="flex:' + c.home + ';background:rgba(34,197,94,.35);border-radius:4px 0 0 4px"></div>';
     h += '<div style="flex:' + c.draw + ';background:rgba(139,148,158,.25)"></div>';
     h += '<div style="flex:' + c.away + ';background:rgba(248,113,113,.32);border-radius:0 4px 4px 0"></div>';
     h += '</div>';
-    // Legendas abaixo alinhadas com os segmentos
-    h += '<div style="display:flex;gap:2px;margin-top:4px">';
-    h += '<div style="flex:' + c.home + ';min-width:0;font-size:.62rem;color:rgba(134,239,172,.7);overflow:visible;white-space:nowrap">Vitória</div>';
-    h += '<div style="flex:' + c.draw + ';min-width:0;font-size:.62rem;color:var(--texto2);text-align:center;overflow:visible;white-space:nowrap">Empate</div>';
-    h += '<div style="flex:' + c.away + ';min-width:0;font-size:.62rem;color:rgba(252,165,165,.7);text-align:right;overflow:visible;white-space:nowrap">Vitória</div>';
+    h += '<div style="flex-shrink:0;width:20px;display:flex;align-items:center;justify-content:flex-end">' + htmlBandeira(aC, 20) + '</div>';
+    h += '</div>';
+    // Percentuais e legendas alinhados com os segmentos da barra
+    h += '<div style="display:flex;gap:8px">';
+    h += '<div style="width:20px;flex-shrink:0"></div>';
+    h += '<div style="flex:1;display:flex;gap:2px">';
+    h += '<div style="flex:' + c.home + ';min-width:0;overflow:visible">';
+    h += '<div style="font-size:.72rem;font-weight:900;color:#86efac;white-space:nowrap">' + pH + '%</div>';
+    h += '<div style="font-size:.61rem;color:rgba(134,239,172,.7);white-space:nowrap">Vitória</div>';
+    h += '</div>';
+    h += '<div style="flex:' + c.draw + ';min-width:0;overflow:visible;text-align:center">';
+    h += '<div style="font-size:.72rem;font-weight:700;color:var(--texto2);white-space:nowrap">' + pD + '%</div>';
+    h += '<div style="font-size:.61rem;color:var(--texto2);white-space:nowrap">Empate</div>';
+    h += '</div>';
+    h += '<div style="flex:' + c.away + ';min-width:0;overflow:visible;text-align:right">';
+    h += '<div style="font-size:.72rem;font-weight:900;color:#fca5a5;white-space:nowrap">' + pA + '%</div>';
+    h += '<div style="font-size:.61rem;color:rgba(252,165,165,.7);white-space:nowrap">Vitória</div>';
+    h += '</div>';
+    h += '</div>';
+    h += '<div style="width:20px;flex-shrink:0"></div>';
     h += '</div>';
     h += '</div>';
 
@@ -379,11 +381,6 @@ window.PROGNOSE = {
       h += '</tr>';
     }
     h += '</tbody></table></div>';
-
-    // Legenda da matriz
-    h += '<div style="display:flex;gap:12px;margin-top:7px;flex-wrap:wrap">';
-    h += '<span style="font-size:.61rem;color:var(--texto2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;outline:1.5px solid rgba(234,179,8,.5);background:rgba(234,179,8,.1)"></span>Empate (diagonal)</span>';
-    h += '</div>';
 
     return h;
   },
@@ -511,8 +508,7 @@ window.PROGNOSE = {
         h += '<div style="text-align:right;min-width:48px">';
         h += '<div style="font-size:.72rem;color:var(--texto2)">' + ct + '×' + (acertou ? ' <span style="color:var(--verde-ok)">✓</span>' : '') + '</div>';
         if (probMStr) {
-          const corProb = grupoAcimaModelo ? 'var(--dourado)' : 'rgba(34,197,94,.9)';
-          h += '<div style="font-size:.62rem;color:' + corProb + '">' + probMStr + '</div>';
+          h += '<div style="font-size:.62rem;color:var(--texto2)">' + probMStr + '</div>';
         }
         h += '</div>';
 
