@@ -324,9 +324,27 @@ window.renderEstatisticas = function () {
     .stat-d-nome { font-size: 0.8rem; font-weight: 800; color: var(--cor-destaque); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
     .stat-d-sub { font-size: 0.62rem; color: var(--texto2); margin-top: 2px; }
     @media (max-width: 599px) {
-      .stat-d-card { min-height: 68px; padding: 7px 3px; }
-      .stat-d-icon { font-size: 1rem; margin-bottom: 1px; }
-      .stat-d-label { font-size: 0.52rem; }
+      .stat-d-card {
+        min-height: 0;
+        padding: 7px 5px;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 6px;
+        text-align: left;
+        justify-content: flex-start;
+      }
+      .stat-d-icon {
+        font-size: 1.1rem;
+        margin-bottom: 0;
+        flex-shrink: 0;
+        padding-top: 1px;
+      }
+      .stat-d-body {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .stat-d-label { font-size: 0.52rem; margin-bottom: 1px; }
       .stat-d-nome { font-size: 0.72rem; }
       .stat-d-sub { font-size: 0.56rem; }
     }
@@ -678,9 +696,11 @@ function _dCard(icon, label, nome, sub, cor, tooltip) {
     : '';
   return `<div class="stat-d-card"${tipAttr}>
     <div class="stat-d-icon">${icon}</div>
-    <div class="stat-d-label">${label}</div>
-    <div class="stat-d-nome" style="--cor-destaque: ${cor}">${nome}</div>
-    <div class="stat-d-sub">${sub}</div>
+    <div class="stat-d-body">
+      <div class="stat-d-label">${label}</div>
+      <div class="stat-d-nome" style="--cor-destaque: ${cor}">${nome}</div>
+      <div class="stat-d-sub">${sub}</div>
+    </div>
     ${tipEl}
   </div>`;
 }
