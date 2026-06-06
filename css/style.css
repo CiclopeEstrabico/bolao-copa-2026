@@ -274,14 +274,29 @@ select{appearance:none;cursor:pointer}
 .regras-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
 
 
-/* ── CLASSIFICAÇÃO — colunas uniformes ── */
+/* ── CLASSIFICAÇÃO — tabela rank ── */
 .tabela-detalhe{border-collapse:collapse}
 .tabela-detalhe th,.tabela-detalhe td{vertical-align:middle}
-/* Stat columns (desktop): equal auto distribution */
-.tabela-detalhe th:not(.col-apostador):not(:first-child),
-.tabela-detalhe td:not(.col-apostador):not(:first-child){
-  width:1%;text-align:center
+/* rank-table: desktop — ocupa tela inteira, colunas stat auto-distribuídas */
+.rank-table{width:100%;table-layout:auto}
+.rank-table .col-apostador{width:200px;min-width:160px}
+.rank-table th:not(.col-apostador):not(:first-child),
+.rank-table td:not(.col-apostador):not(:first-child){
+  width:auto;min-width:72px;text-align:center;white-space:nowrap
 }
+/* rank-table: mobile — scroll horizontal, colunas com largura mínima que comporta o conteúdo */
+@media(max-width:600px) and (orientation:portrait){
+  .rank-table{width:max-content;min-width:100%;table-layout:fixed}
+  .rank-table .col-apostador{width:90px;min-width:90px;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rank-table th:not(.col-apostador):not(:first-child),
+  .rank-table td:not(.col-apostador):not(:first-child){
+    width:64px;min-width:64px;max-width:64px;white-space:normal;word-break:break-word;line-height:1.2
+  }
+}
+/* Header Apostar icon: hidden by default, shown only on mobile portrait via @media below */
+.header-apostar-mob{display:none}
+/* Right-side header action group (SIM + Apostar) */
+.header-actions-right{display:flex;align-items:center;gap:2px;margin-left:auto;flex-shrink:0}
 /* RESPONSIVE — mobile portrait only */
 @media(max-width:600px) and (orientation:portrait){
   /* Header compacto: logo menor + padding reduzido */
@@ -292,9 +307,9 @@ select{appearance:none;cursor:pointer}
   .tabs-wrap{top:45px;overflow-x:unset}
   .tabs-wrap::after{display:none}
   .tabs{min-width:unset;width:100%;padding:0}
-  .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px 0 5px;min-width:0;border-bottom:2px solid transparent}
+  .tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:6px 0 5px;min-width:0;border-bottom:2px solid transparent}
   .tab-btn .tab-txt{display:none}
-  .tab-btn .tab-mob{display:block;font-size:.56rem;font-weight:600;letter-spacing:.03em;text-transform:capitalize;line-height:1;color:var(--texto2)}
+  .tab-btn .tab-mob{display:block;font-size:.62rem;font-weight:600;letter-spacing:.02em;text-transform:capitalize;line-height:1;color:var(--texto2)}
   .tab-btn.ativa .tab-mob{color:var(--verde-light)}
   .tab-btn>svg{display:block;flex-shrink:0}
   .tab-btn:hover>svg{stroke:var(--texto)}
@@ -321,12 +336,6 @@ select{appearance:none;cursor:pointer}
 
   /* Modal mais aproveitado em mobile */
   .modal-box{padding:14px}
-
-  /* Classificação: stat columns fixas em mobile portrait */
-  .tabela-detalhe th:not(.col-apostador):not(:first-child),
-  .tabela-detalhe td:not(.col-apostador):not(:first-child){
-    width:44px;min-width:44px;max-width:44px
-  }
 
   /* Jogo row: layout ajustado para liberar espaço no mobile */
   .jogo-row{
@@ -611,9 +620,5 @@ details[open] > summary span:last-child { content: "−"; }
 
 /* ── TAB APOSTAR — sem destaque especial de cor ── */
 .tab-btn-apostar.ativa{border-bottom-color:var(--verde-light)}
-/* Header Apostar icon: hidden by default, shown only on mobile portrait via @media */
-.header-apostar-mob{display:none}
-/* Right-side header action group (SIM + Apostar) */
-.header-actions-right{display:flex;align-items:center;gap:2px;margin-left:auto;flex-shrink:0}
 
 
