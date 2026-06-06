@@ -6,6 +6,4 @@ modelo/results/training_log.csv
 modelo/results/model_best.pt
 modelo/results/matches_with_elo.csv
 modelo/results/copa2026_heatmaps.py
-
-
-
+modelo/__pycache__/
