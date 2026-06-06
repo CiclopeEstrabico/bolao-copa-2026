@@ -570,8 +570,14 @@ select{appearance:none;cursor:pointer}
 /* ── RANK — valor + porcentagem nas colunas de stat ── */
 .stat-rank-cell{display:inline-flex;flex-direction:row;align-items:baseline;white-space:nowrap}
 .stat-rank-val{font-weight:800;font-size:.85rem}
-.stat-rank-sep{display:inline-block;width:.35em}
+.stat-rank-sep{display:inline-block;width:1em}
 .stat-rank-pct{font-weight:400;font-size:.68rem;color:var(--texto)}
+@media(max-width:600px) and (orientation:portrait){
+  .stat-rank-cell{flex-direction:column;align-items:flex-start;white-space:normal;gap:0}
+  .stat-rank-val{font-size:.8rem}
+  .stat-rank-sep{display:none}
+  .stat-rank-pct{font-size:.63rem}
+}
 
 
 /* details/summary nativo */
