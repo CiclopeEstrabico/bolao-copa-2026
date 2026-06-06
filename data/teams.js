@@ -84,13 +84,10 @@ window.TEAMS = [
 // Alias para exibição compacta (Mobile/Tabelas)
 window.TEAM_ALIASES = {
   "República Tcheca": "R. Tcheca",
-  "Coreia do Sul": "S. Coreia",
-  "África do Sul": "S. África",
-  "Estados Unidos": "E. Unidos",
   "Costa do Marfim": "C. Marfim",
   "Nova Zelândia": "N. Zelândia",
-  "Arábia Saudita": "A. Saudita",
-  "Uzbequistão": "Uzbequist."
+  "Estados Unidos": "E. Unidos",
+  "Arábia Saudita": "A. Saudita"
 };
 
 window.getShortName = function (code) {

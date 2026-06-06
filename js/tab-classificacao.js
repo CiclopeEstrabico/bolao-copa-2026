@@ -104,8 +104,9 @@ window.renderClassificacao = function () {
   const maxPtsGeral = calcularMaxPontosPossiveis(res);
 
   // Tabela ranking
-  h += '<div class="card" style="padding:0;overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="tabela-detalhe" style="width:100%;min-width:750px">';
-  h += '<thead><tr><th style="width:36px">Pos</th><th style="text-align:left;position:sticky;left:0;background:var(--card);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Apostador</th>';
+  const _isMobileClass = window.innerWidth <= 600;
+  h += '<div class="card" style="padding:0;overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="tabela-detalhe" style="width:100%;min-width:' + (_isMobileClass ? '520px' : '750px') + '">';
+  h += '<thead><tr><th style="width:36px">Pos</th><th class="col-apostador" style="text-align:left;position:sticky;left:0;background:var(--card);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Apostador</th>';
   h += '<th title="Pontos Totais" style="text-align:center">🏆 Pts</th>';
   h += '<th title="Todos os resultados corretos" style="text-align:center">✓ Res.</th>';
   h += '<th title="Resultados que renderam Bônus+1" style="text-align:center">✨ Bônus+1</th>';
@@ -173,12 +174,12 @@ window.renderClassificacao = function () {
 
     // Nome
     const stickyBg = 'var(--fundo)';
-    h += '<td style="text-align:left;font-weight:600;position:sticky;left:0;background:' + stickyBg + ';z-index:1">';
+    h += '<td class="col-apostador" style="text-align:left;font-weight:600;position:sticky;left:0;background:' + stickyBg + ';z-index:1">';
     if (isModelo) {
       h += '<span style="font-weight:normal;color:#94a3b8">Modelo</span>';
       h += '<div style="font-size:.6rem;color:var(--texto2)">referência · fora do ranking</div>';
     } else {
-      h += (p.apelido || p.nome || p.token?.substring(0, 8) || "?");
+      h += '<span class="apostador-nome" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (p.apelido || p.nome || p.token?.substring(0, 8) || "?") + '</span>';
     }
     h += '</td>';
 

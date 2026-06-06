@@ -220,8 +220,8 @@ function renderPorDia(jogos, res, isAdm, palApo, bracketOverride) {
 function renderJogoRow(jogo, res, ehElim, isAdm, palApo, showFullDate = false, bracketOverride = null) {
   const r = res[jogo.id]; const b = (bracketOverride && bracketOverride[jogo.id]) || (APP.bracket && APP.bracket[jogo.id]) || {};
   const hCode = b.home || jogo.home; const aCode = b.away || jogo.away;
-  const hName = window.TEAMS_BY_CODE[hCode]?.name || window.BRACKET.descricaoPosicao(b.homePos || "") || "A definir";
-  const aName = window.TEAMS_BY_CODE[aCode]?.name || window.BRACKET.descricaoPosicao(b.awayPos || "") || "A definir";
+  const hName = (window.getShortName && hCode && window.TEAMS_BY_CODE?.[hCode]) ? window.getShortName(hCode) : (window.TEAMS_BY_CODE?.[hCode]?.name || window.BRACKET.descricaoPosicao(b.homePos || "") || "A definir");
+  const aName = (window.getShortName && aCode && window.TEAMS_BY_CODE?.[aCode]) ? window.getShortName(aCode) : (window.TEAMS_BY_CODE?.[aCode]?.name || window.BRACKET.descricaoPosicao(b.awayPos || "") || "A definir");
   const temRes = r && r.homeGoals !== undefined;
   const isSim = APP.modoSimulacao && APP.resultadosSim && APP.resultadosSim[jogo.id] !== undefined && APP.resultadosSim[jogo.id].simulado === true;
   const isEmp = temRes && r.homeGoals === r.awayGoals;
