@@ -107,18 +107,18 @@ window.renderClassificacao = function () {
   const _isMobileClass = window.innerWidth <= 600;
   h += '<div class="card" style="padding:0;overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="tabela-detalhe" style="width:100%;min-width:' + (_isMobileClass ? '520px' : '750px') + '">';
   h += '<thead><tr><th style="width:36px">Pos</th><th class="col-apostador" style="text-align:left;position:sticky;left:0;background:var(--card);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Apostador</th>';
-  h += '<th title="Pontos Totais" style="text-align:center">🏆 Pts</th>';
-  h += '<th title="Todos os resultados corretos" style="text-align:center">✓ Res.</th>';
-  h += '<th title="Resultados que renderam Bônus+1" style="text-align:center">✨ Bônus+1</th>';
-  h += '<th title="Placares exatos com menos de 4 gols" style="text-align:center">🎯 Placar+3</th>';
-  h += '<th title="Placares exatos com 4 ou mais gols" style="text-align:center">🔥 Placar+5</th>';
+  h += '<th title="Pontos Totais" class="col-stat-rank" style="text-align:center">🏆 Pts</th>';
+  h += '<th title="Todos os resultados corretos" class="col-stat-rank" style="text-align:center">✓ Res.</th>';
+  h += '<th title="Resultados que renderam Bônus+1" class="col-stat-rank" style="text-align:center">✨ Bônus+1</th>';
+  h += '<th title="Placares exatos com menos de 4 gols" class="col-stat-rank" style="text-align:center">🎯 Placar+3</th>';
+  h += '<th title="Placares exatos com 4 ou mais gols" class="col-stat-rank" style="text-align:center">🔥 Placar+5</th>';
   h += '<th title="Últimos 5 jogos (esq=mais antigo → dir=mais recente). 🔥 Placar+5 · 🎯 Placar+3 · ✨ Resultado+Bônus · ✓ Resultado · ✗ Errou" style="text-align:center">Forma</th>';
   h += '</tr></thead><tbody>';
 
   const _renderCol = (val, pct, valCor) => {
-    return '<td style="text-align:center"><div style="display:inline-flex;align-items:baseline;gap:7px">' +
-      '<span style="font-weight:800;font-size:1.05rem;color:' + valCor + '">' + val + '</span>' +
-      '<span style="font-size:.64rem;color:var(--texto2);font-weight:600">' + pct + '%</span>' +
+    return '<td class="col-stat-rank" style="text-align:center"><div class="stat-rank-inner">' +
+      '<span class="stat-rank-val" style="color:' + valCor + '">' + val + '</span>' +
+      '<span class="stat-rank-pct">' + pct + '%</span>' +
       '</div></td>';
   };
 
