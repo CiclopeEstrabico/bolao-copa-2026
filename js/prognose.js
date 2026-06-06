@@ -301,24 +301,33 @@ window.PROGNOSE = {
     const pH = (c.home * 100).toFixed(1);
     const pD = (c.draw * 100).toFixed(1);
     const pA = (c.away * 100).toFixed(1);
-    const hShort = hName.length > 10 ? hName.substring(0, 9) + '…' : hName;
-    const aShort = aName.length > 10 ? aName.substring(0, 9) + '…' : aName;
     h += '<div style="margin:12px 0 10px">';
-    // Rótulos em cima: nome + percentual alinhados em cada extremo e centro
-    h += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:.7rem;margin-bottom:5px">';
-    h += '<span style="display:flex;align-items:center;gap:4px;max-width:40%">' + htmlBandeira(hC, 14) + '<strong style="color:#86efac">' + hShort + '</strong><span style="color:#86efac;font-weight:900;margin-left:2px">' + pH + '%</span></span>';
-    h += '<span style="color:var(--texto2);font-weight:700;flex-shrink:0">' + pD + '%</span>';
-    h += '<span style="display:flex;align-items:center;gap:4px;justify-content:flex-end;max-width:40%"><span style="color:#fca5a5;font-weight:900;margin-right:2px">' + pA + '%</span><strong style="color:#fca5a5">' + aShort + '</strong>' + htmlBandeira(aC, 14) + '</span>';
+    // Percentuais em cima, alinhados com os segmentos via flex proporcional
+    h += '<div style="display:flex;gap:2px;margin-bottom:4px;align-items:center">';
+    // Segmento casa
+    h += '<div style="flex:' + c.home + ';min-width:0;display:flex;align-items:center;gap:3px;overflow:visible">';
+    h += htmlBandeira(hC, 14) + '<span style="color:#86efac;font-weight:900;font-size:.72rem;white-space:nowrap">' + pH + '%</span>';
     h += '</div>';
-    // Barra segmentada — sem texto dentro, sem min-width fixo
+    // Segmento empate
+    h += '<div style="flex:' + c.draw + ';min-width:0;display:flex;justify-content:center;overflow:visible">';
+    h += '<span style="color:var(--texto2);font-weight:700;font-size:.72rem;white-space:nowrap">' + pD + '%</span>';
+    h += '</div>';
+    // Segmento visitante
+    h += '<div style="flex:' + c.away + ';min-width:0;display:flex;align-items:center;justify-content:flex-end;gap:3px;overflow:visible">';
+    h += '<span style="color:#fca5a5;font-weight:900;font-size:.72rem;white-space:nowrap">' + pA + '%</span>' + htmlBandeira(aC, 14);
+    h += '</div>';
+    h += '</div>';
+    // Barra segmentada
     h += '<div style="display:flex;border-radius:6px;overflow:hidden;height:20px;gap:2px">';
     h += '<div style="flex:' + c.home + ';background:rgba(34,197,94,.35);border-radius:4px 0 0 4px"></div>';
     h += '<div style="flex:' + c.draw + ';background:rgba(139,148,158,.25)"></div>';
     h += '<div style="flex:' + c.away + ';background:rgba(248,113,113,.32);border-radius:0 4px 4px 0"></div>';
     h += '</div>';
-    // Legenda compacta
-    h += '<div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--texto2);margin-top:4px;padding:0 2px">';
-    h += '<span style="color:rgba(134,239,172,.7)">Vitória</span><span>Empate</span><span style="color:rgba(252,165,165,.7)">Vitória</span>';
+    // Legendas abaixo alinhadas com os segmentos
+    h += '<div style="display:flex;gap:2px;margin-top:4px">';
+    h += '<div style="flex:' + c.home + ';min-width:0;font-size:.62rem;color:rgba(134,239,172,.7);overflow:visible;white-space:nowrap">Vitória</div>';
+    h += '<div style="flex:' + c.draw + ';min-width:0;font-size:.62rem;color:var(--texto2);text-align:center;overflow:visible;white-space:nowrap">Empate</div>';
+    h += '<div style="flex:' + c.away + ';min-width:0;font-size:.62rem;color:rgba(252,165,165,.7);text-align:right;overflow:visible;white-space:nowrap">Vitória</div>';
     h += '</div>';
     h += '</div>';
 
@@ -333,32 +342,11 @@ window.PROGNOSE = {
     h += '</div>';
     h += '</div>';
 
-    // ── 3. Top 3 placares mais prováveis ──
-    const placarFlat = [];
-    for (let i = 0; i < c.N; i++)
-      for (let j = 0; j < c.N; j++)
-        placarFlat.push({ i, j, v: c.matrix[i][j] });
-    placarFlat.sort((a, b) => b.v - a.v);
-    const top3 = placarFlat.slice(0, 3);
-    h += '<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:14px;flex-wrap:wrap">';
-    h += '<span style="font-size:.65rem;color:var(--texto2);font-weight:600">Mais prováveis:</span>';
-    top3.forEach((p, idx) => {
-      const lbl = (p.i === c.N-1 ? '6+' : p.i) + 'x' + (p.j === c.N-1 ? '6+' : p.j);
-      const pct = (p.v * 100).toFixed(1) + '%';
-      const bg = idx === 0 ? 'rgba(245,166,35,.15)' : 'var(--fundo2)';
-      const border = idx === 0 ? '1px solid rgba(245,166,35,.3)' : '1px solid var(--borda)';
-      const cor = idx === 0 ? 'var(--dourado)' : 'var(--texto)';
-      h += '<span style="background:' + bg + ';border:' + border + ';border-radius:20px;padding:3px 10px;font-size:.72rem;font-weight:800;color:' + cor + '">' + lbl + ' <span style="font-weight:400;opacity:.8">(' + pct + ')</span></span>';
-    });
-    h += '</div>';
-
-    // ── 4. Matriz com destaque de diagonal e apostas overlay ──
+    // ── 4. Matriz Dixon-Coles ──
     const stats = this.statsPalpites(gameId);
-    const apostasSet = new Set(stats.topPlacares.map(([placar]) => placar));
 
-    h += '<div style="font-size:.68rem;font-weight:700;color:var(--texto2);margin-bottom:6px;display:flex;align-items:center;gap:6px">';
+    h += '<div style="font-size:.68rem;font-weight:700;color:var(--texto2);margin-bottom:6px">';
     h += 'Matriz Dixon-Coles';
-    if (apostasSet.size > 0) h += '<span style="font-size:.62rem;font-weight:500;color:var(--texto2);opacity:.7">· 🗳 = placares apostados</span>';
     h += '</div>';
     h += '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="matriz-poisson"><thead><tr><th></th>';
     for (let j = 0; j < c.N; j++) h += '<th>' + aName.substring(0, 3) + '&nbsp;' + (j === c.N-1 ? '6+' : j) + '</th>';
@@ -373,8 +361,6 @@ window.PROGNOSE = {
         const v = c.matrix[i][j];
         const p = Math.max(0, Math.min(1, v / top1));
         const isEmpate = i === j;
-        const placarKey = (i === c.N-1 ? '6+' : i) + 'x' + (j === c.N-1 ? '6+' : j);
-        const isApostado = apostasSet.has(placarKey);
 
         // Heatmap base: verde-amarelo-vermelho
         const hue = 60 * (1 - p);
@@ -385,13 +371,8 @@ window.PROGNOSE = {
         const color = p > 0.5 ? '#fff' : 'var(--texto2)';
 
         // Diagonal de empates: anel âmbar sutil
-        let extra = isEmpate ? 'outline:1.5px solid rgba(234,179,8,.35);outline-offset:-1px;' : '';
-        // Placares apostados: anel azul
-        if (isApostado) extra = 'outline:2px solid rgba(96,165,250,.7);outline-offset:-1px;';
-
-        // Badge de apostas (não usa texto para não poluir — só o anel já marca)
-        // Adiciona um mini-dot no canto superior direito via box-shadow
-        const dot = isApostado ? 'box-shadow:inset -2px 2px 0 1px rgba(96,165,250,.9);' : '';
+        const extra = isEmpate ? 'outline:1.5px solid rgba(234,179,8,.35);outline-offset:-1px;' : '';
+        const dot = '';
 
         h += `<td style="background:${bg};color:${color};font-weight:${fw};${extra}${dot};position:relative">${(v * 100).toFixed(1)}%</td>`;
       }
@@ -401,8 +382,7 @@ window.PROGNOSE = {
 
     // Legenda da matriz
     h += '<div style="display:flex;gap:12px;margin-top:7px;flex-wrap:wrap">';
-    h += '<span style="font-size:.61rem;color:var(--texto2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;outline:1.5px solid rgba(234,179,8,.5);background:rgba(234,179,8,.1)"></span>Empate</span>';
-    if (apostasSet.size > 0) h += '<span style="font-size:.61rem;color:var(--texto2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;outline:2px solid rgba(96,165,250,.7);background:rgba(96,165,250,.1)"></span>Apostado pelo grupo</span>';
+    h += '<span style="font-size:.61rem;color:var(--texto2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;outline:1.5px solid rgba(234,179,8,.5);background:rgba(234,179,8,.1)"></span>Empate (diagonal)</span>';
     h += '</div>';
 
     return h;
@@ -462,35 +442,24 @@ window.PROGNOSE = {
     const labels = [[hName, pHome, mHome, 'rgba(34,197,94,.7)', 'rgba(34,197,94,.25)'], ['Empate', pDraw, mDraw, 'rgba(139,148,158,.7)', 'rgba(139,148,158,.2)'], [aName, pAway, mAway, 'rgba(248,113,113,.7)', 'rgba(248,113,113,.22)']];
 
     labels.forEach(([lbl, pGrupo, pMod, corSolid, corFade]) => {
-      h += '<div style="margin-bottom:10px">';
-      // Linha de cabeçalho
-      h += '<div style="display:flex;justify-content:space-between;align-items:baseline;font-size:.74rem;margin-bottom:3px">';
-      h += '<span style="font-weight:600;color:var(--texto)">' + lbl + '</span>';
-      h += '<span style="font-weight:800;color:var(--texto)">' + pGrupo + '%</span>';
-      h += '</div>';
+      h += '<div style="margin-bottom:12px">';
+      // Label do time/resultado
+      h += '<div style="font-size:.72rem;font-weight:700;color:var(--texto);margin-bottom:4px">' + lbl + '</div>';
+      // Rótulo "Palpites XX%" acima da barra do grupo
+      h += '<div style="font-size:.63rem;color:var(--texto2);margin-bottom:2px">Palpites ' + pGrupo + '%</div>';
       // Barra do grupo
-      h += '<div style="background:var(--fundo2);border-radius:4px;height:9px;overflow:hidden;margin-bottom:2px">';
+      h += '<div style="background:var(--fundo2);border-radius:4px;height:9px;overflow:hidden;margin-bottom:5px">';
       h += '<div style="width:' + pGrupo + '%;height:100%;background:' + corSolid + ';border-radius:4px;transition:width .5s ease"></div>';
       h += '</div>';
-      // Barra do modelo (se disponível)
+      // Barra do modelo (mesmo tamanho)
       if (pMod !== null) {
-        h += '<div style="display:flex;align-items:center;gap:5px">';
-        h += '<div style="flex:1;background:var(--fundo2);border-radius:3px;height:5px;overflow:hidden">';
-        h += '<div style="width:' + pMod + '%;height:100%;background:' + corFade + ';border-radius:3px;transition:width .5s ease"></div>';
-        h += '</div>';
-        h += '<span style="font-size:.62rem;color:var(--texto2);white-space:nowrap">modelo ' + pMod + '%</span>';
+        h += '<div style="font-size:.63rem;color:var(--texto2);margin-bottom:2px">Modelo ' + pMod + '%</div>';
+        h += '<div style="background:var(--fundo2);border-radius:4px;height:9px;overflow:hidden">';
+        h += '<div style="width:' + pMod + '%;height:100%;background:' + corFade + ';border-radius:4px;transition:width .5s ease"></div>';
         h += '</div>';
       }
       h += '</div>';
     });
-
-    // Legenda das barras duplas
-    if (modelo) {
-      h += '<div style="display:flex;gap:14px;margin-bottom:14px;margin-top:-2px">';
-      h += '<span style="font-size:.62rem;color:var(--texto2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:18px;height:5px;border-radius:2px;background:rgba(255,255,255,.5)"></span>Grupo</span>';
-      h += '<span style="font-size:.62rem;color:var(--texto2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:18px;height:3px;border-radius:2px;background:rgba(255,255,255,.2)"></span>Modelo</span>';
-      h += '</div>';
-    }
 
     // ── 7. Top placares com prob do modelo ──
     if (s.topPlacares.length) {
@@ -532,8 +501,8 @@ window.PROGNOSE = {
         // Barra modelo
         if (probMStr && modelo) {
           const modRelativo = Math.min((probM / (s.topPlacares[0][1] / total)) * 100, 100);
-          h += '<div style="background:var(--card);border-radius:3px;height:4px;overflow:hidden">';
-          h += '<div style="width:' + modRelativo + '%;height:100%;background:rgba(96,165,250,.5);border-radius:3px;transition:width .5s ease"></div>';
+          h += '<div style="background:var(--card);border-radius:3px;height:6px;overflow:hidden">';
+          h += '<div style="width:' + modRelativo + '%;height:100%;background:rgba(34,197,94,.28);border-radius:3px;transition:width .5s ease"></div>';
           h += '</div>';
         }
         h += '</div>';
@@ -542,8 +511,8 @@ window.PROGNOSE = {
         h += '<div style="text-align:right;min-width:48px">';
         h += '<div style="font-size:.72rem;color:var(--texto2)">' + ct + '×' + (acertou ? ' <span style="color:var(--verde-ok)">✓</span>' : '') + '</div>';
         if (probMStr) {
-          const corProb = grupoAcimaModelo ? 'var(--dourado)' : 'rgba(96,165,250,.8)';
-          h += '<div style="font-size:.62rem;color:' + corProb + '">mod. ' + probMStr + '</div>';
+          const corProb = grupoAcimaModelo ? 'var(--dourado)' : 'rgba(34,197,94,.9)';
+          h += '<div style="font-size:.62rem;color:' + corProb + '">' + probMStr + '</div>';
         }
         h += '</div>';
 
@@ -552,9 +521,9 @@ window.PROGNOSE = {
 
       // Legenda dos placares
       if (modelo) {
-        h += '<div style="display:flex;gap:14px;margin-top:2px">';
-        h += '<span style="font-size:.61rem;color:var(--texto2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:14px;height:4px;border-radius:2px;background:var(--verde)"></span>Apostadores</span>';
-        h += '<span style="font-size:.61rem;color:var(--texto2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:14px;height:3px;border-radius:2px;background:rgba(96,165,250,.5)"></span>Modelo</span>';
+        h += '<div style="display:flex;gap:14px;margin-top:4px">';
+        h += '<span style="font-size:.61rem;color:var(--texto2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:14px;height:5px;border-radius:2px;background:var(--verde)"></span>Apostadores</span>';
+        h += '<span style="font-size:.61rem;color:var(--texto2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:14px;height:5px;border-radius:2px;background:rgba(34,197,94,.28)"></span>Modelo</span>';
         h += '</div>';
       }
     }
