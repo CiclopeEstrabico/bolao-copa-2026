@@ -275,13 +275,12 @@ select{appearance:none;cursor:pointer}
 
 
 /* ── CLASSIFICAÇÃO — colunas uniformes ── */
-.tabela-detalhe{border-collapse:collapse;table-layout:fixed}
+.tabela-detalhe{border-collapse:collapse}
 .tabela-detalhe th,.tabela-detalhe td{vertical-align:middle}
-.tabela-detalhe th:not(.col-apostador),.tabela-detalhe td:not(.col-apostador){
-  width:58px;min-width:58px;max-width:58px;text-align:center
-}
-.tabela-detalhe th:first-child,.tabela-detalhe td:first-child{
-  width:36px;min-width:36px;max-width:36px
+/* Stat columns (desktop): equal auto distribution */
+.tabela-detalhe th:not(.col-apostador):not(:first-child),
+.tabela-detalhe td:not(.col-apostador):not(:first-child){
+  width:1%;text-align:center
 }
 /* RESPONSIVE — mobile portrait only */
 @media(max-width:600px) and (orientation:portrait){
@@ -318,13 +317,11 @@ select{appearance:none;cursor:pointer}
   /* Modal mais aproveitado em mobile */
   .modal-box{padding:14px}
 
-  /* Classificação: colunas mais estreitas em mobile portrait */
-  .tabela-detalhe th:not(.col-apostador),.tabela-detalhe td:not(.col-apostador){
-    width:46px;min-width:46px;max-width:46px
+  /* Classificação: stat columns fixas em mobile portrait */
+  .tabela-detalhe th:not(.col-apostador):not(:first-child),
+  .tabela-detalhe td:not(.col-apostador):not(:first-child){
+    width:44px;min-width:44px;max-width:44px
   }
-  .tabela-detalhe [style*="font-size:1.05rem"]{font-size:.88rem !important}
-  .tabela-detalhe [style*="font-size:.64rem"]{font-size:.54rem !important}
-  .tabela-detalhe [style*="gap:7px"]{gap:4px !important}
 
   /* Jogo row: layout ajustado para liberar espaço no mobile */
   .jogo-row{
