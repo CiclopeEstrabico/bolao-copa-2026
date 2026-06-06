@@ -310,7 +310,7 @@ window.renderEstatisticas = function () {
       background: var(--card2);
       border: 1px solid var(--borda);
       border-radius: var(--radius-sm);
-      padding: 12px 4px;
+      padding: 6px 4px;
       text-align: center;
       display: flex;
       flex-direction: column;
@@ -319,7 +319,7 @@ window.renderEstatisticas = function () {
       position: relative;
       cursor: pointer;
     }
-    .stat-d-icon { font-size: 1.2rem; margin-bottom: 2px; }
+    .stat-d-icon { font-size: 1.38rem; margin-bottom: 2px; line-height: 1; }
     .stat-d-label { font-size: 0.64rem; color: var(--texto2); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 3px; line-height: 1.1; }
     .stat-d-nome { font-size: 0.88rem; font-weight: 800; color: var(--cor-destaque); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
     .stat-d-sub { font-size: 0.62rem; color: var(--texto2); margin-top: 2px; }
@@ -337,6 +337,11 @@ window.renderEstatisticas = function () {
         font-size: 1.1rem;
         margin-bottom: 0;
         flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        align-self: center;
+        line-height: 1;
       }
       .stat-d-body {
         display: flex;
