@@ -21,6 +21,11 @@ window.ELO_CONFIG = {
   MAX_GOLS: 9
 };
 
+// Flag: controla se K_att / K_def do k_factors_final.json são aplicados.
+// false (padrão) → K_att = K_def = 1.0 para todos os times (Dixon-Coles puro).
+// true           → usa os valores fitados do JSON (requer k_factors_final.json válido).
+window.MODELO_USE_K_FACTORS = false;
+
 window.PROGNOSE = {
 
   loadData: async function () {
@@ -59,10 +64,13 @@ window.PROGNOSE = {
 
     const eloH = kf[hN]?.elo || window.ELO_RATINGS[homeCode] || 1500;
     const eloA = kf[aN]?.elo || window.ELO_RATINGS[awayCode] || 1500;
-    const K_att_h = kf[hN]?.K_att || 1.0;
-    const K_def_h = kf[hN]?.K_def || 1.0;
-    const K_att_a = kf[aN]?.K_att || 1.0;
-    const K_def_a = kf[aN]?.K_def || 1.0;
+
+    // K_att / K_def só são aplicados se a flag estiver ativa
+    const useK = !!window.MODELO_USE_K_FACTORS;
+    const K_att_h = useK ? (kf[hN]?.K_att || 1.0) : 1.0;
+    const K_def_h = useK ? (kf[hN]?.K_def || 1.0) : 1.0;
+    const K_att_a = useK ? (kf[aN]?.K_att || 1.0) : 1.0;
+    const K_def_a = useK ? (kf[aN]?.K_def || 1.0) : 1.0;
 
     let delta_eff_elo = eloH - eloA;
     const hosts = ['USA', 'MEX', 'CAN'];

@@ -44,10 +44,10 @@ DECAY_LAMBDA = np.log(2) / DECAY_HALFLIFE_GAMES   # ≈ 0.099
 
 K_FACTORS = {
     # ── K=60 · FIFA World Cup ──────────────────────────────────────────────────
-    'FIFA World Cup':                                   40,
+    'FIFA World Cup':                                   45,
  
     # ── K=50 · Continental championships & major intercontinental ─────────────
-    'UEFA Euro':                                        35,
+    'UEFA Euro':                                        37,
     'Copa América':                                     35,
     'African Cup of Nations':                           35,
     'AFC Asian Cup':                                    35,
@@ -60,7 +60,7 @@ K_FACTORS = {
     'Olympic Games':                                    35,
     'FIFA World Cup qualification':                     35,
     # ── K=40 · World Cup qualifiers, continental qualifiers & major tournaments  
-    'UEFA Euro qualification':                          30,
+    'UEFA Euro qualification':                          33,
     'Copa América qualification':                       30,
     'African Cup of Nations qualification':             30,
     'AFC Asian Cup qualification':                      30,
@@ -107,12 +107,12 @@ K_FACTORS = {
     "MSG Prime Minister's Cup":                         30,
  
     # ── K=20 · Friendlies ─────────────────────────────────────────────────────
-    'Friendly':                                         25,
+    'Friendly':                                         20,
 }
-K_DEFAULT = 28   # torneios não mapeados tratados como "outros torneios" (K=30)
+K_DEFAULT = 25   # torneios não mapeados tratados como "outros torneios" (K=30)
 
 TOURNAMENT_WEIGHTS = {
-    'Friendly':                     0.7,
+    'Friendly':                     0.6,
 }
 TW_DEFAULT = 1.0
 

@@ -138,6 +138,10 @@ window.MODELO_MANAGER = {
 
   atualizar: async function() {
     if (!_adminAutenticado()) return alert("Não autorizado.");
+
+    const usingK = !!window.MODELO_USE_K_FACTORS;
+    console.info(`[MODELO] K_att/K_def: ${usingK ? "ATIVOS (k_factors_final.json)" : "DESATIVADOS (K=1.0 fixo)"}`);
+
     const res = APP.resultados || {};
     const estado = _estadoFases(res);
     const faseKey = _faseElegivel(estado);
