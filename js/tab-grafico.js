@@ -28,6 +28,7 @@ const _METRICAS = [
   { id: 'bonus1',     label: 'Bônus+1' },
   { id: 'placar',     label: 'Placar+3' },
   { id: 'placar_alto',label: 'Placar+5' },
+  { id: 'macaco',     label: '🐒 Macaco' },
 ];
 
 window.renderGrafico = function() {
@@ -94,6 +95,8 @@ window.renderGrafico = function() {
       ? 'onclick="_graficoIrEvolucao()"'
       : m.id === 'chance'
       ? 'onclick="_graficoIrProjecao()"'
+      : m.id === 'macaco'
+      ? 'onclick="_graficoIrMacaco()"'
       : `onclick="window._graficoMetrica='${m.id}';renderAbaAtiva()"`;
     h += `<button class="btn-toggle${ativo?' ativo':''}" ${onclick}>${m.label}</button>`;
   });
@@ -110,6 +113,12 @@ window.renderGrafico = function() {
       h += _renderChance(rankingCompleto, window._graficoChanceCache);
     } else {
       h += _renderChanceLoading();
+    }
+  } else if (metricaAtiva === "macaco") {
+    if (window._graficoMacacoCache) {
+      h += _renderMacaco(rankingCompleto, window._graficoMacacoCache);
+    } else {
+      h += _renderMacacoLoading();
     }
   } else {
     h += _renderBarras(rankingCompleto, metricaAtiva);
@@ -268,7 +277,7 @@ function _fmtVal(metricaAtiva, val, shortFmt = false) {
     return shortFmt ? Math.round(parseFloat(val)) + '%' : val + '%';
   }
   if (metricaAtiva === 'pts') {
-    return shortFmt ? Math.round(val) : val.toFixed(1);
+    return val.toFixed(1); // sempre XX.X, inclusive em landscape
   }
   return String(val);
 }
@@ -762,7 +771,8 @@ function _renderChance(rankingCompleto, chances) {
     const valFmt = shortFmt ? Math.round(val) + '%' : val.toFixed(1) + '%';
     h += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative;height:100%;justify-content:flex-end;z-index:1">`;
     if (valVertical) {
-      h += `<div style="position:absolute;top:0;left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${valFmt}</div>`;
+      const barPercSafe = Math.max(2, perc);
+      h += `<div style="position:absolute;bottom:calc(${barPercSafe.toFixed(1)}% + 4px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${valFmt}</div>`;
     } else {
       h += `<div style="font-size:${valFontSize};font-weight:800;color:var(--texto);margin-bottom:2px;white-space:nowrap">${valFmt}</div>`;
     }
@@ -815,23 +825,19 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
   let ranking = rankingCompleto.filter(a => filtro.has(a.id));
   if (!ranking.length) return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador selecionado.</div>';
 
-  // Ordenação: 'rank' (por valor, default) ou 'az' (A-Z)
+  // Ordenação: 'rank' (classificação) ou 'az' (A-Z)
+  // Para pts e pct, preserva a ordem exata do rankingCompleto (já vem com desempates resolvidos).
+  // Para outras métricas, rank ordena pelo valor da própria métrica.
   const ordemAtiva = window._graficoOrdem || 'rank';
   if (ordemAtiva === 'az') {
     ranking = [...ranking].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  } else if (metricaAtiva === 'pts' || metricaAtiva === 'pct') {
+    // mantém a ordem já estabelecida pelo rankingCompleto
   } else {
-    ranking = [...ranking].sort((a,b) => b[metricaAtiva] - a[metricaAtiva]);
+    ranking = [...ranking].sort((a, b) => b[metricaAtiva] - a[metricaAtiva]);
   }
 
   const maxVal = Math.max(1, ...ranking.map(a => a[metricaAtiva]));
-
-  // ── IC: média ± 1σ para bigodeira de referência ──
-  const vals = ranking.map(a => a[metricaAtiva]);
-  const mean = vals.reduce((s, v) => s + v, 0) / (vals.length || 1);
-  const variance = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / (vals.length || 1);
-  const sigma = Math.sqrt(variance);
-  const ciLow  = Math.max(0, mean - sigma);
-  const ciHigh = mean + sigma;
 
   // ── Dimensões responsivas ──
   const n = ranking.length;
@@ -914,29 +920,7 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
   // Valor rotacionado (vertical) em landscape/desktop para evitar sobreposição com 70+ barras
   const valVertical = !(isMobile && !isLandscape); // true em landscape e desktop
 
-  // Posições IC em percentual do container (invertido: 0% = topo, 100% = base)
-  // chartHeight em px para cálculo das linhas IC overlay
-  const chartHeightPx = (isMobile && isLandscape) ? 180 : 280;
-  const ciHighPerc = Math.max(0, Math.min(100, (1 - ciHigh / maxVal) * 100));
-  const ciLowPerc  = Math.max(0, Math.min(100, (1 - ciLow  / maxVal) * 100));
-  const meanPerc   = Math.max(0, Math.min(100, (1 - mean   / maxVal) * 100));
-  // Mostrar IC apenas quando há variância significativa (σ > 5% da média)
-  const showCI = sigma > 0.05 * mean && ranking.length >= 3;
-
   h += `<div style="display:flex;align-items:flex-end;gap:${gap}px;height:${chartHeight};padding-bottom:10px;border-bottom:1px solid var(--borda);margin-bottom:${marginBot};position:relative;${minWidthStyle}">`;
-
-  // ── Overlay IC (bigodeira horizontal discreta) ──
-  if (showCI) {
-    // Faixa ±1σ — fundo levíssimo
-    h += `<div style="position:absolute;left:0;right:0;top:${ciHighPerc.toFixed(1)}%;bottom:${(100 - ciLowPerc).toFixed(1)}%;background:rgba(255,255,255,0.03);pointer-events:none;z-index:0"></div>`;
-    // Linha da média — tracejada, muito sutil
-    h += `<div style="position:absolute;left:0;right:0;top:${meanPerc.toFixed(1)}%;height:1px;background:rgba(255,255,255,0.18);pointer-events:none;z-index:0" title="Média: ${_fmtVal(metricaAtiva, parseFloat(mean.toFixed(1)), false)}"></div>`;
-    // Linha superior IC (+1σ)
-    h += `<div style="position:absolute;left:0;right:0;top:${ciHighPerc.toFixed(1)}%;height:1px;border-top:1px dashed rgba(255,255,255,0.10);pointer-events:none;z-index:0"></div>`;
-    // Linha inferior IC (−1σ)
-    h += `<div style="position:absolute;left:0;right:0;top:${ciLowPerc.toFixed(1)}%;height:1px;border-top:1px dashed rgba(255,255,255,0.10);pointer-events:none;z-index:0"></div>`;
-  }
-
   // Índice arco-íris apenas entre apostadores não-Modelo (ordem no ranking filtrado)
   const rankingHumanos = ranking.filter(a => !a.isModelo);
   for (const a of ranking) {
@@ -948,8 +932,9 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
       : a.nome;
     h += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative;height:100%;justify-content:flex-end;z-index:1">`;
     if (valVertical) {
-      // Label vertical acima da barra (mesmo estilo do nome, mas no topo)
-      h += `<div style="position:absolute;top:0;left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${_fmtVal(metricaAtiva, val, shortFmt)}</div>`;
+      // Label vertical ancorado logo acima do topo da barra
+      const barPercSafe = Math.max(2, perc);
+      h += `<div style="position:absolute;bottom:calc(${barPercSafe.toFixed(1)}% + 4px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${_fmtVal(metricaAtiva, val, shortFmt)}</div>`;
     } else {
       h += `<div style="font-size:${valFontSize};font-weight:800;color:var(--texto);margin-bottom:4px;white-space:nowrap">${_fmtVal(metricaAtiva, val, shortFmt)}</div>`;
     }
@@ -1112,6 +1097,236 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
   legenda += '</div>';
 
   return `<div class="card" style="padding:16px;overflow-x:auto">${svg}${legenda}</div>`;
+}
+
+// ── Macaco Cego ────────────────────────────────────────────────────────────
+
+window._graficoIrMacaco = function() {
+  window._graficoMetrica = 'macaco';
+  renderAbaAtiva();
+  if (!window._graficoMacacoCache) {
+    setTimeout(_graficoRodarMacaco, 0);
+  }
+};
+
+function _renderMacacoLoading() {
+  return `<div class="card" id="macaco-loading" style="text-align:center;padding:40px 20px">
+    <div style="font-size:2rem;margin-bottom:10px">🐒</div>
+    <div style="font-size:.9rem;font-weight:700;color:var(--dourado)">Simulando 10.000 macacos…</div>
+    <div style="font-size:.75rem;color:var(--texto2);margin-top:6px">Cada macaco chuta 1-0, 1-1 ou 0-1 com chance igual</div>
+  </div>`;
+}
+
+/**
+ * Simula 10.000 macacos cegos, cada um chutando todos os jogos com placar
+ * aleatório entre {1-0, 1-1, 0-1} com probabilidade uniforme (1/3 cada).
+ * Retorna { media, sigma } em pontos usando a mesma engine de pontuação real.
+ */
+function _graficoRodarMacaco() {
+  const N_MACACOS  = 10000;
+  const res        = getResultados();
+  const schedule   = window.SCHEDULE || [];
+  const cfgRaw     = window.CONFIG && window.CONFIG.pontuacao;
+  if (!cfgRaw) { _graficoExibirMacaco({ media: 0, sigma: 0 }); return; }
+
+  // Lookup tables de pontuação (inteiros ×10, igual ao Monte Carlo)
+  const cfgOt = {
+    limiar: cfgRaw.limiar_placar_alto || 4,
+    pts_exatoAlto: {}, pts_exatoBaixo: {}, pts_diff: {}, pts_umTime: {}, pts_base: {}
+  };
+  const bExA = cfgRaw.bonus_placar_exato_alto  || 0;
+  const bExB = cfgRaw.bonus_placar_exato_baixo || 0;
+  const bDif = cfgRaw.bonus_diferenca_gols     || 0;
+  const bUmT = cfgRaw.bonus_gols_um_time       || 0;
+  const base = cfgRaw.resultado_base           || 0;
+  const FASES = ['grupos','16avos','oitavas','quartas','semis','terceiro','final'];
+  for (const f of FASES) {
+    const ft = cfgRaw.fatores_fase[f] || 1;
+    cfgOt.pts_exatoAlto[f]  = Math.round((base + bExA) * ft * 10);
+    cfgOt.pts_exatoBaixo[f] = Math.round((base + bExB) * ft * 10);
+    cfgOt.pts_diff[f]       = Math.round((base + bDif) * ft * 10);
+    cfgOt.pts_umTime[f]     = Math.round((base + bUmT) * ft * 10);
+    cfgOt.pts_base[f]       = Math.round(base * ft * 10);
+  }
+
+  function _pts(palH, palA, resH, resA, f) {
+    const resEf  = resH > resA ? 1 : resH < resA ? -1 : 0;
+    const resPal = palH > palA ? 1 : palH < palA ? -1 : 0;
+    if (resPal !== resEf) return 0;
+    if (palH === resH && palA === resA) {
+      return (resH + resA) >= cfgOt.limiar ? cfgOt.pts_exatoAlto[f] : cfgOt.pts_exatoBaixo[f];
+    }
+    const dPal = palH - palA, dRes = resH - resA;
+    if (Math.abs(dPal) === Math.abs(dRes)) return cfgOt.pts_diff[f];
+    if (palH === resH || palA === resA) return cfgOt.pts_umTime[f];
+    return cfgOt.pts_base[f];
+  }
+
+  // Apenas jogos com resultado oficial
+  const jogosOficiais = schedule.filter(j => {
+    const r = res[j.id];
+    return r && r.homeGoals !== undefined;
+  });
+
+  if (!jogosOficiais.length) { _graficoExibirMacaco({ media: 0, sigma: 0 }); return; }
+
+  // Placares possíveis para o macaco cego
+  const CHUTES = [{h:1,a:0},{h:1,a:1},{h:0,a:1}];
+
+  // Simular
+  const totais = new Float64Array(N_MACACOS);
+  for (let m = 0; m < N_MACACOS; m++) {
+    let acc = 0;
+    for (const j of jogosOficiais) {
+      const r    = res[j.id];
+      const chute = CHUTES[(Math.random() * 3) | 0];
+      acc += _pts(chute.h, chute.a, Number(r.homeGoals), Number(r.awayGoals), j.fase);
+    }
+    totais[m] = acc / 10; // converter de inteiro ×10 para pontos reais
+  }
+
+  // Média e desvio padrão
+  let sum = 0;
+  for (let m = 0; m < N_MACACOS; m++) sum += totais[m];
+  const media = sum / N_MACACOS;
+  let varSum = 0;
+  for (let m = 0; m < N_MACACOS; m++) varSum += (totais[m] - media) ** 2;
+  const sigma = Math.sqrt(varSum / N_MACACOS);
+
+  window._graficoMacacoCache = { media, sigma };
+  _graficoExibirMacaco({ media, sigma });
+}
+
+function _graficoExibirMacaco(cache) {
+  const el = document.getElementById('aba-grafico');
+  if (!el) return;
+  // Rebuild rankingCompleto
+  const res  = getResultados();
+  const apos = APP.apostadores || [];
+  const pals = APP.palpites   || {};
+  const espOficiaisGraf = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
+  let rankingCompleto = apos.map(a => {
+    const st = calcularPontosApostador(pals[a.id]||{}, res, a, espOficiaisGraf);
+    return { id: a.id, nome: (a.apelido||a.nome||'?').substring(0,14), pts: st.total, isModelo: false };
+  }).sort((a,b) => b.pts - a.pts);
+
+  const loading = document.getElementById('macaco-loading');
+  if (loading) {
+    loading.outerHTML = _renderMacaco(rankingCompleto, cache);
+  }
+}
+
+function _renderMacaco(rankingCompleto, cache) {
+  const filtro  = window._graficoFiltroApos;
+  let ranking   = rankingCompleto.filter(a => filtro.has(a.id) && !a.isModelo);
+  if (!ranking.length) return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador selecionado.</div>';
+
+  const { media, sigma } = cache;
+  const maxVal = Math.max(1, ...ranking.map(a => a.pts), media + sigma * 1.5);
+
+  const n = ranking.length;
+  const isMobile    = window.innerWidth <= 768;
+  const isLandscape = window.innerWidth > window.innerHeight;
+
+  let gap, barWidth, valFontSize, nameFontSize, needsScroll;
+
+  if (isMobile && !isLandscape) {
+    const targetVisible = 12;
+    const screenPx = window.innerWidth - 40;
+    const targetColW = Math.floor(screenPx / targetVisible);
+    barWidth     = Math.max(14, Math.min(24, targetColW - 2));
+    gap          = 2;
+    valFontSize  = '.68rem';
+    nameFontSize = '.70rem';
+    needsScroll  = n * (barWidth + gap) + gap > screenPx;
+  } else {
+    needsScroll = false;
+    const margemPx     = isMobile ? 40 : 80;
+    const disponivelPx = window.innerWidth - margemPx;
+    const perColuna    = disponivelPx / n;
+    barWidth = isMobile && isLandscape
+      ? Math.max(4, Math.floor(perColuna - 1))
+      : n <= 6  ? 36 : n <= 10 ? 30 : n <= 15 ? 24 :
+        n <= 20 ? 18 : n <= 28 ? 14 : Math.max(6, Math.floor(perColuna - 1));
+    gap = Math.max(1, Math.floor(perColuna - barWidth));
+    const fScaleVal  = (isMobile && isLandscape) ? 0.72 : 0.80;
+    const fScaleName = (isMobile && isLandscape) ? 0.90 : 1.0;
+    const fv  = (base) => (base * fScaleVal).toFixed(2)  + 'rem';
+    const fvn = (base) => (base * fScaleName).toFixed(2) + 'rem';
+    if      (n <= 8)  { valFontSize = fv(0.78); nameFontSize = fvn(0.80); }
+    else if (n <= 12) { valFontSize = fv(0.73); nameFontSize = fvn(0.75); }
+    else if (n <= 18) { valFontSize = fv(0.68); nameFontSize = fvn(0.70); }
+    else if (n <= 24) { valFontSize = fv(0.64); nameFontSize = fvn(0.66); }
+    else if (n <= 40) { valFontSize = fv(0.58); nameFontSize = fvn(0.60); }
+    else              { valFontSize = fv(0.52); nameFontSize = fvn(0.54); }
+  }
+
+  const chartHeight   = (isMobile && isLandscape) ? '180px' : '280px';
+  const chartHeightPx = (isMobile && isLandscape) ? 180 : 280;
+  const marginBot     = (isMobile && isLandscape) ? '65px' : '80px';
+  const valVertical   = !(isMobile && !isLandscape);
+
+  // Percentuais das linhas do macaco (0% = topo, 100% = base do chart)
+  const mediaPerc    = Math.max(0, Math.min(100, (1 - media           / maxVal) * 100));
+  const sigmaHiPerc  = Math.max(0, Math.min(100, (1 - (media + sigma) / maxVal) * 100));
+  const sigmaLoPerc  = Math.max(0, Math.min(100, (1 - Math.max(0, media - sigma) / maxVal) * 100));
+
+  let h = '<div class="card" style="padding:20px 10px;">';
+
+  // Cabeçalho
+  h += `<div style="text-align:center;margin-bottom:14px">
+    <span style="font-size:.85rem;font-weight:700;color:var(--dourado)">🐒 Macaco Cego · pontos vs. chute aleatório</span>
+  </div>`;
+
+  let minWidthStyle = '';
+  if (needsScroll) {
+    const minPx = n * (barWidth + gap) + gap;
+    h += `<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">`;
+    minWidthStyle = `min-width:${minPx}px;`;
+  }
+
+  h += `<div style="display:flex;align-items:flex-end;gap:${gap}px;height:${chartHeight};padding-bottom:10px;border-bottom:1px solid var(--borda);margin-bottom:${marginBot};position:relative;${minWidthStyle}">`;
+
+  // ── Faixa ±1σ do macaco ──
+  h += `<div style="position:absolute;left:0;right:0;top:${sigmaHiPerc.toFixed(1)}%;bottom:${(100-sigmaLoPerc).toFixed(1)}%;background:rgba(251,191,36,0.07);pointer-events:none;z-index:0"></div>`;
+  // Linha +1σ
+  h += `<div style="position:absolute;left:0;right:0;top:${sigmaHiPerc.toFixed(1)}%;height:0;border-top:1px dashed rgba(251,191,36,0.35);pointer-events:none;z-index:0"></div>`;
+  // Linha −1σ
+  h += `<div style="position:absolute;left:0;right:0;top:${sigmaLoPerc.toFixed(1)}%;height:0;border-top:1px dashed rgba(251,191,36,0.35);pointer-events:none;z-index:0"></div>`;
+  // Linha da média — mais visível
+  h += `<div style="position:absolute;left:0;right:0;top:${mediaPerc.toFixed(1)}%;height:0;border-top:2px dashed rgba(251,191,36,0.75);pointer-events:none;z-index:0">
+    <span style="position:absolute;right:4px;top:-16px;font-size:.62rem;font-weight:700;color:rgba(251,191,36,0.85);white-space:nowrap">🐒 ${media.toFixed(1)} pts</span>
+  </div>`;
+
+  // ── Barras dos apostadores ──
+  for (const a of ranking) {
+    const val   = a.pts;
+    const perc  = (val / maxVal) * 100;
+    const cor   = _rainbowColor(ranking.indexOf(a), ranking.length);
+    h += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative;height:100%;justify-content:flex-end;z-index:1">`;
+    if (valVertical) {
+      const barPercSafe = Math.max(2, perc);
+      h += `<div style="position:absolute;bottom:calc(${barPercSafe.toFixed(1)}% + 4px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${val.toFixed(1)}</div>`;
+    } else {
+      h += `<div style="font-size:${valFontSize};font-weight:800;color:var(--texto);margin-bottom:4px;white-space:nowrap">${val.toFixed(1)}</div>`;
+    }
+    h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2,perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
+    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${a.nome}</div>`;
+    h += '</div>';
+  }
+
+  h += '</div>';
+  if (needsScroll) h += '</div>';
+
+  // Legenda das linhas
+  h += `<div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:10px;font-size:.70rem;color:var(--texto2)">`;
+  h += `<div style="display:flex;align-items:center;gap:5px"><div style="width:18px;height:2px;background:rgba(251,191,36,0.75);border-top:2px dashed rgba(251,191,36,0.75)"></div><span>Média macaco: <strong style="color:var(--dourado)">${media.toFixed(1)} pts</strong></span></div>`;
+  h += `<div style="display:flex;align-items:center;gap:5px"><div style="width:18px;height:0;border-top:1px dashed rgba(251,191,36,0.45)"></div><span>±1σ: <strong style="color:var(--dourado)">${sigma.toFixed(1)} pts</strong></span></div>`;
+  h += `</div>`;
+  h += `<div style="text-align:center;font-size:.62rem;color:var(--texto2);margin-top:6px">10.000 macacos · chutes: 1-0, 1-1, 0-1 (prob. igual)</div>`;
+
+  h += '</div>';
+  return h;
 }
 
 // ── Exportar JPG ───────────────────────────────────────────────────────────
