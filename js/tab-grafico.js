@@ -28,7 +28,7 @@ const _METRICAS = [
   { id: 'bonus1',     label: 'Bônus+1' },
   { id: 'placar',     label: 'Placar+3' },
   { id: 'placar_alto',label: 'Placar+5' },
-  { id: 'macaco',     label: '🐒 Macaco' },
+  { id: 'macaco',     label: 'Macaco' },
 ];
 
 window.renderGrafico = function() {
@@ -723,8 +723,8 @@ function _renderChance(rankingCompleto, chances) {
       else              barWidth = Math.max(6, Math.floor(perColuna - 1));
     }
     gap = Math.max(1, Math.floor(perColuna - barWidth));
-    // Fontes adaptativas — valor fica 20% menor em landscape/desktop (será vertical)
-    const fScaleVal  = (isMobile && isLandscape) ? 0.72 : 0.80; // 0.90*0.80 landscape, 0.80 desktop
+    // Fontes adaptativas — valor vertical, escala 1.0 em desktop e 0.90 em landscape
+    const fScaleVal  = (isMobile && isLandscape) ? 0.90 : 1.0;
     const fScaleName = (isMobile && isLandscape) ? 0.90 : 1.0;
     const fv  = (base) => (base * fScaleVal).toFixed(2) + 'rem';
     const fvn = (base) => (base * fScaleName).toFixed(2) + 'rem';
@@ -791,7 +791,7 @@ function _renderChance(rankingCompleto, chances) {
   const _btnAtivoC = 'background:var(--fundo2);border:1.5px solid var(--dourado);border-radius:var(--radius-sm);padding:8px 14px;color:var(--dourado);font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit';
   h += `<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;flex-wrap:wrap">`;
   h += `<div style="display:flex;gap:4px;background:rgba(255,255,255,0.04);border-radius:var(--radius-sm);padding:3px">`;
-  h += `<button onclick="window._graficoOrdem='rank';renderAbaAtiva()" style="${_ordemC==='rank'?_btnAtivoC:_btnBaseC}">🏆 Classificação</button>`;
+  h += `<button onclick="window._graficoOrdem='rank';renderAbaAtiva()" style="${_ordemC==='rank'?_btnAtivoC:_btnBaseC}">Rank</button>`;
   h += `<button onclick="window._graficoOrdem='az';renderAbaAtiva()" style="${_ordemC==='az'?_btnAtivoC:_btnBaseC}">A → Z</button>`;
   h += `</div>`;
   h += `<button onclick="_graficoExportarJPG()" style="${_btnBaseC}">📷 Exportar JPG</button>`;
@@ -889,8 +889,8 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
 
     gap = Math.max(1, Math.floor(perColuna - barWidth));
 
-    // Fontes adaptativas — valor fica 20% menor em landscape/desktop (será vertical)
-    const fScaleVal  = (isMobile && isLandscape) ? 0.72 : 0.80; // 0.90*0.80 landscape, 0.80 desktop
+    // Fontes adaptativas — valor vertical, escala 1.0 em desktop e 0.90 em landscape
+    const fScaleVal  = (isMobile && isLandscape) ? 0.90 : 1.0;
     const fScaleName = (isMobile && isLandscape) ? 0.90 : 1.0;
     const fv  = (base) => (base * fScaleVal).toFixed(2) + 'rem';
     const fvn = (base) => (base * fScaleName).toFixed(2) + 'rem';
@@ -951,7 +951,7 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
   const btnAtivo = 'background:var(--fundo2);border:1.5px solid var(--dourado);border-radius:var(--radius-sm);padding:8px 14px;color:var(--dourado);font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit';
   h += `<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;flex-wrap:wrap">`;
   h += `<div style="display:flex;gap:4px;background:rgba(255,255,255,0.04);border-radius:var(--radius-sm);padding:3px">`;
-  h += `<button onclick="window._graficoOrdem='rank';renderAbaAtiva()" style="${ordemAtiva==='rank'?btnAtivo:btnBase}">🏆 Classificação</button>`;
+  h += `<button onclick="window._graficoOrdem='rank';renderAbaAtiva()" style="${ordemAtiva==='rank'?btnAtivo:btnBase}">Rank</button>`;
   h += `<button onclick="window._graficoOrdem='az';renderAbaAtiva()" style="${ordemAtiva==='az'?btnAtivo:btnBase}">A → Z</button>`;
   h += `</div>`;
   h += `<button onclick="_graficoExportarJPG()" style="${btnBase}">📷 Exportar JPG</button>`;
@@ -1221,6 +1221,13 @@ function _renderMacaco(rankingCompleto, cache) {
   let ranking   = rankingCompleto.filter(a => filtro.has(a.id) && !a.isModelo);
   if (!ranking.length) return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador selecionado.</div>';
 
+  // Ordenação: rank preserva ordem da classificação (rankingCompleto já ordenado com desempates)
+  const _ordemMrank = window._graficoOrdem || 'rank';
+  if (_ordemMrank === 'az') {
+    ranking = [...ranking].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  }
+  // 'rank': mantém a ordem do rankingCompleto (já com desempates resolvidos)
+
   const { media, sigma } = cache;
   const maxVal = Math.max(1, ...ranking.map(a => a.pts), media + sigma * 1.5);
 
@@ -1275,7 +1282,7 @@ function _renderMacaco(rankingCompleto, cache) {
 
   // Cabeçalho
   h += `<div style="text-align:center;margin-bottom:14px">
-    <span style="font-size:.85rem;font-weight:700;color:var(--dourado)">🐒 Macaco Cego · pontos vs. chute aleatório</span>
+    <span style="font-size:.85rem;font-weight:700;color:var(--dourado)">Macaco Cego · pontos vs. chute aleatório</span>
   </div>`;
 
   let minWidthStyle = '';
@@ -1287,22 +1294,11 @@ function _renderMacaco(rankingCompleto, cache) {
 
   h += `<div style="display:flex;align-items:flex-end;gap:${gap}px;height:${chartHeight};padding-bottom:10px;border-bottom:1px solid var(--borda);margin-bottom:${marginBot};position:relative;${minWidthStyle}">`;
 
-  // ── Faixa ±1σ do macaco ──
-  h += `<div style="position:absolute;left:0;right:0;top:${sigmaHiPerc.toFixed(1)}%;bottom:${(100-sigmaLoPerc).toFixed(1)}%;background:rgba(251,191,36,0.07);pointer-events:none;z-index:0"></div>`;
-  // Linha +1σ
-  h += `<div style="position:absolute;left:0;right:0;top:${sigmaHiPerc.toFixed(1)}%;height:0;border-top:1px dashed rgba(251,191,36,0.35);pointer-events:none;z-index:0"></div>`;
-  // Linha −1σ
-  h += `<div style="position:absolute;left:0;right:0;top:${sigmaLoPerc.toFixed(1)}%;height:0;border-top:1px dashed rgba(251,191,36,0.35);pointer-events:none;z-index:0"></div>`;
-  // Linha da média — mais visível
-  h += `<div style="position:absolute;left:0;right:0;top:${mediaPerc.toFixed(1)}%;height:0;border-top:2px dashed rgba(251,191,36,0.75);pointer-events:none;z-index:0">
-    <span style="position:absolute;right:4px;top:-16px;font-size:.62rem;font-weight:700;color:rgba(251,191,36,0.85);white-space:nowrap">🐒 ${media.toFixed(1)} pts</span>
-  </div>`;
-
-  // ── Barras dos apostadores ──
+  // ── Barras dos apostadores (marrom, z-index:1) ──
+  const COR_MACACO = '#8B5E3C';
   for (const a of ranking) {
     const val   = a.pts;
     const perc  = (val / maxVal) * 100;
-    const cor   = _rainbowColor(ranking.indexOf(a), ranking.length);
     h += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative;height:100%;justify-content:flex-end;z-index:1">`;
     if (valVertical) {
       const barPercSafe = Math.max(2, perc);
@@ -1310,20 +1306,39 @@ function _renderMacaco(rankingCompleto, cache) {
     } else {
       h += `<div style="font-size:${valFontSize};font-weight:800;color:var(--texto);margin-bottom:4px;white-space:nowrap">${val.toFixed(1)}</div>`;
     }
-    h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2,perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
+    h += `<div style="width:${barWidth}px;background:${COR_MACACO};border-radius:4px 4px 0 0;height:${Math.max(2,perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 8px ${COR_MACACO}80"></div>`;
     h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${a.nome}</div>`;
     h += '</div>';
   }
 
+  // ── Linhas do macaco on top (z-index:2) ──
+  // Faixa ±1σ
+  h += `<div style="position:absolute;left:0;right:0;top:${sigmaHiPerc.toFixed(1)}%;bottom:${(100-sigmaLoPerc).toFixed(1)}%;background:rgba(251,191,36,0.08);pointer-events:none;z-index:2"></div>`;
+  // Linha +1σ
+  h += `<div style="position:absolute;left:0;right:0;top:${sigmaHiPerc.toFixed(1)}%;height:0;border-top:1px dashed rgba(251,191,36,0.45);pointer-events:none;z-index:2"></div>`;
+  // Linha −1σ
+  h += `<div style="position:absolute;left:0;right:0;top:${sigmaLoPerc.toFixed(1)}%;height:0;border-top:1px dashed rgba(251,191,36,0.45);pointer-events:none;z-index:2"></div>`;
+  // Linha da média
+  h += `<div style="position:absolute;left:0;right:0;top:${mediaPerc.toFixed(1)}%;height:0;border-top:2px dashed rgba(251,191,36,0.85);pointer-events:none;z-index:2">
+    <span style="position:absolute;right:4px;top:-16px;font-size:.62rem;font-weight:700;color:rgba(251,191,36,0.90);white-space:nowrap">${media.toFixed(1)} pts</span>
+  </div>`;
+
   h += '</div>';
   if (needsScroll) h += '</div>';
 
-  // Legenda das linhas
-  h += `<div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:10px;font-size:.70rem;color:var(--texto2)">`;
-  h += `<div style="display:flex;align-items:center;gap:5px"><div style="width:18px;height:2px;background:rgba(251,191,36,0.75);border-top:2px dashed rgba(251,191,36,0.75)"></div><span>Média macaco: <strong style="color:var(--dourado)">${media.toFixed(1)} pts</strong></span></div>`;
-  h += `<div style="display:flex;align-items:center;gap:5px"><div style="width:18px;height:0;border-top:1px dashed rgba(251,191,36,0.45)"></div><span>±1σ: <strong style="color:var(--dourado)">${sigma.toFixed(1)} pts</strong></span></div>`;
-  h += `</div>`;
   h += `<div style="text-align:center;font-size:.62rem;color:var(--texto2);margin-top:6px">10.000 macacos · chutes: 1-0, 1-1, 0-1 (prob. igual)</div>`;
+
+  // ── Botões de ação: ordenação + exportar ──
+  const _ordemM = window._graficoOrdem || 'rank';
+  const _btnBaseM  = 'background:var(--fundo2);border:1.5px solid var(--borda2);border-radius:var(--radius-sm);padding:8px 14px;color:var(--texto);font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit';
+  const _btnAtivoM = 'background:var(--fundo2);border:1.5px solid var(--dourado);border-radius:var(--radius-sm);padding:8px 14px;color:var(--dourado);font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit';
+  h += `<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;flex-wrap:wrap">`;
+  h += `<div style="display:flex;gap:4px;background:rgba(255,255,255,0.04);border-radius:var(--radius-sm);padding:3px">`;
+  h += `<button onclick="window._graficoOrdem='rank';renderAbaAtiva()" style="${_ordemM==='rank'?_btnAtivoM:_btnBaseM}">Rank</button>`;
+  h += `<button onclick="window._graficoOrdem='az';renderAbaAtiva()" style="${_ordemM==='az'?_btnAtivoM:_btnBaseM}">A → Z</button>`;
+  h += `</div>`;
+  h += `<button onclick="_graficoExportarJPG()" style="${_btnBaseM}">📷 Exportar JPG</button>`;
+  h += `</div>`;
 
   h += '</div>';
   return h;
