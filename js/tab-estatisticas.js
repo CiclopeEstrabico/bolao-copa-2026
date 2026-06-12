@@ -455,6 +455,37 @@ window.renderEstatisticas = function () {
       border-bottom-color: #1e293b;
     }
     .stat-d-card.tooltip-visivel .stat-tooltip { display: block; }
+    .fav-apostadores-row {
+      display: grid;
+      grid-template-columns: 120px 1fr 65px;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      transition: background 0.2s ease;
+    }
+    .fav-apostadores-row:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    @media (min-width: 600px) {
+      .fav-apostadores-row {
+        grid-template-columns: 160px 1fr 80px;
+        gap: 16px;
+      }
+    }
+    .card-sem-padding {
+      padding: 0 !important;
+      overflow: hidden;
+    }
+    .card-sem-padding .card-titulo {
+      padding: 14px 14px 8px;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 599px) {
+      .card-sem-padding .card-titulo {
+        padding: 10px 10px 8px;
+      }
+    }
   </style>`;
 
   h += '<div class="stats-grid">';
@@ -545,11 +576,18 @@ window.renderEstatisticas = function () {
       const pct = apos.length ? Math.round(ct / apos.length * 100) : 0;
       // Fix #4: campeão oficial vem de extrairEspeciaisOficiais, não de bracket["FNL"].home
       const campeaoOficial = esp.campeao && esp.campeao === code;
-      h += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0">';
-      h += htmlBandeira(code, 18) + '<span class="stat-time-nome" style="font-weight:600;flex:1">' + (info?.name || code) + '</span>';
-      h += '<div style="width:80px;background:var(--fundo2);border-radius:3px;height:6px"><div style="width:' + (ct / maxV * 100) + '%;height:100%;background:var(--verde);border-radius:3px"></div></div>';
-      h += '<span style="font-size:.72rem;color:var(--texto2);min-width:30px;text-align:right">' + ct + ' (' + pct + '%)</span>';
-      if (campeaoOficial) h += '<span style="color:var(--dourado)">✓</span>';
+      h += '<div class="fav-apostadores-row">';
+      h += '<div style="display:flex;align-items:center;gap:8px;font-weight:600;min-width:0;">' +
+           htmlBandeira(code, 18) +
+           '<span class="stat-time-nome" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (info?.name || code) + '</span>' +
+           (campeaoOficial ? '<span style="color:var(--dourado);margin-left:4px" title="Campeão Confirmado">✓</span>' : '') +
+           '</div>';
+      h += '<div style="background:var(--fundo2);border-radius:5px;height:10px;overflow:hidden;border:1px solid var(--borda)">' +
+           '<div style="width:' + (ct / maxV * 100) + '%;height:100%;background:var(--verde);border-radius:5px"></div>' +
+           '</div>';
+      h += '<span style="font-size:.75rem;color:var(--texto2);font-weight:700;text-align:right;white-space:nowrap">' +
+           ct + ' <span style="font-size:.65rem;font-weight:normal;opacity:0.85">(' + pct + '%)</span>' +
+           '</span>';
       h += '</div>';
     }
     h += '</div></div>';
@@ -557,7 +595,7 @@ window.renderEstatisticas = function () {
 
 
   // Resumo Avançado de Todos os Jogos
-  h += '<div class="card" style="padding:0;overflow:hidden"><div class="card-titulo" style="padding:16px 16px 0">📈 Estatísticas Avançadas por Jogo</div><div class="compilacao-wrap"><table class="compilacao-table stat-full-table" style="font-size:.7rem">';
+  h += '<div class="card card-sem-padding"><div class="card-titulo">📈 Estatísticas Avançadas por Jogo</div><div class="compilacao-wrap"><table class="compilacao-table stat-full-table" style="font-size:.7rem">';
   h += '<thead><tr>';
   h += '<th class="stat-col-jogo" style="text-align:left;position:sticky;left:0;background:var(--fundo2);z-index:2;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Jogo</th>';
   h += '<th class="col-resultado" title="Placar oficial do jogo">Resultado</th>';
