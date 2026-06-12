@@ -86,10 +86,9 @@ window.renderEstatisticas = function () {
     return { bestArr, bestScore, bestApo: best };
   }
 
-  // Top performers
-  const destLider = obterDestaques(r => r.stats.total, true, true);
-  const melhorPts = destLider.bestApo;
-  const _melhorPtsArr = destLider.bestArr;
+  // Top performers (Líder segue exatamente a classificação oficial)
+  const melhorPts = ranking[0];
+  const _melhorPtsArr = (ranking[1] && ranking[1].posicao === 1) ? [ranking[0], ranking[1]] : [ranking[0]];
 
   const destVidente = obterDestaques(r => r.stats.acertos_resultado, true, true);
   const melhorRes = destVidente.bestApo;
@@ -160,10 +159,11 @@ window.renderEstatisticas = function () {
   const _escalandoArr = destEscalando.bestArr;
   const maiorSalto = destEscalando.bestScore;
 
-  // --- Lanterninha ---
-  const destLanterninha = obterDestaques(r => r.stats.total, false, false);
-  const lanterninha = destLanterninha.bestApo;
-  const _lanterninhaArr = destLanterninha.bestArr;
+  // --- Lanterninha (segue exatamente a classificação oficial, pior posição) ---
+  const lanterninha = ranking[ranking.length - 1];
+  const _lanterninhaArr = (ranking.length >= 2 && ranking[ranking.length - 2].posicao === lanterninha.posicao)
+    ? [ranking[ranking.length - 2], lanterninha]
+    : [lanterninha];
 
   // ─── Feature 2: Cálculos dos novos cards ─────────────────────────────────
 
