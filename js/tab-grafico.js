@@ -1097,10 +1097,202 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
   legenda += '</div>';
 
   const _btnBaseEv = 'background:var(--fundo2);border:1.5px solid var(--borda2);border-radius:var(--radius-sm);padding:8px 14px;color:var(--texto);font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit';
-  const exportBtn = `<div style="display:flex;justify-content:center;margin-top:12px"><button onclick="_graficoExportarJPG()" style="${_btnBaseEv}">📷 Exportar JPG</button></div>`;
+  const exportBtn = `<div style="display:flex;justify-content:center;margin-top:12px"><button onclick="_graficoExportarEvolucaoJPG()" style="${_btnBaseEv}">📷 Exportar JPG</button></div>`;
 
   return `<div class="card" style="padding:16px;overflow-x:auto">${svg}${legenda}${exportBtn}</div>`;
 }
+
+// ── Export JPG · Evolução ──────────────────────────────────────────────────
+window._graficoExportarEvolucaoJPG = function () {
+  const res = getResultados();
+  const apos = APP.apostadores || [];
+  const pals = APP.palpites || {};
+
+  // Rebuild ranking (cores consistentes)
+  const espOficiaisGraf = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
+  let rankingCompleto = apos.map(a => {
+    const st = calcularPontosApostador(pals[a.id] || {}, res, a, espOficiaisGraf);
+    return { id: a.id, nome: (a.apelido || a.nome || '?').substring(0, 14), pts: st.total, isModelo: false };
+  }).sort((a, b) => b.pts - a.pts);
+
+  const modeloGraf = window.getModelo ? window.getModelo() : null;
+  if (modeloGraf && APP._modeloCarregado) {
+    const stMod = calcularPontosApostador(APP.palpitesModelo || {}, res, modeloGraf, espOficiaisGraf);
+    const itemMod = { id: modeloGraf.id, nome: 'Modelo', pts: stMod.total, isModelo: true };
+    const insertIdx = rankingCompleto.findIndex(a => a.pts < stMod.total);
+    if (insertIdx === -1) rankingCompleto.push(itemMod);
+    else rankingCompleto.splice(insertIdx, 0, itemMod);
+  }
+
+  const filtro = window._graficoFiltroApos;
+  const isDefault = !window._graficoFiltroCustomizado;
+  const top10Ids = isDefault ? new Set(rankingCompleto.slice(0, 10).map(r => r.id)) : null;
+  const humanos = rankingCompleto.filter(x => !x.isModelo);
+
+  // Todos apostadores (sem filtro de tela), mas respeitando o top-10 default
+  const aposFiltrados = apos.filter(a => isDefault ? top10Ids.has(a.id) : true);
+
+  const jogosComRes = (window.SCHEDULE || [])
+    .filter(j => res[j.id] && res[j.id].homeGoals !== undefined)
+    .sort((a, b) => new Date(a.utc) - new Date(b.utc));
+
+  const espOficiais = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
+  const temEspeciais = !!(espOficiais.campeao || espOficiais.vice || espOficiais.terceiro);
+
+  if (!jogosComRes.length && !temEspeciais) { alert('Nenhum resultado oficial ainda.'); return; }
+
+  // Build series
+  const series = aposFiltrados.map(a => {
+    const hIdx = humanos.findIndex(r => r.id === a.id);
+    const cor = _EVOLUCAO_CORES_DISTINTAS[hIdx % _EVOLUCAO_CORES_DISTINTAS.length];
+    const pal = pals[a.id] || {};
+    let acumulado = 0;
+    const pontos = [0];
+    jogosComRes.forEach(j => {
+      const p = pal[j.id], r = res[j.id];
+      if (p && r && p.homeGoals !== undefined) {
+        const br = calcularPontosBrutos(p, r);
+        acumulado += aplicarFator(br.total_bruto, j.fase);
+      }
+      pontos.push(parseFloat(acumulado.toFixed(1)));
+    });
+    if (temEspeciais) {
+      const { total_especiais } = calcularPontosEspeciais(a, espOficiais.campeao, espOficiais.vice, espOficiais.terceiro);
+      acumulado += total_especiais;
+      pontos.push(parseFloat(acumulado.toFixed(1)));
+    }
+    return { nome: (a.apelido || a.nome || '?').substring(0, 14), cor, pontos, isModelo: false };
+  });
+
+  // Inserir Modelo (sempre na exportação, sem filtro)
+  if (modeloGraf && APP._modeloCarregado) {
+    const corMod = '#b8cfe8';
+    const palMod = APP.palpitesModelo || {};
+    let acc = 0;
+    const pts = [0];
+    jogosComRes.forEach(j => {
+      const p = palMod[j.id], r = res[j.id];
+      if (p && r && p.homeGoals !== undefined) {
+        const br = calcularPontosBrutos(p, r);
+        acc += aplicarFator(br.total_bruto, j.fase);
+      }
+      pts.push(parseFloat(acc.toFixed(1)));
+    });
+    if (temEspeciais) {
+      const { total_especiais } = calcularPontosEspeciais(modeloGraf, espOficiais.campeao, espOficiais.vice, espOficiais.terceiro);
+      acc += total_especiais;
+      pts.push(parseFloat(acc.toFixed(1)));
+    }
+    series.push({ nome: 'Modelo', cor: '#b8cfe8', pontos: pts, isModelo: true });
+  }
+
+  if (!series.length) { alert('Nenhum apostador para exportar.'); return; }
+
+  // ── Canvas ──
+  const PAD = { top: 50, right: 130, bottom: 60, left: 55 };
+  const W = 1280;
+  const H = 520;
+  const chartW = W - PAD.left - PAD.right;
+  const chartH = H - PAD.top - PAD.bottom;
+  const nMatches = jogosComRes.length;
+  const nPoints = Math.max(...series.map(s => s.pontos.length), 2);
+  const maxPts = Math.max(1, ...series.map(s => Math.max(...s.pontos, 0)));
+
+  const xPos = i => PAD.left + (i / (nPoints - 1)) * chartW;
+  const yPos = v => PAD.top + chartH - (v / maxPts) * chartH;
+
+  const canvas = document.createElement('canvas');
+  const DPR = 2;
+  canvas.width = W * DPR;
+  canvas.height = H * DPR;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
+
+  // Fundo
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0, 0, W, H);
+
+  // Título
+  ctx.fillStyle = '#f1f5f9';
+  ctx.font = 'bold 16px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Bolão Copa 2026 · Evolução de Pontos', W / 2, 30);
+
+  // Grid horizontal
+  for (let i = 0; i <= 4; i++) {
+    const v = (maxPts / 4) * i;
+    const y = yPos(v);
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + chartW, y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#64748b';
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(v.toFixed(0), PAD.left - 6, y + 4);
+  }
+
+  // Grid vertical + labels J
+  const step = Math.max(1, Math.floor(nMatches / 10));
+  for (let i = 1; i <= nMatches; i += step) {
+    const x = xPos(i);
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top + chartH); ctx.stroke();
+    ctx.fillStyle = '#64748b';
+    ctx.font = '10px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`J${i}`, x, PAD.top + chartH + 16);
+  }
+  if (nMatches > 0 && nMatches % step !== 0) {
+    const x = xPos(nMatches);
+    ctx.fillStyle = '#64748b'; ctx.font = '10px system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(`J${nMatches}`, x, PAD.top + chartH + 16);
+  }
+
+  // Linhas das séries
+  for (const s of series) {
+    if (!s.pontos.length) continue;
+    ctx.strokeStyle = s.cor;
+    ctx.lineWidth = s.isModelo ? 2.5 : 2.5;
+    ctx.setLineDash(s.isModelo ? [6, 3] : []);
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    s.pontos.forEach((v, i) => {
+      const x = xPos(i), y = yPos(v);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Círculo no último ponto
+    const lastIdx = s.pontos.length - 1;
+    const lx = xPos(lastIdx), ly = yPos(s.pontos[lastIdx]);
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = s.cor; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.stroke();
+
+    // Label à direita
+    ctx.fillStyle = s.cor;
+    ctx.font = `${s.isModelo ? 'normal' : 'bold'} 10px system-ui, sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.fillText(`${s.nome} ${s.pontos[lastIdx]}`, lx + 8, ly + 4);
+  }
+
+  // Eixo Y (linha vertical esquerda)
+  ctx.strokeStyle = '#334155'; ctx.lineWidth = 1; ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(PAD.left, PAD.top); ctx.lineTo(PAD.left, PAD.top + chartH); ctx.stroke();
+
+  // Download
+  const link = document.createElement('a');
+  link.download = 'bolao-copa-2026-evolucao.jpg';
+  link.href = canvas.toDataURL('image/jpeg', 0.92);
+  link.click();
+};
 
 // ── Macaco Cego ────────────────────────────────────────────────────────────
 
@@ -1361,9 +1553,9 @@ window._graficoExportarJPG = function () {
   const pals = APP.palpites || {};
   const metricaAtiva = window._graficoMetrica || 'pts';
 
-  // Não exportar evolução como barras
+  // Evolução tem export próprio
   if (metricaAtiva === 'evolucao') {
-    alert('Exportação disponível para métricas de barra. Selecione uma métrica como Pontos, Projeção, etc.');
+    _graficoExportarEvolucaoJPG();
     return;
   }
 
@@ -1427,7 +1619,7 @@ window._graficoExportarJPG = function () {
   ctx.fillRect(0, 0, TOTAL_W, TOTAL_H);
 
   // Título
-  const metricaLabel = { pts: 'Pontos', pct: 'Pontos %', res: 'Resultados', bonus1: 'Bônus+1', placar: 'Placar+3', placar_alto: 'Placar+5', chance: 'Projeção (chance de ganhar)', macaco: 'Macaco Médio · pontos vs. chute aleatório' }[metricaAtiva] || metricaAtiva;
+  const metricaLabel = { pts: 'Pontos', pct: 'Pontos %', res: 'Resultados', bonus1: 'Bônus+1', placar: 'Placar+3', placar_alto: 'Placar+5', chance: 'Projeção (chance de ganhar)', macaco: 'Macaco Médio' }[metricaAtiva] || metricaAtiva;
   ctx.fillStyle = '#f1f5f9';
   ctx.font = 'bold 16px system-ui, sans-serif';
   ctx.textAlign = 'center';
@@ -1436,8 +1628,8 @@ window._graficoExportarJPG = function () {
   const macacoCache = (metricaAtiva === 'macaco') ? (window._graficoMacacoCache || { media: 0, sigma: 0 }) : null;
   const vals = rankingExp.map(a =>
     metricaAtiva === 'chance' ? (a.chance || 0) :
-    metricaAtiva === 'macaco' ? a.pts :
-    a[metricaAtiva]
+      metricaAtiva === 'macaco' ? a.pts :
+        a[metricaAtiva]
   );
   const maxValBase = Math.max(1, ...vals);
   const maxVal = macacoCache ? Math.max(maxValBase, macacoCache.media + macacoCache.sigma * 1.5) : maxValBase;
@@ -1501,10 +1693,10 @@ window._graficoExportarJPG = function () {
   // ── Linhas do Macaco Médio (média ± 1σ) ──
   if (macacoCache && macacoCache.media > 0) {
     const { media, sigma } = macacoCache;
-    const yMedia   = CHART_BOTTOM - Math.max(0, Math.min(1, media / maxVal)) * CHART_HEIGHT;
+    const yMedia = CHART_BOTTOM - Math.max(0, Math.min(1, media / maxVal)) * CHART_HEIGHT;
     const ySigmaHi = CHART_BOTTOM - Math.max(0, Math.min(1, (media + sigma) / maxVal)) * CHART_HEIGHT;
     const ySigmaLo = CHART_BOTTOM - Math.max(0, Math.min(1, Math.max(0, media - sigma) / maxVal)) * CHART_HEIGHT;
-    const COR_MAC  = '#8B5E3C';
+    const COR_MAC = '#8B5E3C';
     const xL = PADDING_LEFT, xR = TOTAL_W - PADDING_RIGHT;
     // Faixa ±1σ
     ctx.fillStyle = 'rgba(139,94,60,0.15)';
