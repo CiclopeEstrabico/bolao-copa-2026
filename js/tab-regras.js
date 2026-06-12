@@ -175,11 +175,11 @@ window.renderRegras = function () {
       "Sim! Na aba Palpites você vê os palpites de todos — mas apenas dos jogos cujas apostas <strong>já foram encerradas</strong>. Enquanto as apostas estão abertas, os palpites ficam ocultos (🔒) para manter o jogo justo."],
     // --- COPA 2026 ---
     ["Como são os melhores terceiros na classificação de grupos? É novidade isso para essa copa?",
-      "Sim! Na Copa 2026 com 12 grupos, os 8 melhores 3ºs colocados avançam. O critério é: pontos → saldo de gols → gols marcados."],
+      "Sim! Na Copa do Mundo de 2026 com 12 grupos, os 8 melhores 3ºs colocados avançam. O critério é: pontos → saldo de gols → gols marcados."],
     ["Por que existe a fase de '16 Avos de Final'? Nunca vi isso em Copas anteriores.",
       "A Copa do Mundo de 2026 tem um formato novo: <strong>48 seleções</strong> participam, divididas em <strong>12 grupos de 4 times</strong>.<br><br>" +
       "Os 2 melhores de cada grupo avançam automaticamente (24 classificados), mais os <strong>8 melhores terceiros colocados</strong> — totalizando <strong>32 times</strong> na fase eliminatória.<br><br>" +
-      "Como são 32 times nessa rodada, ela se chama <strong>16 Avos de Final</strong> (cada time disputa 1/32 da fase eliminatória). A partir daí o formato é o clássico: Oitavas → Quartas → Semifinais → Final."],
+      "Como são 16 jogos nessa rodada, ela se chama <strong>16 Avos de Final</strong>. A partir daí o formato é o clássico: Oitavas → Quartas → Semifinais → Final."],
     // --- TRANSPARÊNCIA ---
     ["Como garanto que algum admin não vai mudar alguma aposta minha ou de outro jogador?",
       "Os botões de <strong>Exportar CSV</strong> e <strong>Exportar JSON</strong> na aba Palpites estão disponíveis exatamente para isso.<br><br>" +
@@ -204,6 +204,11 @@ window.renderRegras = function () {
       "O sistema roda <strong>20.000 simulações</strong> do restante da Copa (usando o ELO das seleções para simular cada placar).<br><br>" +
       "Se um jogo não tiver palpites enviados (ou para fases futuras ainda fechadas), o sistema gera palpites automáticos para o participante com base nas chances reais do confronto.<br><br>" +
       "O gráfico mostra a porcentagem de cenários em que o apostador terminou em 1.º lugar."],
+    ["O que significa o gráfico do \"Macaco\"?",
+      "É um teste de sanidade estatística para comparar a pontuação dos participantes contra palpites puramente aleatórios.<br><br>" +
+      "O sistema simula <strong>10.000 \"macacos cegos\"</strong> que chutam placares aleatórios (1×0, 1×1 ou 0×1) com a mesma chance. " +
+      "O gráfico mostra a <strong>pontuação média obtida por eles (🐒)</strong> e uma <strong>faixa sombreada de desvio padrão</strong>.<br><br>" +
+      "Estar acima da faixa indica que seu desempenho supera o acaso; estar abaixo ou dentro dela... talvez um macaco cego fizesse escolhas melhores!"],
     ["O que são e como ver as estatísticas de cada jogo (Elo, xGols, Probabilidade)?",
       "São dados do modelo matemático calculados para cada confronto:<br><br>" +
       "• <strong>Elo:</strong> Força histórica da seleção.<br>" +

@@ -1202,7 +1202,7 @@ window._graficoExportarEvolucaoJPG = function () {
   const yPos = v => PAD.top + chartH - (v / maxPts) * chartH;
 
   const canvas = document.createElement('canvas');
-  const DPR = 2;
+  const DPR = 3;
   canvas.width = W * DPR;
   canvas.height = H * DPR;
   const ctx = canvas.getContext('2d');
@@ -1290,7 +1290,7 @@ window._graficoExportarEvolucaoJPG = function () {
   // Download
   const link = document.createElement('a');
   link.download = 'bolao-copa-2026-evolucao.jpg';
-  link.href = canvas.toDataURL('image/jpeg', 0.92);
+  link.href = canvas.toDataURL('image/jpeg', 0.95);
   link.click();
 };
 
@@ -1606,7 +1606,7 @@ window._graficoExportarJPG = function () {
   const TOTAL_H = PADDING_TOP + CHART_HEIGHT + PADDING_BOTTOM;
 
   const canvas = document.createElement('canvas');
-  const DPR = 2; // alta resolução
+  const DPR = 3; // alta resolução
   canvas.width = TOTAL_W * DPR;
   canvas.height = TOTAL_H * DPR;
   canvas.style.width = TOTAL_W + 'px';
@@ -1724,6 +1724,6 @@ window._graficoExportarJPG = function () {
   // Download
   const link = document.createElement('a');
   link.download = `bolao-copa-2026-${metricaAtiva}.jpg`;
-  link.href = canvas.toDataURL('image/jpeg', 0.92);
+  link.href = canvas.toDataURL('image/jpeg', 0.95);
   link.click();
 };
