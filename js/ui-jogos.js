@@ -155,7 +155,7 @@ function renderJogosComToggle(res, tg, isAdm, palApo, bracketOverride, resComple
   if (_modoGrupos === "topo") h += '<div class="card" style="padding:10px;margin-bottom:10px">' + renderGruposGrid(tg, res, resCompleto) + '</div>';
   const gJogos = (window.SCHEDULE || []).filter(j => j.fase === "grupos");
   h += _ordemJogos === "grupos" ? renderPorGrupo(gJogos, res, tg, isAdm, palApo, bracketOverride, resCompleto) : renderPorDia(gJogos, res, isAdm, palApo, bracketOverride);
-  for (const fe of [{ l: "32 Avos de Final", ids: ["32avos"] }, { l: "Oitavas de Final", ids: ["oitavas"] }, { l: "Quartas de Final", ids: ["quartas"] }, { l: "Semifinais", ids: ["semis"] }, { l: "3° Lugar e Final", ids: ["terceiro", "final"] }]) {
+  for (const fe of [{ l: "16 Avos de Final", ids: ["16avos"] }, { l: "Oitavas de Final", ids: ["oitavas"] }, { l: "Quartas de Final", ids: ["quartas"] }, { l: "Semifinais", ids: ["semis"] }, { l: "3° Lugar e Final", ids: ["terceiro", "final"] }]) {
     const jogos = (window.SCHEDULE || []).filter(j => fe.ids.includes(j.fase)).sort((a, b) => new Date(a.utc) - new Date(b.utc));
     if (!jogos.length) continue;
     h += '<div class="fase-header">' + fe.l + '</div><div class="fase-grupo-bloco">';

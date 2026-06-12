@@ -5,11 +5,11 @@
  *             window.calcularPontosBrutos, window.aplicarFator (scoring.js)
  */
 
-const _FASES_ORDEM = ["grupos", "32avos", "oitavas", "quartas", "semis", "finais"];
+const _FASES_ORDEM = ["grupos", "16avos", "oitavas", "quartas", "semis", "finais"];
 
 const _FASES_MAPA = {
   grupos:  ["grupos"],
-  "32avos": ["32avos"],
+  "16avos": ["16avos"],
   oitavas: ["oitavas"],
   quartas: ["quartas"],
   semis:   ["semis"],
@@ -19,7 +19,7 @@ const _FASES_MAPA = {
 function _faseEstaAberta(faseKey) {
   const st = APP.configStatus || {};
   if (faseKey === "grupos")  return !!st.liberado_grupos;
-  if (faseKey === "32avos")  return !!st.liberado_32avos;
+  if (faseKey === "16avos")  return !!st.liberado_16avos;
   if (faseKey === "oitavas") return !!st.liberado_oitavas;
   if (faseKey === "quartas") return !!st.liberado_quartas;
   if (faseKey === "semis")   return !!st.liberado_semis;

@@ -20,7 +20,7 @@ window.CONFIG = {
     // Multiplicadores por fase — pontos_finais = pontos_brutos × fator
     fatores_fase: {
       grupos: 1.0,
-      "32avos": 1.2,
+      "16avos": 1.2,
       oitavas: 1.4,
       quartas: 1.6,
       semis: 1.8,
@@ -49,11 +49,11 @@ window.CONFIG = {
       inclui_especiais: true
     },
     {
-      id: "32avos",
-      nome: "32 Avos de Final",
-      descricao: "Palpites para os 16 jogos dos 32 avos de final",
+      id: "16avos",
+      nome: "16 Avos de Final",
+      descricao: "Palpites para os 16 jogos dos 16 avos de final",
       deadline_utc: "2026-06-28T18:30:00Z",  // 30 min antes do jogo 73
-      fases_cobertas: ["32avos"],
+      fases_cobertas: ["16avos"],
       inclui_especiais: false
     },
     {

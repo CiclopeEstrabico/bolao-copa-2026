@@ -67,7 +67,7 @@ window.renderRegras = function () {
   const fatores = cfg.fatores_fase;
   h += '<div style="margin-top:14px"><div style="font-size:.72rem;font-weight:700;color:var(--texto2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">× Multiplicador por Fase</div>';
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px">';
-  for (const [nome, id] of [["Grupos", "grupos"], ["32 Avos", "32avos"], ["Oitavas", "oitavas"], ["Quartas", "quartas"], ["Semis", "semis"], ["3° Lugar", "terceiro"], ["Final", "final"]]) {
+  for (const [nome, id] of [["Grupos", "grupos"], ["16 Avos", "16avos"], ["Oitavas", "oitavas"], ["Quartas", "quartas"], ["Semis", "semis"], ["3° Lugar", "terceiro"], ["Final", "final"]]) {
     const f = fatores[id] ?? 1;
     h += '<div style="text-align:center;padding:8px 6px;background:var(--fundo2);border-radius:var(--radius-sm)">';
     h += '<div style="font-size:.63rem;color:var(--texto2)">' + nome + '</div>';
@@ -156,9 +156,9 @@ window.renderRegras = function () {
     // --- APOSTAS E PRAZOS ---
     ["Tenho que apostar todos os jogos logo no começo do bolão?",
       "Não! Somente a <strong>fase de grupos</strong> e os <strong>palpites especiais</strong> (campeão, vice e 3º lugar) precisam ser preenchidos antes do início da Copa.<br><br>" +
-      "As apostas das demais fases eliminatórias serão abertas gradualmente: os administradores liberam cada fase (32 avos, oitavas, quartas, semifinais, finais) em horário predeterminado, antes do início dos jogos daquela fase."],
+      "As apostas das demais fases eliminatórias serão abertas gradualmente: os administradores liberam cada fase (16 avos, oitavas, quartas, semifinais, finais) em horário predeterminado, antes do início dos jogos daquela fase."],
     ["Quais são as fases de apostas?",
-      "São <strong>6 fases</strong> no total: Grupos, 32 Avos de Final, Oitavas de Final, Quartas de Final, Semifinais e Finais.<br><br>" +
+      "São <strong>6 fases</strong> no total: Grupos, 16 Avos de Final, Oitavas de Final, Quartas de Final, Semifinais e Finais.<br><br>" +
       "Além disso, os <strong>palpites especiais</strong> (campeão, vice, 3º lugar) são preenchidos separadamente, junto com a fase de grupos."],
     ["Como funcionam os palpites especiais (campeão, vice, 3° lugar)?",
       "Os palpites especiais são apostas únicas feitas <strong>junto com a fase de grupos</strong> — e não podem ser alterados depois que as apostas de grupos forem encerradas.<br><br>" +
@@ -172,17 +172,17 @@ window.renderRegras = function () {
     ["Perdi meu token. E agora?",
       "Fale com um dos <strong>administradores do bolão</strong>. Eles conseguem acessar o painel admin e recuperar o link da sua aposta com o seu token."],
     ["Todos veem os palpites dos outros?",
-      "Sim! Na aba Compilação você vê os palpites de todos — mas apenas dos jogos cujas apostas <strong>já foram encerradas</strong>. Enquanto as apostas estão abertas, os palpites ficam ocultos (🔒) para manter o jogo justo."],
+      "Sim! Na aba Palpites você vê os palpites de todos — mas apenas dos jogos cujas apostas <strong>já foram encerradas</strong>. Enquanto as apostas estão abertas, os palpites ficam ocultos (🔒) para manter o jogo justo."],
     // --- COPA 2026 ---
     ["Como são os melhores terceiros na classificação de grupos? É novidade isso para essa copa?",
       "Sim! Na Copa 2026 com 12 grupos, os 8 melhores 3ºs colocados avançam. O critério é: pontos → saldo de gols → gols marcados."],
-    ["Por que existe a fase de '32 Avos de Final'? Nunca vi isso em Copas anteriores.",
+    ["Por que existe a fase de '16 Avos de Final'? Nunca vi isso em Copas anteriores.",
       "A Copa do Mundo de 2026 tem um formato novo: <strong>48 seleções</strong> participam, divididas em <strong>12 grupos de 4 times</strong>.<br><br>" +
       "Os 2 melhores de cada grupo avançam automaticamente (24 classificados), mais os <strong>8 melhores terceiros colocados</strong> — totalizando <strong>32 times</strong> na fase eliminatória.<br><br>" +
-      "Como são 32 times nessa rodada, ela se chama <strong>32 Avos de Final</strong> (cada time disputa 1/32 da fase eliminatória). A partir daí o formato é o clássico: Oitavas → Quartas → Semifinais → Final."],
+      "Como são 32 times nessa rodada, ela se chama <strong>16 Avos de Final</strong> (cada time disputa 1/32 da fase eliminatória). A partir daí o formato é o clássico: Oitavas → Quartas → Semifinais → Final."],
     // --- TRANSPARÊNCIA ---
     ["Como garanto que algum admin não vai mudar alguma aposta minha ou de outro jogador?",
-      "Os botões de <strong>Exportar CSV</strong> e <strong>Exportar JSON</strong> na aba Compilação estão disponíveis exatamente para isso.<br><br>" +
+      "Os botões de <strong>Exportar CSV</strong> e <strong>Exportar JSON</strong> na aba Palpites estão disponíveis exatamente para isso.<br><br>" +
       "Antes de cada fase começar — quando as apostas já estiverem bloqueadas — todos os participantes podem salvar uma cópia dos palpites para conferência e backup. Guarde seus exports e compare ao final se tiver dúvidas."],
     // --- MODELO ---
     ["O que é esse apostador \"Modelo\"? Ele está competindo?",
@@ -194,6 +194,24 @@ window.renderRegras = function () {
       "<li><strong>Distribuição Dixon-Coles</strong> — modelo estatístico de contagem de gols que gera uma matriz de probabilidade para cada placar possível, corrigindo o viés de empates de 0×0.</li>" +
       "</ul><br>" +
       "A partir dessa matriz, o Modelo escolhe para cada jogo o placar que <em>maximiza o valor esperado de pontos</em> no sistema de pontuação do bolão — não necessariamente o placar mais provável."],
+    // --- SIMULAÇÃO E PROJEÇÕES ---
+    ["Como funciona o \"Modo Simulação\"?",
+      "Permite simular resultados futuros para testar cenários.<br><br>" +
+      "Ao alterar o placar de qualquer jogo na aba <strong>Jogos</strong>, o sistema recalcula temporariamente a classificação e os confrontos de mata-mata.<br><br>" +
+      "Um banner amarelo indicará que a simulação está ativa. As alterações ocorrem apenas no seu navegador, sem afetar o bolão oficial. Para voltar ao normal, basta clicar em <strong>Sair</strong> no banner."],
+    ["O que é a métrica \"Projeção\" na aba de Gráficos?",
+      "Ela calcula a probabilidade estatística de cada participante vencer o bolão.<br><br>" +
+      "O sistema roda <strong>20.000 simulações</strong> do restante da Copa (usando o ELO das seleções para simular cada placar).<br><br>" +
+      "Se um jogo não tiver palpites enviados (ou para fases futuras ainda fechadas), o sistema gera palpites automáticos para o participante com base nas chances reais do confronto.<br><br>" +
+      "O gráfico mostra a porcentagem de cenários em que o apostador terminou em 1.º lugar."],
+    ["O que são e como ver as estatísticas de cada jogo (Elo, xGols, Probabilidade)?",
+      "São dados do modelo matemático calculados para cada confronto:<br><br>" +
+      "• <strong>Elo:</strong> Força histórica da seleção.<br>" +
+      "• <strong>xGols (Gols Esperados):</strong> Média estimada de gols que o time fará no jogo.<br>" +
+      "• <strong>Probabilidade:</strong> Chance percentual de vitória ou empate.<br><br>" +
+      "<strong>Ver Detalhes (Prognóstico):</strong><br>" +
+      "Ao clicar na linha de qualquer jogo ou no ícone correspondente na aba <strong>Jogos</strong>, abre-se um painel com a matriz completa de probabilidades de todos os placares e o histórico do confronto.<br><br>" +
+      "<em>Nota: As estatísticas ficam ocultas (🔒) para jogos com apostas abertas para manter o jogo justo.</em>"],
     // --- SUPORTE / BUGS ---
     ["Encontrei um bug. O que faço?",
       "Primeiramente, limpe o cache do navegador. Se o bug persistir, contate um administrador."],

@@ -135,7 +135,7 @@ function renderAdmin() {
 
   const bts = [
     { k: "grupos", l: "Grupos" },
-    { k: "32avos", l: "32avos" },
+    { k: "16avos", l: "16avos" },
     { k: "oitavas", l: "Oitavas" },
     { k: "quartas", l: "Quartas" },
     { k: "semis", l: "Semis" },
@@ -304,7 +304,7 @@ function toggleStatusFase(fase) {
 
 const FASES_CONFIG = [
   { key: "grupos", label: "Grupos" },
-  { key: "32avos", label: "32avos" },
+  { key: "16avos", label: "16avos" },
   { key: "oitavas", label: "Oitavas" },
   { key: "quartas", label: "Quartas" },
   { key: "semis", label: "Semis" },
@@ -608,7 +608,7 @@ async function limparFaseApostador(id) {
       await APP.db.collection("apostadores").doc(id).collection("dados").doc("palpites").set({ especiais: {} }, { merge: true });
     }
   } else {
-    const fasesFiltro = fase === "todas" ? ["grupos", "32avos", "oitavas", "quartas", "semis", "final", "terceiro"] :
+    const fasesFiltro = fase === "todas" ? ["grupos", "16avos", "oitavas", "quartas", "semis", "final", "terceiro"] :
       (fase === "finais" ? ["final", "terceiro"] : [fase]);
     const jogosParaLimpar = (window.SCHEDULE || []).filter(j => fasesFiltro.includes(j.fase));
 
@@ -1014,7 +1014,7 @@ async function gerarCachePalpites(tipo, silencioso = false) {
   }
 
   const FASES_GRUPOS = ["grupos"];
-  const FASES_ELIM = ["32avos", "oitavas", "quartas", "semis", "final", "terceiro"];
+  const FASES_ELIM = ["16avos", "oitavas", "quartas", "semis", "final", "terceiro"];
   const fasesAlvo = tipo === "grupos" ? FASES_GRUPOS : FASES_ELIM;
 
   const jogosDaFase = (window.SCHEDULE || []).filter(j => fasesAlvo.includes(j.fase));

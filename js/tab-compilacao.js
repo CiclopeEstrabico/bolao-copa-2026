@@ -43,9 +43,9 @@ window.renderCompilacao = function () {
   if (!apos.length) { el.innerHTML = '<div class="card"><p style="color:var(--texto2)">Nenhum apostador cadastrado.</p></div>'; return; }
 
   // Filtros de fase
-  const fases = ["todos", "grupos", "32avos", "oitavas", "quartas", "semis", "terceiro", "final"];
+  const fases = ["todos", "grupos", "16avos", "oitavas", "quartas", "semis", "terceiro", "final"];
   const faseAtiva = window._compFase || "todos";
-  const nomesFase = { todos: "Todos", grupos: "Grupos", "32avos": "32 Avos", oitavas: "Oitavas", quartas: "Quartas", semis: "Semis", terceiro: "3o Lugar", final: "Final" };
+  const nomesFase = { todos: "Todos", grupos: "Grupos", "16avos": "16 Avos", oitavas: "Oitavas", quartas: "Quartas", semis: "Semis", terceiro: "3o Lugar", final: "Final" };
 
   let h = '<div class="toggle-bar" style="margin-bottom:15px">';
   h += '<span class="toggle-label">Fase:</span>';

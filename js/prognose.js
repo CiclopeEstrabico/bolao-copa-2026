@@ -554,7 +554,7 @@ window.PROGNOSE = {
     h += _infoRow("📍", "Cidade", jogo.cidade + " · " + (jogo.pais === "USA" ? "EUA" : jogo.pais === "MEX" ? "México" : jogo.pais === "CAN" ? "Canadá" : jogo.pais || ""));
     h += _infoRow("📅", "Data & Hora", data + " (BRT)");
     if (jogo.fase === "grupos") h += _infoRow("🏆", "Fase", "Fase de Grupos — Grupo " + jogo.grupo);
-    else h += _infoRow("🏆", "Fase", { ["32avos"]: "32 Avos de Final", oitavas: "Oitavas de Final", quartas: "Quartas de Final", semis: "Semifinais", terceiro: "Disputa de 3° Lugar", final: "FINAL" }[jogo.fase] || jogo.fase);
+    else h += _infoRow("🏆", "Fase", { ["16avos"]: "16 Avos de Final", oitavas: "Oitavas de Final", quartas: "Quartas de Final", semis: "Semifinais", terceiro: "Disputa de 3° Lugar", final: "FINAL" }[jogo.fase] || jogo.fase);
     h += '</div></div>';
     return h;
   }

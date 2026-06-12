@@ -28,7 +28,7 @@ window.renderTabela = function() {
     </div>`;
   }
 
-  // Derivar a ordem dos 32avos a partir de quem alimenta cada oitava
+  // Derivar a ordem dos 16avos a partir de quem alimenta cada oitava
   // R16_1: WR32_2, WR32_5 → R32_2 e R32_5 ficam alinhados com R16_1
   const r16Template = window.BRACKET.BRACKET_TEMPLATE_R16;
   const r8Template  = window.BRACKET.BRACKET_TEMPLATE_QF;
@@ -48,7 +48,7 @@ window.renderTabela = function() {
     sfOrder.push([sf.home.replace('WQF_','QF_'), sf.away.replace('WQF_','QF_')]);
   }
 
-  // Ordem dos 32avos: para cada R16 na ordem acima, extrair os dois R32 que o alimentam
+  // Ordem dos 16avos: para cada R16 na ordem acima, extrair os dois R32 que o alimentam
   const r32Order = [];
   for (const [h16, a16] of r16Order) {
     for (const r16Id of [h16, a16]) {
@@ -57,7 +57,7 @@ window.renderTabela = function() {
     }
   }
 
-  function col32avos() {
+  function col16avos() {
     let h = '';
     for (let i = 0; i < r32Order.length; i++) {
       const [r32a, r32b] = r32Order[i];
@@ -93,9 +93,9 @@ window.renderTabela = function() {
 
   let h = '<div class="bracket-scroll">';
 
-  // 32 avos
-  h += '<div class="bracket-fase"><div class="bracket-fase-label">32 Avos</div><div class="bracket-coluna">';
-  h += col32avos();
+  // 16 avos
+  h += '<div class="bracket-fase"><div class="bracket-fase-label">16 Avos</div><div class="bracket-coluna">';
+  h += col16avos();
   h += '</div></div>';
 
   // Oitavas

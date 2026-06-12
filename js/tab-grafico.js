@@ -351,7 +351,7 @@ function _graficoRodarMonteCarlo() {
   const bUmT = cfgRaw.bonus_gols_um_time || 0;
   const base = cfgRaw.resultado_base || 0;
 
-  const FASES = ['grupos', '32avos', 'oitavas', 'quartas', 'semis', 'terceiro', 'final'];
+  const FASES = ['grupos', '16avos', 'oitavas', 'quartas', 'semis', 'terceiro', 'final'];
   for (const f of FASES) {
     const ft = cfgRaw.fatores_fase[f] || 1;
     cfgOt.pts_exatoAlto[f] = Math.round((base + bExA) * ft * 10);
@@ -714,19 +714,24 @@ function _renderChance(rankingCompleto, chances) {
       else              barWidth = Math.max(6, Math.floor(perColuna - 1));
     }
     gap = Math.max(1, Math.floor(perColuna - barWidth));
-    const fScale = (isMobile && isLandscape) ? 0.90 : 1.0;
-    const fv = (base) => (base * fScale).toFixed(2) + 'rem';
-    if      (n <= 8)  { valFontSize = fv(0.72); nameFontSize = fv(0.78); }
-    else if (n <= 12) { valFontSize = fv(0.67); nameFontSize = fv(0.73); }
-    else if (n <= 18) { valFontSize = fv(0.62); nameFontSize = fv(0.68); }
-    else if (n <= 24) { valFontSize = fv(0.58); nameFontSize = fv(0.63); }
-    else if (n <= 40) { valFontSize = fv(0.54); nameFontSize = fv(0.58); }
-    else              { valFontSize = fv(0.50); nameFontSize = fv(0.54); }
+    // Fontes adaptativas — valor fica 20% menor em landscape/desktop (será vertical)
+    const fScaleVal  = (isMobile && isLandscape) ? 0.72 : 0.80; // 0.90*0.80 landscape, 0.80 desktop
+    const fScaleName = (isMobile && isLandscape) ? 0.90 : 1.0;
+    const fv  = (base) => (base * fScaleVal).toFixed(2) + 'rem';
+    const fvn = (base) => (base * fScaleName).toFixed(2) + 'rem';
+    if      (n <= 8)  { valFontSize = fv(0.72); nameFontSize = fvn(0.78); }
+    else if (n <= 12) { valFontSize = fv(0.67); nameFontSize = fvn(0.73); }
+    else if (n <= 18) { valFontSize = fv(0.62); nameFontSize = fvn(0.68); }
+    else if (n <= 24) { valFontSize = fv(0.58); nameFontSize = fvn(0.63); }
+    else if (n <= 40) { valFontSize = fv(0.54); nameFontSize = fvn(0.58); }
+    else              { valFontSize = fv(0.50); nameFontSize = fvn(0.54); }
   }
 
   const chartHeight = (isMobile && isLandscape) ? '180px' : '280px';
   const marginBot   = (isMobile && isLandscape) ? '65px' : '80px';
   const shortFmt    = isMobile && isLandscape;
+  // Valor rotacionado (vertical) em landscape/desktop para evitar sobreposição com 70+ barras
+  const valVertical = !(isMobile && !isLandscape); // true em landscape e desktop
 
   let h = '<div class="card" style="padding:20px 10px;">';
 
@@ -756,7 +761,11 @@ function _renderChance(rankingCompleto, chances) {
     const cor = _rainbowColor(rankingHumanosC.indexOf(a), rankingHumanosC.length);
     const valFmt = shortFmt ? Math.round(val) + '%' : val.toFixed(1) + '%';
     h += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative;height:100%;justify-content:flex-end;z-index:1">`;
-    h += `<div style="font-size:${valFontSize};font-weight:800;color:var(--texto);margin-bottom:2px;white-space:nowrap">${valFmt}</div>`;
+    if (valVertical) {
+      h += `<div style="position:absolute;top:0;left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${valFmt}</div>`;
+    } else {
+      h += `<div style="font-size:${valFontSize};font-weight:800;color:var(--texto);margin-bottom:2px;white-space:nowrap">${valFmt}</div>`;
+    }
     h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2, perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
     h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${a.nome}</div>`;
     h += '</div>';
@@ -874,16 +883,18 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
 
     gap = Math.max(1, Math.floor(perColuna - barWidth));
 
-    // Fontes adaptativas
-    const fScale = (isMobile && isLandscape) ? 0.90 : 1.0;
-    const fv = (base) => (base * fScale).toFixed(2) + 'rem';
+    // Fontes adaptativas — valor fica 20% menor em landscape/desktop (será vertical)
+    const fScaleVal  = (isMobile && isLandscape) ? 0.72 : 0.80; // 0.90*0.80 landscape, 0.80 desktop
+    const fScaleName = (isMobile && isLandscape) ? 0.90 : 1.0;
+    const fv  = (base) => (base * fScaleVal).toFixed(2) + 'rem';
+    const fvn = (base) => (base * fScaleName).toFixed(2) + 'rem';
 
-    if      (n <= 8)  { valFontSize = fv(0.78); nameFontSize = fv(0.80); }
-    else if (n <= 12) { valFontSize = fv(0.73); nameFontSize = fv(0.75); }
-    else if (n <= 18) { valFontSize = fv(0.68); nameFontSize = fv(0.70); }
-    else if (n <= 24) { valFontSize = fv(0.64); nameFontSize = fv(0.66); }
-    else if (n <= 40) { valFontSize = fv(0.58); nameFontSize = fv(0.60); }
-    else              { valFontSize = fv(0.52); nameFontSize = fv(0.54); }
+    if      (n <= 8)  { valFontSize = fv(0.78); nameFontSize = fvn(0.80); }
+    else if (n <= 12) { valFontSize = fv(0.73); nameFontSize = fvn(0.75); }
+    else if (n <= 18) { valFontSize = fv(0.68); nameFontSize = fvn(0.70); }
+    else if (n <= 24) { valFontSize = fv(0.64); nameFontSize = fvn(0.66); }
+    else if (n <= 40) { valFontSize = fv(0.58); nameFontSize = fvn(0.60); }
+    else              { valFontSize = fv(0.52); nameFontSize = fvn(0.54); }
   }
 
   // ── Monta o HTML ──
@@ -900,6 +911,8 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
   const chartHeight = (isMobile && isLandscape) ? '180px' : '280px';
   const marginBot   = (isMobile && isLandscape) ? '65px' : '80px';
   const shortFmt    = isMobile && isLandscape;
+  // Valor rotacionado (vertical) em landscape/desktop para evitar sobreposição com 70+ barras
+  const valVertical = !(isMobile && !isLandscape); // true em landscape e desktop
 
   // Posições IC em percentual do container (invertido: 0% = topo, 100% = base)
   // chartHeight em px para cálculo das linhas IC overlay
@@ -934,7 +947,12 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
       ? `<span style='font-weight:normal;color:#b8cfe8'>${a.nome}</span>`
       : a.nome;
     h += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative;height:100%;justify-content:flex-end;z-index:1">`;
-    h += `<div style="font-size:${valFontSize};font-weight:800;color:var(--texto);margin-bottom:4px;white-space:nowrap">${_fmtVal(metricaAtiva, val, shortFmt)}</div>`;
+    if (valVertical) {
+      // Label vertical acima da barra (mesmo estilo do nome, mas no topo)
+      h += `<div style="position:absolute;top:0;left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${_fmtVal(metricaAtiva, val, shortFmt)}</div>`;
+    } else {
+      h += `<div style="font-size:${valFontSize};font-weight:800;color:var(--texto);margin-bottom:4px;white-space:nowrap">${_fmtVal(metricaAtiva, val, shortFmt)}</div>`;
+    }
     h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2,perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
     h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${nomeBarra}</div>`;
     h += '</div>';
@@ -1149,7 +1167,7 @@ window._graficoExportarJPG = function() {
   // ── Dimensões do canvas (paisagem fixa) ──
   const PADDING_LEFT   = 20;
   const PADDING_RIGHT  = 20;
-  const PADDING_TOP    = 60;  // espaço para título
+  const PADDING_TOP    = 80;  // espaço para título + labels verticais de valor
   const PADDING_BOTTOM = 120; // espaço para nomes verticais
   const CHART_HEIGHT   = 260;
   const BAR_WIDTH      = Math.max(6, Math.min(28, Math.floor((Math.max(900, n * 14 + 40) - PADDING_LEFT - PADDING_RIGHT) / n - 1)));
@@ -1208,10 +1226,11 @@ window._graficoExportarJPG = function() {
       : ctx.rect(x, y, BAR_WIDTH, barH);
     ctx.fill();
 
-    // Valor acima da barra
+    // Valor vertical acima da barra (rotacionado para não sobrepor com 70+ barras)
+    ctx.save();
     ctx.fillStyle = '#f1f5f9';
-    ctx.font = 'bold 9px system-ui, sans-serif';
-    ctx.textAlign = 'center';
+    ctx.font = 'bold 7px system-ui, sans-serif'; // 20% menor que 9px
+    ctx.textAlign = 'left';
     const valLabel = metricaAtiva === 'pct'
       ? val + '%'
       : metricaAtiva === 'chance'
@@ -1219,7 +1238,10 @@ window._graficoExportarJPG = function() {
       : metricaAtiva === 'pts'
       ? val.toFixed(1)
       : String(val);
-    ctx.fillText(valLabel, x + BAR_WIDTH / 2, y - 4);
+    ctx.translate(x + BAR_WIDTH / 2 + 3, y - 4);
+    ctx.rotate(-Math.PI / 2); // rotaciona 90° anti-horário (de baixo para cima)
+    ctx.fillText(valLabel, 0, 0);
+    ctx.restore();
 
     // Nome vertical abaixo
     ctx.save();

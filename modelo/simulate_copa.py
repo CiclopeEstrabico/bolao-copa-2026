@@ -1182,7 +1182,7 @@ def main():
     # 2) Heatmap de Probabilidade de Avanço
     plt.figure(figsize=(12, 14))
     phases = ['P_r32', 'P_r16', 'P_quarters', 'P_semis', 'P_final', 'P_champion']
-    phase_labels = ['32-Avos', 'Oitavas', 'Quartas', 'Semi', 'Final', 'Campeão']
+    phase_labels = ['16-Avos', 'Oitavas', 'Quartas', 'Semi', 'Final', 'Campeão']
     
     heatmap_df = df.set_index('Team')[phases].copy()
     data = heatmap_df.values

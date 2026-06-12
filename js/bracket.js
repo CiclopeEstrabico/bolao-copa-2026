@@ -284,7 +284,7 @@ window.BRACKET = (() => {
       };
       return tercLabels[pos] || `3.° lugar #${tercMatch[1]}`;
     }
-    if (pos.startsWith("WR32_")) return `Venc. 32avos #${pos.slice(5)}`;
+    if (pos.startsWith("WR32_")) return `Venc. 16avos #${pos.slice(5)}`;
     if (pos.startsWith("WR16_")) return `Venc. Oitavas #${pos.slice(5)}`;
     if (pos.startsWith("WQF_")) return `Venc. Quartas #${pos.slice(4)}`;
     if (pos.startsWith("WSF_")) return `Venc. Semi #${pos.slice(4)}`;

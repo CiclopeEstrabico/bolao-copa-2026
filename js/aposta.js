@@ -536,7 +536,7 @@ function atualizarMiniTabelasAposta() {
 function renderProgressoAposta() {
   const fases = [
     { key: "grupos", label: "Grupos", total: 72 },
-    { key: "32avos", label: "32avos", total: 16 },
+    { key: "16avos", label: "16avos", total: 16 },
     { key: "oitavas", label: "Oitavas", total: 8 },
     { key: "quartas", label: "Quartas", total: 4 },
     { key: "semis", label: "Semis", total: 2 },

@@ -208,7 +208,7 @@ window.renderClassificacao = function () {
       h += '<div style="grid-column: 1 / -1; margin-bottom: 4px;"><div style="color:var(--texto2)">Nome Completo</div><div style="font-weight:700">' + (p.nome || "—") + '</div></div>';
     }
     h += '<div><div style="color:var(--texto2)" title="Pontos acumulados somente nos jogos da fase de grupos">Grupos</div><div style="font-weight:700">' + st.total_grupos.toFixed(1) + ' pts</div></div>';
-    h += '<div><div style="color:var(--texto2)" title="Pontos dos jogos a partir dos 32 avos de final (fases eliminatórias)">Eliminatórias</div><div style="font-weight:700">' + st.total_eliminatorias.toFixed(1) + ' pts</div></div>';
+    h += '<div><div style="color:var(--texto2)" title="Pontos dos jogos a partir dos 16 avos de final (fases eliminatórias)">Eliminatórias</div><div style="font-weight:700">' + st.total_eliminatorias.toFixed(1) + ' pts</div></div>';
     h += '<div><div style="color:var(--texto2)" title="Pontos de palpites especiais: Campeão, Vice e 3º Lugar">Especiais</div><div style="font-weight:700">' + st.total_especiais + ' pts</div></div>';
     h += '<div><div style="color:var(--texto2)" title="Jogos em que nenhum palpite foi registrado — valem 0 pts">Sem palpite</div><div style="font-weight:700;color:var(--texto2)">' + st.sem_palpite + '</div></div>';
     h += '</div></div></td></tr>';

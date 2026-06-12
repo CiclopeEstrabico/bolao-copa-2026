@@ -106,7 +106,7 @@ Documentos raiz identificados pelo ID do apostador (ex: `tok_1716...` ou `MODELO
 ### `config` (Coleção)
 
 - Documento `status`: Configurações de liberação de fases e metadados.
-  - Campos: `{ liberado_grupos, liberado_32avos, liberado_oitavas, liberado_quartas, liberado_semis, liberado_final, liberado_terceiro, cache_res_ts, cache_grupos_ts, cache_elim_ts }`.
+  - Campos: `{ liberado_grupos, liberado_16avos, liberado_oitavas, liberado_quartas, liberado_semis, liberado_final, liberado_terceiro, cache_res_ts, cache_grupos_ts, cache_elim_ts }`.
 
 ### `tokens` (Coleção)
 

@@ -402,7 +402,7 @@ function nomeTime(code) {
 function getFaseLabel(jogo) {
   if (!jogo) return "";
   if (jogo.fase === "grupos") return "Grupo " + (jogo.grupo || "");
-  if (jogo.fase === "32avos") return "32 Avos";
+  if (jogo.fase === "16avos") return "16 Avos";
   if (jogo.fase === "oitavas") return "Oitavas";
   if (jogo.fase === "quartas") return "Quartas";
   if (jogo.fase === "semis") return "Semi";
@@ -415,7 +415,7 @@ function jogoAceita(jogoId) {
   if (!jogo) return false;
   const status = APP.configStatus || {};
   if (jogo.fase === "grupos")   return !!status.liberado_grupos;
-  if (jogo.fase === "32avos")   return !!status.liberado_32avos;
+  if (jogo.fase === "16avos")   return !!status.liberado_16avos;
   if (jogo.fase === "oitavas")  return !!status.liberado_oitavas;
   if (jogo.fase === "quartas")  return !!status.liberado_quartas;
   if (jogo.fase === "semis")    return !!status.liberado_semis;
@@ -514,7 +514,7 @@ window.injetarTooltipsMobile = function (containerEl, seletor) {
 
     // Se o elemento for clicável nativamente (tem onclick),
     // ignoramos o tooltip via toque para não conflitar com a ação de clique,
-    // garantindo que continue funcionando na aba Compilação e Tabela.
+    // garantindo que continue funcionando na aba Palpites e Tabela.
     if (el.hasAttribute('onclick') || el.tagName.toLowerCase() === 'a' || el.tagName.toLowerCase() === 'button') {
       return;
     }
