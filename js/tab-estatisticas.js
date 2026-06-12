@@ -34,24 +34,71 @@ window.renderEstatisticas = function () {
     return a?.participante?.apelido || a?.participante?.nome || a?.apelido || a?.nome || '—';
   }
 
+  // Helper: ordena os candidatos e retorna os 2 melhores/piores respeitando os desempates por pontos
+  function obterDestaques(getScore, isGoodCard, higherIsWinner = true, filterFn = null) {
+    let candidatos = ranking.map(r => {
+      const score = getScore(r);
+      return { r, score };
+    });
+
+    if (filterFn) {
+      candidatos = candidatos.filter(c => filterFn(c.score, c.r));
+    }
+
+    candidatos.sort((a, b) => {
+      const diff = higherIsWinner ? (b.score - a.score) : (a.score - b.score);
+      if (Math.abs(diff) > 0.0001) return diff;
+      
+      // Desempate:
+      if (isGoodCard) {
+        // Se o card for bom: mais pontos primeiro
+        if (b.r.stats.total !== a.r.stats.total) {
+          return b.r.stats.total - a.r.stats.total;
+        }
+        return a.r.posicao - b.r.posicao; // melhor posição
+      } else {
+        // Se o card for ruim: menos pontos primeiro
+        if (a.r.stats.total !== b.r.stats.total) {
+          return a.r.stats.total - b.r.stats.total;
+        }
+        return b.r.posicao - a.r.posicao; // pior posição
+      }
+    });
+
+    if (!candidatos.length) return { bestArr: null, bestScore: 0, bestApo: null };
+
+    const bestScore = candidatos[0].score;
+    // Se o score do melhor for inválido ou 0 (para cards baseados em contagem positiva), trata como vazio.
+    const isInvalid = (higherIsWinner === true && bestScore === 0) ||
+                      (higherIsWinner === true && bestScore === -Infinity) ||
+                      (higherIsWinner === false && bestScore === Infinity);
+                      
+    if (isInvalid) {
+      return { bestArr: null, bestScore: 0, bestApo: null };
+    }
+
+    const best = candidatos[0].r;
+    let bestArr = [best];
+    if (candidatos[1] && Math.abs(candidatos[1].score - bestScore) < 0.0001) {
+      bestArr.push(candidatos[1].r);
+    }
+    
+    return { bestArr, bestScore, bestApo: best };
+  }
+
   // Top performers
-  const _rankByPts = [...ranking].sort((a, b) => b.stats.total - a.stats.total);
-  const melhorPts = _rankByPts[0];
-  const _melhorPtsArr = _tieTop2(_rankByPts, x => x.stats.total);
+  const destLider = obterDestaques(r => r.stats.total, true, true);
+  const melhorPts = destLider.bestApo;
+  const _melhorPtsArr = destLider.bestArr;
 
-  const _rankByRes = [...ranking].sort((a, b) => b.stats.acertos_resultado - a.stats.acertos_resultado);
-  const melhorRes = _rankByRes[0];
-  const _melhorResArr = _tieTop2(_rankByRes, x => x.stats.acertos_resultado);
+  const destVidente = obterDestaques(r => r.stats.acertos_resultado, true, true);
+  const melhorRes = destVidente.bestApo;
+  const _melhorResArr = destVidente.bestArr;
 
-  const _rankByExato = [...ranking].sort((a, b) =>
-    (b.stats.acertos_placar_exato + b.stats.acertos_placar_alto) -
-    (a.stats.acertos_placar_exato + a.stats.acertos_placar_alto)
-  );
-  const melhorExato = _rankByExato[0];
-  const _melhorExatoArr = _tieTop2(_rankByExato, x => x.stats.acertos_placar_exato + x.stats.acertos_placar_alto);
-  const melhorExatoCount = melhorExato
-    ? (melhorExato.stats.acertos_placar_exato + melhorExato.stats.acertos_placar_alto)
-    : 0;
+  const destAtirador = obterDestaques(r => r.stats.acertos_placar_exato + r.stats.acertos_placar_alto, true, true);
+  const melhorExato = destAtirador.bestApo;
+  const _melhorExatoArr = destAtirador.bestArr;
+  const melhorExatoCount = destAtirador.bestScore;
 
   // --- Zebra de Ouro ---
   const zebraScores = {};
@@ -78,30 +125,19 @@ window.renderEstatisticas = function () {
       }
     }
   }
-  const _zebraSorted = Object.entries(zebraScores).sort((a, b) => b[1] - a[1]);
-  const melhorZebraId = _zebraSorted[0]?.[0];
-  const melhorZebra = apos.find(a => a.id === melhorZebraId);
-  const zebraCount = zebraScores[melhorZebraId] || 0;
-  const _zebraArr = _zebraSorted.length >= 2 && _zebraSorted[0][1] === _zebraSorted[1][1]
-    ? [melhorZebra, apos.find(a => a.id === _zebraSorted[1][0])].filter(Boolean)
-    : (melhorZebra ? [melhorZebra] : null);
+  const destZebra = obterDestaques(r => zebraScores[r.participante.id] || 0, true, true);
+  const melhorZebra = destZebra.bestApo;
+  const _zebraArr = destZebra.bestArr;
+  const zebraCount = destZebra.bestScore;
 
   // --- Mestre dos Bônus ---
-  const bonusRanking = ranking.map(r => {
-    const s = r.stats;
-    // Contagem total de jogos onde o apostador recebeu algum bônus:
-    // placares exatos (baixo ou alto) + bônus+1 (diferença ou gols de um time)
-    const jogosComBonus = s.acertos_placar_exato + s.acertos_placar_alto + s.acertos_bonus1;
-    return { ...r, jogosComBonus };
-  }).sort((a, b) => b.jogosComBonus - a.jogosComBonus);
-  const mestreBonus = bonusRanking[0];
-  const _mestreBonusArr = bonusRanking.length >= 2 && bonusRanking[0].jogosComBonus === bonusRanking[1].jogosComBonus
-    ? [bonusRanking[0], bonusRanking[1]]
-    : (bonusRanking[0] ? [bonusRanking[0]] : null);
+  const destMestreBonus = obterDestaques(r => r.stats.acertos_placar_exato + r.stats.acertos_placar_alto + r.stats.acertos_bonus1, true, true);
+  const mestreBonus = destMestreBonus.bestApo;
+  const _mestreBonusArr = destMestreBonus.bestArr;
 
   // --- Escalando (Últimos 5 jogos) ---
   const totalJogos = jogosFeitos.length;
-  let escalandoApo = null, escalandoApo2 = null, maiorSalto = -999;
+  const saltos5 = {};
   if (totalJogos >= 5) {
     const jogosOrdenados = [...jogosFeitos].sort((a, b) => new Date(a.utc) - new Date(b.utc));
     const ultimos5Ids = jogosOrdenados.slice(-5).map(j => j.id);
@@ -115,31 +151,24 @@ window.renderEstatisticas = function () {
       const aId = ranking[i].participante.id;
       const posAtual = ranking[i].posicao;
       const posAnt = rankingAnterior.findIndex(x => x.participante.id === aId) + 1;
-      const salto = posAnt - posAtual;
-      if (salto > maiorSalto) {
-        maiorSalto = salto;
-        escalandoApo2 = null;
-        escalandoApo = ranking[i].participante;
-      } else if (salto === maiorSalto && escalandoApo) {
-        escalandoApo2 = ranking[i].participante;
-      }
+      saltos5[aId] = posAnt - posAtual;
     }
-
   }
-  const _escalandoArr = escalandoApo ? (escalandoApo2 ? [escalandoApo, escalandoApo2] : [escalandoApo]) : null;
+
+  const destEscalando = obterDestaques(r => saltos5[r.participante.id] || 0, true, true, (score) => totalJogos >= 5 && score > 0);
+  const escalandoApo = destEscalando.bestApo;
+  const _escalandoArr = destEscalando.bestArr;
+  const maiorSalto = destEscalando.bestScore;
 
   // --- Lanterninha ---
-  const lanterninha = ranking[ranking.length - 1];
-  const lanterninha2 = ranking.length >= 2 && ranking[ranking.length - 2] &&
-    ranking[ranking.length - 2].stats.total === lanterninha?.stats.total
-    ? ranking[ranking.length - 2]
-    : null;
-  const _lanterninhaArr = lanterninha ? (lanterninha2 ? [lanterninha, lanterninha2] : [lanterninha]) : null;
+  const destLanterninha = obterDestaques(r => r.stats.total, false, false);
+  const lanterninha = destLanterninha.bestApo;
+  const _lanterninhaArr = destLanterninha.bestArr;
 
   // ─── Feature 2: Cálculos dos novos cards ─────────────────────────────────
 
   // --- Maior Tombo (inverso do Escalando) ---
-  let tombApo = null, tombApo2 = null, maiorTombo = -999;
+  const quedas5 = {};
   if (totalJogos >= 5) {
     const jogosOrdenadosTombo = [...jogosFeitos].sort((a, b) => new Date(a.utc) - new Date(b.utc));
     const ultimos5IdsTombo = jogosOrdenadosTombo.slice(-5).map(j => j.id);
@@ -152,17 +181,14 @@ window.renderEstatisticas = function () {
       const aId = ranking[i].participante.id;
       const posAtual = ranking[i].posicao;
       const posAnt = rankingAntTombo.findIndex(x => x.participante.id === aId) + 1;
-      const queda = posAtual - posAnt; // positivo = caiu
-      if (queda > maiorTombo) {
-        maiorTombo = queda;
-        tombApo2 = null;
-        tombApo = ranking[i].participante;
-      } else if (queda === maiorTombo && tombApo) {
-        tombApo2 = ranking[i].participante;
-      }
+      quedas5[aId] = posAtual - posAnt;
     }
   }
-  const _tombArr = tombApo ? (tombApo2 ? [tombApo, tombApo2] : [tombApo]) : null;
+
+  const destQueda = obterDestaques(r => quedas5[r.participante.id] || 0, false, true, (score) => totalJogos >= 5 && score > 0);
+  const tombApo = destQueda.bestApo;
+  const _tombArr = destQueda.bestArr;
+  const maiorTombo = destQueda.bestScore;
 
   // --- Fênix: maior salto nos últimos 20 jogos (mín 15) ---
   let recuperApo = null, recuperApo2 = null, maiorRecup = -999;
@@ -188,7 +214,10 @@ window.renderEstatisticas = function () {
       }
     }
   }
-  const _recuperArr = recuperApo ? (recuperApo2 ? [recuperApo, recuperApo2] : [recuperApo]) : null;
+  const destFenix = obterDestaques(r => recuperacoes20[r.participante.id] || 0, true, true, (score) => totalJogos >= 15 && score > 0);
+  const recuperApo = destFenix.bestApo;
+  const _recuperArr = destFenix.bestArr;
+  const maiorRecup = destFenix.bestScore;
 
   // --- Chutador de Zebra (apostou em mais zebras, independente de acerto) ---
   const zebraApostas = {};
@@ -213,13 +242,11 @@ window.renderEstatisticas = function () {
       }
     }
   }
-  const _chutZebraSorted = Object.entries(zebraApostas).sort((a, b) => b[1] - a[1]);
-  const chutZebraId = _chutZebraSorted[0]?.[0];
-  const chutZebraApo = apos.find(a => a.id === chutZebraId);
-  const chutZebraCount = zebraApostas[chutZebraId] || 0;
-  const _chutZebraArr = _chutZebraSorted.length >= 2 && _chutZebraSorted[0][1] === _chutZebraSorted[1][1]
-    ? [chutZebraApo, apos.find(a => a.id === _chutZebraSorted[1][0])].filter(Boolean)
-    : (chutZebraApo ? [chutZebraApo] : null);
+
+  const destDestemido = obterDestaques(r => zebraApostas[r.participante.id] || 0, true, true);
+  const chutZebraApo = destDestemido.bestApo;
+  const _chutZebraArr = destDestemido.bestArr;
+  const chutZebraCount = destDestemido.bestScore;
 
   // --- Conservador: mais apostas onde ≥50% do grupo apostou no mesmo resultado ---
   const conservScores = {};
@@ -242,13 +269,11 @@ window.renderEstatisticas = function () {
       if (cnt / cTotal >= 0.50) conservScores[a.id] = (conservScores[a.id] || 0) + 1;
     }
   }
-  const _conservSorted = Object.entries(conservScores).sort((a, b) => b[1] - a[1]);
-  const conservId = _conservSorted[0]?.[0];
-  const conservApo = apos.find(a => a.id === conservId);
-  const conservCount = conservScores[conservId] || 0;
-  const _conservArr = _conservSorted.length >= 2 && _conservSorted[0][1] === _conservSorted[1][1]
-    ? [conservApo, apos.find(a => a.id === _conservSorted[1][0])].filter(Boolean)
-    : (conservApo ? [conservApo] : null);
+
+  const destConservador = obterDestaques(r => conservScores[r.participante.id] || 0, true, true);
+  const conservApo = destConservador.bestApo;
+  const _conservArr = destConservador.bestArr;
+  const conservCount = destConservador.bestScore;
 
   // --- Anarquista: maior distância média |ΔH - ΔA| do placar mais votado ---
   const anarqScores = {};
@@ -274,19 +299,17 @@ window.renderEstatisticas = function () {
       anarqJogos[a.id] = (anarqJogos[a.id] || 0) + 1;
     }
   }
-  const _anarqSorted = Object.entries(anarqScores)
-    .filter(([id]) => (anarqJogos[id] || 0) >= 3)
-    .map(([id, soma]) => [id, soma / anarqJogos[id]])
-    .sort((a, b) => b[1] - a[1]);
-  const anarqId = _anarqSorted[0]?.[0];
-  const anarqApo = apos.find(a => a.id === anarqId);
-  const anarqMedia = anarqId ? (anarqScores[anarqId] / anarqJogos[anarqId]).toFixed(1) : "—";
-  const _anarqArr = _anarqSorted.length >= 2 && Math.abs(_anarqSorted[0][1] - _anarqSorted[1][1]) < 0.001
-    ? [anarqApo, apos.find(a => a.id === _anarqSorted[1][0])].filter(Boolean)
-    : (anarqApo ? [anarqApo] : null);
+
+  const destAnarquista = obterDestaques(r => {
+    const id = r.participante.id;
+    return (anarqJogos[id] || 0) >= 3 ? (anarqScores[id] / anarqJogos[id]) : 0;
+  }, true, true, (score) => score > 0);
+  const anarqApo = destAnarquista.bestApo;
+  const _anarqArr = destAnarquista.bestArr;
+  const anarqMedia = destAnarquista.bestScore ? destAnarquista.bestScore.toFixed(1) : "—";
 
   // --- Consistência (menor desvio padrão de pts/jogo, mínimo 10 jogos) ---
-  let consistApo = null, consistApo2 = null, menorDP = Infinity;
+  const dps = {};
   for (const r2 of ranking) {
     const aId = r2.participante.id;
     const ptsPorJogo = jogosFeitos.map(jogo => {
@@ -297,12 +320,13 @@ window.renderEstatisticas = function () {
     }).filter(x => x !== null);
     if (ptsPorJogo.length < 10) continue;
     const media = ptsPorJogo.reduce((s, v) => s + v, 0) / ptsPorJogo.length;
-    const dp = Math.sqrt(ptsPorJogo.reduce((s, v) => s + (v - media) ** 2, 0) / ptsPorJogo.length);
-    if (Math.abs(dp - menorDP) < 0.001 && consistApo) {
-      consistApo2 = r2.participante;
-    } else if (dp < menorDP) { menorDP = dp; consistApo2 = null; consistApo = r2.participante; }
+    dps[aId] = Math.sqrt(ptsPorJogo.reduce((s, v) => s + (v - media) ** 2, 0) / ptsPorJogo.length);
   }
-  const _consistArr = consistApo ? (consistApo2 ? [consistApo, consistApo2] : [consistApo]) : null;
+
+  const destMetronome = obterDestaques(r => dps[r.participante.id] !== undefined ? dps[r.participante.id] : Infinity, true, false, (score) => score !== Infinity);
+  const consistApo = destMetronome.bestApo;
+  const _consistArr = destMetronome.bestArr;
+  const menorDP = destMetronome.bestScore;
 
   // --- Pior Palpite (maior distância absoluta ΔH+ΔA) ---
   let piorPalpite = null, maiorDistancia = -1;
@@ -313,7 +337,25 @@ window.renderEstatisticas = function () {
       const p = pals[a.id]?.[jogo.id];
       if (!p || p.homeGoals === undefined) continue;
       const dist = Math.abs((parseInt(p.homeGoals) - parseInt(p.awayGoals)) - (r2.homeGoals - r2.awayGoals));
+      
+      const aRank = ranking.find(x => x.participante.id === a.id);
+      const piorRank = piorPalpite ? ranking.find(x => x.participante.id === piorPalpite.id) : null;
+      
+      let isNewPior = false;
       if (dist > maiorDistancia) {
+        isNewPior = true;
+      } else if (dist === maiorDistancia && dist > 0 && aRank && piorRank) {
+        // Desempate: pior card, escolhe o que tem menos pontos
+        if (aRank.stats.total < piorRank.stats.total) {
+          isNewPior = true;
+        } else if (aRank.stats.total === piorRank.stats.total) {
+          if (aRank.posicao > piorRank.posicao) {
+            isNewPior = true;
+          }
+        }
+      }
+      
+      if (isNewPior) {
         maiorDistancia = dist;
         piorPalpite = a;
         piorJogo = jogo;
@@ -326,16 +368,17 @@ window.renderEstatisticas = function () {
   // --- Pé Frio (maior sequência consecutiva de 0 pts, recorde na Copa) ---
   // --- Pé Quente (maior sequência consecutiva acertando pelo menos o resultado, recorde na Copa) ---
   const jogosOrdenadosSeq = [...jogosFeitos].sort((a, b) => new Date(a.utc) - new Date(b.utc));
-  let peFrioApo = null, peFrioApo2 = null, maiorSeqFria = 0;
-  let peQuenteApo = null, peQuenteApo2 = null, maiorSeqQuente = 0;
-  for (const a of apos) {
+  const coldStreaks = {};
+  const hotStreaks = {};
+  for (const r2 of ranking) {
+    const aId = r2.participante.id;
     let seqFria = 0, recFria = 0;
     let seqQuente = 0, recQuente = 0;
     for (const jogo of jogosOrdenadosSeq) {
-      const p = pals[a.id]?.[jogo.id];
-      const r2 = res[jogo.id];
-      if (!p || p.homeGoals === undefined || !r2) continue;
-      const br = calcularPontosBrutos(p, r2);
+      const p = pals[aId]?.[jogo.id];
+      const r2Val = res[jogo.id];
+      if (!p || p.homeGoals === undefined || !r2Val) continue;
+      const br = calcularPontosBrutos(p, r2Val);
       const pts = aplicarFator(br.total_bruto, jogo.fase);
       // Pé Frio: zero pontos
       if (pts === 0) {
@@ -352,13 +395,19 @@ window.renderEstatisticas = function () {
         seqQuente = 0;
       }
     }
-    if (recFria > maiorSeqFria) { maiorSeqFria = recFria; peFrioApo2 = null; peFrioApo = a; }
-    else if (recFria === maiorSeqFria && recFria > 0 && peFrioApo) { peFrioApo2 = a; }
-    if (recQuente > maiorSeqQuente) { maiorSeqQuente = recQuente; peQuenteApo2 = null; peQuenteApo = a; }
-    else if (recQuente === maiorSeqQuente && recQuente > 0 && peQuenteApo) { peQuenteApo2 = a; }
+    coldStreaks[aId] = recFria;
+    hotStreaks[aId] = recQuente;
   }
-  const _peFrioArr = peFrioApo ? (peFrioApo2 ? [peFrioApo, peFrioApo2] : [peFrioApo]) : null;
-  const _peQuenteArr = peQuenteApo ? (peQuenteApo2 ? [peQuenteApo, peQuenteApo2] : [peQuenteApo]) : null;
+
+  const destPeFrio = obterDestaques(r => coldStreaks[r.participante.id] || 0, false, true);
+  const peFrioApo = destPeFrio.bestApo;
+  const _peFrioArr = destPeFrio.bestArr;
+  const maiorSeqFria = destPeFrio.bestScore;
+
+  const destPeQuente = obterDestaques(r => hotStreaks[r.participante.id] || 0, true, true);
+  const peQuenteApo = destPeQuente.bestApo;
+  const _peQuenteArr = destPeQuente.bestArr;
+  const maiorSeqQuente = destPeQuente.bestScore;
 
   let h = "";
 
