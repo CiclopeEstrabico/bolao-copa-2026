@@ -191,7 +191,7 @@ window.renderEstatisticas = function () {
   const maiorTombo = destQueda.bestScore;
 
   // --- Fênix: maior salto nos últimos 20 jogos (mín 15) ---
-  let recuperApo = null, recuperApo2 = null, maiorRecup = -999;
+  const recuperacoes20 = {};
   if (totalJogos >= 15) {
     const jogosOrdenadosFenix = [...jogosFeitos].sort((a, b) => new Date(a.utc) - new Date(b.utc));
     const ultimos20Ids = jogosOrdenadosFenix.slice(-20).map(j => j.id);
@@ -204,16 +204,10 @@ window.renderEstatisticas = function () {
       const aId = ranking[i].participante.id;
       const posAtual = ranking[i].posicao;
       const posAnt = rankingAntFenix.findIndex(x => x.participante.id === aId) + 1;
-      const salto = posAnt - posAtual;
-      if (salto > maiorRecup) {
-        maiorRecup = salto;
-        recuperApo2 = null;
-        recuperApo = ranking[i].participante;
-      } else if (salto === maiorRecup && recuperApo) {
-        recuperApo2 = ranking[i].participante;
-      }
+      recuperacoes20[aId] = posAnt - posAtual;
     }
   }
+
   const destFenix = obterDestaques(r => recuperacoes20[r.participante.id] || 0, true, true, (score) => totalJogos >= 15 && score > 0);
   const recuperApo = destFenix.bestApo;
   const _recuperArr = destFenix.bestArr;
