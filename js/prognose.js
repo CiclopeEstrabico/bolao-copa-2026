@@ -166,6 +166,8 @@ window.PROGNOSE = {
     let home = 0, draw = 0, away = 0, total = 0;
     const placarCount = {};
     for (const apId of Object.keys(todos)) {
+      // Exclui o MODELO da contagem de apostadores humanos
+      if (apId === "MODELO") continue;
       const p = todos[apId]?.[gameId];
       if (!p || p.homeGoals === undefined) continue;
       total++;

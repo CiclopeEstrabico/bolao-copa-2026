@@ -15,13 +15,40 @@ window.renderEstatisticas = function () {
     .filter(j => res[j.id]?.homeGoals !== undefined)
     .sort((a, b) => new Date(a.utc) - new Date(b.utc));
 
+  // Helper: dado array sorted desc por score, retorna [top1, top2?] se empate no topo
+  function _tieTop2(sorted, getScore) {
+    if (!sorted.length) return null;
+    const best = sorted[0];
+    const bestScore = getScore(best);
+    const second = sorted[1];
+    if (second && getScore(second) === bestScore) return [best, second];
+    return [best];
+  }
+  function _tieName(arr) {
+    if (!arr) return '—';
+    if (arr.length >= 2) return [
+      arr[0]?.participante?.apelido || arr[0]?.participante?.nome || arr[0]?.apelido || arr[0]?.nome || '—',
+      arr[1]?.participante?.apelido || arr[1]?.participante?.nome || arr[1]?.apelido || arr[1]?.nome || '—',
+    ];
+    const a = arr[0];
+    return a?.participante?.apelido || a?.participante?.nome || a?.apelido || a?.nome || '—';
+  }
+
   // Top performers
-  const melhorPts = [...ranking].sort((a, b) => b.stats.total - a.stats.total)[0];
-  const melhorRes = [...ranking].sort((a, b) => b.stats.acertos_resultado - a.stats.acertos_resultado)[0];
-  const melhorExato = [...ranking].sort((a, b) =>
+  const _rankByPts = [...ranking].sort((a, b) => b.stats.total - a.stats.total);
+  const melhorPts = _rankByPts[0];
+  const _melhorPtsArr = _tieTop2(_rankByPts, x => x.stats.total);
+
+  const _rankByRes = [...ranking].sort((a, b) => b.stats.acertos_resultado - a.stats.acertos_resultado);
+  const melhorRes = _rankByRes[0];
+  const _melhorResArr = _tieTop2(_rankByRes, x => x.stats.acertos_resultado);
+
+  const _rankByExato = [...ranking].sort((a, b) =>
     (b.stats.acertos_placar_exato + b.stats.acertos_placar_alto) -
     (a.stats.acertos_placar_exato + a.stats.acertos_placar_alto)
-  )[0];
+  );
+  const melhorExato = _rankByExato[0];
+  const _melhorExatoArr = _tieTop2(_rankByExato, x => x.stats.acertos_placar_exato + x.stats.acertos_placar_alto);
   const melhorExatoCount = melhorExato
     ? (melhorExato.stats.acertos_placar_exato + melhorExato.stats.acertos_placar_alto)
     : 0;
@@ -51,9 +78,13 @@ window.renderEstatisticas = function () {
       }
     }
   }
-  const melhorZebraId = Object.entries(zebraScores).sort((a, b) => b[1] - a[1])[0]?.[0];
+  const _zebraSorted = Object.entries(zebraScores).sort((a, b) => b[1] - a[1]);
+  const melhorZebraId = _zebraSorted[0]?.[0];
   const melhorZebra = apos.find(a => a.id === melhorZebraId);
   const zebraCount = zebraScores[melhorZebraId] || 0;
+  const _zebraArr = _zebraSorted.length >= 2 && _zebraSorted[0][1] === _zebraSorted[1][1]
+    ? [melhorZebra, apos.find(a => a.id === _zebraSorted[1][0])].filter(Boolean)
+    : (melhorZebra ? [melhorZebra] : null);
 
   // --- Mestre dos Bônus ---
   const bonusRanking = ranking.map(r => {
@@ -64,10 +95,13 @@ window.renderEstatisticas = function () {
     return { ...r, jogosComBonus };
   }).sort((a, b) => b.jogosComBonus - a.jogosComBonus);
   const mestreBonus = bonusRanking[0];
+  const _mestreBonusArr = bonusRanking.length >= 2 && bonusRanking[0].jogosComBonus === bonusRanking[1].jogosComBonus
+    ? [bonusRanking[0], bonusRanking[1]]
+    : (bonusRanking[0] ? [bonusRanking[0]] : null);
 
   // --- Escalando (Últimos 5 jogos) ---
   const totalJogos = jogosFeitos.length;
-  let escalandoApo = null, maiorSalto = -999;
+  let escalandoApo = null, escalandoApo2 = null, maiorSalto = -999;
   if (totalJogos >= 5) {
     const jogosOrdenados = [...jogosFeitos].sort((a, b) => new Date(a.utc) - new Date(b.utc));
     const ultimos5Ids = jogosOrdenados.slice(-5).map(j => j.id);
@@ -84,19 +118,28 @@ window.renderEstatisticas = function () {
       const salto = posAnt - posAtual;
       if (salto > maiorSalto) {
         maiorSalto = salto;
+        escalandoApo2 = null;
         escalandoApo = ranking[i].participante;
+      } else if (salto === maiorSalto && escalandoApo) {
+        escalandoApo2 = ranking[i].participante;
       }
     }
 
   }
+  const _escalandoArr = escalandoApo ? (escalandoApo2 ? [escalandoApo, escalandoApo2] : [escalandoApo]) : null;
 
   // --- Lanterninha ---
   const lanterninha = ranking[ranking.length - 1];
+  const lanterninha2 = ranking.length >= 2 && ranking[ranking.length - 2] &&
+    ranking[ranking.length - 2].stats.total === lanterninha?.stats.total
+    ? ranking[ranking.length - 2]
+    : null;
+  const _lanterninhaArr = lanterninha ? (lanterninha2 ? [lanterninha, lanterninha2] : [lanterninha]) : null;
 
   // ─── Feature 2: Cálculos dos novos cards ─────────────────────────────────
 
   // --- Maior Tombo (inverso do Escalando) ---
-  let tombApo = null, maiorTombo = -999;
+  let tombApo = null, tombApo2 = null, maiorTombo = -999;
   if (totalJogos >= 5) {
     const jogosOrdenadosTombo = [...jogosFeitos].sort((a, b) => new Date(a.utc) - new Date(b.utc));
     const ultimos5IdsTombo = jogosOrdenadosTombo.slice(-5).map(j => j.id);
@@ -112,13 +155,17 @@ window.renderEstatisticas = function () {
       const queda = posAtual - posAnt; // positivo = caiu
       if (queda > maiorTombo) {
         maiorTombo = queda;
+        tombApo2 = null;
         tombApo = ranking[i].participante;
+      } else if (queda === maiorTombo && tombApo) {
+        tombApo2 = ranking[i].participante;
       }
     }
   }
+  const _tombArr = tombApo ? (tombApo2 ? [tombApo, tombApo2] : [tombApo]) : null;
 
   // --- Fênix: maior salto nos últimos 20 jogos (mín 15) ---
-  let recuperApo = null, maiorRecup = -999;
+  let recuperApo = null, recuperApo2 = null, maiorRecup = -999;
   if (totalJogos >= 15) {
     const jogosOrdenadosFenix = [...jogosFeitos].sort((a, b) => new Date(a.utc) - new Date(b.utc));
     const ultimos20Ids = jogosOrdenadosFenix.slice(-20).map(j => j.id);
@@ -134,10 +181,14 @@ window.renderEstatisticas = function () {
       const salto = posAnt - posAtual;
       if (salto > maiorRecup) {
         maiorRecup = salto;
+        recuperApo2 = null;
         recuperApo = ranking[i].participante;
+      } else if (salto === maiorRecup && recuperApo) {
+        recuperApo2 = ranking[i].participante;
       }
     }
   }
+  const _recuperArr = recuperApo ? (recuperApo2 ? [recuperApo, recuperApo2] : [recuperApo]) : null;
 
   // --- Chutador de Zebra (apostou em mais zebras, independente de acerto) ---
   const zebraApostas = {};
@@ -162,9 +213,13 @@ window.renderEstatisticas = function () {
       }
     }
   }
-  const chutZebraId = Object.entries(zebraApostas).sort((a, b) => b[1] - a[1])[0]?.[0];
+  const _chutZebraSorted = Object.entries(zebraApostas).sort((a, b) => b[1] - a[1]);
+  const chutZebraId = _chutZebraSorted[0]?.[0];
   const chutZebraApo = apos.find(a => a.id === chutZebraId);
   const chutZebraCount = zebraApostas[chutZebraId] || 0;
+  const _chutZebraArr = _chutZebraSorted.length >= 2 && _chutZebraSorted[0][1] === _chutZebraSorted[1][1]
+    ? [chutZebraApo, apos.find(a => a.id === _chutZebraSorted[1][0])].filter(Boolean)
+    : (chutZebraApo ? [chutZebraApo] : null);
 
   // --- Conservador: mais apostas onde ≥50% do grupo apostou no mesmo resultado ---
   const conservScores = {};
@@ -187,9 +242,13 @@ window.renderEstatisticas = function () {
       if (cnt / cTotal >= 0.50) conservScores[a.id] = (conservScores[a.id] || 0) + 1;
     }
   }
-  const conservId = Object.entries(conservScores).sort((a, b) => b[1] - a[1])[0]?.[0];
+  const _conservSorted = Object.entries(conservScores).sort((a, b) => b[1] - a[1]);
+  const conservId = _conservSorted[0]?.[0];
   const conservApo = apos.find(a => a.id === conservId);
   const conservCount = conservScores[conservId] || 0;
+  const _conservArr = _conservSorted.length >= 2 && _conservSorted[0][1] === _conservSorted[1][1]
+    ? [conservApo, apos.find(a => a.id === _conservSorted[1][0])].filter(Boolean)
+    : (conservApo ? [conservApo] : null);
 
   // --- Anarquista: maior distância média |ΔH - ΔA| do placar mais votado ---
   const anarqScores = {};
@@ -215,15 +274,19 @@ window.renderEstatisticas = function () {
       anarqJogos[a.id] = (anarqJogos[a.id] || 0) + 1;
     }
   }
-  const anarqId = Object.entries(anarqScores)
+  const _anarqSorted = Object.entries(anarqScores)
     .filter(([id]) => (anarqJogos[id] || 0) >= 3)
     .map(([id, soma]) => [id, soma / anarqJogos[id]])
-    .sort((a, b) => b[1] - a[1])[0]?.[0];
+    .sort((a, b) => b[1] - a[1]);
+  const anarqId = _anarqSorted[0]?.[0];
   const anarqApo = apos.find(a => a.id === anarqId);
   const anarqMedia = anarqId ? (anarqScores[anarqId] / anarqJogos[anarqId]).toFixed(1) : "—";
+  const _anarqArr = _anarqSorted.length >= 2 && Math.abs(_anarqSorted[0][1] - _anarqSorted[1][1]) < 0.001
+    ? [anarqApo, apos.find(a => a.id === _anarqSorted[1][0])].filter(Boolean)
+    : (anarqApo ? [anarqApo] : null);
 
   // --- Consistência (menor desvio padrão de pts/jogo, mínimo 10 jogos) ---
-  let consistApo = null, menorDP = Infinity;
+  let consistApo = null, consistApo2 = null, menorDP = Infinity;
   for (const r2 of ranking) {
     const aId = r2.participante.id;
     const ptsPorJogo = jogosFeitos.map(jogo => {
@@ -235,8 +298,11 @@ window.renderEstatisticas = function () {
     if (ptsPorJogo.length < 10) continue;
     const media = ptsPorJogo.reduce((s, v) => s + v, 0) / ptsPorJogo.length;
     const dp = Math.sqrt(ptsPorJogo.reduce((s, v) => s + (v - media) ** 2, 0) / ptsPorJogo.length);
-    if (dp < menorDP) { menorDP = dp; consistApo = r2.participante; }
+    if (Math.abs(dp - menorDP) < 0.001 && consistApo) {
+      consistApo2 = r2.participante;
+    } else if (dp < menorDP) { menorDP = dp; consistApo2 = null; consistApo = r2.participante; }
   }
+  const _consistArr = consistApo ? (consistApo2 ? [consistApo, consistApo2] : [consistApo]) : null;
 
   // --- Pior Palpite (maior distância absoluta ΔH+ΔA) ---
   let piorPalpite = null, maiorDistancia = -1;
@@ -260,8 +326,8 @@ window.renderEstatisticas = function () {
   // --- Pé Frio (maior sequência consecutiva de 0 pts, recorde na Copa) ---
   // --- Pé Quente (maior sequência consecutiva acertando pelo menos o resultado, recorde na Copa) ---
   const jogosOrdenadosSeq = [...jogosFeitos].sort((a, b) => new Date(a.utc) - new Date(b.utc));
-  let peFrioApo = null, maiorSeqFria = 0;
-  let peQuenteApo = null, maiorSeqQuente = 0;
+  let peFrioApo = null, peFrioApo2 = null, maiorSeqFria = 0;
+  let peQuenteApo = null, peQuenteApo2 = null, maiorSeqQuente = 0;
   for (const a of apos) {
     let seqFria = 0, recFria = 0;
     let seqQuente = 0, recQuente = 0;
@@ -286,9 +352,13 @@ window.renderEstatisticas = function () {
         seqQuente = 0;
       }
     }
-    if (recFria > maiorSeqFria) { maiorSeqFria = recFria; peFrioApo = a; }
-    if (recQuente > maiorSeqQuente) { maiorSeqQuente = recQuente; peQuenteApo = a; }
+    if (recFria > maiorSeqFria) { maiorSeqFria = recFria; peFrioApo2 = null; peFrioApo = a; }
+    else if (recFria === maiorSeqFria && recFria > 0 && peFrioApo) { peFrioApo2 = a; }
+    if (recQuente > maiorSeqQuente) { maiorSeqQuente = recQuente; peQuenteApo2 = null; peQuenteApo = a; }
+    else if (recQuente === maiorSeqQuente && recQuente > 0 && peQuenteApo) { peQuenteApo2 = a; }
   }
+  const _peFrioArr = peFrioApo ? (peFrioApo2 ? [peFrioApo, peFrioApo2] : [peFrioApo]) : null;
+  const _peQuenteArr = peQuenteApo ? (peQuenteApo2 ? [peQuenteApo, peQuenteApo2] : [peQuenteApo]) : null;
 
   let h = "";
 
@@ -322,6 +392,8 @@ window.renderEstatisticas = function () {
     .stat-d-icon { font-size: 1.38rem; margin-bottom: 7px; line-height: 1; }
     .stat-d-label { font-size: 0.64rem; color: var(--texto2); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 3px; line-height: 1.1; }
     .stat-d-nome { font-size: 0.88rem; font-weight: 800; color: var(--cor-destaque); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
+    .stat-d-nome--tie { font-size: 0.72rem; white-space: normal; line-height: 1.25; word-break: break-word; }
+    .stat-d-tie-sep { color: var(--texto2); font-weight: 400; }
     .stat-d-sub { font-size: 0.62rem; color: var(--texto2); margin-top: 2px; }
     @media (max-width: 599px) {
       .stat-d-card {
@@ -351,6 +423,7 @@ window.renderEstatisticas = function () {
       }
       .stat-d-label { font-size: 0.52rem; margin-bottom: 0; }
       .stat-d-nome { font-size: 0.83rem; }
+      .stat-d-nome--tie { font-size: 0.68rem; }
       .stat-d-sub { font-size: 0.56rem; margin-top: 0; }
     }
     .stat-tooltip {
@@ -385,22 +458,22 @@ window.renderEstatisticas = function () {
   </style>`;
 
   h += '<div class="stats-grid">';
-  h += _dCard("🏆", "Líder", (jogosFeitos.length === 0 ? "—" : melhorPts?.participante.apelido || melhorPts?.participante.nome || "—"), (jogosFeitos.length === 0 ? "— (sem jogos)" : melhorPts ? melhorPts.stats.total.toFixed(1) + " pts" : "—"), "var(--dourado)", "Quem tem mais pontos no total. Cada jogo vale mais dependendo da fase: grupos, oitavas, quartas, semi e final têm multiplicadores crescentes.");
-  h += _dCard("🔮", "Vidente", (jogosFeitos.length === 0 ? "—" : melhorRes?.participante.apelido || melhorRes?.participante.nome || "—"), (jogosFeitos.length === 0 ? "— (sem jogos)" : melhorRes ? melhorRes.stats.acertos_resultado + " acertos de resultados" : "—"), "#86efac", "Quem mais acertou o desfecho dos jogos — vitória do time da casa, empate ou vitória do visitante — sem precisar acertar o placar exato.");
-  h += _dCard("🎯", "Atirador de Elite", (jogosFeitos.length === 0 ? "—" : melhorExato?.participante.apelido || melhorExato?.participante.nome || "—"), (jogosFeitos.length === 0 ? "— (sem jogos)" : melhorExato ? melhorExatoCount + " placares exatos" : "—"), "var(--verde-ok)", "Quem mais acertou o placar exato. Placares normais dão +3 pts de bônus; placares com 4 ou mais gols no total dão +5 pts.");
-  h += _dCard("🦓", "Zebra de Ouro", (jogosFeitos.length === 0 ? "—" : melhorZebra?.apelido || melhorZebra?.nome || "—"), (jogosFeitos.length === 0 ? "— (sem jogos)" : melhorZebra ? zebraCount + " zebras domadas" : "—"), "#fcd34d", "Quem mais acertou resultados que menos de 20% do grupo havia apostado — palpites raros E corretos. Coragem com precisão.");
-  h += _dCard("💎", "Mestre dos Bônus", (jogosFeitos.length === 0 ? "—" : mestreBonus?.participante.apelido || mestreBonus?.participante.nome || "—"), (jogosFeitos.length === 0 ? "— (sem jogos)" : mestreBonus ? (mestreBonus.jogosComBonus ?? 0) + " jogos com bônus" : "—"), "#c084fc", "Quem somou mais jogos com algum bônus: placar exato (+3 ou +5 pts), diferença de gols correta (+1 pt) ou gols de um time corretos (+1 pt).");
-  h += _dCard("🧗", "Escalando", (totalJogos < 5 ? "—" : (escalandoApo?.apelido || escalandoApo?.nome || "—")), (totalJogos < 5 ? "— (< 5 jogos)" : (escalandoApo && maiorSalto > 0 ? "+" + maiorSalto + " posições" : "—")), "#fb7185", "Quem mais subiu no ranking nos últimos 5 jogos. Compara a posição atual com a de antes desses 5 jogos.");
-  h += _dCard("🕯️", "Lanterninha", (jogosFeitos.length === 0 ? "—" : lanterninha?.participante.apelido || lanterninha?.participante.nome || "—"), (jogosFeitos.length === 0 ? "— (sem jogos)" : lanterninha ? lanterninha.stats.total.toFixed(1) + " pts" : "—"), "#94a3b8", "Quem está com menos pontos acumulados até agora. A lanterna da Copa.");
-  h += _dCard("📉", "Queda Livre", (totalJogos < 5 ? "—" : (tombApo?.apelido || tombApo?.nome || "—")), (totalJogos < 5 ? "— (< 5 jogos)" : (tombApo && maiorTombo > 0 ? "−" + maiorTombo + " posições" : "—")), "#f87171", "Quem mais caiu no ranking nos últimos 5 jogos. Compara a posição atual com a de antes desses 5 jogos.");
-  h += _dCard("🔄", "Fênix", (totalJogos < 15 ? "—" : (recuperApo?.apelido || recuperApo?.nome || "—")), (totalJogos < 15 ? "— (< 15 jogos)" : (recuperApo && maiorRecup > 0 ? "+" + maiorRecup + " posições" : "—")), "#38bdf8", "Quem mais subiu no ranking nos últimos 20 jogos. Começa a ser calculado a partir do 15º jogo da Copa.");
-  h += _dCard("🃏", "Destemido", (!chutZebraApo ? "—" : (chutZebraApo?.apelido || chutZebraApo?.nome || "—")), (!chutZebraApo ? "—" : chutZebraCount + " palpites improváveis"), "#f59e0b", "Quem mais apostou em resultados que menos de 20% do grupo escolheu — independente de acertar. Diferente da Zebra de Ouro, que só conta quando o palpite improvável estava certo.");
-  h += _dCard("💤", "Conservador", (!conservApo ? "—" : (conservApo?.apelido || conservApo?.nome || "—")), (!conservApo ? "— (sem consenso)" : conservCount + " vezes no consenso"), "#94a3b8", "Quem mais apostou igual à maioria: o resultado escolhido tinha pelo menos 50% dos palpites do grupo naquela direção.");
-  h += _dCard("🎲", "Anarquista", (!anarqApo ? "—" : (anarqApo?.apelido || anarqApo?.nome || "—")), (!anarqApo ? "— (< 3 apostas)" : "Δ" + anarqMedia + " de distância média"), "#a78bfa", "Quem mais diverge do placar mais votado pelo grupo em cada jogo apostado. A distância é medida por |(palH−palA) − (topH−topA)|, onde topH×topA é o placar mais chutado. Mínimo 3 apostas.");
-  h += _dCard("⚖️", "Metrônomo", (jogosFeitos.length < 10 || !consistApo ? "—" : (consistApo?.apelido || consistApo?.nome || "—")), (jogosFeitos.length < 10 || !consistApo ? "— (< 10 jogos)" : (consistApo ? "DP " + menorDP.toFixed(2) + " pts" : "—")), "#34d399", "Quem pontua de forma mais consistente jogo a jogo, com menor variação entre rodadas boas e ruins. Calculado pelo desvio padrão dos pontos por jogo (mínimo 10 jogos).");
+  h += _dCard("🏆", "Líder", (jogosFeitos.length === 0 ? "—" : _tieName(_melhorPtsArr)), (jogosFeitos.length === 0 ? "— (sem jogos)" : melhorPts ? melhorPts.stats.total.toFixed(1) + " pts" : "—"), "var(--dourado)", "Quem tem mais pontos no total. Cada jogo vale mais dependendo da fase: grupos, oitavas, quartas, semi e final têm multiplicadores crescentes.");
+  h += _dCard("🔮", "Vidente", (jogosFeitos.length === 0 ? "—" : _tieName(_melhorResArr)), (jogosFeitos.length === 0 ? "— (sem jogos)" : melhorRes ? melhorRes.stats.acertos_resultado + " acertos de resultados" : "—"), "#86efac", "Quem mais acertou o desfecho dos jogos — vitória do time da casa, empate ou vitória do visitante — sem precisar acertar o placar exato.");
+  h += _dCard("🎯", "Atirador de Elite", (jogosFeitos.length === 0 ? "—" : _tieName(_melhorExatoArr)), (jogosFeitos.length === 0 ? "— (sem jogos)" : melhorExato ? melhorExatoCount + " placares exatos" : "—"), "var(--verde-ok)", "Quem mais acertou o placar exato. Placares normais dão +3 pts de bônus; placares com 4 ou mais gols no total dão +5 pts.");
+  h += _dCard("🦓", "Zebra de Ouro", (jogosFeitos.length === 0 ? "—" : _tieName(_zebraArr)), (jogosFeitos.length === 0 ? "— (sem jogos)" : melhorZebra ? zebraCount + " zebras domadas" : "—"), "#fcd34d", "Quem mais acertou resultados que menos de 20% do grupo havia apostado — palpites raros E corretos. Coragem com precisão.");
+  h += _dCard("💎", "Mestre dos Bônus", (jogosFeitos.length === 0 ? "—" : _tieName(_mestreBonusArr)), (jogosFeitos.length === 0 ? "— (sem jogos)" : mestreBonus ? (mestreBonus.jogosComBonus ?? 0) + " jogos com bônus" : "—"), "#c084fc", "Quem somou mais jogos com algum bônus: placar exato (+3 ou +5 pts), diferença de gols correta (+1 pt) ou gols de um time corretos (+1 pt).");
+  h += _dCard("🧗", "Escalando", (totalJogos < 5 ? "—" : _tieName(_escalandoArr)), (totalJogos < 5 ? "— (< 5 jogos)" : (escalandoApo && maiorSalto > 0 ? "+" + maiorSalto + " posições" : "—")), "#fb7185", "Quem mais subiu no ranking nos últimos 5 jogos. Compara a posição atual com a de antes desses 5 jogos.");
+  h += _dCard("🕯️", "Lanterninha", (jogosFeitos.length === 0 ? "—" : _tieName(_lanterninhaArr)), (jogosFeitos.length === 0 ? "— (sem jogos)" : lanterninha ? lanterninha.stats.total.toFixed(1) + " pts" : "—"), "#94a3b8", "Quem está com menos pontos acumulados até agora. A lanterna da Copa.");
+  h += _dCard("📉", "Queda Livre", (totalJogos < 5 ? "—" : _tieName(_tombArr)), (totalJogos < 5 ? "— (< 5 jogos)" : (tombApo && maiorTombo > 0 ? "−" + maiorTombo + " posições" : "—")), "#f87171", "Quem mais caiu no ranking nos últimos 5 jogos. Compara a posição atual com a de antes desses 5 jogos.");
+  h += _dCard("🔄", "Fênix", (totalJogos < 15 ? "—" : _tieName(_recuperArr)), (totalJogos < 15 ? "— (< 15 jogos)" : (recuperApo && maiorRecup > 0 ? "+" + maiorRecup + " posições" : "—")), "#38bdf8", "Quem mais subiu no ranking nos últimos 20 jogos. Começa a ser calculado a partir do 15º jogo da Copa.");
+  h += _dCard("🃏", "Destemido", _tieName(_chutZebraArr), (!chutZebraApo ? "—" : chutZebraCount + " palpites improváveis"), "#f59e0b", "Quem mais apostou em resultados que menos de 20% do grupo escolheu — independente de acertar. Diferente da Zebra de Ouro, que só conta quando o palpite improvável estava certo.");
+  h += _dCard("💤", "Conservador", _tieName(_conservArr), (!conservApo ? "— (sem consenso)" : conservCount + " vezes no consenso"), "#94a3b8", "Quem mais apostou igual à maioria: o resultado escolhido tinha pelo menos 50% dos palpites do grupo naquela direção.");
+  h += _dCard("🎲", "Anarquista", _tieName(_anarqArr), (!anarqApo ? "— (< 3 apostas)" : "Δ" + anarqMedia + " de distância média"), "#a78bfa", "Quem mais diverge do placar mais votado pelo grupo em cada jogo apostado. A distância é medida por |(palH−palA) − (topH−topA)|, onde topH×topA é o placar mais chutado. Mínimo 3 apostas.");
+  h += _dCard("⚖️", "Metrônomo", (jogosFeitos.length < 10 ? "—" : _tieName(_consistArr)), (jogosFeitos.length < 10 || !consistApo ? "— (< 10 jogos)" : (consistApo ? "DP " + menorDP.toFixed(2) + " pts" : "—")), "#34d399", "Quem pontua de forma mais consistente jogo a jogo, com menor variação entre rodadas boas e ruins. Calculado pelo desvio padrão dos pontos por jogo (mínimo 10 jogos).");
   h += _dCard("🙈", "Pra fora!", (piorPalpite?.apelido || piorPalpite?.nome || "—"), (piorJogo && piorPalpite ? piorPlacarApostado + " (foi " + piorPlacarReal + ")" : "—"), "#fb923c", "O palpite mais distante do resultado real na Copa inteira, medido pela diferença de gols: |(palH−palA) − (resH−resA)|. Ex: resultado 1×0, chute 0×4 → |(−4) − 1| = 5.");
-  h += _dCard("🥶", "Pé Frio", (jogosFeitos.length === 0 || !peFrioApo ? "—" : (peFrioApo?.apelido || peFrioApo?.nome || "—")), (jogosFeitos.length === 0 ? "— (sem jogos)" : (!peFrioApo || maiorSeqFria === 0 ? "—" : maiorSeqFria + " jogos seguidos zerado")), "#7dd3fc", "Quem teve a maior sequência seguida de jogos com zero pontos — o recorde de fase ruim da Copa.");
-  h += _dCard("🔥", "Pé Quente", (jogosFeitos.length === 0 || !peQuenteApo ? "—" : (peQuenteApo?.apelido || peQuenteApo?.nome || "—")), (jogosFeitos.length === 0 ? "— (sem jogos)" : (!peQuenteApo || maiorSeqQuente === 0 ? "—" : maiorSeqQuente + " resultados seguidos")), "#fdba74", "Quem teve a maior sequência seguida acertando pelo menos o resultado (vitória/empate) em cada jogo — o recorde de fase boa da Copa.");
+  h += _dCard("🥶", "Pé Frio", (jogosFeitos.length === 0 ? "—" : _tieName(_peFrioArr)), (jogosFeitos.length === 0 ? "— (sem jogos)" : (!peFrioApo || maiorSeqFria === 0 ? "—" : maiorSeqFria + " jogos seguidos zerado")), "#7dd3fc", "Quem teve a maior sequência seguida de jogos com zero pontos — o recorde de fase ruim da Copa.");
+  h += _dCard("🔥", "Pé Quente", (jogosFeitos.length === 0 ? "—" : _tieName(_peQuenteArr)), (jogosFeitos.length === 0 ? "— (sem jogos)" : (!peQuenteApo || maiorSeqQuente === 0 ? "—" : maiorSeqQuente + " resultados seguidos")), "#fdba74", "Quem teve a maior sequência seguida acertando pelo menos o resultado (vitória/empate) em cada jogo — o recorde de fase boa da Copa.");
   h += '</div>';
 
   // Listener de delegate para tooltips (garante single-listener via flag no document)
@@ -699,11 +772,19 @@ function _dCard(icon, label, nome, sub, cor, tooltip) {
   const tipEl = tooltip
     ? `<div class="stat-tooltip">${tooltip}</div>`
     : '';
+  // `nome` pode ser string simples ou array de até 2 nomes (empate)
+  let nomeHtml;
+  if (Array.isArray(nome) && nome.length >= 2) {
+    nomeHtml = `<div class="stat-d-nome stat-d-nome--tie" style="--cor-destaque: ${cor}">${nome[0]}<span class="stat-d-tie-sep"> &amp; </span>${nome[1]}</div>`;
+  } else {
+    const nomeStr = Array.isArray(nome) ? (nome[0] || '—') : nome;
+    nomeHtml = `<div class="stat-d-nome" style="--cor-destaque: ${cor}">${nomeStr}</div>`;
+  }
   return `<div class="stat-d-card"${tipAttr}>
     <div class="stat-d-icon">${icon}</div>
     <div class="stat-d-body">
       <div class="stat-d-label">${label}</div>
-      <div class="stat-d-nome" style="--cor-destaque: ${cor}">${nome}</div>
+      ${nomeHtml}
       <div class="stat-d-sub">${sub}</div>
     </div>
     ${tipEl}
