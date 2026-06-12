@@ -1129,8 +1129,8 @@ window._graficoExportarEvolucaoJPG = function () {
   const top10Ids = isDefault ? new Set(rankingCompleto.slice(0, 10).map(r => r.id)) : null;
   const humanos = rankingCompleto.filter(x => !x.isModelo);
 
-  // Todos apostadores (sem filtro de tela), mas respeitando o top-10 default
-  const aposFiltrados = apos.filter(a => isDefault ? top10Ids.has(a.id) : true);
+  // Export: usa o mesmo filtro ativo da tela
+  const aposFiltrados = apos.filter(a => isDefault ? top10Ids.has(a.id) : filtro.has(a.id));
 
   const jogosComRes = (window.SCHEDULE || [])
     .filter(j => res[j.id] && res[j.id].homeGoals !== undefined)
@@ -1510,14 +1510,14 @@ function _renderMacaco(rankingCompleto, cache) {
 
   // ── Linhas do macaco on top (z-index:2) ──
   // Faixa ±1σ
-  h += `<div style="position:absolute;left:0;right:0;top:${sigmaHiPerc.toFixed(1)}%;bottom:${(100 - sigmaLoPerc).toFixed(1)}%;background:rgba(139,94,60,0.15);pointer-events:none;z-index:2"></div>`;
+  h += `<div style="position:absolute;left:0;right:0;top:${sigmaHiPerc.toFixed(1)}%;bottom:${(100 - sigmaLoPerc).toFixed(1)}%;background:rgba(139,94,60,0.22);pointer-events:none;z-index:2"></div>`;
   // Linha +1σ
-  h += `<div style="position:absolute;left:0;right:0;top:${sigmaHiPerc.toFixed(1)}%;height:0;border-top:1px dashed rgba(139,94,60,0.60);pointer-events:none;z-index:2"></div>`;
+  h += `<div style="position:absolute;left:0;right:0;top:${sigmaHiPerc.toFixed(1)}%;height:0;border-top:1.5px dashed rgba(139,94,60,0.70);pointer-events:none;z-index:2"></div>`;
   // Linha −1σ
-  h += `<div style="position:absolute;left:0;right:0;top:${sigmaLoPerc.toFixed(1)}%;height:0;border-top:1px dashed rgba(139,94,60,0.60);pointer-events:none;z-index:2"></div>`;
+  h += `<div style="position:absolute;left:0;right:0;top:${sigmaLoPerc.toFixed(1)}%;height:0;border-top:1.5px dashed rgba(139,94,60,0.70);pointer-events:none;z-index:2"></div>`;
   // Linha da média
-  h += `<div style="position:absolute;left:0;right:0;top:${mediaPerc.toFixed(1)}%;height:0;border-top:2px dashed ${COR_MACACO_LINHA};pointer-events:none;z-index:2">
-    <span style="position:absolute;right:4px;top:-16px;font-size:.62rem;font-weight:700;color:${COR_MACACO_LINHA};white-space:nowrap">${media.toFixed(1)} pts</span>
+  h += `<div style="position:absolute;left:0;right:0;top:${mediaPerc.toFixed(1)}%;height:0;border-top:3px dashed ${COR_MACACO_LINHA};pointer-events:none;z-index:2">
+    <span style="position:absolute;right:4px;top:-16px;font-size:.62rem;font-weight:700;color:${COR_MACACO_LINHA};white-space:nowrap">🐒 ${media.toFixed(1)} pts</span>
   </div>`;
 
   h += '</div>';
@@ -1561,7 +1561,8 @@ window._graficoExportarJPG = function () {
 
   const espOficiaisGraf = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
 
-  // Montar ranking completo (todos, sem filtro)
+  // Montar ranking com filtro ativo (igual à tela)
+  const _expFiltro = window._graficoFiltroApos;
   let rankingExp = apos.map((a, idx) => {
     const st = calcularPontosApostador(pals[a.id] || {}, res, a, espOficiaisGraf);
     return {
@@ -1587,8 +1588,8 @@ window._graficoExportarJPG = function () {
     rankingExp = rankingExp.sort((a, b) => b[metricaAtiva] - a[metricaAtiva]);
   }
 
-  // Remover Modelo (não aparece na exportação conforme item 6)
-  rankingExp = rankingExp.filter(a => !a.isModelo);
+  // Aplicar filtro ativo (igual à tela) e remover Modelo
+  rankingExp = rankingExp.filter(a => !a.isModelo && (!_expFiltro || _expFiltro.has(a.id)));
 
   const n = rankingExp.length;
   if (!n) { alert('Nenhum apostador para exportar.'); return; }
@@ -1699,7 +1700,7 @@ window._graficoExportarJPG = function () {
     const COR_MAC = '#8B5E3C';
     const xL = PADDING_LEFT, xR = TOTAL_W - PADDING_RIGHT;
     // Faixa ±1σ
-    ctx.fillStyle = 'rgba(139,94,60,0.15)';
+    ctx.fillStyle = 'rgba(139,94,60,0.22)';
     ctx.fillRect(xL, ySigmaHi, xR - xL, ySigmaLo - ySigmaHi);
     // Linha +1σ
     ctx.save(); ctx.strokeStyle = 'rgba(139,94,60,0.60)'; ctx.lineWidth = 1;
@@ -1709,7 +1710,7 @@ window._graficoExportarJPG = function () {
     ctx.beginPath(); ctx.moveTo(xL, ySigmaLo); ctx.lineTo(xR, ySigmaLo); ctx.stroke();
     ctx.restore();
     // Linha média
-    ctx.save(); ctx.strokeStyle = COR_MAC; ctx.lineWidth = 2;
+    ctx.save(); ctx.strokeStyle = COR_MAC; ctx.lineWidth = 3;
     ctx.setLineDash([6, 4]);
     ctx.beginPath(); ctx.moveTo(xL, yMedia); ctx.lineTo(xR, yMedia); ctx.stroke();
     ctx.restore();
@@ -1717,7 +1718,7 @@ window._graficoExportarJPG = function () {
     ctx.fillStyle = COR_MAC;
     ctx.font = 'bold 9px system-ui, sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText(`${media.toFixed(1)} pts`, xR - 4, yMedia - 4);
+    ctx.fillText(`🐒 ${media.toFixed(1)} pts`, xR - 4, yMedia - 4);
   }
 
   // Download
