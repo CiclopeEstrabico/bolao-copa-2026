@@ -40,8 +40,8 @@ window.SCHEDULE = [
 
   // ── GRUPO D ──
   { id: "D_R1_USA_PAR", fase: "grupos", grupo: "D", rodada: 1, home: "USA", away: "PAR", utc: "2026-06-13T01:00:00Z", cidade: "Los Angeles", pais: "USA" },
-  { id: "D_R1_AUS_TUR", fase: "grupos", grupo: "D", rodada: 1, home: "AUS", away: "TUR", utc: "2026-06-13T04:00:00Z", cidade: "Vancouver", pais: "CAN" },
-  { id: "D_R2_TUR_PAR", fase: "grupos", grupo: "D", rodada: 2, home: "TUR", away: "PAR", utc: "2026-06-19T04:00:00Z", cidade: "San Francisco", pais: "USA" },
+  { id: "D_R1_AUS_TUR", fase: "grupos", grupo: "D", rodada: 1, home: "AUS", away: "TUR", utc: "2026-06-14T04:00:00Z", cidade: "Vancouver", pais: "CAN" },
+  { id: "D_R2_TUR_PAR", fase: "grupos", grupo: "D", rodada: 2, home: "TUR", away: "PAR", utc: "2026-06-20T04:00:00Z", cidade: "San Francisco", pais: "USA" },
   { id: "D_R2_USA_AUS", fase: "grupos", grupo: "D", rodada: 2, home: "USA", away: "AUS", utc: "2026-06-19T19:00:00Z", cidade: "Seattle", pais: "USA" },
   { id: "D_R3_TUR_USA", fase: "grupos", grupo: "D", rodada: 3, home: "TUR", away: "USA", utc: "2026-06-26T02:00:00Z", cidade: "Los Angeles", pais: "USA" },
   { id: "D_R3_PAR_AUS", fase: "grupos", grupo: "D", rodada: 3, home: "PAR", away: "AUS", utc: "2026-06-26T02:00:00Z", cidade: "San Francisco", pais: "USA" },

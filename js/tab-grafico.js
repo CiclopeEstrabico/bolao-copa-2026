@@ -1479,6 +1479,7 @@ function _renderMacaco(rankingCompleto, cache) {
   // Cabeçalho
   h += `<div style="text-align:center;margin-bottom:14px">
     <span style="font-size:.85rem;font-weight:700;color:var(--dourado)">Macaco Médio</span>
+    <span style="font-size:.78rem;font-weight:700;color:${'#8B5E3C'};margin-left:8px;white-space:nowrap">🐒 ${media.toFixed(1)} pts</span>
   </div>`;
 
   let minWidthStyle = '';
@@ -1510,15 +1511,13 @@ function _renderMacaco(rankingCompleto, cache) {
 
   // ── Linhas do macaco on top (z-index:2) ──
   // Faixa ±1σ
-  h += `<div style="position:absolute;left:0;right:0;top:${sigmaHiPerc.toFixed(1)}%;bottom:${(100 - sigmaLoPerc).toFixed(1)}%;background:rgba(139,94,60,0.22);pointer-events:none;z-index:2"></div>`;
+  h += `<div style="position:absolute;left:0;right:0;top:${sigmaHiPerc.toFixed(1)}%;bottom:${(100 - sigmaLoPerc).toFixed(1)}%;background:rgba(139,94,60,0.38);pointer-events:none;z-index:2"></div>`;
   // Linha +1σ
   h += `<div style="position:absolute;left:0;right:0;top:${sigmaHiPerc.toFixed(1)}%;height:0;border-top:1.5px dashed rgba(139,94,60,0.70);pointer-events:none;z-index:2"></div>`;
   // Linha −1σ
   h += `<div style="position:absolute;left:0;right:0;top:${sigmaLoPerc.toFixed(1)}%;height:0;border-top:1.5px dashed rgba(139,94,60,0.70);pointer-events:none;z-index:2"></div>`;
   // Linha da média
-  h += `<div style="position:absolute;left:0;right:0;top:${mediaPerc.toFixed(1)}%;height:0;border-top:3px dashed ${COR_MACACO_LINHA};pointer-events:none;z-index:2">
-    <span style="position:absolute;right:4px;top:-16px;font-size:.62rem;font-weight:700;color:${COR_MACACO_LINHA};white-space:nowrap">🐒 ${media.toFixed(1)} pts</span>
-  </div>`;
+  h += `<div style="position:absolute;left:0;right:0;top:${mediaPerc.toFixed(1)}%;height:0;border-top:3px dashed ${COR_MACACO_LINHA};pointer-events:none;z-index:2"></div>`;
 
   h += '</div>';
   if (needsScroll) h += '</div>';
@@ -1627,6 +1626,13 @@ window._graficoExportarJPG = function () {
   ctx.fillText(`Bolão Copa 2026 · ${metricaLabel}`, TOTAL_W / 2, 28);
 
   const macacoCache = (metricaAtiva === 'macaco') ? (window._graficoMacacoCache || { media: 0, sigma: 0 }) : null;
+  if (macacoCache && macacoCache.media > 0) {
+    ctx.fillStyle = '#8B5E3C';
+    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`🐒 ${macacoCache.media.toFixed(1)} pts`, TOTAL_W / 2, 48);
+  }
+
   const vals = rankingExp.map(a =>
     metricaAtiva === 'chance' ? (a.chance || 0) :
       metricaAtiva === 'macaco' ? a.pts :
@@ -1700,7 +1706,7 @@ window._graficoExportarJPG = function () {
     const COR_MAC = '#8B5E3C';
     const xL = PADDING_LEFT, xR = TOTAL_W - PADDING_RIGHT;
     // Faixa ±1σ
-    ctx.fillStyle = 'rgba(139,94,60,0.22)';
+    ctx.fillStyle = 'rgba(139,94,60,0.38)';
     ctx.fillRect(xL, ySigmaHi, xR - xL, ySigmaLo - ySigmaHi);
     // Linha +1σ
     ctx.save(); ctx.strokeStyle = 'rgba(139,94,60,0.60)'; ctx.lineWidth = 1;
@@ -1714,11 +1720,6 @@ window._graficoExportarJPG = function () {
     ctx.setLineDash([6, 4]);
     ctx.beginPath(); ctx.moveTo(xL, yMedia); ctx.lineTo(xR, yMedia); ctx.stroke();
     ctx.restore();
-    // Label da média
-    ctx.fillStyle = COR_MAC;
-    ctx.font = 'bold 9px system-ui, sans-serif';
-    ctx.textAlign = 'right';
-    ctx.fillText(`🐒 ${media.toFixed(1)} pts`, xR - 4, yMedia - 4);
   }
 
   // Download

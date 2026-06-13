@@ -291,9 +291,14 @@ async function gravarPalpite(apostadorId, gameId, homeGoals, awayGoals, token) {
 }
 
 // ─── Modo Simulação ───────────────────────────────────────────────────────────
+function _limparCachesGrafico() {
+  window._graficoMacacoCache = null;
+  window._graficoChanceCache = null;
+}
 function ativarSimulacao() {
   APP.modoSimulacao = true;
   APP.resultadosSim = {};
+  _limparCachesGrafico();
   atualizarBracket(); renderAbaAtiva();
   document.getElementById("banner-simulacao")?.classList.remove("hidden");
   const btn = document.getElementById("btn-simulacao");
@@ -302,6 +307,7 @@ function ativarSimulacao() {
 function desativarSimulacao() {
   APP.modoSimulacao = false;
   APP.resultadosSim = null;
+  _limparCachesGrafico();
   atualizarBracket(); renderAbaAtiva();
   document.getElementById("banner-simulacao")?.classList.add("hidden");
   const btn = document.getElementById("btn-simulacao");
@@ -313,6 +319,7 @@ function simularResultado(gameId, hg, ag, foiPen, penVenc, ph, pa) {
     gameId, homeGoals: hg, awayGoals: ag,
     foi_penaltis: !!foiPen, penaltis_vencedor: penVenc || null, simulado: true, penaltis_home: ph, penaltis_away: pa
   };
+  _limparCachesGrafico();
   atualizarBracket(); renderAbaAtiva();
 }
 function getResultados() {
