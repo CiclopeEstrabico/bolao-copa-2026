@@ -319,27 +319,54 @@ window.renderEstatisticas = function () {
   const _derreteuArr = destDerreteu.bestArr;
   const derreteuScore = destDerreteu.bestScore;
 
-  // --- Onisciente: acertou o PLACAR EXATO do jogo com mais gols da Copa ---
+  // --- Onisciente: acertou o placar exato com mais gols dentre todos os acertos de placar da Copa ---
+  // Lógica: entre todos os jogos onde alguém acertou o placar exato, pegar o que teve mais gols.
+  // Se ninguém acertou placar exato nenhum, o card fica vazio mas mostra o jogo mais goleado no sub.
   let oniscienteJogo = null;
   let oniscienteTotalGols = 0;
   const oniscienteScores = {};
   if (jogosFeitos.length > 0) {
-    oniscienteJogo = jogosFeitos.reduce((best, j) => {
-      const rv = res[j.id];
-      const gols = (rv?.homeGoals || 0) + (rv?.awayGoals || 0);
-      const bestGols = (res[best.id]?.homeGoals || 0) + (res[best.id]?.awayGoals || 0);
-      return gols > bestGols ? j : best;
-    });
-    const rvOnisciente = res[oniscienteJogo.id];
-    oniscienteTotalGols = (rvOnisciente?.homeGoals || 0) + (rvOnisciente?.awayGoals || 0);
-    for (const a of apos) {
-      const p = pals[a.id]?.[oniscienteJogo.id];
-      if (!p || p.homeGoals === undefined) continue;
-      const br = calcularPontosBrutos(p, rvOnisciente);
-      // Onisciente: acertar o PLACAR EXATO (não apenas resultado)
-      if (br.bonus_tipo === 'placar_exato') {
-        oniscienteScores[a.id] = 1;
+    // Primeiro: coletar todos os jogos onde houve ao menos 1 acerto de placar exato
+    const jogosComAcertoExato = [];
+    for (const jogo of jogosFeitos) {
+      const rv = res[jogo.id];
+      for (const a of apos) {
+        const p = pals[a.id]?.[jogo.id];
+        if (!p || p.homeGoals === undefined) continue;
+        const br = calcularPontosBrutos(p, rv);
+        if (br.bonus_tipo === 'placar_exato') {
+          jogosComAcertoExato.push(jogo);
+          break; // basta 1 acertador para qualificar o jogo
+        }
       }
+    }
+
+    if (jogosComAcertoExato.length > 0) {
+      // Onisciente: jogo mais goleado DENTRE os que tiveram acerto de placar exato
+      oniscienteJogo = jogosComAcertoExato.reduce((best, j) => {
+        const gols = (res[j.id]?.homeGoals || 0) + (res[j.id]?.awayGoals || 0);
+        const bestGols = (res[best.id]?.homeGoals || 0) + (res[best.id]?.awayGoals || 0);
+        return gols > bestGols ? j : best;
+      });
+      const rvOnisciente = res[oniscienteJogo.id];
+      oniscienteTotalGols = (rvOnisciente?.homeGoals || 0) + (rvOnisciente?.awayGoals || 0);
+      for (const a of apos) {
+        const p = pals[a.id]?.[oniscienteJogo.id];
+        if (!p || p.homeGoals === undefined) continue;
+        const br = calcularPontosBrutos(p, rvOnisciente);
+        if (br.bonus_tipo === 'placar_exato') {
+          oniscienteScores[a.id] = 1;
+        }
+      }
+    } else {
+      // Ninguém acertou placar exato ainda: mostrar o jogo mais goleado no subtexto
+      oniscienteJogo = jogosFeitos.reduce((best, j) => {
+        const gols = (res[j.id]?.homeGoals || 0) + (res[j.id]?.awayGoals || 0);
+        const bestGols = (res[best.id]?.homeGoals || 0) + (res[best.id]?.awayGoals || 0);
+        return gols > bestGols ? j : best;
+      });
+      const rvOnisciente = res[oniscienteJogo.id];
+      oniscienteTotalGols = (rvOnisciente?.homeGoals || 0) + (rvOnisciente?.awayGoals || 0);
     }
   }
   const destOnisciente = obterDestaques(r => oniscienteScores[r.participante.id] || 0, true, true, score => score > 0);
@@ -350,7 +377,8 @@ window.renderEstatisticas = function () {
     const hCOni = bOni.home || oniscienteJogo.home;
     const aCOni = bOni.away || oniscienteJogo.away;
     const rvOni = res[oniscienteJogo.id];
-    oniscienteSubStr = getShortName(hCOni) + ' ' + rvOni.homeGoals + '×' + rvOni.awayGoals + ' ' + getShortName(aCOni) + ' (' + oniscienteTotalGols + ' gols)';
+    const ninguemAcertou = Object.keys(oniscienteScores).length === 0;
+    oniscienteSubStr = getShortName(hCOni) + ' ' + rvOni.homeGoals + '×' + rvOni.awayGoals + ' ' + getShortName(aCOni) + (ninguemAcertou ? ' (ninguém acertou)' : ' (' + oniscienteTotalGols + ' gols)');
   }
 
   // --- Centro Avante / Zagueirão: maior/menor média de gols apostados ---
@@ -558,9 +586,20 @@ window.renderEstatisticas = function () {
 
   // --- Lanterninha ---
   const lanterninha = ranking[ranking.length - 1];
-  const _lanterninhaArr = (ranking.length >= 2 && ranking[ranking.length - 2].posicao === lanterninha.posicao)
-    ? [ranking[ranking.length - 2], lanterninha]
-    : [lanterninha];
+  const lanterninhaPos = lanterninha.posicao;
+  const empatadosLanterna = ranking.filter(r => r.posicao === lanterninhaPos);
+  let _lanterninhaArr;
+  if (empatadosLanterna.length <= 2) {
+    // Empate simples: mostrar todos (1 ou 2)
+    _lanterninhaArr = empatadosLanterna;
+  } else {
+    // Empate triplo+: desempate pelos piores (card ruim = menos pontos na frente, pior posição)
+    empatadosLanterna.sort((a, b) => {
+      if (Math.abs(a.stats.total - b.stats.total) > 0.0001) return a.stats.total - b.stats.total;
+      return b.posicao - a.posicao;
+    });
+    _lanterninhaArr = [empatadosLanterna[0], empatadosLanterna[1]];
+  }
 
   let h = "";
 
@@ -710,7 +749,7 @@ window.renderEstatisticas = function () {
 
   h += _dCard("🧗", "Escalando",
     totalJogos < 5 ? '—' : _tieName(_escalandoArr),
-    totalJogos < 5 ? '— (< 5 jogos)' : (escalandoApo && maiorSalto > 0 ? '+' + maiorSalto + ' posições' : '—'),
+    totalJogos < 5 ? '— (mín. 5 jogos)' : (escalandoApo && maiorSalto > 0 ? '+' + maiorSalto + ' posições' : '—'),
     "#fb7185", "Quem mais subiu no ranking nos últimos 5 jogos. Compara a posição atual com a de antes desses 5 jogos.");
 
   h += _dCard("📉", "Queda Livre",
@@ -720,13 +759,13 @@ window.renderEstatisticas = function () {
 
   h += _dCard("🔄", "Fênix",
     totalJogos < 15 ? '—' : _tieName(_recuperArr),
-    totalJogos < 15 ? '— (< 15 jogos)' : (recuperApo && maiorRecup > 0 ? '+' + maiorRecup + ' posições' : '—'),
+    totalJogos < 15 ? '— (mín. 15 jogos)' : (recuperApo && maiorRecup > 0 ? '+' + maiorRecup + ' posições' : '—'),
     "#38bdf8", "Quem mais subiu no ranking nos últimos 20 jogos. Começa a ser calculado a partir do 15º jogo da Copa.");
 
   // ── Linha 2 ──────────────────────────────────────────────────────────────
   h += _dCard("🧈", "Derreteu",
     totalJogos < 10 ? '—' : (_derreteuArr ? _tieName(_derreteuArr) : '—'),
-    totalJogos < 10 ? '— (< 10 jogos)' : (!_derreteuArr || derreteuScore === 0 ? '—' : '−' + derreteuScore + ' posições'),
+    totalJogos < 10 ? '— (mín. 10 jogos)' : (!_derreteuArr || derreteuScore === 0 ? '—' : '−' + derreteuScore + ' posições'),
     "#f97316", "Quem mais caiu desde a melhor posição que já ocupou na Copa. Mínimo 10 jogos.");
 
   h += _dCard("🏰", "Rei da Colina",
@@ -741,17 +780,17 @@ window.renderEstatisticas = function () {
 
   h += _dCard("🎢", "Montanha Russa",
     totalJogos < 5 ? '—' : (_montanhaArr ? _tieName(_montanhaArr) : '—'),
-    totalJogos < 5 ? '— (< 5 jogos)' : (!_montanhaArr || montanhaScore === 0 ? '—' : 'Σ|Δpos| = ' + montanhaScore),
+    totalJogos < 5 ? '— (< 5 jogos)' : (!_montanhaArr || montanhaScore === 0 ? '—' : montanhaScore + ' posições de variação'),
     "#e879f9", "Quem mais oscilou de posição no ranking: soma das variações absolutas Σ|Δposição| entre cada snapshot. Mínimo 5 jogos.");
 
   h += _dCard("🐢", "Tartaruga",
     totalJogos < 10 ? '—' : (_tartarugaArr ? _tieName(_tartarugaArr) : '—'),
-    totalJogos < 10 ? '— (< 10 jogos)' : (!_tartarugaArr ? '—' : 'Σ|Δpos| = ' + tartarugaScore),
+    totalJogos < 10 ? '— (< 10 jogos)' : (!_tartarugaArr ? '—' : tartarugaScore + ' posições de variação'),
     "#84cc16", "Quem menos oscilou de posição — sempre no mesmo lugar. Mesma fórmula da Montanha Russa, mas o menor valor vence. Mínimo 10 jogos.");
 
   h += _dCard("🔮", "Vidente",
     jogosFeitos.length === 0 ? '—' : _tieName(_melhorResArr),
-    jogosFeitos.length === 0 ? '— (sem jogos)' : (melhorRes ? melhorRes.stats.acertos_resultado + ' acertos de resultados' : '—'),
+    jogosFeitos.length === 0 ? '— (sem jogos)' : (melhorRes ? melhorRes.stats.acertos_resultado + ' resultados acertados' : '—'),
     "#86efac", "Quem mais acertou o desfecho dos jogos — vitória do time da casa, empate ou vitória do visitante — sem precisar acertar o placar exato.");
 
   h += _dCard("🪬", "Onisciente",
@@ -803,7 +842,7 @@ window.renderEstatisticas = function () {
 
   h += _dCard("🪞", "Clone",
     _cloneArr ? _tieName(_cloneArr) : '—',
-    !_cloneArr || cloneScore === 0 ? '—' : cloneScore + 'x no placar do grupo',
+    !_cloneArr || cloneScore === 0 ? '—' : cloneScore + ' vezes no placar do grupo',
     "#a5f3fc", "Quem mais vezes apostou exatamente o placar mais votado pelo grupo. Só conta quando ao menos 2 pessoas apostaram o mesmo placar.");
 
   h += _dCard("🕊️", "Pacifista",
@@ -818,17 +857,17 @@ window.renderEstatisticas = function () {
 
   h += _dCard("🎲", "Anarquista",
     _tieName(_anarqArr),
-    !anarqApo ? '— (< 3 apostas)' : 'Δ' + anarqMedia + ' de distância média',
+    !anarqApo ? '— (mín. 3 apostas)' : 'dist. média ' + anarqMedia + ' gols',
     "#a78bfa", "Quem mais diverge do placar mais votado pelo grupo em cada jogo apostado. A distância é medida por |(palH−palA) − (topH−topA)|. Mínimo 3 apostas.");
 
   h += _dCard("⚖️", "Metrônomo",
     jogosFeitos.length < 10 ? '—' : _tieName(_consistArr),
-    jogosFeitos.length < 10 || !consistApo ? '— (< 10 jogos)' : 'DP ' + menorDP.toFixed(2) + ' pts',
+    jogosFeitos.length < 10 || !consistApo ? '— (mín. 10 jogos)' : 'desvio ' + menorDP.toFixed(2) + ' pts/jogo',
     "#34d399", "Quem pontua de forma mais consistente jogo a jogo, com menor variação entre rodadas boas e ruins. Calculado pelo desvio padrão dos pontos por jogo (mínimo 10 jogos).");
 
   h += _dCard("🕯️", "Lanterninha",
     jogosFeitos.length === 0 ? '—' : _tieName(_lanterninhaArr),
-    jogosFeitos.length === 0 ? '— (sem jogos)' : (lanterninha ? lanterninha.stats.total.toFixed(1) + ' pts' : '—'),
+    jogosFeitos.length === 0 ? '— (sem jogos)' : (_lanterninhaArr?.[0] ? _lanterninhaArr[0].stats.total.toFixed(1) + ' pts' : '—'),
     "#94a3b8", "Quem está com menos pontos acumulados até agora. A lanterna da Copa.");
 
   h += '</div>';
