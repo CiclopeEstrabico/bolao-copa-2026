@@ -319,26 +319,45 @@ window.renderEstatisticas = function () {
   const _derreteuArr = destDerreteu.bestArr;
   const derreteuScore = destDerreteu.bestScore;
 
-  // --- Onisciente: acertou o PLACAR EXATO do jogo com mais gols da Copa ---
+  // --- Onisciente: quem acertou o placar exato com mais gols dentre todos os acertos de placar da Copa ---
+  // Lógica: filtra jogos onde houve ao menos 1 acerto de placar exato; dentre esses, pega o mais goleado.
+  // Se ninguém acertou placar exato ainda, cai no jogo mais goleado da Copa e exibe subtexto sem vencedor.
   let oniscienteJogo = null;
   let oniscienteTotalGols = 0;
   const oniscienteScores = {};
   if (jogosFeitos.length > 0) {
-    oniscienteJogo = jogosFeitos.reduce((best, j) => {
-      const rv = res[j.id];
-      const gols = (rv?.homeGoals || 0) + (rv?.awayGoals || 0);
+    // Coletar jogos onde ao menos 1 apostador acertou o placar exato
+    const jogosComAcertoExato = [];
+    for (const jogo of jogosFeitos) {
+      const rv = res[jogo.id];
+      for (const a of apos) {
+        const p = pals[a.id]?.[jogo.id];
+        if (!p || p.homeGoals === undefined) continue;
+        const br = calcularPontosBrutos(p, rv);
+        if (br.bonus_tipo === 'placar_exato') {
+          jogosComAcertoExato.push(jogo);
+          break;
+        }
+      }
+    }
+
+    const candidatos = jogosComAcertoExato.length > 0 ? jogosComAcertoExato : jogosFeitos;
+    oniscienteJogo = candidatos.reduce((best, j) => {
+      const gols = (res[j.id]?.homeGoals || 0) + (res[j.id]?.awayGoals || 0);
       const bestGols = (res[best.id]?.homeGoals || 0) + (res[best.id]?.awayGoals || 0);
       return gols > bestGols ? j : best;
     });
     const rvOnisciente = res[oniscienteJogo.id];
     oniscienteTotalGols = (rvOnisciente?.homeGoals || 0) + (rvOnisciente?.awayGoals || 0);
-    for (const a of apos) {
-      const p = pals[a.id]?.[oniscienteJogo.id];
-      if (!p || p.homeGoals === undefined) continue;
-      const br = calcularPontosBrutos(p, rvOnisciente);
-      // Onisciente: acertar o PLACAR EXATO (não apenas resultado)
-      if (br.bonus_tipo === 'placar_exato') {
-        oniscienteScores[a.id] = 1;
+
+    if (jogosComAcertoExato.length > 0) {
+      for (const a of apos) {
+        const p = pals[a.id]?.[oniscienteJogo.id];
+        if (!p || p.homeGoals === undefined) continue;
+        const br = calcularPontosBrutos(p, rvOnisciente);
+        if (br.bonus_tipo === 'placar_exato') {
+          oniscienteScores[a.id] = 1;
+        }
       }
     }
   }
@@ -346,11 +365,9 @@ window.renderEstatisticas = function () {
   const _oniscienteArr = destOnisciente.bestArr;
   let oniscienteSubStr = '—';
   if (oniscienteJogo && oniscienteTotalGols > 0) {
-    const bOni = APP.bracket?.[oniscienteJogo.id] || {};
-    const hCOni = bOni.home || oniscienteJogo.home;
-    const aCOni = bOni.away || oniscienteJogo.away;
     const rvOni = res[oniscienteJogo.id];
-    oniscienteSubStr = rvOni.homeGoals + '×' + rvOni.awayGoals + ' (' + oniscienteTotalGols + ' gols)';
+    const ninguemAcertou = Object.keys(oniscienteScores).length === 0;
+    oniscienteSubStr = rvOni.homeGoals + '×' + rvOni.awayGoals + (ninguemAcertou ? ' (sem acerto)' : ' (' + oniscienteTotalGols + ' gols)');
   }
 
   // --- Centro Avante / Zagueirão: maior/menor média de gols apostados ---
