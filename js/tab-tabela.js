@@ -159,17 +159,17 @@ window.renderTabela = function() {
       const frozen = document.createElement('div');
       frozen.id = 'frozen-bracket-labels';
       frozen.style.cssText = 'position:fixed;left:0;right:0;z-index:50;display:none;overflow:hidden;' +
-        'background:var(--fundo2);border-bottom:1px solid var(--borda);box-shadow:0 2px 8px rgba(0,0,0,.3);';
+        'background:var(--fundo);box-shadow:0 2px 8px rgba(0,0,0,.3);padding-top:8px;';
 
       // Criar barra com as mesmas labels
       const innerBar = document.createElement('div');
-      innerBar.style.cssText = 'display:flex;gap:0;width:' + scroll.scrollWidth + 'px;';
+      innerBar.style.cssText = 'display:flex;gap:0;width:' + scroll.scrollWidth + 'px;background:transparent;';
       const fases = scroll.querySelectorAll('.bracket-fase');
       fases.forEach(fase => {
         const label = fase.querySelector('.bracket-fase-label');
         const clone = document.createElement('div');
-        clone.style.cssText = 'width:' + fase.offsetWidth + 'px;flex-shrink:0;text-align:center;' +
-          'font-size:.72rem;font-weight:700;color:var(--texto);padding:6px 4px;text-transform:uppercase;letter-spacing:.03em;';
+        clone.className = 'bracket-fase-label';
+        clone.style.cssText = 'width:' + (fase.offsetWidth - 8) + 'px;flex-shrink:0;box-sizing:border-box;margin:0 4px;';
         clone.textContent = label ? label.textContent : '';
         innerBar.appendChild(clone);
       });
