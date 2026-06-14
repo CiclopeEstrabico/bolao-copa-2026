@@ -184,16 +184,56 @@ select{appearance:none;cursor:pointer}
 .tabela-detalhe tr:hover td{background:rgba(0,200,120,.04)}
 
 /* COMPILACAO */
-.compilacao-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--radius)}
+.compilacao-wrap{
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+  border-radius:var(--radius);
+  max-height:calc(100vh - 180px);
+}
+@media(max-width:600px){
+  .compilacao-wrap{
+    max-height:calc(100vh - 130px);
+  }
+}
 
 /* Coluna resultado sticky na horizontal (ao rolar pra direita) */
 .compilacao-table th.col-resultado,
 .compilacao-table td.col-resultado{
   position:sticky;
-  left:130px;
+  left:105px;
   z-index:3;
   background:var(--fundo2);
   box-shadow:2px 0 5px rgba(0,0,0,0.1);
+}
+
+/* Sticky vertical para o cabeçalho da compilação */
+.compilacao-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--fundo2);
+}
+/* Cantos superiores fixos em ambas as direções */
+.compilacao-table thead th:first-child {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 8;
+  background: var(--fundo2);
+}
+.compilacao-table thead th.col-resultado {
+  position: sticky;
+  top: 0;
+  left: 105px;
+  z-index: 8;
+  background: var(--fundo2);
+}
+
+/* Largura da coluna Jogo uniforme */
+.compilacao-table .col-jogo {
+  width: 105px !important;
+  min-width: 105px !important;
+  max-width: 105px !important;
 }
 
 
@@ -383,15 +423,11 @@ select{appearance:none;cursor:pointer}
   .compilacao-time-nome,.stat-time-nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.64rem}
   .compilacao-time-nome:first-of-type,.stat-time-nome:first-of-type{text-align:left}
   .compilacao-time-nome:last-of-type,.stat-time-nome:last-of-type{text-align:right}
-  .col-jogo,.stat-col-jogo{width:125px !important;min-width:125px !important;max-width:125px !important}
-  /* col-resultado sticky: posicionar após col-jogo mobile (125px) */
-  .compilacao-table th.col-resultado,
-  .compilacao-table td.col-resultado { left: 125px; }
+  .stat-col-jogo{width:125px !important;min-width:125px !important;max-width:125px !important}
   /* Coluna nome da classificação: limitar a ~35% da largura original */
   .col-apostador{width:90px !important;min-width:90px !important;max-width:90px !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   td.col-apostador{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
   /* Siglas: coluna mais estreita só quando comp-sigla/stat-sigla estão presentes */
-  .compilacao-table .col-jogo:has(.comp-sigla),
   .stat-col-jogo:has(.stat-sigla) {
     width:80px !important;min-width:80px !important;max-width:80px !important;
   }

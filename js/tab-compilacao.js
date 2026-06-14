@@ -46,26 +46,26 @@ window.renderCompilacao = function () {
   const fases = ["todos", "grupos", "16avos", "oitavas", "quartas", "semis", "terceiro", "final"];
   const faseAtiva = window._compFase || "todos";
   const nomesFase = { todos: "Todos", grupos: "Grupos", "16avos": "16 Avos", oitavas: "Oitavas", quartas: "Quartas", semis: "Semis", terceiro: "3o Lugar", final: "Final" };
+  const ordemStr = window._compOrdem || "pts";
 
-  let h = '<div class="toggle-bar" style="margin-bottom:15px">';
-  h += '<span class="toggle-label">Fase:</span>';
+  let toggleBarHtml = '<div class="toggle-bar" style="margin-top:15px;margin-bottom:15px;justify-content:center">';
+  toggleBarHtml += '<span class="toggle-label">Fase:</span>';
   for (const f of fases) {
-    h += '<button class="btn-toggle' + (faseAtiva === f ? " ativo" : "") + '" onclick="window._compFase=\'' + f + '\';renderAbaAtiva()">' + nomesFase[f] + '</button>';
+    toggleBarHtml += '<button class="btn-toggle' + (faseAtiva === f ? " ativo" : "") + '" onclick="window._compFase=\'' + f + '\';renderAbaAtiva()">' + nomesFase[f] + '</button>';
   }
 
-  h += '<div class="toggle-sep"></div>';
+  toggleBarHtml += '<div class="toggle-sep"></div>';
 
-  const ordemStr = window._compOrdem || "pts";
-  h += '<span class="toggle-label">Ordenar por:</span>';
-  h += '<button class="btn-toggle' + (ordemStr === "alfa" ? " ativo" : "") + '" onclick="window._compOrdem=\'alfa\';renderAbaAtiva()">A-Z</button>';
-  h += '<button class="btn-toggle' + (ordemStr === "pts" ? " ativo" : "") + '" onclick="window._compOrdem=\'pts\';renderAbaAtiva()">Pontos</button>';
-  h += '<button class="btn-toggle' + (ordemStr === "res" ? " ativo" : "") + '" onclick="window._compOrdem=\'res\';renderAbaAtiva()">Resultados</button>';
-  h += '<button class="btn-toggle' + (ordemStr === "placar" ? " ativo" : "") + '" onclick="window._compOrdem=\'placar\';renderAbaAtiva()">Placar</button>';
-  h += '</div>';
+  toggleBarHtml += '<span class="toggle-label">Ordenar por:</span>';
+  toggleBarHtml += '<button class="btn-toggle' + (ordemStr === "alfa" ? " ativo" : "") + '" onclick="window._compOrdem=\'alfa\';renderAbaAtiva()">A-Z</button>';
+  toggleBarHtml += '<button class="btn-toggle' + (ordemStr === "pts" ? " ativo" : "") + '" onclick="window._compOrdem=\'pts\';renderAbaAtiva()">Pontos</button>';
+  toggleBarHtml += '<button class="btn-toggle' + (ordemStr === "res" ? " ativo" : "") + '" onclick="window._compOrdem=\'res\';renderAbaAtiva()">Resultados</button>';
+  toggleBarHtml += '<button class="btn-toggle' + (ordemStr === "placar" ? " ativo" : "") + '" onclick="window._compOrdem=\'placar\';renderAbaAtiva()">Placar</button>';
+  toggleBarHtml += '</div>';
 
   const jogos = (window.SCHEDULE || []).filter(j => faseAtiva === "todos" || j.fase === faseAtiva)
     .sort((a, b) => new Date(a.utc) - new Date(b.utc));
-  if (!jogos.length) { el.innerHTML = h + '<div class="card"><p style="color:var(--texto2)">Sem jogos nesta fase.</p></div>'; return; }
+  if (!jogos.length) { el.innerHTML = '<div class="card"><p style="color:var(--texto2)">Sem jogos nesta fase.</p></div>' + toggleBarHtml; return; }
 
   // Ranking lateral: ordenar apostadores
   // Passa especiais oficiais para que pontos totais incluam campeão/vice/3º
@@ -109,18 +109,19 @@ window.renderCompilacao = function () {
     return b.pts - a.pts; // Default pts
   });
 
+  let h = '';
   h += '<div class="compilacao-wrap"><table class="compilacao-table"><thead><tr>';
-  h += '<th class="col-jogo" style="position:sticky;left:0;background:var(--fundo2);z-index:7;min-width:130px;max-width:130px;width:130px">Jogo</th>';
-  h += '<th class="col-resultado" style="background:var(--fundo2)">Resultado</th>';
+  h += '<th class="col-jogo">Jogo</th>';
+  h += '<th class="col-resultado">Resultado</th>';
   for (const a of ranking) {
     const nomeA = a.apelido || a.nome || "?";
     const nomeEscaped = (a.nome || nomeA).replace(/'/g, "\\'");
     const apelidoEscaped = (a.apelido || "").replace(/'/g, "\\'");
     if (a.isModelo) {
-      h += '<th onclick="window.abrirModalApostador(\'Modelo Estatístico\', \'Modelo\', ' + a.pts + ')" title="Modelo — Referência Estatística (Clique para ver detalhes)" style="z-index:1;max-width:50px;overflow:hidden;text-overflow:clip;white-space:nowrap;padding:4px 2px;font-weight:normal;color:#7ba4c9;cursor:pointer">' +
+      h += '<th onclick="window.abrirModalApostador(\'Modelo Estatístico\', \'Modelo\', ' + a.pts + ')" title="Modelo — Referência Estatística (Clique para ver detalhes)" style="max-width:50px;overflow:hidden;text-overflow:clip;white-space:nowrap;padding:4px 2px;font-weight:normal;color:#7ba4c9;cursor:pointer">' +
            'Modelo' + '</th>';
     } else {
-      h += '<th onclick="window.abrirModalApostador(\'' + nomeEscaped + '\', \'' + apelidoEscaped + '\', ' + a.pts + ')" title="' + (a.nome || nomeA) + ' (Clique para ver detalhes)" style="z-index:1;max-width:50px;overflow:hidden;text-overflow:clip;white-space:nowrap;padding:4px 2px;cursor:pointer">' + nomeA + '</th>';
+      h += '<th onclick="window.abrirModalApostador(\'' + nomeEscaped + '\', \'' + apelidoEscaped + '\', ' + a.pts + ')" title="' + (a.nome || nomeA) + ' (Clique para ver detalhes)" style="max-width:50px;overflow:hidden;text-overflow:clip;white-space:nowrap;padding:4px 2px;cursor:pointer">' + nomeA + '</th>';
     }
   }
   h += '</tr></thead><tbody>';
@@ -130,17 +131,14 @@ window.renderCompilacao = function () {
     const temRes = r && r.homeGoals !== undefined;
     const b = APP.bracket?.[jogo.id] || {};
     const hC = b.home || jogo.home; const aC = b.away || jogo.away;
-    const hN = getShortName(hC);
-    const aN = getShortName(aC);
-    const isMobile = window.innerWidth <= 600;
-    const hDisplay = isMobile ? getSigla(hC) : hN;
-    const aDisplay = isMobile ? getSigla(aC) : aN;
+    const hDisplay = getSigla(hC);
+    const aDisplay = getSigla(aC);
     const dataHoraStr = formatarDataBRT(jogo.utc, false);
     const faseLbl = getFaseLabel(jogo);
     const dataHora = dataHoraStr + (faseLbl ? ", " + faseLbl : "");
     h += '<tr><td class="col-jogo" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="position:sticky;left:0;background:var(--card2);padding:6px 8px;z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1);cursor:pointer">';
     h += '<div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">' + dataHora + '</div>';
-    h += '<div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">' + htmlBandeira(hC, 14) + ' <span class="compilacao-time-nome' + (isMobile ? ' comp-sigla' : '') + '">' + hDisplay + '</span> <span style="color:var(--texto2)">×</span> <span class="compilacao-time-nome' + (isMobile ? ' comp-sigla' : '') + '">' + aDisplay + '</span> ' + htmlBandeira(aC, 14) + '</div></td>';
+    h += '<div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">' + htmlBandeira(hC, 14) + ' <span class="compilacao-time-nome comp-sigla">' + hDisplay + '</span> <span style="color:var(--texto2)">×</span> <span class="compilacao-time-nome comp-sigla">' + aDisplay + '</span> ' + htmlBandeira(aC, 14) + '</div></td>';
     // Resultado oficial
     if (temRes) {
       let resHtml = r.homeGoals + 'x' + r.awayGoals;
@@ -262,6 +260,7 @@ window.renderCompilacao = function () {
     h += '</tr>';
   }
   h += '</tbody></table></div>';
+  h += toggleBarHtml;
 
   h += '<div style="display:flex;justify-content:center;gap:12px;margin-top:20px;margin-bottom:10px">';
   h += '<button class="btn btn-secundario" onclick="exportarCompilacaoCsv()">📊 Exportar CSV</button>';

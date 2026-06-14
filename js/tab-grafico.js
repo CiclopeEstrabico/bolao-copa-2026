@@ -1421,9 +1421,23 @@ function _graficoExibirMacaco(cache) {
   const apos = APP.apostadores || [];
   const pals = APP.palpites || {};
   const espOficiaisGraf = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
+  const baseRanking = gerarRanking(pals, res, apos, espOficiaisGraf);
+  const posMap = {};
+  baseRanking.forEach(item => {
+    const pId = item.participante.id || item.participante.token;
+    if (pId) posMap[pId] = item.posicao;
+  });
+
   let rankingCompleto = apos.map(a => {
     const st = calcularPontosApostador(pals[a.id] || {}, res, a, espOficiaisGraf);
-    return { id: a.id, nome: (a.apelido || a.nome || '?').substring(0, 14), pts: st.total, isModelo: false };
+    const pId = a.id || a.token;
+    return {
+      id: a.id,
+      nome: (a.apelido || a.nome || '?').substring(0, 14),
+      pts: st.total,
+      isModelo: false,
+      posicao: pId ? posMap[pId] : null
+    };
   }).sort((a, b) => b.pts - a.pts);
 
   // Inserir Modelo na posição correta do ranking
@@ -1768,10 +1782,10 @@ window._graficoExportarJPG = function () {
     ctx.save();
     ctx.fillStyle = a.isModelo ? '#b8cfe8' : '#94a3b8';
     ctx.font = '10px system-ui, sans-serif';
-    ctx.textAlign = 'left';
-    // Âncora no fundo da área de labels; rotate(-90°) faz X apontar pra cima
-    // textAlign:'left' → texto começa aqui e sobe → primeiro char embaixo, último em cima
-    ctx.translate(x + BAR_WIDTH / 2, CHART_BOTTOM + PADDING_BOTTOM - 8);
+    ctx.textAlign = 'right';
+    // Âncora no topo da área de labels (logo abaixo do chart); rotate(-90°) faz X apontar pra cima
+    // textAlign:'right' → texto termina na âncora → último char no topo (perto da barra), primeiro embaixo
+    ctx.translate(x + BAR_WIDTH / 2, CHART_BOTTOM + 8);
     ctx.rotate(-Math.PI / 2);
     ctx.fillText(nomeLabelExp, 0, 0);
     ctx.restore();
