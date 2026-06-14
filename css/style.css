@@ -200,7 +200,7 @@ select{appearance:none;cursor:pointer}
 .compilacao-table th.col-resultado,
 .compilacao-table td.col-resultado{
   position:sticky;
-  left:105px;
+  left:115px;
   z-index:3;
   background:var(--fundo2);
   box-shadow:2px 0 5px rgba(0,0,0,0.1);
@@ -224,16 +224,16 @@ select{appearance:none;cursor:pointer}
 .compilacao-table thead th.col-resultado {
   position: sticky;
   top: 0;
-  left: 105px;
+  left: 115px;
   z-index: 8;
   background: var(--fundo2);
 }
 
 /* Largura da coluna Jogo uniforme */
 .compilacao-table .col-jogo {
-  width: 105px !important;
-  min-width: 105px !important;
-  max-width: 105px !important;
+  width: 115px !important;
+  min-width: 115px !important;
+  max-width: 115px !important;
 }
 
 
@@ -547,6 +547,9 @@ select{appearance:none;cursor:pointer}
   .jogo-col-home>span,.jogo-col-away>span{
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     max-width:72px;
+  }
+  .toggle-bar {
+    justify-content: flex-start !important;
   }
 }
 

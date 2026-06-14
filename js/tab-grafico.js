@@ -796,7 +796,7 @@ function _renderChance(rankingCompleto, chances) {
     const barPercSafe = Math.max(2, perc);
     h += `<div style="position:absolute;bottom:calc(${barPercSafe.toFixed(1)}% + 4px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${valFmt}</div>`;
     h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2, perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
-    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${posStr}${a.nome}</div>`;
+    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:translateX(-38%) rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${posStr}${a.nome}</div>`;
     h += '</div>';
   }
 
@@ -960,7 +960,7 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
     h += `<div style="position:absolute;bottom:calc(${barPercSafe.toFixed(1)}% + 4px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${_fmtVal(metricaAtiva, val, shortFmt)}</div>`;
     h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2, perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
     // Nome centralizado abaixo da barra
-    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${nomeBarra}</div>`;
+    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:translateX(-38%) rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${nomeBarra}</div>`;
     h += '</div>';
   }
 
@@ -1559,7 +1559,7 @@ function _renderMacaco(rankingCompleto, cache) {
     h += `<div style="position:absolute;bottom:calc(${barPercSafe.toFixed(1)}% + 4px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${val.toFixed(1)}</div>`;
     h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2, perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
     // Nome centralizado abaixo
-    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${nomeLabel}</div>`;
+    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:translateX(-38%) rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${nomeLabel}</div>`;
     h += '</div>';
   }
 
@@ -1713,11 +1713,31 @@ window._graficoExportarJPG = function () {
   const macacoCache = (metricaAtiva === 'macaco') ? (window._graficoMacacoCache || { media: 0, sigma: 0 }) : null;
   if (macacoCache && macacoCache.media > 0) {
     const COR_MAC_LEG = '#8B5E3C';
-    // Linha única simplificada: 🐒 + pontos + "Macaco Médio"
     ctx.fillStyle = COR_MAC_LEG;
+    const emoji = '🐒';
+    const text = `  ${macacoCache.media.toFixed(1)} pts`;
+    
+    ctx.save();
+    // Medir largura total para centralizar
+    ctx.font = 'bold 17px system-ui, sans-serif';
+    const wEmoji = ctx.measureText(emoji).width;
+    
     ctx.font = 'bold 13px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(`🐒 ${macacoCache.media.toFixed(1)} pts  Macaco Médio`, TOTAL_W / 2, 46);
+    const wText = ctx.measureText(text).width;
+    
+    const wTotal = wEmoji + wText;
+    const startX = (TOTAL_W - wTotal) / 2;
+    
+    // Desenhar emoji (30% maior, ~17px)
+    ctx.font = 'bold 17px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(emoji, startX, 46);
+    
+    // Desenhar pontuação
+    ctx.font = 'bold 13px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(text, startX + wEmoji, 45);
+    ctx.restore();
   }
 
   const vals = rankingExp.map(a =>
