@@ -544,7 +544,16 @@ select{appearance:none;cursor:pointer}
 .bracket-gol{margin-left:auto;font-weight:800;font-size:.82rem}
 .bracket-spacer{height:8px}
 
-/* ===== APOSTA PROGRESSO ===== */
+/* ===== APOSTA PROGRESSO & ESTATISTICAS & RANK ===== */
+.stat-table-wrap,
+.rank-table-wrap {
+  max-height: none !important;
+}
+.card-sem-padding {
+  padding: 0 !important;
+  overflow: visible !important; /* Permite que o sticky vertical funcione em toda a página */
+}
+
 @media(min-width: 851px) {
   .stat-full-table {
     width: 100% !important;
@@ -552,12 +561,24 @@ select{appearance:none;cursor:pointer}
     min-width: 100% !important;
   }
 }
+
 @media (min-width: 601px) {
-  /* No desktop, o cabeçalho fica sticky no topo (top: 0), mas livre na horizontal (left: auto) */
+  .stat-table-wrap,
+  .rank-table-wrap {
+    overflow: visible !important;
+  }
+
+  /* Cabeçalho da tabela de estatísticas fica sticky verticalmente no desktop (abaixo do header + tabs = 102px) */
+  .stat-full-table thead th {
+    position: sticky !important;
+    top: 102px !important;
+    z-index: 5 !important;
+    background: var(--fundo2) !important;
+  }
   .stat-full-table thead th:first-child,
   .stat-full-table thead th.col-resultado {
     position: sticky !important;
-    top: 0 !important;
+    top: 102px !important;
     left: auto !important;
     z-index: 5 !important;
     width: auto !important;
@@ -565,7 +586,6 @@ select{appearance:none;cursor:pointer}
     max-width: none !important;
     box-shadow: none !important;
   }
-  /* Células de dados no desktop fluem normalmente (sem ser sticky) */
   .stat-full-table tbody td:first-child,
   .stat-full-table tbody td.col-resultado {
     position: static !important;
@@ -574,13 +594,104 @@ select{appearance:none;cursor:pointer}
     max-width: none !important;
     box-shadow: none !important;
   }
+
+  /* Cabeçalho da tabela de classificação fica sticky verticalmente no desktop (top = 102px) */
+  .rank-table thead th {
+    position: sticky !important;
+    top: 102px !important;
+    z-index: 5 !important;
+    background: var(--fundo2) !important;
+  }
+  .rank-table thead th.col-apostador {
+    position: sticky !important;
+    top: 102px !important;
+    left: auto !important;
+    z-index: 5 !important;
+    box-shadow: none !important;
+  }
+  .rank-table tbody td.col-apostador {
+    position: static !important;
+    left: auto !important;
+    box-shadow: none !important;
+  }
 }
+
 @media (max-width: 600px) {
+  .stat-table-wrap,
+  .rank-table-wrap {
+    overflow-x: auto !important;
+    overflow-y: clip !important; /* clip permite que o sticky vertical se propague para a janela */
+  }
+
+  /* Cabeçalho da tabela de estatísticas fica sticky verticalmente no mobile (abaixo do header + tabs = 86px) */
+  .stat-full-table thead th {
+    position: sticky !important;
+    top: 86px !important;
+    z-index: 5 !important;
+    background: var(--fundo2) !important;
+  }
+  .stat-full-table thead th:first-child,
+  .stat-full-table thead th.col-jogo {
+    position: sticky !important;
+    top: 86px !important;
+    left: 0 !important;
+    z-index: 8 !important;
+    background: var(--fundo2) !important;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1) !important;
+  }
+  .stat-full-table thead th.col-resultado {
+    position: sticky !important;
+    top: 86px !important;
+    left: 115px !important;
+    z-index: 8 !important;
+    background: var(--fundo2) !important;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1) !important;
+  }
+  .stat-full-table tbody td:first-child,
+  .stat-full-table tbody td.col-jogo {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 2 !important;
+    background: var(--card2) !important;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1) !important;
+  }
+  .stat-full-table tbody td.col-resultado {
+    position: sticky !important;
+    left: 115px !important;
+    z-index: 3 !important;
+    background: var(--fundo2) !important;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1) !important;
+  }
+
+  /* Ajusta tamanho das outras colunas no mobile */
   .stat-full-table th:not(.col-jogo):not(.col-resultado),
   .stat-full-table td:not(.col-jogo):not(.col-resultado) {
     width: auto !important;
     min-width: 0 !important;
     max-width: none !important;
+  }
+
+  /* Cabeçalho da tabela de classificação fica sticky verticalmente no mobile (top = 86px) */
+  .rank-table thead th {
+    position: sticky !important;
+    top: 86px !important;
+    z-index: 5 !important;
+    background: var(--fundo2) !important;
+  }
+  .rank-table thead th.col-apostador {
+    position: sticky !important;
+    top: 86px !important;
+    left: 0 !important;
+    z-index: 8 !important;
+    background: var(--fundo2) !important;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1) !important;
+  }
+  .rank-table tbody td.col-apostador {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 2 !important;
+    background: var(--fundo) !important;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1) !important;
   }
 }
 .progresso-barra-wrap{background:var(--fundo2);border-radius:4px;height:6px;overflow:hidden;margin:4px 0}
@@ -759,16 +870,17 @@ details[open] > summary span:last-child { content: "−"; }
 /* ── TAB APOSTAR — sem destaque especial de cor ── */
 .tab-btn-apostar.ativa{border-bottom-color:var(--verde-light)}
 
-/* Sticky header for Rank/Classification table */
-.rank-table thead th {
+
+/* Sticky header for Chaves/Bracket columns */
+.bracket-fase-label {
   position: sticky !important;
-  top: 0 !important;
-  z-index: 5 !important;
-  background: var(--fundo2) !important;
+  top: 86px !important;
+  z-index: 10 !important;
 }
-.rank-table thead th.col-apostador {
-  left: 0 !important;
-  z-index: 6 !important;
+@media (min-width: 601px) {
+  .bracket-fase-label {
+    top: 102px !important;
+  }
 }
 
 

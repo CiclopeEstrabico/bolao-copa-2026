@@ -704,7 +704,7 @@ window.renderEstatisticas = function () {
         gap: 16px;
       }
     }
-    .card-sem-padding { padding: 0 !important; overflow: hidden; }
+    .card-sem-padding { padding: 0 !important; overflow: visible; }
     .card-sem-padding .card-titulo { padding: 14px 14px 8px; margin-bottom: 12px; }
     @media (max-width: 599px) {
       .card-sem-padding .card-titulo { padding: 10px 10px 8px; }
@@ -951,10 +951,10 @@ window.renderEstatisticas = function () {
   }
 
 
-  h += '<div class="card card-sem-padding"><div class="card-titulo">📈 Estatísticas Avançadas por Jogo</div><div class="compilacao-wrap"><table class="compilacao-table stat-full-table" style="font-size:.7rem">';
+  h += '<div class="card card-sem-padding"><div class="card-titulo">📈 Estatísticas Avançadas por Jogo</div><div class="compilacao-wrap stat-table-wrap"><table class="compilacao-table stat-full-table" style="font-size:.7rem">';
   h += '<thead><tr>';
   const isMobileHeader = window.innerWidth <= 600;
-  h += `<th class="${isMobileHeader ? 'col-jogo' : 'stat-col-jogo'}" style="text-align:left;position:sticky;left:0;background:var(--fundo2);z-index:2;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Jogo</th>`;
+  h += `<th class="${isMobileHeader ? 'col-jogo' : 'stat-col-jogo'}" style="text-align:left;">Jogo</th>`;
   h += '<th class="col-resultado" title="Placar oficial do jogo">' + (window.innerWidth <= 600 ? 'Result' : 'Resultado') + '</th>';
   h += '<th title="Nº de apostadores que apostaram na vitória do Time 1 (mandante)">Apostas T1</th>';
   h += '<th title="Nº de apostadores que apostaram em empate">Apostas Emp</th>';
@@ -1027,7 +1027,7 @@ window.renderEstatisticas = function () {
     const faseLbl = getFaseLabel(jogo);
     const dataHoraLbl = dataHoraStr + (faseLbl ? ", " + faseLbl : "");
     h += `<tr style="${rowBg}">`;
-    h += `<td class="${isMobile ? 'col-jogo' : 'stat-col-jogo'}" onclick="PROGNOSE.abrirModal('${jogo.id}')" style="text-align:left;position:sticky;left:0;background:var(--card2);padding:6px 8px;z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1);cursor:pointer">
+    h += `<td class="${isMobile ? 'col-jogo' : 'stat-col-jogo'}" onclick="PROGNOSE.abrirModal('${jogo.id}')" style="text-align:left;padding:6px 8px;cursor:pointer">
             <div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">${dataHoraLbl}</div>
             <div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">
               ${htmlBandeira(hC, 14)} <span class="${isMobile ? 'compilacao-time-nome comp-sigla' : 'stat-time-nome'}">${isMobile ? getSigla(hC) : hName}</span> <span style="color:var(--texto2)">×</span> <span class="${isMobile ? 'compilacao-time-nome comp-sigla' : 'stat-time-nome'}">${isMobile ? getSigla(aC) : aName}</span> ${htmlBandeira(aC, 14)}
