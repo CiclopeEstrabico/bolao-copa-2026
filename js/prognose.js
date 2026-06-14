@@ -721,9 +721,9 @@ window.PROGNOSE = {
       return '<p style="text-align:center;color:var(--texto2);padding:30px">Nenhum palpite cadastrado.</p>';
     }
 
-    // data-scroll-inner evita que o swipe-down no modal feche quando o usuário estiver
-    // rolando a lista de palpites
-    let h = '<div data-scroll-inner="1" style="max-height:55vh;overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--borda);border-radius:var(--radius-sm);margin-top:5px">';
+    const isMob = window.innerWidth <= 600;
+    const tableMaxH = isMob ? 'calc(100dvh - 180px)' : 'calc(92vh - 160px)';
+    let h = '<div data-scroll-inner="1" style="max-height:' + tableMaxH + ';overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--borda);border-radius:var(--radius-sm);margin-top:5px">';
     h += '<table class="tabela-detalhe" style="width:100%;margin:0;border-collapse:collapse">';
     h += '<thead><tr style="position:sticky;top:0;z-index:10;background:var(--fundo2)">';
     h += '<th style="text-align:left;padding:8px 10px;border-bottom:2px solid var(--verde-light)">Apostador</th>';

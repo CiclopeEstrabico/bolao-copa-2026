@@ -159,7 +159,7 @@ window.renderTabela = function() {
       const frozen = document.createElement('div');
       frozen.id = 'frozen-bracket-labels';
       frozen.style.cssText = 'position:fixed;left:0;right:0;z-index:50;display:none;overflow:hidden;' +
-        'background:var(--fundo);box-shadow:0 2px 8px rgba(0,0,0,.3);padding-top:8px;';
+        'background:var(--fundo2);border-bottom:2px solid var(--verde-light);box-shadow:0 2px 8px rgba(0,0,0,.3);padding-top:8px;';
 
       // Criar barra com as mesmas labels
       const innerBar = document.createElement('div');

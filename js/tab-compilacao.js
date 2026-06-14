@@ -1,25 +1,74 @@
 /** tab-compilacao.js - Heatmap de palpites */
 
-window.abrirModalApostador = function (nome, apelido, pts) {
+window.abrirModalApostador = function (nome, apelido, pts, apostadorId) {
   const ov = document.getElementById("modal-prog");
   const box = document.getElementById("modal-prog-body");
   if (!ov || !box) return;
 
   const isMob = window.innerWidth <= 600;
+
+  // Calcular stats reais se tivermos o ID do apostador
+  let st = null;
+  if (apostadorId && apostadorId !== '__modelo__') {
+    const a = (APP.apostadores || []).find(x => x.id === apostadorId);
+    if (a) {
+      const res = getResultados();
+      const esp = window.BRACKET?.extrairEspeciaisOficiais?.(res, APP.bracket || {}) || {};
+      st = calcularPontosApostador(APP.palpites?.[a.id] || {}, res, a, esp);
+    }
+  } else if (apostadorId === '__modelo__' && window.getModelo && APP._modeloCarregado) {
+    const modeloA = window.getModelo();
+    if (modeloA) {
+      const res = getResultados();
+      const esp = window.BRACKET?.extrairEspeciaisOficiais?.(res, APP.bracket || {}) || {};
+      st = calcularPontosApostador(APP.palpitesModelo || {}, res, modeloA, esp);
+    }
+  }
+
   let h = '';
   h += '<button class="modal-close" onclick="(function(){document.getElementById(\'modal-prog\').classList.remove(\'aberto\');document.body.style.overflow=\'\'})()">✕</button>';
   
   h += '<div style="text-align:center;padding:' + (isMob ? '8px 6px' : '15px 10px') + '">';
-  h += '  <div style="font-size:' + (isMob ? '1.8rem' : '2.8rem') + ';margin-bottom:' + (isMob ? '6px' : '12px') + ';display:inline-block;padding:' + (isMob ? '8px' : '12px') + ';background:var(--fundo2);border-radius:50%;border:1.5px solid var(--borda)">👤</div>';
-  h += '  <h3 style="margin:' + (isMob ? '4px 0 2px 0' : '8px 0 4px 0') + ';font-size:' + (isMob ? '1rem' : '1.4rem') + ';font-weight:800;color:var(--verde-light);letter-spacing:.02em">' + (apelido || nome) + '</h3>';
-  h += '  <p style="margin:0 0 ' + (isMob ? '12px' : '24px') + ' 0;font-size:' + (isMob ? '0.75rem' : '0.9rem') + ';color:var(--texto2);font-weight:500">' + nome + '</p>';
-  
-  h += '  <div style="display:flex;justify-content:center;gap:12px;margin-top:6px">';
-  h += '    <div style="background:var(--fundo2);padding:' + (isMob ? '10px 18px' : '14px 24px') + ';border-radius:12px;border:1px solid var(--borda);min-width:' + (isMob ? '100px' : '140px') + ';box-shadow:0 4px 12px rgba(0,0,0,0.15)">';
-  h += '      <div style="font-size:' + (isMob ? '0.6rem' : '0.68rem') + ';color:var(--texto2);text-transform:uppercase;letter-spacing:0.06em;font-weight:700">Pontos Totais</div>';
-  h += '      <div style="font-size:' + (isMob ? '1.4rem' : '2rem') + ';font-weight:900;color:var(--dourado);margin-top:4px;letter-spacing:-0.02em">' + Number(pts).toFixed(1) + '</div>';
-  h += '    </div>';
-  h += '  </div>';
+  h += '<div style="font-size:' + (isMob ? '1.8rem' : '2.8rem') + ';margin-bottom:' + (isMob ? '6px' : '12px') + ';display:inline-block;padding:' + (isMob ? '8px' : '12px') + ';background:var(--fundo2);border-radius:50%;border:1.5px solid var(--borda)">👤</div>';
+  h += '<h3 style="margin:' + (isMob ? '4px 0 2px 0' : '8px 0 4px 0') + ';font-size:' + (isMob ? '1rem' : '1.4rem') + ';font-weight:800;color:var(--verde-light);letter-spacing:.02em">' + (apelido || nome) + '</h3>';
+  if (nome && nome !== apelido) {
+    h += '<p style="margin:0 0 ' + (isMob ? '6px' : '10px') + ' 0;font-size:' + (isMob ? '0.72rem' : '0.85rem') + ';color:var(--texto2);font-weight:500">' + nome + '</p>';
+  }
+
+  if (st) {
+    // Layout enriquecido com estatísticas detalhadas
+    const _card = function(label, valor, cor) {
+      return '<div style="background:var(--fundo2);border-radius:8px;padding:10px;text-align:center">' +
+        '<div style="font-size:.55rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">' + label + '</div>' +
+        '<div style="font-size:1.2rem;font-weight:900;color:' + cor + '">' + valor + '</div></div>';
+    };
+    h += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0">';
+    h += _card('Pontos Totais', st.total.toFixed(1), 'var(--verde-light)');
+    h += _card('Acertos Resultado', st.acertos_resultado, '#22c55e');
+    h += _card('Grupos', st.total_grupos.toFixed(1) + ' pts', 'var(--texto)');
+    h += _card('Eliminatórias', st.total_eliminatorias.toFixed(1) + ' pts', 'var(--texto)');
+    h += '</div>';
+
+    const _mini = function(label, valor, cor) {
+      return '<div style="background:var(--fundo2);border-radius:8px;padding:8px 4px;text-align:center">' +
+        '<div style="font-size:.5rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">' + label + '</div>' +
+        '<div style="font-size:.9rem;font-weight:800;color:' + cor + '">' + valor + '</div></div>';
+    };
+    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">';
+    h += _mini('Bônus+1', st.acertos_bonus1, '#9bf73e');
+    h += _mini('Placar+3', st.acertos_placar_exato, '#ffff66');
+    h += _mini('Placar+5', st.acertos_placar_alto, '#fb923c');
+    h += '</div>';
+  } else {
+    // Fallback simples (sem ID ou modelo)
+    h += '<div style="display:flex;justify-content:center;gap:12px;margin-top:6px">';
+    h += '<div style="background:var(--fundo2);padding:' + (isMob ? '10px 18px' : '14px 24px') + ';border-radius:12px;border:1px solid var(--borda);min-width:' + (isMob ? '100px' : '140px') + ';box-shadow:0 4px 12px rgba(0,0,0,0.15)">';
+    h += '<div style="font-size:' + (isMob ? '0.6rem' : '0.68rem') + ';color:var(--texto2);text-transform:uppercase;letter-spacing:0.06em;font-weight:700">Pontos Totais</div>';
+    h += '<div style="font-size:' + (isMob ? '1.4rem' : '2rem') + ';font-weight:900;color:var(--dourado);margin-top:4px;letter-spacing:-0.02em">' + Number(pts).toFixed(1) + '</div>';
+    h += '</div>';
+    h += '</div>';
+  }
+
   h += '</div>';
 
   box.innerHTML = h;
@@ -124,10 +173,11 @@ window.renderCompilacao = function () {
     const nomeEscaped = (a.nome || nomeA).replace(/'/g, "\\'");
     const apelidoEscaped = (a.apelido || "").replace(/'/g, "\\'");
     if (a.isModelo) {
-      h += '<th onclick="window.abrirModalApostador(\'Modelo Estatístico\', \'Modelo\', ' + a.pts + ')" title="Modelo — Referência Estatística (Clique para ver detalhes)" style="max-width:50px;overflow:hidden;text-overflow:clip;white-space:nowrap;padding:4px 2px;font-weight:normal;color:#7ba4c9;cursor:pointer">' +
+      h += '<th onclick="window.abrirModalApostador(\'Modelo Estat\u00edstico\', \'Modelo\', ' + a.pts + ', \'__modelo__\')" title="Modelo — Refer\u00eancia Estat\u00edstica (Clique para ver detalhes)" style="max-width:50px;overflow:hidden;text-overflow:clip;white-space:nowrap;padding:4px 2px;font-weight:normal;color:#7ba4c9;cursor:pointer">' +
            'Modelo' + '</th>';
     } else {
-      h += '<th onclick="window.abrirModalApostador(\'' + nomeEscaped + '\', \'' + apelidoEscaped + '\', ' + a.pts + ')" title="' + (a.nome || nomeA) + ' (Clique para ver detalhes)" style="max-width:50px;overflow:hidden;text-overflow:clip;white-space:nowrap;padding:4px 2px;cursor:pointer">' + nomeA + '</th>';
+      const idEscaped = (a.id || '').replace(/'/g, "\\'");
+      h += '<th onclick="window.abrirModalApostador(\'' + nomeEscaped + '\', \'' + apelidoEscaped + '\', ' + a.pts + ', \'' + idEscaped + '\')" title="' + (a.nome || nomeA) + ' (Clique para ver detalhes)" style="max-width:50px;overflow:hidden;text-overflow:clip;white-space:nowrap;padding:4px 2px;cursor:pointer">' + nomeA + '</th>';
     }
   }
   h += '</tr></thead><tbody>';
