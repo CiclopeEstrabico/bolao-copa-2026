@@ -614,9 +614,9 @@ select{appearance:none;cursor:pointer}
 .celula-parcial{background:rgba(234,179,8,.12);color:#fde047}
 .celula-erro{background:rgba(239,68,68,0.06);color:#fca5a5;opacity:0.8}
 
-.celula-pts-8{background:rgba(245,158,11,0.25) !important;color:#fbbf24 !important;font-weight:900}
-.celula-pts-6{background:rgba(234,179,8,0.18) !important;color:#fde047 !important;font-weight:700}
-.celula-pts-4{background:rgba(163,230,53,0.15) !important;color:#bef264 !important;font-weight:700}
+.celula-pts-8{background:rgba(249,115,22,0.25) !important;color:#fb923c !important;font-weight:900}
+.celula-pts-6{background:rgba(250,204,21,0.20) !important;color:#fef08a !important;font-weight:700}
+.celula-pts-4{background:rgba(190,242,100,0.15) !important;color:#d9f99d !important;font-weight:700}
 .celula-pts-3{background:rgba(34,197,94,0.12) !important;color:#86efac !important;font-weight:700}
 
 .celula-futuro{color:var(--texto2);font-style:italic}
