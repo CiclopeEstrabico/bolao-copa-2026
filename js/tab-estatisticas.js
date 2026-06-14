@@ -951,8 +951,8 @@ window.renderEstatisticas = function () {
   }
 
 
-  // Resumo Avançado de Todos os Jogos
   h += '<div class="card card-sem-padding"><div class="card-titulo">📈 Estatísticas Avançadas por Jogo</div><div class="compilacao-wrap"><table class="compilacao-table stat-full-table" style="font-size:.7rem">';
+  h += '<thead><tr>';
   const isMobileHeader = window.innerWidth <= 600;
   h += `<th class="${isMobileHeader ? 'col-jogo' : 'stat-col-jogo'}" style="text-align:left;position:sticky;left:0;background:var(--fundo2);z-index:2;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Jogo</th>`;
   h += '<th class="col-resultado" title="Placar oficial do jogo">' + (window.innerWidth <= 600 ? 'Result' : 'Resultado') + '</th>';
