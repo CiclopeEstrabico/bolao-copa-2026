@@ -1,12 +1,6 @@
 /** tab-compilacao.js - Heatmap de palpites */
 
 window.abrirModalApostador = function (nome, apelido, pts, apostadorId) {
-  const ov = document.getElementById("modal-prog");
-  const box = document.getElementById("modal-prog-body");
-  if (!ov || !box) return;
-
-  const isMob = window.innerWidth <= 600;
-
   // Calcular stats reais se tivermos o ID do apostador
   let st = null;
   if (apostadorId && apostadorId !== '__modelo__') {
@@ -25,62 +19,63 @@ window.abrirModalApostador = function (nome, apelido, pts, apostadorId) {
     }
   }
 
-  let h = '';
-  h += '<button class="modal-close" onclick="(function(){document.getElementById(\'modal-prog\').classList.remove(\'aberto\');document.body.style.overflow=\'\'})()">✕</button>';
-  
-  h += '<div style="text-align:center;padding:' + (isMob ? '8px 6px' : '15px 10px') + '">';
-  h += '<div style="font-size:' + (isMob ? '1.8rem' : '2.8rem') + ';margin-bottom:' + (isMob ? '6px' : '12px') + ';display:inline-block;padding:' + (isMob ? '8px' : '12px') + ';background:var(--fundo2);border-radius:50%;border:1.5px solid var(--borda)">👤</div>';
-  h += '<h3 style="margin:' + (isMob ? '4px 0 2px 0' : '8px 0 4px 0') + ';font-size:' + (isMob ? '1rem' : '1.4rem') + ';font-weight:800;color:var(--verde-light);letter-spacing:.02em">' + (apelido || nome) + '</h3>';
-  if (nome && nome !== apelido) {
-    h += '<p style="margin:0 0 ' + (isMob ? '6px' : '10px') + ' 0;font-size:' + (isMob ? '0.72rem' : '0.85rem') + ';color:var(--texto2);font-weight:500">' + nome + '</p>';
+  const nomeCompleto = nome || apelido || '';
+  const apelidoDisplay = apelido || nome || '';
+
+  // Remover popup anterior se existir
+  const existing = document.getElementById('popup-apostador-detalhe');
+  if (existing) existing.remove();
+
+  const div = document.createElement('div');
+  div.id = 'popup-apostador-detalhe';
+  div.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px';
+
+  let inner = '';
+  inner += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">';
+  inner += '<div>';
+  inner += '<div style="font-size:1rem;font-weight:800;color:var(--texto)">' + apelidoDisplay + '</div>';
+  if (nomeCompleto && nomeCompleto !== apelidoDisplay) {
+    inner += '<div style="font-size:.72rem;color:var(--texto2);margin-top:2px">' + nomeCompleto + '</div>';
   }
+  inner += '</div>';
+  inner += '<button onclick="document.getElementById(\'popup-apostador-detalhe\')?.remove()" style="background:rgba(255,255,255,.08);border:none;border-radius:50%;width:28px;height:28px;color:var(--texto2);font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>';
+  inner += '</div>';
 
   if (st) {
-    // Layout enriquecido com estatísticas detalhadas
     const _card = function(label, valor, cor) {
       return '<div style="background:var(--fundo2);border-radius:8px;padding:10px;text-align:center">' +
         '<div style="font-size:.55rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">' + label + '</div>' +
         '<div style="font-size:1.2rem;font-weight:900;color:' + cor + '">' + valor + '</div></div>';
     };
-    h += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0">';
-    h += _card('Pontos Totais', st.total.toFixed(1), 'var(--verde-light)');
-    h += _card('Acertos Resultado', st.acertos_resultado, '#22c55e');
-    h += _card('Grupos', st.total_grupos.toFixed(1) + ' pts', 'var(--texto)');
-    h += _card('Eliminatórias', st.total_eliminatorias.toFixed(1) + ' pts', 'var(--texto)');
-    h += '</div>';
+    inner += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px">';
+    inner += _card('Pontos Totais', st.total.toFixed(1), 'var(--verde-light)');
+    inner += _card('Acertos Resultado', st.acertos_resultado, '#22c55e');
+    inner += _card('Grupos', st.total_grupos.toFixed(1) + ' pts', 'var(--texto)');
+    inner += _card('Eliminatórias', st.total_eliminatorias.toFixed(1) + ' pts', 'var(--texto)');
+    inner += '</div>';
 
     const _mini = function(label, valor, cor) {
       return '<div style="background:var(--fundo2);border-radius:8px;padding:8px 4px;text-align:center">' +
         '<div style="font-size:.5rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">' + label + '</div>' +
         '<div style="font-size:.9rem;font-weight:800;color:' + cor + '">' + valor + '</div></div>';
     };
-    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">';
-    h += _mini('Bônus+1', st.acertos_bonus1, '#9bf73e');
-    h += _mini('Placar+3', st.acertos_placar_exato, '#ffff66');
-    h += _mini('Placar+5', st.acertos_placar_alto, '#fb923c');
-    h += '</div>';
+    inner += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">';
+    inner += _mini('Bônus+1', st.acertos_bonus1, '#9bf73e');
+    inner += _mini('Placar+3', st.acertos_placar_exato, '#ffff66');
+    inner += _mini('Placar+5', st.acertos_placar_alto, '#fb923c');
+    inner += '</div>';
   } else {
-    // Fallback simples (sem ID ou modelo)
-    h += '<div style="display:flex;justify-content:center;gap:12px;margin-top:6px">';
-    h += '<div style="background:var(--fundo2);padding:' + (isMob ? '10px 18px' : '14px 24px') + ';border-radius:12px;border:1px solid var(--borda);min-width:' + (isMob ? '100px' : '140px') + ';box-shadow:0 4px 12px rgba(0,0,0,0.15)">';
-    h += '<div style="font-size:' + (isMob ? '0.6rem' : '0.68rem') + ';color:var(--texto2);text-transform:uppercase;letter-spacing:0.06em;font-weight:700">Pontos Totais</div>';
-    h += '<div style="font-size:' + (isMob ? '1.4rem' : '2rem') + ';font-weight:900;color:var(--dourado);margin-top:4px;letter-spacing:-0.02em">' + Number(pts).toFixed(1) + '</div>';
-    h += '</div>';
-    h += '</div>';
+    inner += '<div style="text-align:center;padding:10px 0">';
+    inner += '<div style="font-size:.68rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.06em;font-weight:700">Pontos Totais</div>';
+    inner += '<div style="font-size:2rem;font-weight:900;color:var(--dourado);margin-top:4px">' + Number(pts).toFixed(1) + '</div>';
+    inner += '</div>';
   }
 
-  h += '</div>';
+  inner += '<div style="margin-top:10px;font-size:.65rem;color:var(--texto2);text-align:center">Toque fora para fechar</div>';
 
-  box.innerHTML = h;
-  ov.classList.add("aberto");
-  document.body.style.overflow = "hidden";
-  
-  ov.onclick = function(e) {
-    if (e.target === ov) {
-      ov.classList.remove("aberto");
-      document.body.style.overflow = "";
-    }
-  };
+  div.innerHTML = '<div style="width:100%;max-width:400px;background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.4)">' + inner + '</div>';
+  div.addEventListener('click', e => { if (e.target === div) div.remove(); });
+  document.body.appendChild(div);
 };
 
 window.renderCompilacao = function () {

@@ -758,9 +758,9 @@ window.PROGNOSE = {
 
     const div = document.createElement('div');
     div.id = 'popup-apostador-detalhe';
-    div.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center';
+    div.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px';
     div.innerHTML = `
-      <div style="width:100%;max-width:480px;background:var(--card);border-radius:var(--radius) var(--radius) 0 0;padding:20px;">
+      <div style="width:100%;max-width:400px;background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.4)">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
           <div>
             <div style="font-size:1rem;font-weight:800;color:var(--texto)">${apelido}</div>
