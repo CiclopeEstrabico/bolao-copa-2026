@@ -262,8 +262,8 @@ window.renderEstatisticas = function () {
   const _montanhaArr = destMontanha.bestArr;
   const montanhaScore = destMontanha.bestScore;
 
-  // --- Tartaruga: menor Σ|Δposição| (mín 10 jogos) ---
-  const destTartaruga = obterDestaques(r => montanhaScores[r.participante.id] !== undefined ? montanhaScores[r.participante.id] : Infinity, true, false, score => totalJogos >= 10 && score !== Infinity);
+  // --- Tartaruga: menor Σ|Δposição| (mín 5 jogos) ---
+  const destTartaruga = obterDestaques(r => montanhaScores[r.participante.id] !== undefined ? montanhaScores[r.participante.id] : Infinity, true, false, score => totalJogos >= 5 && score !== Infinity);
   const _tartarugaArr = destTartaruga.bestArr;
   const tartarugaScore = destTartaruga.bestScore;
 
@@ -790,9 +790,9 @@ window.renderEstatisticas = function () {
     "#e879f9", "montanha_russa", "Quem mais oscilou de posição no ranking: média de |Δposição| por jogo. Mínimo 5 jogos.");
 
   h += _dCard("🐢", "Tartaruga",
-    totalJogos < 10 ? '—' : (_tartarugaArr ? _tieName(_tartarugaArr) : '—'),
-    totalJogos < 10 ? '— (< 10 jogos)' : (!_tartarugaArr ? '—' : tartarugaScore.toFixed(2) + ' pos./jogo'),
-    "#84cc16", "tartaruga", "Quem menos oscilou de posição — sempre no mesmo lugar. Média de |Δposição| por jogo, o menor valor vence. Mínimo 10 jogos.");
+    totalJogos < 5 ? '—' : (_tartarugaArr ? _tieName(_tartarugaArr) : '—'),
+    totalJogos < 5 ? '— (< 5 jogos)' : (!_tartarugaArr ? '—' : tartarugaScore.toFixed(2) + ' pos./jogo'),
+    "#84cc16", "tartaruga", "Quem menos oscilou de posição — sempre no mesmo lugar. Média de |Δposição| por jogo, o menor valor vence. Mínimo 5 jogos.");
 
   h += _dCard("🔮", "Vidente",
     jogosFeitos.length === 0 ? '—' : _tieName(_melhorResArr),
@@ -1223,7 +1223,7 @@ window.CARD_CONFIGS = {
   rei_colina:    { icon: '🏰', label: 'Rei da Colina',        desc: 'Dono do trono! Quem conseguiu passar mais rodadas consecutivas no topo geral do ranking (isolado ou empatado em 1º lugar). Calculado analisando a liderança em cada snapshot acumulativo de rodadas.', getScore: (r,c) => c.reiScores[r.participante.id] || 0,            higherIsWinner: true,  isGoodCard: true,  format: v => v + ' rodadas', filterFn: s => s > 0 },
   tubarao:       { icon: '🦈', label: 'Tubarão Banguela',     desc: 'Morde mas não machuca! Quem passou mais rodadas cumulativas dentro do Top 5 do ranking ao longo do campeonato, mas que atualmente está fora dele. Calculado contando a quantidade de rodadas no Top 5 e filtrando se a posição atual é pior que 5 (mínimo 10 jogos).', getScore: (r,c) => c.tubaraoScores[r.participante.id] || 0,        higherIsWinner: true,  isGoodCard: false, format: v => v + ' rodadas', filterFn: (s,r,c) => c.totalJogos >= 10 && s > 0 },
   montanha_russa:{ icon: '🎢', label: 'Montanha Russa',       desc: 'Haja coração! Quem teve a maior média de variação absoluta de posições por jogo. Calculado somando o valor absoluto da diferença de posições entre cada jogo (|Δposição|) e dividindo pelo total de rodadas (mínimo 5 jogos).', getScore: (r,c) => c.montanhaScores[r.participante.id] ?? -1,    higherIsWinner: true,  isGoodCard: true,  format: v => v.toFixed(2) + ' pos./jogo', filterFn: (s,r,c) => c.totalJogos >= 5 && s > 0 },
-  tartaruga:     { icon: '🐢', label: 'Tartaruga',            desc: 'Devagar e sempre! Quem teve a menor média de variação de posições por rodada. Calculado somando a diferença absoluta de posições a cada jogo (|Δposição|) e dividindo pelo total de rodadas (menor média vence, mínimo 10 jogos).', getScore: (r,c) => c.montanhaScores[r.participante.id] ?? Infinity, higherIsWinner: false, isGoodCard: true,  format: v => v.toFixed(2) + ' pos./jogo', filterFn: (s) => s !== Infinity },
+  tartaruga:     { icon: '🐢', label: 'Tartaruga',            desc: 'Devagar e sempre! Quem teve a menor média de variação de posições por rodada. Calculado somando a diferença absoluta de posições a cada jogo (|Δposição|) e dividindo pelo total de rodadas (menor média vence, mínimo 5 jogos).', getScore: (r,c) => c.montanhaScores[r.participante.id] ?? Infinity, higherIsWinner: false, isGoodCard: true,  format: v => v.toFixed(2) + ' pos./jogo', filterFn: (s,r,c) => c.totalJogos >= 5 && s !== Infinity },
   vidente:       { icon: '🔮', label: 'Vidente',              desc: 'Previsões certeiras! Quem mais acumulou acertos do desfecho final da partida (vitória do time 1, empate ou vitória do time 2). Calculado somando os acertos simples de resultado geral de todos os jogos, independentemente de bônus.', getScore: (r,c) => r.stats.acertos_resultado,                       higherIsWinner: true,  isGoodCard: true,  format: v => v + ' acertos' },
   onisciente:    { icon: '🪬', label: 'Onisciente',           desc: 'Adivinho supremo! Quem acertou o placar exato do jogo que teve o maior número total de gols da Copa inteira. Calculado encontrando o valor máximo de gols (gols mandante + gols visitante) entre todos os palpites de placar exato acertados pelo jogador.', getScore: (r,c) => c.oniscienteScores[r.participante.id] || 0,     higherIsWinner: true,  isGoodCard: true,  format: (v,r,c) => { const d = c.oniscienteDetalhes[r.participante.id]; return d ? d.games.join(', ') : '—'; }, filterFn: s => s > 0 },
   atirador:      { icon: '🎯', label: 'Atirador de Elite',    desc: 'Mira calibrada! Quem acumulou mais acertos de placares exatos. É calculado somando os acertos de placar clássicos (bônus de +3) com os acertos de placares com 4 ou mais gols no total (bônus de +5).', getScore: (r,c) => r.stats.acertos_placar_exato + r.stats.acertos_placar_alto, higherIsWinner: true, isGoodCard: true, format: v => v + ' placares' },
