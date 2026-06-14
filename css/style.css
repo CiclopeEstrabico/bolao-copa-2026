@@ -762,18 +762,13 @@ details[open] > summary span:last-child { content: "−"; }
 /* Sticky header for Rank/Classification table */
 .rank-table thead th {
   position: sticky !important;
-  top: 86px !important;
+  top: 0 !important;
   z-index: 5 !important;
   background: var(--fundo2) !important;
 }
 .rank-table thead th.col-apostador {
   left: 0 !important;
   z-index: 6 !important;
-}
-@media (min-width: 601px) {
-  .rank-table thead th {
-    top: 102px !important;
-  }
 }
 
 
