@@ -46,8 +46,16 @@ window.renderGrafico = function () {
   // mantendo a ordem de cores consistente com a aba Classificação.
   const espOficiaisGraf = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
 
+  const baseRanking = gerarRanking(pals, res, apos, espOficiaisGraf);
+  const posMap = {};
+  baseRanking.forEach(item => {
+    const pId = item.participante.id || item.participante.token;
+    if (pId) posMap[pId] = item.posicao;
+  });
+
   let rankingCompleto = apos.map((a, idx) => {
     const st = calcularPontosApostador(pals[a.id] || {}, res, a, espOficiaisGraf);
+    const pId = a.id || a.token;
     return {
       id: a.id,
       nome: (a.apelido || a.nome || "?").substring(0, 14),
@@ -58,6 +66,7 @@ window.renderGrafico = function () {
       placar: st.acertos_placar_exato + st.acertos_placar_alto,
       placar_alto: st.acertos_placar_alto,
       isModelo: false,
+      posicao: pId ? posMap[pId] : null
     };
   }).sort((a, b) => b.pts - a.pts);
 
@@ -639,14 +648,23 @@ function _graficoExibirChance(chances) {
   const pals = APP.palpites || {};
   const espOficiaisGraf = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
 
+  const baseRanking = gerarRanking(pals, res, apos, espOficiaisGraf);
+  const posMap = {};
+  baseRanking.forEach(item => {
+    const pId = item.participante.id || item.participante.token;
+    if (pId) posMap[pId] = item.posicao;
+  });
+
   let rankingCompleto = apos.map((a, idx) => {
     const st = calcularPontosApostador(pals[a.id] || {}, res, a, espOficiaisGraf);
+    const pId = a.id || a.token;
     return {
       id: a.id,
       nome: (a.apelido || a.nome || '?').substring(0, 14),
       pts: st.total,
       chance: chances[a.id] || 0,
       isModelo: false,
+      posicao: pId ? posMap[pId] : null
     };
   }).sort((a, b) => b.pts - a.pts);
 
@@ -772,8 +790,8 @@ function _renderChance(rankingCompleto, chances) {
     const cor = _rainbowColor(rankingHumanosC.indexOf(a), rankingHumanosC.length);
     const valFmt = shortFmt ? Math.round(val) + '%' : val.toFixed(1) + '%';
     // Posição entre humanos
-    const posNum = rankingHumanosC.indexOf(a) + 1;
-    const posStr = `${posNum}\u00ba- `;
+    const posNum = a.posicao;
+    const posStr = posNum !== null ? `${posNum}\u00ba- ` : '';
     h += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative;height:100%;justify-content:flex-end;z-index:1">`;
     const barPercSafe = Math.max(2, perc);
     h += `<div style="position:absolute;bottom:calc(${barPercSafe.toFixed(1)}% + 4px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${valFmt}</div>`;
@@ -931,7 +949,7 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
     const perc = (val / maxVal) * 100;
     const cor = a.isModelo ? '#b8cfe8' : _rainbowColor(rankingHumanos.indexOf(a), rankingHumanos.length);
     // Posição: apenas para não-Modelo (posição real no ranking filtrado entre humanos)
-    const posNum = a.isModelo ? null : (rankingHumanos.indexOf(a) + 1);
+    const posNum = a.isModelo ? null : a.posicao;
     const posStr = posNum !== null ? `${posNum}\u00ba- ` : '';
     const nomeBarra = a.isModelo
       ? `<span style='font-weight:normal;color:#b8cfe8'>${a.nome}</span>`
@@ -1490,19 +1508,13 @@ function _renderMacaco(rankingCompleto, cache) {
 
   let h = '<div class="card" style="padding:20px 10px;">';
 
-  // Cabeçalho com legenda integrada
+  // Cabeçalho simplificado: ícone maior + pontos + título
   const COR_MACACO_LINHA = '#8B5E3C';
-  h += `<div style="text-align:center;margin-bottom:6px">
-    <span style="font-size:.85rem;font-weight:700;color:var(--dourado)">Macaco Médio</span>
-    <span style="font-size:.78rem;font-weight:700;color:${COR_MACACO_LINHA};margin-left:8px;white-space:nowrap">🐒 ${media.toFixed(1)} pts</span>
+  h += `<div style="text-align:center;margin-bottom:14px">
+    <span style="font-size:1.5rem">🐒</span>
+    <span style="font-size:.90rem;font-weight:800;color:${COR_MACACO_LINHA};margin-left:4px">${media.toFixed(1)} pts</span>
+    <span style="font-size:.85rem;font-weight:700;color:var(--dourado);margin-left:6px">Macaco Médio</span>
   </div>`;
-  // Legenda abaixo do título — tipo de traço + ícone + valor
-  h += `<div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">`;
-  h += `<div style="display:flex;align-items:center;gap:5px;font-size:.66rem;color:var(--texto2)">`;
-  h += `<svg width="28" height="10" style="flex-shrink:0"><line x1="0" y1="5" x2="28" y2="5" stroke="${COR_MACACO_LINHA}" stroke-width="3" stroke-dasharray="6,3"/></svg>`;
-  h += `🐒 Média &nbsp;<strong style="color:${COR_MACACO_LINHA}">${media.toFixed(1)} pts</strong>`;
-  h += `</div>`;
-  h += `</div>`;
 
   let minWidthStyle = '';
   if (needsScroll) {
@@ -1522,7 +1534,7 @@ function _renderMacaco(rankingCompleto, cache) {
     const val = a.pts;
     const perc = (val / maxVal) * 100;
     const cor = a.isModelo ? '#b8cfe8' : _rainbowColor(rankingHumanosM.indexOf(a), rankingHumanosM.length);
-    const posNum = a.isModelo ? null : (rankingHumanosM.indexOf(a) + 1);
+    const posNum = a.isModelo ? null : a.posicao;
     const posStr = posNum !== null ? `${posNum}\u00ba- ` : '';
     const nomeLabel = a.isModelo
       ? `<span style='font-weight:normal;color:#b8cfe8'>${a.nome}</span>`
@@ -1596,8 +1608,16 @@ window._graficoExportarJPG = function () {
 
   // Montar ranking com filtro ativo (igual à tela)
   const _expFiltro = window._graficoFiltroApos;
+  const baseRanking = gerarRanking(pals, res, apos, espOficiaisGraf);
+  const posMap = {};
+  baseRanking.forEach(item => {
+    const pId = item.participante.id || item.participante.token;
+    if (pId) posMap[pId] = item.posicao;
+  });
+
   let rankingExp = apos.map((a, idx) => {
     const st = calcularPontosApostador(pals[a.id] || {}, res, a, espOficiaisGraf);
+    const pId = a.id || a.token;
     return {
       id: a.id,
       nome: (a.apelido || a.nome || '?').substring(0, 14),
@@ -1608,6 +1628,7 @@ window._graficoExportarJPG = function () {
       placar: st.acertos_placar_exato + st.acertos_placar_alto,
       placar_alto: st.acertos_placar_alto,
       isModelo: false,
+      posicao: pId ? posMap[pId] : null
     };
   });
 
@@ -1678,34 +1699,11 @@ window._graficoExportarJPG = function () {
   const macacoCache = (metricaAtiva === 'macaco') ? (window._graficoMacacoCache || { media: 0, sigma: 0 }) : null;
   if (macacoCache && macacoCache.media > 0) {
     const COR_MAC_LEG = '#8B5E3C';
-    // Linha 1: valor central da média
+    // Linha única simplificada: 🐒 + pontos + "Macaco Médio"
     ctx.fillStyle = COR_MAC_LEG;
-    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.font = 'bold 13px system-ui, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`🐒 ${macacoCache.media.toFixed(1)} pts`, TOTAL_W / 2, 46);
-
-    // Linha 2: legenda inline — μ (média) e ±σ (banda)
-    const LEG_Y = 64;
-    const CX = TOTAL_W / 2;
-    // item μ (linha sólida grossa)
-    const SEG = 28;
-    ctx.save();
-    ctx.strokeStyle = COR_MAC_LEG; ctx.lineWidth = 3; ctx.setLineDash([6, 4]);
-    ctx.beginPath(); ctx.moveTo(CX - 120, LEG_Y - 3); ctx.lineTo(CX - 120 + SEG, LEG_Y - 3); ctx.stroke();
-    ctx.restore();
-    ctx.fillStyle = COR_MAC_LEG; ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'left';
-    ctx.fillText('μ  Média  ' + macacoCache.media.toFixed(1) + ' pts', CX - 120 + SEG + 5, LEG_Y);
-
-    // item ±σ (banda)
-    ctx.fillStyle = 'rgba(139,94,60,0.38)';
-    ctx.fillRect(CX + 30, LEG_Y - 8, SEG, 11);
-    ctx.save();
-    ctx.strokeStyle = 'rgba(139,94,60,0.70)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
-    ctx.beginPath(); ctx.moveTo(CX + 30, LEG_Y - 8); ctx.lineTo(CX + 30 + SEG, LEG_Y - 8); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(CX + 30, LEG_Y + 3); ctx.lineTo(CX + 30 + SEG, LEG_Y + 3); ctx.stroke();
-    ctx.restore();
-    ctx.fillStyle = 'rgba(139,94,60,0.85)'; ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'left';
-    ctx.fillText('±σ  Banda ±1 desvio', CX + 30 + SEG + 5, LEG_Y);
+    ctx.fillText(`🐒 ${macacoCache.media.toFixed(1)} pts  Macaco Médio`, TOTAL_W / 2, 46);
   }
 
   const vals = rankingExp.map(a =>
@@ -1762,16 +1760,19 @@ window._graficoExportarJPG = function () {
     ctx.fillText(valLabel, 0, 0);
     ctx.restore();
 
-    // Nome vertical abaixo — centralizado na barra (textAlign center + translate ao centro)
+    // Nome vertical abaixo — âncora no FUNDO da área de labels, lido de baixo pra cima
+    // Igual ao CSS: writing-mode:vertical-rl + rotate(180deg) na tela
     // Inclui prefixo de posição (ex: "1º- Fulano") para não-Modelo
-    const posNumExp = a.isModelo ? null : (rankingExpHumanos.indexOf(a) + 1);
+    const posNumExp = a.isModelo ? null : a.posicao;
     const nomeLabelExp = posNumExp !== null ? `${posNumExp}\u00ba- ${a.nome}` : a.nome;
     ctx.save();
     ctx.fillStyle = a.isModelo ? '#b8cfe8' : '#94a3b8';
-    ctx.font = (a.isModelo ? '' : '') + '10px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.translate(x + BAR_WIDTH / 2, CHART_BOTTOM + 8);
-    ctx.rotate(Math.PI / 2); // texto de baixo pra cima
+    ctx.font = '10px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    // Âncora no fundo da área de labels; rotate(-90°) faz X apontar pra cima
+    // textAlign:'left' → texto começa aqui e sobe → primeiro char embaixo, último em cima
+    ctx.translate(x + BAR_WIDTH / 2, CHART_BOTTOM + PADDING_BOTTOM - 8);
+    ctx.rotate(-Math.PI / 2);
     ctx.fillText(nomeLabelExp, 0, 0);
     ctx.restore();
   });
