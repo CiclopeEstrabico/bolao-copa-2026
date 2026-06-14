@@ -489,13 +489,13 @@ function renderEspeciaisAposta(res) {
     h += '</div>';
 
     h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">' + htmlBandeira(val, 24);
-    h += '<span style="font-size:.82rem;font-weight:600">' + (info?.name || "Selecionar") + '</span></div>';
+    h += '<span style="font-size:.7rem;font-weight:600">' + (info?.name || "Selecionar") + '</span></div>';
 
     if (!_modoVer) {
       const disAttr = estaBloqueado
         ? ' disabled style="background-color:#30363d;color:var(--texto2);opacity:1;cursor:not-allowed;border-color:var(--borda)"'
         : '';
-      h += '<select class="apt-esp" data-key="' + f.key + '" onchange="gravarEspecialAposta(this)" style="font-size:.75rem;padding:5px 8px"' + disAttr + '>';
+      h += '<select class="apt-esp" data-key="' + f.key + '" onchange="gravarEspecialAposta(this)" style="font-size:.64rem;padding:5px 8px"' + disAttr + '>';
       h += '<option value="">-- Selecionar --</option>';
       for (const c of times.sort()) {
         const t = window.TEAMS_BY_CODE?.[c];
@@ -761,7 +761,7 @@ function renderEspeciaisModeloReadOnly() {
     h += '<div style="font-size:.78rem;font-weight:700;margin-bottom:6px">' + f.label +
       ' <span style="color:var(--dourado);font-size:.65rem">' + f.pts + '</span></div>';
     h += '<div style="display:flex;align-items:center;gap:6px">' + htmlBandeira(val, 24);
-    h += '<span style="font-size:.82rem;font-weight:600">' + (info?.name || (val ? val : "Não definido")) + '</span></div>';
+    h += '<span style="font-size:.7rem;font-weight:600">' + (info?.name || (val ? val : "Não definido")) + '</span></div>';
     h += '</div>';
   }
   h += '</div></div>';

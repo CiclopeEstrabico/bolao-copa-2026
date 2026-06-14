@@ -441,15 +441,15 @@ select{appearance:none;cursor:pointer}
   .compilacao-time-nome,.stat-time-nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.64rem}
   .compilacao-time-nome:first-of-type,.stat-time-nome:first-of-type{text-align:left}
   .compilacao-time-nome:last-of-type,.stat-time-nome:last-of-type{text-align:right}
-  .stat-col-jogo{width:125px !important;min-width:125px !important;max-width:125px !important}
+  .stat-col-jogo{width:117px !important;min-width:117px !important;max-width:117px !important}
   /* Coluna nome da classificação: limitar a ~35% da largura original */
   .col-apostador{width:90px !important;min-width:90px !important;max-width:90px !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   td.col-apostador{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
   /* Siglas: coluna mais estreita só quando comp-sigla/stat-sigla estão presentes */
   .stat-col-jogo:has(.stat-sigla) {
-    width:80px !important;min-width:80px !important;max-width:80px !important;
+    width:75px !important;min-width:75px !important;max-width:75px !important;
   }
-  .comp-sigla,.stat-sigla{font-size:.72rem;font-weight:800;letter-spacing:.02em;flex:0 0 auto;overflow:visible;white-space:nowrap}
+  .comp-sigla,.stat-sigla{font-size:.68rem;font-weight:800;letter-spacing:.02em;flex:0 0 auto;overflow:visible;white-space:nowrap}
 }
 @media(max-width:500px){
   .td-hid{display:none}
@@ -554,6 +554,19 @@ select{appearance:none;cursor:pointer}
     width: 100% !important;
     table-layout: auto;
     min-width: 100% !important;
+  }
+}
+@media (min-width: 601px) {
+  .stat-col-jogo {
+    width: 115px !important;
+    min-width: 115px !important;
+    max-width: 115px !important;
+  }
+}
+@media (max-width: 600px) {
+  .stat-full-table th.col-resultado,
+  .stat-full-table td.col-resultado {
+    left: 75px !important;
   }
 }
 .progresso-barra-wrap{background:var(--fundo2);border-radius:4px;height:6px;overflow:hidden;margin:4px 0}
