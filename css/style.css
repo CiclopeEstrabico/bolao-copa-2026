@@ -232,7 +232,6 @@ select{appearance:none;cursor:pointer}
     z-index: 5 !important;
     background: var(--fundo2) !important;
     box-shadow: 0 2px 0 0 var(--verde-light) !important;
-    border-bottom: 2px solid var(--verde-light) !important;
   }
   .compilacao-table thead th:first-child {
     position: sticky !important;
@@ -260,7 +259,6 @@ select{appearance:none;cursor:pointer}
     z-index: 5 !important;
     background: var(--fundo2) !important;
     box-shadow: 0 2px 0 0 var(--verde-light) !important;
-    border-bottom: 2px solid var(--verde-light) !important;
   }
   .compilacao-table thead th:first-child {
     position: sticky !important;
@@ -939,77 +937,100 @@ details[open] > summary span:last-child { content: "−"; }
 
 /* Correção de bordas transparentes em elementos sticky (para evitar vazamento de texto ao scrollar) */
 
-/* Compilação/Palpites */
+/* ═══════════════════════════════════════════════════════════════════════════
+   REGRA: Em border-collapse:collapse, border-bottom de um TH sticky desaparece
+   ao scrollar. A barra verde é renderizada APENAS via box-shadow.
+   A border real do TH usa cor opaca (#292d35) para selar gaps.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Compilação / Palpites ─────────────────────────────────────────────── */
 .compilacao-table thead th {
-  border-color: #292d35 !important;
-  border-bottom: 2px solid var(--verde-light) !important;
+  border: 1px solid #292d35 !important;
+  border-bottom: 1px solid #292d35 !important;
+  box-shadow: 0 2px 0 0 var(--verde-light) !important;
 }
 .compilacao-table th:first-child,
 .compilacao-table td:first-child {
-  border-right: 1px solid #292d35 !important;
-  border-left: 1px solid #292d35 !important;
-  border-top: 1px solid #292d35 !important;
-  border-bottom: 1px solid #292d35 !important;
+  border: 1px solid #292d35 !important;
 }
 .compilacao-table th.col-resultado,
 .compilacao-table td.col-resultado {
-  border-right: 1px solid #292d35 !important;
-  border-left: 1px solid #292d35 !important;
-  border-top: 1px solid #292d35 !important;
-  border-bottom: 1px solid #292d35 !important;
+  border: 1px solid #292d35 !important;
 }
 
-/* Estatísticas */
+/* ── Estatísticas (stat-full-table herda compilacao-table, reforça) ───── */
 .stat-full-table thead th {
-  border-color: #292d35 !important;
-  border-bottom: 2px solid var(--verde-light) !important;
-}
-.stat-full-table th:first-child,
-.stat-full-table th.col-jogo,
-.stat-full-table th.col-resultado {
-  border-color: #292d35 !important;
-  border-bottom: 2px solid var(--verde-light) !important;
+  border: 1px solid #292d35 !important;
+  border-bottom: 1px solid #292d35 !important;
+  box-shadow: 0 2px 0 0 var(--verde-light) !important;
 }
 @media (max-width: 600px) {
   .stat-full-table tbody td:first-child,
   .stat-full-table tbody td.col-jogo {
-    border-right: 1px solid #313c4a !important;
-    border-left: 1px solid #313c4a !important;
-    border-top: 1px solid #313c4a !important;
-    border-bottom: 1px solid #313c4a !important;
+    border: 1px solid #313c4a !important;
   }
   .stat-full-table tbody td.col-resultado {
-    border-right: 1px solid #292d35 !important;
-    border-left: 1px solid #292d35 !important;
-    border-top: 1px solid #292d35 !important;
-    border-bottom: 1px solid #292d35 !important;
+    border: 1px solid #292d35 !important;
   }
 }
 
-/* Classificação/Rank */
+/* ── Classificação / Rank ──────────────────────────────────────────────── */
 .rank-table thead th {
-  border-color: #292d35 !important;
-  border-bottom: 2px solid var(--verde-light) !important;
+  border: 1px solid #292d35 !important;
+  border-bottom: 1px solid #292d35 !important;
+  box-shadow: 0 2px 0 0 var(--verde-light) !important;
 }
 .rank-table thead th.col-apostador {
-  border-color: #292d35 !important;
-  border-bottom: 2px solid var(--verde-light) !important;
+  border: 1px solid #292d35 !important;
+  box-shadow: 0 2px 0 0 var(--verde-light), 2px 0 5px rgba(0,0,0,0.1) !important;
 }
 @media (max-width: 600px) {
   .rank-table tbody td.col-apostador {
-    border-right: 1px solid #20242a !important;
-    border-left: 1px solid #20242a !important;
-    border-top: 1px solid #20242a !important;
-    border-bottom: 1px solid #20242a !important;
+    border: 1px solid #20242a !important;
   }
 }
 
-/* Modal de Prognósticos - Aba de Palpites */
-.tabela-detalhe thead th {
-  border-bottom: 2px solid var(--verde-light) !important;
-  border-top-color: #292d35 !important;
-  border-left-color: #292d35 !important;
-  border-right-color: #292d35 !important;
+/* ── Desktop: rank-table precisa de sticky (não tem class compilacao-table) */
+@media (min-width: 601px) {
+  .rank-table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 5 !important;
+    background: var(--card) !important;
+    box-shadow: 0 2px 0 0 var(--verde-light) !important;
+  }
+  .rank-table thead th.col-apostador {
+    position: sticky !important;
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 8 !important;
+    background: var(--card) !important;
+    box-shadow: 0 2px 0 0 var(--verde-light), 2px 0 5px rgba(0,0,0,0.1) !important;
+  }
 }
 
+/* ── Mobile: rank-table sticky dentro do rank-table-wrap ─────────────── */
+@media (max-width: 600px) {
+  .rank-table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 5 !important;
+    background: var(--card) !important;
+    box-shadow: 0 2px 0 0 var(--verde-light) !important;
+  }
+  .rank-table thead th.col-apostador {
+    position: sticky !important;
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 8 !important;
+    background: var(--card) !important;
+    box-shadow: 0 2px 0 0 var(--verde-light), 2px 0 5px rgba(0,0,0,0.1) !important;
+  }
+}
 
+/* ── Modal Prognósticos - Palpites ─────────────────────────────────────── */
+.tabela-detalhe thead th {
+  border: 1px solid #292d35 !important;
+  border-bottom: 1px solid #292d35 !important;
+  box-shadow: 0 2px 0 0 var(--verde-light) !important;
+}
