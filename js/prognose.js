@@ -373,16 +373,17 @@ window.PROGNOSE = {
     const minSegPct = Math.min(c.home, c.draw, c.away) * 100;
     const useStackedLabels = minSegPct < 8; // segmento muito pequeno → layout empilhado abaixo
     if (useStackedLabels) {
-      // Layout alternativo: empate posicionado perto da barra cinza, não centralizado
+      // Layout alternativo: empate no lado OPOSTO ao time dominante para evitar colisão
       const homeIsDominant = c.home > c.away;
       h += '<div style="display:flex;justify-content:space-between;margin-top:4px;gap:4px">';
       if (homeIsDominant) {
-        // Time 1 dominante → empate fica mais à direita (perto da barra cinza)
+        // Time 1 dominante → empate fica à DIREITA (lado do time fraco, oposto ao dominante)
         h += '<div style="min-width:0">';
         h += '<div style="font-size:.72rem;font-weight:900;color:#67e8f9;white-space:nowrap">' + pH + '%</div>';
         h += '<div style="font-size:.61rem;color:rgba(103,232,249,.7);white-space:nowrap">Vitória</div>';
         h += '</div>';
-        h += '<div style="min-width:0;text-align:right;margin-right:auto;padding-left:4px">';
+        h += '<div style="flex:1"></div>'; /* spacer */
+        h += '<div style="min-width:0;text-align:center;padding:0 2px">';
         h += '<div style="font-size:.72rem;font-weight:700;color:var(--texto2);white-space:nowrap">' + pD + '%</div>';
         h += '<div style="font-size:.61rem;color:var(--texto2);white-space:nowrap">Empate</div>';
         h += '</div>';
@@ -391,15 +392,16 @@ window.PROGNOSE = {
         h += '<div style="font-size:.61rem;color:rgba(196,181,253,.7);white-space:nowrap">Vitória</div>';
         h += '</div>';
       } else {
-        // Time 2 dominante → empate fica mais à esquerda (perto da barra cinza)
+        // Time 2 dominante → empate fica à ESQUERDA (lado do time fraco, oposto ao dominante)
         h += '<div style="min-width:0">';
         h += '<div style="font-size:.72rem;font-weight:900;color:#67e8f9;white-space:nowrap">' + pH + '%</div>';
         h += '<div style="font-size:.61rem;color:rgba(103,232,249,.7);white-space:nowrap">Vitória</div>';
         h += '</div>';
-        h += '<div style="min-width:0;text-align:left;margin-left:auto;padding-right:4px">';
+        h += '<div style="min-width:0;text-align:center;padding:0 2px">';
         h += '<div style="font-size:.72rem;font-weight:700;color:var(--texto2);white-space:nowrap">' + pD + '%</div>';
         h += '<div style="font-size:.61rem;color:var(--texto2);white-space:nowrap">Empate</div>';
         h += '</div>';
+        h += '<div style="flex:1"></div>'; /* spacer */
         h += '<div style="min-width:0;text-align:right">';
         h += '<div style="font-size:.72rem;font-weight:900;color:#c4b5fd;white-space:nowrap">' + pA + '%</div>';
         h += '<div style="font-size:.61rem;color:rgba(196,181,253,.7);white-space:nowrap">Vitória</div>';
@@ -460,12 +462,12 @@ window.PROGNOSE = {
         const p = Math.max(0, Math.min(1, v / top1));
         const isEmpate = i === j;
 
-        // Heatmap: azul-roxo (evita confundir com verde/vermelho de acertos/erros)
-        // Baixa prob = azul escuro (hue 220), alta prob = roxo vivo (hue 270)
-        const hue = 220 + 50 * p;
-        const sat = 70 + 25 * p;
-        const light = 25 + 35 * p;
-        const alpha = 0.15 + 0.75 * p;
+        // Heatmap: ciano claro transparente → roxo vibrante
+        // Baixa prob = ciano claro (hue 185), alta prob = indigo/roxo (hue 270)
+        const hue = 185 + 85 * p;
+        const sat = 55 + 40 * p;
+        const light = 30 + 30 * p;
+        const alpha = 0.10 + 0.80 * p;
         let bg = `hsla(${hue}, ${sat}%, ${light}%, ${alpha})`;
 
         const fw = p > 0.75 ? '800' : p > 0.35 ? '600' : '400';
@@ -579,27 +581,28 @@ window.PROGNOSE = {
         const probMStr = probM !== undefined ? (probM * 100).toFixed(1) + '%' : null;
         const pctGrupo = total > 0 ? Math.round(ct / total * 100) : 0;
 
-        h += '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--fundo2);border-radius:8px;margin-bottom:5px' + (acertou ? ';border:1px solid rgba(34,197,94,.4)' : '') + '">';
+        // Top placar acertado: borda roxa vibrante em vez de verde
+        h += '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--fundo2);border-radius:8px;margin-bottom:5px' + (acertou ? ';border:1px solid rgba(139,92,246,.5)' : '') + '">';
 
-        // Placar
-        h += '<span style="font-weight:900;min-width:30px;text-align:center;font-size:.85rem;' + (acertou ? 'color:var(--verde-ok)' : 'color:var(--texto)') + '">' + placar + '</span>';
+        // Placar: roxo vibrante quando acertou
+        h += '<span style="font-weight:900;min-width:30px;text-align:center;font-size:.85rem;' + (acertou ? 'color:#a78bfa' : 'color:var(--texto)') + '">' + placar + '</span>';
 
-        // Barras empilhadas
+        // Barras empilhadas - roxo vibrante
         h += '<div style="flex:1;display:flex;flex-direction:column;gap:2px">';
         h += '<div style="background:var(--card);border-radius:3px;height:6px;overflow:hidden">';
-        h += '<div style="width:' + (ct / maxCt * 100) + '%;height:100%;background:rgba(99,102,241,.6);border-radius:3px;transition:width .5s ease"></div>';
+        h += '<div style="width:' + (ct / maxCt * 100) + '%;height:100%;background:rgba(109,70,230,.65);border-radius:3px;transition:width .5s ease"></div>';
         h += '</div>';
         if (probMStr && modelo) {
           const modRelativo = Math.min((probM / (s.topPlacares[0][1] / total)) * 100, 100);
           h += '<div style="background:var(--card);border-radius:3px;height:6px;overflow:hidden">';
-          h += '<div style="width:' + modRelativo + '%;height:100%;background:rgba(99,102,241,.28);border-radius:3px;transition:width .5s ease"></div>';
+          h += '<div style="width:' + modRelativo + '%;height:100%;background:rgba(109,70,230,.25);border-radius:3px;transition:width .5s ease"></div>';
           h += '</div>';
         }
         h += '</div>';
 
-        // Meta direita: contagem (%) + prob modelo
+        // Meta direita: contagem (%) + prob modelo — tick e texto roxos
         h += '<div style="text-align:right;white-space:nowrap">';
-        h += '<div style="font-size:.72rem;color:var(--texto2)">' + ct + ' <span style="font-size:.62rem;opacity:.85">(' + pctGrupo + '%)</span>' + (acertou ? ' <span style="color:var(--verde-ok)">✓</span>' : '') + '</div>';
+        h += '<div style="font-size:.72rem;color:' + (acertou ? '#a78bfa' : 'var(--texto2)') + '">' + ct + ' <span style="font-size:.62rem;opacity:.85">(' + pctGrupo + '%)</span>' + (acertou ? ' <span style="color:#a78bfa">✓</span>' : '') + '</div>';
         if (probMStr) {
           h += '<div style="font-size:.62rem;color:var(--texto2)">Modelo ' + probMStr + '</div>';
         }

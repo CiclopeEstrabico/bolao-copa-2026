@@ -1024,6 +1024,7 @@ window.renderEstatisticas = function () {
     const dataHoraLbl = dataHoraStr + (faseLbl ? ", " + faseLbl : "");
     const tooltipH = '';
     const tooltipA = '';
+    h += `<tr style="${rowBg}">`;
     h += `<td class="${isMobile ? 'col-jogo' : 'stat-col-jogo'}" onclick="PROGNOSE.abrirModal('${jogo.id}')" style="text-align:left;padding:6px 8px;cursor:pointer">
             <div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">${dataHoraLbl}</div>
             <div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">

@@ -378,6 +378,16 @@ function renderAbaAtiva(resetScroll = false) {
   const sStart = document.activeElement?.selectionStart;
   const sEnd = document.activeElement?.selectionEnd;
 
+  // Heavy tabs: defer render to next frame for instant visual tab switch
+  const heavyTabs = ['estatisticas', 'compilacao'];
+  if (resetScroll && heavyTabs.includes(_abaAtiva)) {
+    window.scrollTo(0, 0);
+    requestAnimationFrame(() => {
+      fn[_abaAtiva]?.();
+    });
+    return;
+  }
+
   const oldHeight = document.body.style.minHeight;
   document.body.style.minHeight = document.body.scrollHeight + 'px';
 
