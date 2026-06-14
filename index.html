@@ -7,7 +7,7 @@
   <title>Bolão Aeronáutica — Copa 2026</title>
   <meta name="description" content="Bolão Copa do Mundo 2026 — Aeronáutica">
   <link rel="icon" type="image/jpeg" href="assets/logo-white.jpg">
-  <link rel="stylesheet" href="css/style.css?v=1.0.1">
+  <link rel="stylesheet" href="css/style.css?v=1.0.2">
 </head>
 
 <body>
@@ -156,6 +156,11 @@
     <div class="modal-box" id="modal-prog-body"></div>
   </div>
 
+  <!-- Modal Estatísticas Card Detail -->
+  <div class="modal-overlay" id="modal-stat" onclick="if(event.target===this)window.fecharModalStat()">
+    <div class="modal-box" id="modal-stat-body"></div>
+  </div>
+
   <script src="data/config.js"></script>
   <script src="data/teams.js"></script>
   <script src="data/schedule.js"></script>
@@ -167,6 +172,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="js/mobile-sticky-header.js?v=1.0.2"></script>
   <script src="js/scoring.js"></script>
   <script src="data/third_place_combinations.js"></script>
   <script src="js/bracket.js"></script>
@@ -179,7 +185,7 @@
   <script src="js/tab-tabela.js"></script>
   <script src="js/tab-compilacao.js"></script>
   <script src="js/tab-grafico.js"></script>
-  <script src="js/tab-estatisticas.js?v=1.0.1"></script>
+  <script src="js/tab-estatisticas.js?v=1.0.2"></script>
 
   <script src="js/tab-regras.js"></script>
   <script>

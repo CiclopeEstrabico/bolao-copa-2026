@@ -140,12 +140,75 @@ window.renderTabela = function() {
   window.injetarTooltipsMobile(el);
 
   // Exibe hint só em mobile e esconde ao scrollar
+  const scroll = el.querySelector(".bracket-scroll");
   if (window.innerWidth < 768) {
     const hint = document.getElementById("bracket-scroll-hint");
-    const scroll = el.querySelector(".bracket-scroll");
     if (hint && scroll) {
       hint.style.display = "block";
       scroll.addEventListener("scroll", () => { hint.style.display = "none"; }, { once: true, passive: true });
     }
+  }
+
+  // Frozen bracket phase labels on mobile
+  if (window.innerWidth <= 600 && scroll) {
+    requestAnimationFrame(() => {
+      // Remover frozen anterior
+      const old = document.getElementById('frozen-bracket-labels');
+      if (old) old.remove();
+
+      const frozen = document.createElement('div');
+      frozen.id = 'frozen-bracket-labels';
+      frozen.style.cssText = 'position:fixed;left:0;right:0;z-index:50;display:none;overflow:hidden;' +
+        'background:var(--fundo2);border-bottom:1px solid var(--borda);box-shadow:0 2px 8px rgba(0,0,0,.3);';
+
+      // Criar barra com as mesmas labels
+      const innerBar = document.createElement('div');
+      innerBar.style.cssText = 'display:flex;gap:0;width:' + scroll.scrollWidth + 'px;';
+      const fases = scroll.querySelectorAll('.bracket-fase');
+      fases.forEach(fase => {
+        const label = fase.querySelector('.bracket-fase-label');
+        const clone = document.createElement('div');
+        clone.style.cssText = 'width:' + fase.offsetWidth + 'px;flex-shrink:0;text-align:center;' +
+          'font-size:.72rem;font-weight:700;color:var(--texto);padding:6px 4px;text-transform:uppercase;letter-spacing:.03em;';
+        clone.textContent = label ? label.textContent : '';
+        innerBar.appendChild(clone);
+      });
+      frozen.appendChild(innerBar);
+      document.body.appendChild(frozen);
+
+      // Sync horizontal scroll
+      scroll.addEventListener('scroll', () => {
+        if (frozen.style.display !== 'none') {
+          innerBar.style.transform = 'translateX(' + (-scroll.scrollLeft) + 'px)';
+        }
+      }, { passive: true });
+
+      // Show/hide on vertical scroll
+      const stickyTop = (() => {
+        let h = 0;
+        const header = document.querySelector('.header');
+        const tabs = document.querySelector('.tabs-wrap');
+        if (header) h += header.getBoundingClientRect().height;
+        if (tabs) h += tabs.getBoundingClientRect().height;
+        return h;
+      })();
+
+      let ticking = false;
+      const update = () => {
+        const scrollRect = scroll.getBoundingClientRect();
+        const labelsGone = scrollRect.top < stickyTop;
+        const tableVisible = scrollRect.bottom > stickyTop + 40;
+        if (labelsGone && tableVisible) {
+          frozen.style.display = 'block';
+          frozen.style.top = stickyTop + 'px';
+          innerBar.style.transform = 'translateX(' + (-scroll.scrollLeft) + 'px)';
+        } else {
+          frozen.style.display = 'none';
+        }
+      };
+      window.addEventListener('scroll', () => {
+        if (!ticking) { ticking = true; requestAnimationFrame(() => { update(); ticking = false; }); }
+      }, { passive: true });
+    });
   }
 };

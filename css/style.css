@@ -623,17 +623,17 @@ select{appearance:none;cursor:pointer}
     overflow-y: clip !important; /* clip permite que o sticky vertical se propague para a janela */
   }
 
-  /* Cabeçalho da tabela de estatísticas fica sticky verticalmente no mobile (abaixo do header + tabs = 86px) */
+  /* Cabeçalho da tabela de estatísticas fica sticky verticalmente no mobile (abaixo do header + tabs = 94px) */
   .stat-full-table thead th {
     position: sticky !important;
-    top: 86px !important;
+    top: 94px !important;
     z-index: 5 !important;
     background: var(--fundo2) !important;
   }
   .stat-full-table thead th:first-child,
   .stat-full-table thead th.col-jogo {
     position: sticky !important;
-    top: 86px !important;
+    top: 94px !important;
     left: 0 !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
@@ -641,7 +641,7 @@ select{appearance:none;cursor:pointer}
   }
   .stat-full-table thead th.col-resultado {
     position: sticky !important;
-    top: 86px !important;
+    top: 94px !important;
     left: 115px !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
@@ -671,16 +671,16 @@ select{appearance:none;cursor:pointer}
     max-width: none !important;
   }
 
-  /* Cabeçalho da tabela de classificação fica sticky verticalmente no mobile (top = 86px) */
+  /* Cabeçalho da tabela de classificação fica sticky verticalmente no mobile (top = 94px) */
   .rank-table thead th {
     position: sticky !important;
-    top: 86px !important;
+    top: 94px !important;
     z-index: 5 !important;
     background: var(--fundo2) !important;
   }
   .rank-table thead th.col-apostador {
     position: sticky !important;
-    top: 86px !important;
+    top: 94px !important;
     left: 0 !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
@@ -874,7 +874,7 @@ details[open] > summary span:last-child { content: "−"; }
 /* Sticky header for Chaves/Bracket columns */
 .bracket-fase-label {
   position: sticky !important;
-  top: 86px !important;
+  top: 94px !important;
   z-index: 10 !important;
 }
 @media (min-width: 601px) {

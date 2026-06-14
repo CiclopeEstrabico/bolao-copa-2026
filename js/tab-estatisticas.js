@@ -716,172 +716,166 @@ window.renderEstatisticas = function () {
   // Linha 2: Trajetória histórica + Precisão
   // Linha 3: Precisão + Perfil
   // Linha 4: Perfil + Consistência
+  // Cache stats data for modal detail views
+  window.STATS_CACHE = {
+    ranking, jogosFeitos, res, apos, pals, schedule, esp,
+    hotStreaks, coldStreaks, maresAltas, maresBaixas,
+    saltos5, quedas5, recuperacoes20, derreteuScores,
+    montanhaScores, reiScores, tubaraoScores,
+    zebraScores, mediasGols, cloneScores, ovelhaScores,
+    pacifistaScores, zebraApostas, conservScores, anarqScores, anarqJogos,
+    dps, praForaScores, praForaDetalhes, oniscienteScores,
+    totalJogos, snapshots
+  };
+
   h += '<div class="stats-grid">';
 
   // ── Linha 1 ──────────────────────────────────────────────────────────────
   h += _dCard("🔥", "Pé Quente",
     jogosFeitos.length === 0 ? '—' : _tieName(_peQuenteArr),
     jogosFeitos.length === 0 ? '— (sem jogos)' : (!peQuenteApo || maiorSeqQuente === 0 ? '—' : maiorSeqQuente + ' resultados seguidos'),
-    "#fdba74", "Quem teve a maior sequência seguida acertando pelo menos o resultado (vitória/empate) em cada jogo — o recorde de fase boa da Copa.");
+    "#fdba74", "pe_quente", "Quem teve a maior sequência seguida acertando pelo menos o resultado (vitória/empate) em cada jogo — o recorde de fase boa da Copa.");
 
   h += _dCard("🥶", "Pé Frio",
     jogosFeitos.length === 0 ? '—' : _tieName(_peFrioArr),
     jogosFeitos.length === 0 ? '— (sem jogos)' : (!peFrioApo || maiorSeqFria === 0 ? '—' : maiorSeqFria + ' zerados seguidos'),
-    "#7dd3fc", "Quem teve a maior sequência seguida de jogos com zero pontos — o recorde de fase ruim da Copa.");
+    "#7dd3fc", "pe_frio", "Quem teve a maior sequência seguida de jogos com zero pontos — o recorde de fase ruim da Copa.");
 
   h += _dCard("🏄", "Maré Alta",
     jogosFeitos.length === 0 ? '—' : (_maraAltaArr ? _tieName(_maraAltaArr) : '—'),
     jogosFeitos.length === 0 ? '— (sem jogos)' : (!_maraAltaArr || maraAltaScore === 0 ? '—' : maraAltaScore + ' em sequência agora'),
-    "#34d399", "Quem está na maior sequência atual acertando pelo menos o resultado. Diferente do Pé Quente (recorde histórico): conta só o que está acontecendo agora.");
+    "#34d399", "mare_alta", "Quem está na maior sequência atual acertando pelo menos o resultado. Diferente do Pé Quente (recorde histórico): conta só o que está acontecendo agora.");
 
   h += _dCard("🌊", "Maré Baixa",
     jogosFeitos.length === 0 ? '—' : (_mareBaixaArr ? _tieName(_mareBaixaArr) : '—'),
     jogosFeitos.length === 0 ? '— (sem jogos)' : (!_mareBaixaArr || mareBaixaScore === 0 ? '—' : mareBaixaScore + ' zerados agora'),
-    "#93c5fd", "Quem está na maior sequência atual de jogos com zero pontos. Diferente do Pé Frio (recorde histórico): conta só a seca em curso agora.");
+    "#93c5fd", "mare_baixa", "Quem está na maior sequência atual de jogos com zero pontos. Diferente do Pé Frio (recorde histórico): conta só a seca em curso agora.");
 
   h += _dCard("🧗", "Escalando",
     totalJogos < 5 ? '—' : _tieName(_escalandoArr),
     totalJogos < 5 ? '— (< 5 jogos)' : (escalandoApo && maiorSalto > 0 ? '+' + maiorSalto + ' posições' : '—'),
-    "#fb7185", "Quem mais subiu no ranking nos últimos 5 jogos. Compara a posição atual com a de antes desses 5 jogos.");
+    "#fb7185", "escalando", "Quem mais subiu no ranking nos últimos 5 jogos. Compara a posição atual com a de antes desses 5 jogos.");
 
   h += _dCard("📉", "Queda Livre",
     totalJogos < 5 ? '—' : _tieName(_tombArr),
     totalJogos < 5 ? '— (< 5 jogos)' : (tombApo && maiorTombo > 0 ? '−' + maiorTombo + ' posições' : '—'),
-    "#f87171", "Quem mais caiu no ranking nos últimos 5 jogos. Compara a posição atual com a de antes desses 5 jogos.");
+    "#f87171", "queda_livre", "Quem mais caiu no ranking nos últimos 5 jogos. Compara a posição atual com a de antes desses 5 jogos.");
 
   h += _dCard("🔄", "Fênix",
     totalJogos < 15 ? '—' : _tieName(_recuperArr),
     totalJogos < 15 ? '— (< 15 jogos)' : (recuperApo && maiorRecup > 0 ? '+' + maiorRecup + ' posições' : '—'),
-    "#38bdf8", "Quem mais subiu no ranking nos últimos 20 jogos. Começa a ser calculado a partir do 15º jogo da Copa.");
+    "#38bdf8", "fenix", "Quem mais subiu no ranking nos últimos 20 jogos. Começa a ser calculado a partir do 15º jogo da Copa.");
 
   // ── Linha 2 ──────────────────────────────────────────────────────────────
   h += _dCard("🧈", "Derreteu",
     totalJogos < 15 ? '—' : (_derreteuArr ? _tieName(_derreteuArr) : '—'),
     totalJogos < 15 ? '— (< 15 jogos)' : (!_derreteuArr || derreteuScore === 0 ? '—' : '−' + derreteuScore + ' posições'),
-    "#f97316", "Quem mais caiu no ranking nos últimos 20 jogos. Oposto do Fênix. Começa a ser calculado a partir do 15º jogo da Copa.");
+    "#f97316", "derreteu", "Quem mais caiu no ranking nos últimos 20 jogos. Oposto do Fênix. Começa a ser calculado a partir do 15º jogo da Copa.");
 
   h += _dCard("🏰", "Rei da Colina",
     _reiArr ? _tieName(_reiArr) : '—',
     !_reiArr || reiScore === 0 ? '—' : reiScore + ' rodadas na liderança',
-    "#fbbf24", "Quem ficou mais rodadas consecutivas em 1º lugar. Conta a maior sequência contínua na liderança, não o tempo total.");
+    "#fbbf24", "rei_colina", "Quem ficou mais rodadas consecutivas em 1º lugar. Conta a maior sequência contínua na liderança, não o tempo total.");
 
   h += _dCard("🦈", "Tubarão Banguela",
     totalJogos < 10 ? '—' : (_tubaraoArr ? _tieName(_tubaraoArr) : '—'),
     totalJogos < 10 ? '— (< 10 jogos)' : (!_tubaraoArr || tubaraoScore === 0 ? '—' : tubaraoScore + ' rodadas no Top 5'),
-    "#94a3b8", "Quem passou mais rodadas no Top 5 mas está fora dessa zona agora. Era temido, perdeu o faro. Mínimo 10 jogos.");
+    "#94a3b8", "tubarao", "Quem passou mais rodadas no Top 5 mas está fora dessa zona agora. Era temido, perdeu o faro. Mínimo 10 jogos.");
 
   h += _dCard("🎢", "Montanha Russa",
     totalJogos < 5 ? '—' : (_montanhaArr ? _tieName(_montanhaArr) : '—'),
     totalJogos < 5 ? '— (< 5 jogos)' : (!_montanhaArr || montanhaScore === 0 ? '—' : montanhaScore.toFixed(2) + ' pos./jogo'),
-    "#e879f9", "Quem mais oscilou de posição no ranking: média de |Δposição| por jogo. Mínimo 5 jogos.");
+    "#e879f9", "montanha_russa", "Quem mais oscilou de posição no ranking: média de |Δposição| por jogo. Mínimo 5 jogos.");
 
   h += _dCard("🐢", "Tartaruga",
     totalJogos < 10 ? '—' : (_tartarugaArr ? _tieName(_tartarugaArr) : '—'),
     totalJogos < 10 ? '— (< 10 jogos)' : (!_tartarugaArr ? '—' : tartarugaScore.toFixed(2) + ' pos./jogo'),
-    "#84cc16", "Quem menos oscilou de posição — sempre no mesmo lugar. Média de |Δposição| por jogo, o menor valor vence. Mínimo 10 jogos.");
+    "#84cc16", "tartaruga", "Quem menos oscilou de posição — sempre no mesmo lugar. Média de |Δposição| por jogo, o menor valor vence. Mínimo 10 jogos.");
 
   h += _dCard("🔮", "Vidente",
     jogosFeitos.length === 0 ? '—' : _tieName(_melhorResArr),
     jogosFeitos.length === 0 ? '— (sem jogos)' : (melhorRes ? melhorRes.stats.acertos_resultado + ' resultados acertados' : '—'),
-    "#86efac", "Quem mais acertou o desfecho dos jogos — vitória do time da casa, empate ou vitória do visitante — sem precisar acertar o placar exato.");
+    "#86efac", "vidente", "Quem mais acertou o desfecho dos jogos — vitória do time da casa, empate ou vitória do visitante — sem precisar acertar o placar exato.");
 
   h += _dCard("🪬", "Onisciente",
     jogosFeitos.length === 0 ? '—' : (_oniscienteArr ? _tieName(_oniscienteArr) : '—'),
     jogosFeitos.length === 0 ? '— (sem jogos)' : (!_oniscienteArr ? '—' : oniscienteSubStr),
-    "#c084fc", "Acertou o placar exato do jogo com mais gols da Copa — o mais difícil de prever pelo volume de gols.");
+    "#c084fc", "onisciente", "Acertou o placar exato do jogo com mais gols da Copa — o mais difícil de prever pelo volume de gols.");
 
   // ── Linha 3 ──────────────────────────────────────────────────────────────
   h += _dCard("🎯", "Atirador de Elite",
     jogosFeitos.length === 0 ? '—' : _tieName(_melhorExatoArr),
     jogosFeitos.length === 0 ? '— (sem jogos)' : (melhorExato ? melhorExatoCount + ' placares exatos' : '—'),
-    "var(--verde-ok)", "Quem mais acertou o placar exato. Placares normais dão +3 pts de bônus; placares com 4 ou mais gols no total dão +5 pts.");
+    "var(--verde-ok)", "atirador", "Quem mais acertou o placar exato. Placares normais dão +3 pts de bônus; placares com 4 ou mais gols no total dão +5 pts.");
 
   h += _dCard("🦓", "Zebra de Ouro",
     jogosFeitos.length === 0 ? '—' : _tieName(_zebraArr),
     jogosFeitos.length === 0 ? '— (sem jogos)' : (melhorZebra ? zebraCount + ' zebras domadas' : '—'),
-    "#fcd34d", "Quem mais acertou resultados que menos de 20% do grupo havia apostado — palpites raros E corretos. Coragem com precisão.");
+    "#fcd34d", "zebra_ouro", "Quem mais acertou resultados que menos de 20% do grupo havia apostado — palpites raros E corretos. Coragem com precisão.");
 
   h += _dCard("💎", "Mestre dos Bônus",
     jogosFeitos.length === 0 ? '—' : _tieName(_mestreBonusArr),
     jogosFeitos.length === 0 ? '— (sem jogos)' : (mestreBonus ? destMestreBonus.bestScore + ' jogos com bônus' : '—'),
-    "#a78bfa", "Quem somou mais jogos com algum bônus: placar exato (+3 ou +5 pts), diferença de gols correta (+1 pt) ou gols de um time corretos (+1 pt).");
+    "#a78bfa", "mestre_bonus", "Quem somou mais jogos com algum bônus: placar exato (+3 ou +5 pts), diferença de gols correta (+1 pt) ou gols de um time corretos (+1 pt).");
 
   h += _dCard("🙈", "Pra fora!",
     _tieName(_praForaArr),
     praForaSub,
-    "#fb923c", "O palpite mais distante do resultado real na Copa inteira, medido pela diferença de gols: |(palH−palA) − (resH−resA)|. Ex: resultado 1×0, chute 0×4 → |(−4) − 1| = 5.");
+    "#fb923c", "pra_fora", "O palpite mais distante do resultado real na Copa inteira, medido pela diferença de gols: |(palH−palA) − (resH−resA)|. Ex: resultado 1×0, chute 0×4 → |(−4) − 1| = 5.");
 
   h += _dCard("⚽", "Centro Avante",
     _centroAvanteArr ? _tieName(_centroAvanteArr) : '—',
     !_centroAvanteArr || centroAvanteScore === -Infinity ? '— (< 5 apostas)' : centroAvanteScore.toFixed(2) + ' gols/jogo',
-    "#fb923c", "Quem aposta em mais gols por jogo em média. O otimista ofensivo do bolão. Mínimo 5 apostas.");
+    "#fb923c", "centro_avante", "Quem aposta em mais gols por jogo em média. O otimista ofensivo do bolão. Mínimo 5 apostas.");
 
   h += _dCard("🧱", "Zagueirão",
     _zagueiroArr ? _tieName(_zagueiroArr) : '—',
     !_zagueiroArr || zagueiroScore === Infinity ? '— (< 5 apostas)' : zagueiroScore.toFixed(2) + ' gols/jogo',
-    "#64748b", "Quem aposta em menos gols por jogo em média. Acredita em defesas, resultados magros e jogos travados. Mínimo 5 apostas.");
+    "#64748b", "zagueirao", "Quem aposta em menos gols por jogo em média. Acredita em defesas, resultados magros e jogos travados. Mínimo 5 apostas.");
 
   h += _dCard("🃏", "Destemido",
     _tieName(_chutZebraArr),
     !chutZebraApo ? '—' : chutZebraCount + ' palpites improváveis',
-    "#f59e0b", "Quem mais apostou em resultados que menos de 20% do grupo escolheu — independente de acertar. Diferente da Zebra de Ouro, que só conta quando o palpite improvável estava certo.");
+    "#f59e0b", "destemido", "Quem mais apostou em resultados que menos de 20% do grupo escolheu — independente de acertar. Diferente da Zebra de Ouro, que só conta quando o palpite improvável estava certo.");
 
   // ── Linha 4 ──────────────────────────────────────────────────────────────
   h += _dCard("🐑", "Ovelha Negra",
     _ovelhaArr ? _tieName(_ovelhaArr) : '—',
     !_ovelhaArr || ovelhaScore === 0 ? '—' : ovelhaScore + ' erros em jogos fáceis',
-    "#f43f5e", "Quem mais errou em jogos que 80% ou mais do grupo acertou. Errar o que todo mundo acertou é uma arte.");
+    "#f43f5e", "ovelha_negra", "Quem mais errou em jogos que 80% ou mais do grupo acertou. Errar o que todo mundo acertou é uma arte.");
 
   h += _dCard("🪞", "Clone",
     _cloneArr ? _tieName(_cloneArr) : '—',
     !_cloneArr || cloneScore === 0 ? '—' : cloneScore + 'x no placar do grupo',
-    "#a5f3fc", "Quem mais vezes apostou exatamente o placar mais votado pelo grupo. Só conta quando ao menos 2 pessoas apostaram o mesmo placar.");
+    "#a5f3fc", "clone", "Quem mais vezes apostou exatamente o placar mais votado pelo grupo. Só conta quando ao menos 2 pessoas apostaram o mesmo placar.");
 
   h += _dCard("🕊️", "Pacifista",
     _pacifistaArr ? _tieName(_pacifistaArr) : '—',
     !_pacifistaArr || pacifistaScore === 0 ? '—' : pacifistaScore + ' empates apostados',
-    "#bae6fd", "Quem mais apostou em empate ao longo do bolão. O resultado mais raro em Copas do Mundo, apostado com convicção.");
+    "#bae6fd", "pacifista", "Quem mais apostou em empate ao longo do bolão. O resultado mais raro em Copas do Mundo, apostado com convicção.");
 
   h += _dCard("💤", "Conservador",
     _tieName(_conservArr),
     !conservApo ? '— (sem consenso)' : conservCount + 'x no consenso',
-    "#94a3b8", "Quem mais apostou igual à maioria: o resultado escolhido tinha pelo menos 50% dos palpites do grupo naquela direção.");
+    "#94a3b8", "conservador", "Quem mais apostou igual à maioria: o resultado escolhido tinha pelo menos 50% dos palpites do grupo naquela direção.");
 
   h += _dCard("🎲", "Anarquista",
     _tieName(_anarqArr),
     !anarqApo ? '— (< 3 apostas)' : 'dist. média ' + anarqMedia + ' gols',
-    "#a78bfa", "Quem mais diverge do placar mais votado pelo grupo em cada jogo apostado. A distância é medida por |(palH−palA) − (topH−topA)|. Mínimo 3 apostas.");
+    "#a78bfa", "anarquista", "Quem mais diverge do placar mais votado pelo grupo em cada jogo apostado. A distância é medida por |(palH−palA) − (topH−topA)|. Mínimo 3 apostas.");
 
   h += _dCard("⚖️", "Metrônomo",
     jogosFeitos.length < 10 ? '—' : _tieName(_consistArr),
     jogosFeitos.length < 10 || !consistApo ? '— (< 10 jogos)' : 'desvio ' + menorDP.toFixed(2) + ' pts/jogo',
-    "#34d399", "Quem pontua de forma mais consistente jogo a jogo, com menor variação entre rodadas boas e ruins. Calculado pelo desvio padrão dos pontos por jogo (mínimo 10 jogos).");
+    "#34d399", "metronomo", "Quem pontua de forma mais consistente jogo a jogo, com menor variação entre rodadas boas e ruins. Calculado pelo desvio padrão dos pontos por jogo (mínimo 10 jogos).");
 
   h += _dCard("🕯️", "Lanterninha",
     jogosFeitos.length === 0 ? '—' : _tieName(_lanterninhaArr),
     jogosFeitos.length === 0 ? '— (sem jogos)' : (_lanterninhaArr?.[0] ? _lanterninhaArr[0].stats.total.toFixed(1) + ' pts' : '—'),
-    "#94a3b8", "Quem está com menos pontos acumulados até agora. A lanterna da Copa.");
+    "#94a3b8", "lanterninha", "Quem está com menos pontos acumulados até agora. A lanterna da Copa.");
 
   h += '</div>';
 
-  // Listener de delegate para tooltips (garante single-listener via flag no document)
-  requestAnimationFrame(() => {
-    if (!document._statTooltipListenerActive) {
-      document._statTooltipListenerActive = true;
-      document.addEventListener('click', function (e) {
-        const card = e.target.closest('.stat-d-card');
-        const allCards = document.querySelectorAll('#aba-estatisticas .stat-d-card');
-        if (card && card.dataset.tooltip) {
-          const isVisible = card.classList.contains('tooltip-visivel');
-          allCards.forEach(c => c.classList.remove('tooltip-visivel'));
-          if (!isVisible) card.classList.add('tooltip-visivel');
-          e.stopPropagation();
-        } else {
-          allCards.forEach(c => c.classList.remove('tooltip-visivel'));
-        }
-      });
-    }
-  });
 
   // Jogo mais e menos acertado
   const jogoStats = jogosFeitos.map(jogo => {
@@ -1104,6 +1098,15 @@ window.renderEstatisticas = function () {
 
   // Tooltip unificado (hover desktop + toque mobile) em todos os [title] da aba
   window.injetarTooltipsMobile(el);
+
+  // Frozen header para mobile (CSS sticky não funciona com overflow-x:auto)
+  requestAnimationFrame(() => {
+    const table = el.querySelector('.stat-full-table');
+    const wrapper = el.querySelector('.stat-table-wrap');
+    if (table && wrapper && window.registrarFrozenHeader) {
+      window.registrarFrozenHeader(table, wrapper);
+    }
+  });
 };
 
 window.renderHtH = function () {
@@ -1165,12 +1168,12 @@ window.renderHtH = function () {
   out.innerHTML = h;
 };
 
-function _dCard(icon, label, nome, sub, cor, tooltip) {
+function _dCard(icon, label, nome, sub, cor, key, tooltip) {
   const tipAttr = tooltip ? ` data-tooltip="${tooltip.replace(/"/g, '&quot;')}"` : '';
+  const keyAttr = key ? ` data-card-key="${key}"` : '';
   const tipEl = tooltip
     ? `<div class="stat-tooltip">${tooltip}</div>`
     : '';
-  // `nome` pode ser string simples ou array de até 2 nomes (empate)
   let nomeHtml;
   if (Array.isArray(nome) && nome.length >= 2) {
     nomeHtml = `<div class="stat-d-nome stat-d-nome--tie" style="--cor-destaque: ${cor}">${nome[0]}<span class="stat-d-tie-sep"> &amp; </span>${nome[1]}</div>`;
@@ -1178,7 +1181,7 @@ function _dCard(icon, label, nome, sub, cor, tooltip) {
     const nomeStr = Array.isArray(nome) ? (nome[0] || '—') : nome;
     nomeHtml = `<div class="stat-d-nome" style="--cor-destaque: ${cor}">${nomeStr}</div>`;
   }
-  return `<div class="stat-d-card"${tipAttr}>
+  return `<div class="stat-d-card"${tipAttr}${keyAttr} onclick="window.abrirModalCard('${key || ''}')">
     <div class="stat-d-icon">${icon}</div>
     <div class="stat-d-body">
       <div class="stat-d-label">${label}</div>
@@ -1202,3 +1205,148 @@ function _jogoStatRow(jogoId, hC, aC, r, acertos, total, cor) {
     '<div style="width:' + pct + '%;height:100%;background:' + cor + ';border-radius:3px"></div></div>' +
     '<span style="font-size:.7rem;color:' + cor + ';font-weight:700;min-width:40px;text-align:right">' + acertos + '/' + total + '</span></div>';
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CARD_CONFIGS: Mapeamento de cada card → { icon, label, desc, getScore, higherIsWinner, format, isGoodCard, filterFn? }
+// ══════════════════════════════════════════════════════════════════════════════
+window.CARD_CONFIGS = {
+  pe_quente:     { icon: '🔥', label: 'Pé Quente',           desc: 'Maior sequência seguida acertando resultado.', getScore: (r,c) => c.hotStreaks[r.participante.id] || 0,            higherIsWinner: true,  isGoodCard: true,  format: v => v + ' seguidos' },
+  pe_frio:       { icon: '🥶', label: 'Pé Frio',             desc: 'Maior sequência seguida de jogos com 0 pts.', getScore: (r,c) => c.coldStreaks[r.participante.id] || 0,           higherIsWinner: true,  isGoodCard: false, format: v => v + ' zerados' },
+  mare_alta:     { icon: '🏄', label: 'Maré Alta',            desc: 'Maior sequência atual acertando resultado.', getScore: (r,c) => c.maresAltas[r.participante.id] || 0,           higherIsWinner: true,  isGoodCard: true,  format: v => v + ' em seq.', filterFn: s => s > 0 },
+  mare_baixa:    { icon: '🌊', label: 'Maré Baixa',           desc: 'Maior sequência atual de jogos zerados.', getScore: (r,c) => c.maresBaixas[r.participante.id] || 0,         higherIsWinner: true,  isGoodCard: false, format: v => v + ' zerados', filterFn: s => s > 0 },
+  escalando:     { icon: '🧗', label: 'Escalando',            desc: 'Maior salto no ranking nos últimos 5 jogos.', getScore: (r,c) => c.saltos5[r.participante.id] || 0,             higherIsWinner: true,  isGoodCard: true,  format: v => '+' + v + ' pos.', filterFn: (s,r,c) => c.totalJogos >= 5 && s > 0 },
+  queda_livre:   { icon: '📉', label: 'Queda Livre',          desc: 'Maior queda no ranking nos últimos 5 jogos.', getScore: (r,c) => c.quedas5[r.participante.id] || 0,             higherIsWinner: true,  isGoodCard: false, format: v => '−' + v + ' pos.', filterFn: (s,r,c) => c.totalJogos >= 5 && s > 0 },
+  fenix:         { icon: '🔄', label: 'Fênix',                desc: 'Maior salto nos últimos 20 jogos.', getScore: (r,c) => c.recuperacoes20[r.participante.id] || 0,       higherIsWinner: true,  isGoodCard: true,  format: v => '+' + v + ' pos.', filterFn: (s,r,c) => c.totalJogos >= 15 && s > 0 },
+  derreteu:      { icon: '🧈', label: 'Derreteu',             desc: 'Maior queda nos últimos 20 jogos.', getScore: (r,c) => c.derreteuScores[r.participante.id] || 0,        higherIsWinner: true,  isGoodCard: false, format: v => '−' + v + ' pos.', filterFn: (s,r,c) => c.totalJogos >= 15 && s > 0 },
+  rei_colina:    { icon: '🏰', label: 'Rei da Colina',        desc: 'Maior sequência consecutiva em 1° lugar.', getScore: (r,c) => c.reiScores[r.participante.id] || 0,            higherIsWinner: true,  isGoodCard: true,  format: v => v + ' rodadas', filterFn: s => s > 0 },
+  tubarao:       { icon: '🦈', label: 'Tubarão Banguela',     desc: 'Mais rodadas no Top 5, mas fora dele agora.', getScore: (r,c) => c.tubaraoScores[r.participante.id] || 0,        higherIsWinner: true,  isGoodCard: false, format: v => v + ' rodadas', filterFn: (s,r,c) => c.totalJogos >= 10 && s > 0 },
+  montanha_russa:{ icon: '🎢', label: 'Montanha Russa',       desc: 'Média de |Δposição| por jogo (maior = mais volátil).', getScore: (r,c) => c.montanhaScores[r.participante.id] ?? -1,    higherIsWinner: true,  isGoodCard: true,  format: v => v.toFixed(2) + ' pos./jogo', filterFn: (s,r,c) => c.totalJogos >= 5 && s > 0 },
+  tartaruga:     { icon: '🐢', label: 'Tartaruga',            desc: 'Menor oscilação de posição (mais estável).', getScore: (r,c) => c.montanhaScores[r.participante.id] ?? Infinity, higherIsWinner: false, isGoodCard: true,  format: v => v.toFixed(2) + ' pos./jogo', filterFn: (s) => s !== Infinity },
+  vidente:       { icon: '🔮', label: 'Vidente',              desc: 'Mais acertos de resultado (V/E/D).', getScore: (r,c) => r.stats.acertos_resultado,                       higherIsWinner: true,  isGoodCard: true,  format: v => v + ' acertos' },
+  onisciente:    { icon: '🪬', label: 'Onisciente',           desc: 'Acertou placar exato do jogo com mais gols.', getScore: (r,c) => c.oniscienteScores[r.participante.id] || 0,     higherIsWinner: true,  isGoodCard: true,  format: v => v > 0 ? '✓ Acertou' : '—', filterFn: s => s > 0 },
+  atirador:      { icon: '🎯', label: 'Atirador de Elite',    desc: 'Mais acertos de placar exato.', getScore: (r,c) => r.stats.acertos_placar_exato + r.stats.acertos_placar_alto, higherIsWinner: true, isGoodCard: true, format: v => v + ' placares' },
+  zebra_ouro:    { icon: '🦓', label: 'Zebra de Ouro',        desc: 'Acertos em jogos onde <20% apostou igual.', getScore: (r,c) => c.zebraScores[r.participante.id] || 0,          higherIsWinner: true,  isGoodCard: true,  format: v => v + ' zebras' },
+  mestre_bonus:  { icon: '💎', label: 'Mestre dos Bônus',     desc: 'Mais jogos com algum bônus (exato/diff/gols).', getScore: (r,c) => r.stats.acertos_placar_exato + r.stats.acertos_placar_alto + r.stats.acertos_bonus1, higherIsWinner: true, isGoodCard: true, format: v => v + ' bônus' },
+  pra_fora:      { icon: '🙈', label: 'Pra fora!',            desc: 'Maior distância entre palpite e resultado real.', getScore: (r,c) => c.praForaScores[r.participante.id] ?? 0,       higherIsWinner: true,  isGoodCard: false, format: (v,r,c) => { const d = c.praForaDetalhes[r.participante.id]; return d ? d.apost + ' (foi ' + d.real + ')' : v; }, filterFn: s => s > 0 },
+  centro_avante: { icon: '⚽', label: 'Centro Avante',        desc: 'Maior média de gols apostados por jogo.', getScore: (r,c) => c.mediasGols[r.participante.id] ?? -Infinity,   higherIsWinner: true,  isGoodCard: true,  format: v => v.toFixed(2) + ' gols/jogo', filterFn: s => s !== -Infinity },
+  zagueirao:     { icon: '🧱', label: 'Zagueirão',            desc: 'Menor média de gols apostados por jogo.', getScore: (r,c) => c.mediasGols[r.participante.id] ?? Infinity,    higherIsWinner: false, isGoodCard: true,  format: v => v.toFixed(2) + ' gols/jogo', filterFn: s => s !== Infinity },
+  destemido:     { icon: '🃏', label: 'Destemido',             desc: 'Mais apostas em resultados com <20% do grupo.', getScore: (r,c) => c.zebraApostas[r.participante.id] || 0,        higherIsWinner: true,  isGoodCard: true,  format: v => v + ' apostas' },
+  ovelha_negra:  { icon: '🐑', label: 'Ovelha Negra',         desc: 'Mais erros em jogos que 80%+ acertou.', getScore: (r,c) => c.ovelhaScores[r.participante.id] || 0,         higherIsWinner: true,  isGoodCard: false, format: v => v + ' erros', filterFn: s => s > 0 },
+  clone:         { icon: '🪞', label: 'Clone',                desc: 'Mais vezes apostou o placar mais votado.', getScore: (r,c) => c.cloneScores[r.participante.id] || 0,          higherIsWinner: true,  isGoodCard: true,  format: v => v + 'x' },
+  pacifista:     { icon: '🕊️', label: 'Pacifista',             desc: 'Mais apostas em empate.', getScore: (r,c) => c.pacifistaScores[r.participante.id] || 0,      higherIsWinner: true,  isGoodCard: true,  format: v => v + ' empates' },
+  conservador:   { icon: '💤', label: 'Conservador',           desc: 'Mais apostas com a maioria (≥50%).', getScore: (r,c) => c.conservScores[r.participante.id] || 0,        higherIsWinner: true,  isGoodCard: true,  format: v => v + 'x consenso' },
+  anarquista:    { icon: '🎲', label: 'Anarquista',            desc: 'Maior divergência média do placar top.', getScore: (r,c) => { const id = r.participante.id; return (c.anarqJogos[id] || 0) >= 3 ? (c.anarqScores[id] / c.anarqJogos[id]) : 0; }, higherIsWinner: true, isGoodCard: true, format: v => v.toFixed(1) + ' dist.', filterFn: s => s > 0 },
+  metronomo:     { icon: '⚖️', label: 'Metrônomo',             desc: 'Menor desvio padrão de pts/jogo (mais regular).', getScore: (r,c) => c.dps[r.participante.id] ?? Infinity,         higherIsWinner: false, isGoodCard: true,  format: v => 'σ ' + v.toFixed(2), filterFn: s => s !== Infinity },
+  lanterninha:   { icon: '🕯️', label: 'Lanterninha',           desc: 'Menor total de pontos acumulados.', getScore: (r,c) => r.stats.total,                                    higherIsWinner: false, isGoodCard: false, format: v => v.toFixed(1) + ' pts' }
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Modal de Detalhes do Card
+// ══════════════════════════════════════════════════════════════════════════════
+window.abrirModalCard = function(key) {
+  if (!key) return;
+  const cfg = window.CARD_CONFIGS[key];
+  const cache = window.STATS_CACHE;
+  if (!cfg || !cache) return;
+
+  const ov = document.getElementById('modal-stat');
+  const box = document.getElementById('modal-stat-body');
+  if (!ov || !box) return;
+
+  // Swipe-down para fechar (mobile) — setup único
+  if (!ov._swipeSetup) {
+    ov._swipeSetup = true;
+    let startY = 0, startScroll = 0;
+    ov.addEventListener('touchstart', e => { startY = e.touches[0].clientY; startScroll = box.scrollTop; }, { passive: true });
+    ov.addEventListener('touchmove', e => {
+      const dy = e.touches[0].clientY - startY;
+      if (dy > 0 && startScroll <= 0) { box.style.transform = `translateY(${Math.min(dy * 0.6, 160)}px)`; box.style.transition = 'none'; }
+    }, { passive: true });
+    ov.addEventListener('touchend', e => {
+      const dy = e.changedTouches[0].clientY - startY;
+      box.style.transition = ''; box.style.transform = '';
+      if (dy > 80 && startScroll <= 0) window.fecharModalStat();
+    }, { passive: true });
+  }
+
+  // Calcular ranking do card
+  let candidatos = cache.ranking.map(r => {
+    const score = cfg.getScore(r, cache);
+    return { r, score };
+  });
+
+  if (cfg.filterFn) {
+    candidatos = candidatos.filter(c => cfg.filterFn(c.score, c.r, cache));
+  }
+
+  candidatos.sort((a, b) => {
+    const diff = cfg.higherIsWinner ? (b.score - a.score) : (a.score - b.score);
+    if (Math.abs(diff) > 0.0001) return diff;
+    if (cfg.isGoodCard) {
+      if (b.r.stats.total !== a.r.stats.total) return b.r.stats.total - a.r.stats.total;
+      return a.r.posicao - b.r.posicao;
+    } else {
+      if (a.r.stats.total !== b.r.stats.total) return a.r.stats.total - b.r.stats.total;
+      return b.r.posicao - a.r.posicao;
+    }
+  });
+
+  const top10 = candidatos.slice(0, 10);
+
+  // Montar HTML do modal
+  let h = '<button class="modal-close" onclick="window.fecharModalStat()">✕</button>';
+  h += '<div style="text-align:center;margin-bottom:14px">';
+  h += '<div style="font-size:1.8rem;margin-bottom:6px">' + cfg.icon + '</div>';
+  h += '<div style="font-size:.95rem;font-weight:800;color:var(--texto)">' + cfg.label + '</div>';
+  h += '<div style="font-size:.7rem;color:var(--texto2);max-width:300px;margin:4px auto 0">' + cfg.desc + '</div>';
+  h += '</div>';
+
+  if (!top10.length) {
+    h += '<div style="text-align:center;padding:24px;color:var(--texto2);font-size:.8rem">Sem dados suficientes para este card.</div>';
+  } else {
+    // Tabela Top 10
+    h += '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">';
+    h += '<table style="width:100%;border-collapse:collapse;font-size:.76rem">';
+    h += '<thead><tr>';
+    h += '<th style="text-align:center;padding:8px 6px;border-bottom:1px solid var(--borda);color:var(--texto2);font-size:.65rem;width:32px">#</th>';
+    h += '<th style="text-align:left;padding:8px 6px;border-bottom:1px solid var(--borda);color:var(--texto2);font-size:.65rem">Apelido</th>';
+    h += '<th style="text-align:right;padding:8px 6px;border-bottom:1px solid var(--borda);color:var(--texto2);font-size:.65rem">Métrica</th>';
+    h += '<th style="text-align:right;padding:8px 6px;border-bottom:1px solid var(--borda);color:var(--texto2);font-size:.65rem;width:50px">Pts</th>';
+    h += '</tr></thead><tbody>';
+
+    let pos = 1;
+    for (let i = 0; i < top10.length; i++) {
+      const c = top10[i];
+      if (i > 0 && Math.abs(c.score - top10[i-1].score) > 0.0001) pos = i + 1;
+      const apelido = c.r.participante.apelido || c.r.participante.nome || c.r.participante.id;
+      const metricaStr = typeof cfg.format === 'function' ? cfg.format(c.score, c.r, cache) : c.score;
+      const isMedal = pos <= 3;
+      const medalColors = ['#fbbf24', '#c0c0c0', '#cd7f32'];
+      const rowBg = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,.02)';
+      const posColor = isMedal ? medalColors[pos - 1] : 'var(--texto2)';
+
+      h += '<tr style="background:' + rowBg + '">';
+      h += '<td style="text-align:center;padding:7px 6px;font-weight:800;color:' + posColor + '">' + pos + '</td>';
+      h += '<td style="text-align:left;padding:7px 6px;font-weight:600;color:var(--texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px">' + apelido + '</td>';
+      h += '<td style="text-align:right;padding:7px 6px;font-weight:700;color:var(--verde-light);white-space:nowrap">' + metricaStr + '</td>';
+      h += '<td style="text-align:right;padding:7px 6px;color:var(--texto2)">' + c.r.stats.total.toFixed(1) + '</td>';
+      h += '</tr>';
+    }
+    h += '</tbody></table></div>';
+
+    // Legenda
+    h += '<div style="font-size:.6rem;color:var(--texto2);text-align:center;margin-top:10px;opacity:.7">';
+    h += 'Desempate: ' + (cfg.isGoodCard ? 'mais pontos → melhor posição geral' : 'menos pontos → pior posição geral');
+    h += '</div>';
+  }
+
+  box.innerHTML = h;
+  ov.classList.add('aberto');
+  document.body.style.overflow = 'hidden';
+};
+
+window.fecharModalStat = function() {
+  const ov = document.getElementById('modal-stat');
+  if (ov) ov.classList.remove('aberto');
+  document.body.style.overflow = '';
+};

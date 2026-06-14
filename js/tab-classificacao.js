@@ -221,6 +221,15 @@ window.renderClassificacao = function () {
 
   // Tooltip unificado (hover desktop + toque mobile) em todos os [title] da aba
   window.injetarTooltipsMobile(el);
+
+  // Frozen header para mobile (CSS sticky não funciona com overflow-x:auto)
+  requestAnimationFrame(() => {
+    const table = el.querySelector('.rank-table');
+    const wrapper = el.querySelector('.rank-table-wrap');
+    if (table && wrapper && window.registrarFrozenHeader) {
+      window.registrarFrozenHeader(table, wrapper);
+    }
+  });
 };
 
 window._toggleRankingDetalhe = function (id) {

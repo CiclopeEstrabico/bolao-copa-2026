@@ -163,10 +163,17 @@ window.PROGNOSE = {
 
   statsPalpites: function (gameId) {
     const todos = APP.palpites || {};
+    const res = getResultados();
+    const r = res[gameId];
+    const temRes = r && r.homeGoals !== undefined;
     let home = 0, draw = 0, away = 0, total = 0;
     const placarCount = {};
+    let acertosResultado = 0, acertosPlacar = 0, somaPontos = 0;
+    let maiorPts = 0, maiorPtsApelido = '';
+    const apos = APP.apostadores || [];
+    const apelidoMap = {};
+    for (const a of apos) apelidoMap[a.id] = a.apelido || a.nome || a.id;
     for (const apId of Object.keys(todos)) {
-      // Exclui o MODELO da contagem de apostadores humanos
       if (apId === "MODELO") continue;
       const p = todos[apId]?.[gameId];
       if (!p || p.homeGoals === undefined) continue;
@@ -175,10 +182,21 @@ window.PROGNOSE = {
       if (hg > ag) home++; else if (hg < ag) away++; else draw++;
       const k = hg + "x" + ag;
       placarCount[k] = (placarCount[k] || 0) + 1;
+      if (temRes) {
+        const jogoInfo = window.SCHEDULE_BY_ID?.[gameId];
+        const br = calcularPontosBrutos(p, r);
+        if (br.acertou) acertosResultado++;
+        if (br.bonus_tipo === 'placar_exato') acertosPlacar++;
+        const pts = aplicarFator(br.total_bruto, jogoInfo?.fase || 'grupos');
+        somaPontos += pts;
+        if (pts > maiorPts) { maiorPts = pts; maiorPtsApelido = apelidoMap[apId] || apId; }
+      }
     }
+    const mediaPts = total > 0 ? somaPontos / total : 0;
     return {
       total, home, draw, away,
-      topPlacares: Object.entries(placarCount).sort((a, b) => b[1] - a[1]).slice(0, 5)
+      topPlacares: Object.entries(placarCount).sort((a, b) => b[1] - a[1]).slice(0, 5),
+      acertosResultado, acertosPlacar, mediaPts, maiorPts, maiorPtsApelido
     };
   },
 
@@ -511,10 +529,7 @@ window.PROGNOSE = {
         const acertou = r && r.homeGoals !== undefined && placar === r.homeGoals + "x" + r.awayGoals;
         const probM = probModelo[placar];
         const probMStr = probM !== undefined ? (probM * 100).toFixed(1) + '%' : null;
-
-        // Detecta se o grupo apostou muito mais ou menos que o modelo
-        const diverge = probM !== undefined && Math.abs((ct / total) - probM) > 0.08;
-        const grupoAcimaModelo = probM !== undefined && (ct / total) > probM + 0.05;
+        const pctGrupo = total > 0 ? Math.round(ct / total * 100) : 0;
 
         h += '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--fundo2);border-radius:8px;margin-bottom:5px' + (acertou ? ';border:1px solid rgba(34,197,94,.4)' : '') + '">';
 
@@ -523,11 +538,9 @@ window.PROGNOSE = {
 
         // Barras empilhadas
         h += '<div style="flex:1;display:flex;flex-direction:column;gap:2px">';
-        // Barra grupo
         h += '<div style="background:var(--card);border-radius:3px;height:6px;overflow:hidden">';
         h += '<div style="width:' + (ct / maxCt * 100) + '%;height:100%;background:var(--verde);border-radius:3px;transition:width .5s ease"></div>';
         h += '</div>';
-        // Barra modelo
         if (probMStr && modelo) {
           const modRelativo = Math.min((probM / (s.topPlacares[0][1] / total)) * 100, 100);
           h += '<div style="background:var(--card);border-radius:3px;height:6px;overflow:hidden">';
@@ -536,11 +549,11 @@ window.PROGNOSE = {
         }
         h += '</div>';
 
-        // Meta direita: contagem + prob modelo
-        h += '<div style="text-align:right;min-width:48px">';
-        h += '<div style="font-size:.72rem;color:var(--texto2)">' + ct + '×' + (acertou ? ' <span style="color:var(--verde-ok)">✓</span>' : '') + '</div>';
+        // Meta direita: contagem (%) + prob modelo
+        h += '<div style="text-align:right;white-space:nowrap">';
+        h += '<div style="font-size:.72rem;color:var(--texto2)">' + ct + ' <span style="font-size:.62rem;opacity:.85">(' + pctGrupo + '%)</span>' + (acertou ? ' <span style="color:var(--verde-ok)">✓</span>' : '') + '</div>';
         if (probMStr) {
-          h += '<div style="font-size:.62rem;color:var(--texto2)">' + probMStr + '</div>';
+          h += '<div style="font-size:.62rem;color:var(--texto2)">Modelo ' + probMStr + '</div>';
         }
         h += '</div>';
 
@@ -554,6 +567,52 @@ window.PROGNOSE = {
         h += '<span style="font-size:.61rem;color:var(--texto2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:14px;height:5px;border-radius:2px;background:rgba(34,197,94,.28)"></span>Modelo</span>';
         h += '</div>';
       }
+    }
+
+    // ── Bloco 3: Desempenho do Grupo (só quando há resultado oficial) ──
+    const res2 = getResultados();
+    const temResBloco = res2[gameId] && res2[gameId].homeGoals !== undefined;
+    if (temResBloco && s.total > 0) {
+      const pctRes = Math.round(s.acertosResultado / s.total * 100);
+      const pctPlac = Math.round(s.acertosPlacar / s.total * 100);
+
+      h += '<div style="margin-top:16px;border-top:1px solid var(--borda);padding-top:14px">';
+      h += '<div style="font-size:.68rem;font-weight:700;color:var(--texto2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Desempenho do Grupo</div>';
+
+      // Acertaram Resultado
+      h += '<div style="margin-bottom:10px">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">';
+      h += '<span style="font-size:.7rem;font-weight:600;color:var(--texto)">Acertaram resultado</span>';
+      h += '<span style="font-size:.72rem;font-weight:800;color:#38bdf8">' + s.acertosResultado + '/' + s.total + ' <span style="font-size:.62rem;font-weight:600;opacity:.85">(' + pctRes + '%)</span></span>';
+      h += '</div>';
+      h += '<div style="background:var(--fundo2);border-radius:4px;height:8px;overflow:hidden">';
+      h += '<div style="width:' + pctRes + '%;height:100%;background:rgba(56,189,248,.6);border-radius:4px;transition:width .5s ease"></div>';
+      h += '</div></div>';
+
+      // Acertaram Placar Exato
+      h += '<div style="margin-bottom:10px">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">';
+      h += '<span style="font-size:.7rem;font-weight:600;color:var(--texto)">Acertaram placar exato</span>';
+      h += '<span style="font-size:.72rem;font-weight:800;color:#818cf8">' + s.acertosPlacar + '/' + s.total + ' <span style="font-size:.62rem;font-weight:600;opacity:.85">(' + pctPlac + '%)</span></span>';
+      h += '</div>';
+      h += '<div style="background:var(--fundo2);border-radius:4px;height:8px;overflow:hidden">';
+      h += '<div style="width:' + pctPlac + '%;height:100%;background:rgba(129,140,248,.5);border-radius:4px;transition:width .5s ease"></div>';
+      h += '</div></div>';
+
+      // Média de pontos e maior pontuação
+      h += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
+      h += '<div style="flex:1;min-width:100px;background:var(--fundo2);border-radius:8px;padding:8px 10px;text-align:center">';
+      h += '<div style="font-size:.62rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.03em;margin-bottom:2px">Média de Pts</div>';
+      h += '<div style="font-size:1rem;font-weight:900;color:#38bdf8">' + s.mediaPts.toFixed(1) + '</div>';
+      h += '</div>';
+      h += '<div style="flex:1;min-width:100px;background:var(--fundo2);border-radius:8px;padding:8px 10px;text-align:center">';
+      h += '<div style="font-size:.62rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.03em;margin-bottom:2px">Maior Pts</div>';
+      h += '<div style="font-size:1rem;font-weight:900;color:#818cf8">' + s.maiorPts.toFixed(1) + '</div>';
+      h += '<div style="font-size:.58rem;color:var(--texto2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;margin-left:auto;margin-right:auto">' + s.maiorPtsApelido + '</div>';
+      h += '</div>';
+      h += '</div>';
+
+      h += '</div>';
     }
 
     return h;
