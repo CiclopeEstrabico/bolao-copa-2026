@@ -553,10 +553,21 @@ select{appearance:none;cursor:pointer}
   }
 }
 @media (min-width: 601px) {
-  .stat-full-table th:first-child,
-  .stat-full-table td:first-child,
-  .stat-full-table th.col-resultado,
-  .stat-full-table td.col-resultado {
+  /* No desktop, o cabeçalho fica sticky no topo (top: 0), mas livre na horizontal (left: auto) */
+  .stat-full-table thead th:first-child,
+  .stat-full-table thead th.col-resultado {
+    position: sticky !important;
+    top: 0 !important;
+    left: auto !important;
+    z-index: 5 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    box-shadow: none !important;
+  }
+  /* Células de dados no desktop fluem normalmente (sem ser sticky) */
+  .stat-full-table tbody td:first-child,
+  .stat-full-table tbody td.col-resultado {
     position: static !important;
     width: auto !important;
     min-width: 0 !important;
@@ -747,5 +758,22 @@ details[open] > summary span:last-child { content: "−"; }
 
 /* ── TAB APOSTAR — sem destaque especial de cor ── */
 .tab-btn-apostar.ativa{border-bottom-color:var(--verde-light)}
+
+/* Sticky header for Rank/Classification table */
+.rank-table thead th {
+  position: sticky !important;
+  top: 86px !important;
+  z-index: 5 !important;
+  background: var(--fundo2) !important;
+}
+.rank-table thead th.col-apostador {
+  left: 0 !important;
+  z-index: 6 !important;
+}
+@media (min-width: 601px) {
+  .rank-table thead th {
+    top: 102px !important;
+  }
+}
 
 
