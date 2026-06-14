@@ -564,6 +564,14 @@ select{appearance:none;cursor:pointer}
     box-shadow: none !important;
   }
 }
+@media (max-width: 600px) {
+  .stat-full-table th:not(.col-jogo):not(.col-resultado),
+  .stat-full-table td:not(.col-jogo):not(.col-resultado) {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+}
 .progresso-barra-wrap{background:var(--fundo2);border-radius:4px;height:6px;overflow:hidden;margin:4px 0}
 .progresso-barra-fill{height:100%;background:linear-gradient(90deg,var(--verde-dark),var(--verde));border-radius:4px;transition:width .4s ease}
 /* ===== POLISH VISUAL ===== */
