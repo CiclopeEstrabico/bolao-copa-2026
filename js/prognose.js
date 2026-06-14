@@ -709,10 +709,8 @@ window.PROGNOSE = {
       });
     }
 
+    // Sempre ordenar alfabeticamente, independente de ter resultado ou não
     rowsData.sort((a, b) => {
-      if (temRes) {
-        if (b.pts !== a.pts) return b.pts - a.pts;
-      }
       if (b.hasPalpite !== a.hasPalpite) return b.hasPalpite ? 1 : -1;
       return a.apelido.localeCompare(b.apelido);
     });
