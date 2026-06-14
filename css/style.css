@@ -231,7 +231,7 @@ select{appearance:none;cursor:pointer}
     top: 0 !important;
     z-index: 5 !important;
     background: var(--fundo2) !important;
-    box-shadow: 0 2px 0 0 var(--verde-light) !important;
+    box-shadow: inset 0 -2px 0 0 var(--verde-light) !important;
   }
   .compilacao-table thead th:first-child {
     position: sticky !important;
@@ -239,7 +239,7 @@ select{appearance:none;cursor:pointer}
     left: 0 !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
-    box-shadow: 0 2px 0 0 var(--verde-light), 2px 0 5px rgba(0,0,0,0.1) !important;
+    box-shadow: inset 0 -2px 0 0 var(--verde-light), 2px 0 5px rgba(0,0,0,0.1) !important;
   }
   .compilacao-table thead th.col-resultado {
     position: sticky !important;
@@ -247,7 +247,7 @@ select{appearance:none;cursor:pointer}
     left: 115px !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
-    box-shadow: 0 2px 0 0 var(--verde-light), 2px 0 5px rgba(0,0,0,0.1) !important;
+    box-shadow: inset 0 -2px 0 0 var(--verde-light), 2px 0 5px rgba(0,0,0,0.1) !important;
   }
 }
 @media (max-width: 600px) {
@@ -258,7 +258,7 @@ select{appearance:none;cursor:pointer}
     top: 0 !important;
     z-index: 5 !important;
     background: var(--fundo2) !important;
-    box-shadow: 0 2px 0 0 var(--verde-light) !important;
+    box-shadow: inset 0 -2px 0 0 var(--verde-light) !important;
   }
   .compilacao-table thead th:first-child {
     position: sticky !important;
@@ -266,7 +266,7 @@ select{appearance:none;cursor:pointer}
     left: 0 !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
-    box-shadow: 0 2px 0 0 var(--verde-light), 2px 0 5px rgba(0,0,0,0.1) !important;
+    box-shadow: inset 0 -2px 0 0 var(--verde-light), 2px 0 5px rgba(0,0,0,0.1) !important;
   }
   .compilacao-table thead th.col-resultado {
     position: sticky !important;
@@ -274,7 +274,7 @@ select{appearance:none;cursor:pointer}
     left: 115px !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
-    box-shadow: 0 2px 0 0 var(--verde-light), 2px 0 5px rgba(0,0,0,0.1) !important;
+    box-shadow: inset 0 -2px 0 0 var(--verde-light), 2px 0 5px rgba(0,0,0,0.1) !important;
   }
 }
 
@@ -947,7 +947,7 @@ details[open] > summary span:last-child { content: "−"; }
 .compilacao-table thead th {
   border: 1px solid #292d35 !important;
   border-bottom: 1px solid #292d35 !important;
-  box-shadow: 0 2px 0 0 var(--verde-light) !important;
+  box-shadow: inset 0 -2px 0 0 var(--verde-light) !important;
 }
 .compilacao-table th:first-child,
 .compilacao-table td:first-child {
@@ -962,7 +962,7 @@ details[open] > summary span:last-child { content: "−"; }
 .stat-full-table thead th {
   border: 1px solid #292d35 !important;
   border-bottom: 1px solid #292d35 !important;
-  box-shadow: 0 2px 0 0 var(--verde-light) !important;
+  box-shadow: inset 0 -2px 0 0 var(--verde-light) !important;
 }
 @media (max-width: 600px) {
   .stat-full-table tbody td:first-child,
@@ -978,11 +978,11 @@ details[open] > summary span:last-child { content: "−"; }
 .rank-table thead th {
   border: 1px solid #292d35 !important;
   border-bottom: 1px solid #292d35 !important;
-  box-shadow: 0 2px 0 0 var(--verde-light) !important;
+  box-shadow: inset 0 -2px 0 0 var(--verde-light) !important;
 }
 .rank-table thead th.col-apostador {
   border: 1px solid #292d35 !important;
-  box-shadow: 0 2px 0 0 var(--verde-light), 2px 0 5px rgba(0,0,0,0.1) !important;
+  box-shadow: inset 0 -2px 0 0 var(--verde-light), 2px 0 5px rgba(0,0,0,0.1) !important;
 }
 @media (max-width: 600px) {
   .rank-table tbody td.col-apostador {
@@ -997,7 +997,7 @@ details[open] > summary span:last-child { content: "−"; }
     top: 0 !important;
     z-index: 5 !important;
     background: var(--card) !important;
-    box-shadow: 0 2px 0 0 var(--verde-light) !important;
+    box-shadow: inset 0 -2px 0 0 var(--verde-light) !important;
   }
   .rank-table thead th.col-apostador {
     position: sticky !important;
@@ -1005,7 +1005,7 @@ details[open] > summary span:last-child { content: "−"; }
     left: 0 !important;
     z-index: 8 !important;
     background: var(--card) !important;
-    box-shadow: 0 2px 0 0 var(--verde-light), 2px 0 5px rgba(0,0,0,0.1) !important;
+    box-shadow: inset 0 -2px 0 0 var(--verde-light), 2px 0 5px rgba(0,0,0,0.1) !important;
   }
 }
 
@@ -1016,7 +1016,7 @@ details[open] > summary span:last-child { content: "−"; }
     top: 0 !important;
     z-index: 5 !important;
     background: var(--card) !important;
-    box-shadow: 0 2px 0 0 var(--verde-light) !important;
+    box-shadow: inset 0 -2px 0 0 var(--verde-light) !important;
   }
   .rank-table thead th.col-apostador {
     position: sticky !important;
@@ -1024,7 +1024,7 @@ details[open] > summary span:last-child { content: "−"; }
     left: 0 !important;
     z-index: 8 !important;
     background: var(--card) !important;
-    box-shadow: 0 2px 0 0 var(--verde-light), 2px 0 5px rgba(0,0,0,0.1) !important;
+    box-shadow: inset 0 -2px 0 0 var(--verde-light), 2px 0 5px rgba(0,0,0,0.1) !important;
   }
 }
 
@@ -1032,5 +1032,5 @@ details[open] > summary span:last-child { content: "−"; }
 .tabela-detalhe thead th {
   border: 1px solid #292d35 !important;
   border-bottom: 1px solid #292d35 !important;
-  box-shadow: 0 2px 0 0 var(--verde-light) !important;
+  box-shadow: inset 0 -2px 0 0 var(--verde-light) !important;
 }
