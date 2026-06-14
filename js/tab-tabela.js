@@ -223,10 +223,10 @@ window.renderTabela = function() {
         }
       };
 
-      // Inicializar
-      requestAnimationFrame(() => {
+      // Inicializar: aguardar o scrollTo(0,0) de renderAbaAtiva() tomar efeito
+      setTimeout(() => {
         update();
-      });
+      }, 50);
 
       let ticking = false;
       window.addEventListener('scroll', () => {

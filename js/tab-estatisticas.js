@@ -1022,8 +1022,8 @@ window.renderEstatisticas = function () {
     const dataHoraStr = formatarDataBRT(jogo.utc, false);
     const faseLbl = getFaseLabel(jogo);
     const dataHoraLbl = dataHoraStr + (faseLbl ? ", " + faseLbl : "");
-    const tooltipH = !isMobile ? ` title="${nomeTime(hC)}"` : '';
-    const tooltipA = !isMobile ? ` title="${nomeTime(aC)}"` : '';
+    const tooltipH = '';
+    const tooltipA = '';
     h += `<td class="${isMobile ? 'col-jogo' : 'stat-col-jogo'}" onclick="PROGNOSE.abrirModal('${jogo.id}')" style="text-align:left;padding:6px 8px;cursor:pointer">
             <div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">${dataHoraLbl}</div>
             <div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">
@@ -1102,7 +1102,9 @@ window.renderEstatisticas = function () {
   // Tooltip unificado (hover desktop + toque mobile) em todos os [title] da aba
   window.injetarTooltipsMobile(el);
 
-  // Frozen header para mobile (CSS sticky não funciona com overflow-x:auto)
+  // Frozen header para mobile:
+  // stat-table-wrap usa overflow-y:clip que propaga o sticky para a janela (não cria scroll interno).
+  // Por isso monitoramos o scroll da página (window), não do wrapper.
   requestAnimationFrame(() => {
     const table = el.querySelector('.stat-full-table');
     const wrapper = el.querySelector('.stat-table-wrap');
@@ -1145,8 +1147,8 @@ window.renderHtH = function () {
     const b = APP.bracket?.[jogo.id] || {}; const hC = b.home || jogo.home; const aC = b.away || jogo.away;
     const cor1 = v1 > v2 ? "var(--verde-ok)" : v1 < v2 ? "#f87171" : "var(--texto2)";
     const cor2 = v2 > v1 ? "var(--verde-ok)" : v2 < v1 ? "#f87171" : "var(--texto2)";
-    const tooltipH = !isMob ? ' title="' + nomeTime(hC).replace(/"/g, '&quot;') + '"' : '';
-    const tooltipA = !isMob ? ' title="' + nomeTime(aC).replace(/"/g, '&quot;') + '"' : '';
+    const tooltipH = '';
+    const tooltipA = '';
     rows += '<tr><td class="' + (isMob ? 'col-jogo' : 'stat-col-jogo') + '" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="text-align:left;font-size:.73rem;position:sticky;left:0;background:var(--fundo);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1);cursor:pointer">' +
       '<div style="display:flex;align-items:center;gap:4px;width:100%">' + htmlBandeira(hC, 14) + ' <span class="' + (isMob ? 'compilacao-time-nome comp-sigla' : 'stat-time-nome') + '"' + tooltipH + '>' + hDisplay + '</span> <span style="color:var(--texto2)">×</span> <span class="' + (isMob ? 'compilacao-time-nome comp-sigla' : 'stat-time-nome') + '"' + tooltipA + '>' + aDisplay + '</span> ' + htmlBandeira(aC, 14) + '</div></td>' +
       '<td onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="font-size:.72rem;cursor:pointer">' + r.homeGoals + '×' + r.awayGoals + '</td>' +

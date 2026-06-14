@@ -3,17 +3,17 @@
  * ───────────────────────────────────────
  * Fix for mobile: CSS position:sticky on <thead> doesn't work
  * when the table is inside a wrapper with overflow-x:auto.
- * 
+ *
  * This JS clones the <thead> into a fixed-position element that
  * sticks below the header+tabs bar, and syncs horizontal scroll.
- * Uses a cached-position system to run layout-safe, zero-reflow updates.
+ * Uses live getBoundingClientRect() to avoid stale layout issues.
  */
 (function () {
   if (typeof window === 'undefined') return;
 
   const MOBILE_BREAKPOINT = 600;
 
-  /** altura do header + tabs (medida dinamicamente) */
+  /** Altura do header + tabs (medida dinamicamente) */
   function getStickyTop() {
     const header = document.querySelector('.header');
     const tabs = document.querySelector('.tabs-wrap');
@@ -21,16 +21,6 @@
     if (header) h += header.getBoundingClientRect().height;
     if (tabs) h += tabs.getBoundingClientRect().height;
     return h;
-  }
-
-  /** Retorna a posição do topo absoluto de um elemento na página */
-  function getAbsoluteTop(element) {
-    let top = 0;
-    while (element) {
-      top += element.offsetTop;
-      element = element.offsetParent;
-    }
-    return top;
   }
 
   /** Cria ou atualiza o header fixo para uma tabela */
@@ -77,18 +67,6 @@
     return { frozen, wrapper, table, thead };
   }
 
-  function updateCachedPositions() {
-    _instances.forEach(inst => {
-      if (!inst) return;
-      const { table, thead } = inst;
-      if (table && thead) {
-        inst.tableTop = getAbsoluteTop(table);
-        inst.tableHeight = table.offsetHeight;
-        inst.theadHeight = thead.offsetHeight;
-      }
-    });
-  }
-
   /** Atualiza a visibilidade e posição de todos os frozen headers (zero-reflow) */
   function updateAll() {
     if (window.innerWidth > MOBILE_BREAKPOINT) {
@@ -102,8 +80,8 @@
 
     _instances.forEach(inst => {
       if (!inst) return;
-      const { frozen, wrapper } = inst;
-      if (!frozen || !wrapper) return;
+      const { frozen, wrapper, table, thead } = inst;
+      if (!frozen || !wrapper || !table || !thead) return;
 
       // Se a aba está oculta (display:none), esconder frozen
       if (!wrapper.offsetParent) {
@@ -111,14 +89,16 @@
         return;
       }
 
-      const tableTop = inst.tableTop || 0;
-      const tableHeight = inst.tableHeight || 0;
-      const theadHeight = inst.theadHeight || 0;
+      // Usa getBoundingClientRect() para posição sempre precisa (sem cache stale)
+      const tableRect = table.getBoundingClientRect();
+      const tableTop = tableRect.top;        // posição relativa ao viewport
+      const tableHeight = tableRect.height;
+      const theadHeight = thead.getBoundingClientRect().height || 40;
 
-      // Mostrar frozen header quando o thead original está acima do stickyTop
-      // e a tabela ainda está parcialmente visível
-      const theadHidden = scrollTop + stickyTop > tableTop + theadHeight;
-      const tableStillVisible = scrollTop + stickyTop < tableTop + tableHeight;
+      // O thead está oculto quando seu bottom (tableTop + theadHeight) ficou acima do stickyTop
+      const theadHidden = tableTop + theadHeight < stickyTop;
+      // A tabela ainda está visível (parte dela está abaixo do stickyTop)
+      const tableStillVisible = tableTop + tableHeight > stickyTop;
 
       if (theadHidden && tableStillVisible) {
         frozen.style.display = 'block';
@@ -156,13 +136,10 @@
     if (inst) {
       _instances.push(inst);
 
-      // Calcular posições no próximo frame para garantir layout estabelecido
-      requestAnimationFrame(() => {
-        inst.tableTop = getAbsoluteTop(table);
-        inst.tableHeight = table.offsetHeight;
-        inst.theadHeight = table.querySelector('thead')?.offsetHeight || 40;
+      // Primeiro update com atraso: garante que window.scrollTo(0,0) de mudarAba() já tomou efeito
+      setTimeout(() => {
         updateAll();
-      });
+      }, 50);
 
       // Sync horizontal scroll
       wrapper.addEventListener('scroll', () => {
@@ -199,9 +176,8 @@
     }
   }, { passive: true });
 
-  // Listener de resize (pra recalcular posições e limpar em transição mobile→desktop)
+  // Listener de resize
   window.addEventListener('resize', () => {
-    updateCachedPositions();
     requestAnimationFrame(updateAll);
   }, { passive: true });
 })();
