@@ -107,7 +107,7 @@ window.renderClassificacao = function () {
   const _isMobileClass = window.innerWidth <= 600;
   h += '<div class="card" style="padding:0;overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="tabela-detalhe rank-table">';
   h += '<thead><tr><th style="width:36px">Pos</th><th class="col-apostador" style="text-align:left;position:sticky;left:0;background:var(--card);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Apostador</th>';
-  h += '<th title="Pontos Totais" class="col-stat-rank" style="text-align:left;padding-left:6px">🏆 Pts</th>';
+  h += '<th title="Pontos Totais" class="col-stat-rank col-stat-pts" style="text-align:left;padding-left:6px">🏆 Pts</th>';
   h += '<th title="Todos os resultados corretos" class="col-stat-rank" style="text-align:left;padding-left:6px">✓ Res.</th>';
   h += '<th title="Resultados que renderam Bônus+1" class="col-stat-rank" style="text-align:left;padding-left:6px">✨ Bônus+1</th>';
   h += '<th title="Placares exatos com menos de 4 gols" class="col-stat-rank" style="text-align:left;padding-left:6px">🎯 Placar+3</th>';

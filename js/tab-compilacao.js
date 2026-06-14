@@ -110,8 +110,8 @@ window.renderCompilacao = function () {
   });
 
   h += '<div class="compilacao-wrap"><table class="compilacao-table"><thead><tr>';
-  h += '<th class="col-jogo" style="position:sticky;left:0;background:var(--fundo2);z-index:2;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Jogo</th>';
-  h += '<th class="col-resultado" style="z-index:1">Resultado</th>';
+  h += '<th class="col-jogo" style="position:sticky;left:0;background:var(--fundo2);z-index:7;min-width:130px;max-width:130px;width:130px">Jogo</th>';
+  h += '<th class="col-resultado" style="background:var(--fundo2)">Resultado</th>';
   for (const a of ranking) {
     const nomeA = a.apelido || a.nome || "?";
     const nomeEscaped = (a.nome || nomeA).replace(/'/g, "\\'");
@@ -148,9 +148,9 @@ window.renderCompilacao = function () {
         const ph = r.penaltis_home ?? 0; const pa = r.penaltis_away ?? 0;
         resHtml += '<div style="font-size:.58rem;color:var(--amber);margin-top:1px;font-weight:700">PEN ' + ph + 'x' + pa + '</div>';
       }
-      h += '<td class="col-resultado" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="color:var(--verde-ok);vertical-align:middle;cursor:pointer">' + resHtml + '</td>';
+      h += '<td class="col-resultado" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="background:var(--fundo2);color:var(--verde-ok);vertical-align:middle;cursor:pointer">' + resHtml + '</td>';
     } else {
-      h += '<td class="col-resultado" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="color:var(--texto2);cursor:pointer">–</td>';
+      h += '<td class="col-resultado" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="background:var(--fundo2);color:var(--texto2);cursor:pointer">–</td>';
     }
     // Palpites de cada apostador (incluindo MODELO)
     for (const a of ranking) {
@@ -213,7 +213,7 @@ window.renderCompilacao = function () {
     const escOf = resOficialEsp[rowE.key] || "";
     const resultadoOficialReal = escOf && _jogoOficialPorKey[rowE.key];
     const nomeOf = window.TEAMS_BY_CODE?.[escOf]?.name || (escOf ? escOf : "—");
-    h += '<td class="col-resultado" style="font-weight:700;font-size:.65rem;color:var(--dourado)">' + (resultadoOficialReal ? nomeOf : (gruposTravados ? nomeOf : "—")) + '</td>';
+    h += '<td class="col-resultado" style="background:var(--fundo2);font-weight:700;font-size:.65rem;color:var(--dourado)">' + (resultadoOficialReal ? nomeOf : (gruposTravados ? nomeOf : "—")) + '</td>';
 
     for (const a of ranking) {
       const espA = a.isModelo ? (window.getModelo ? window.getModelo() : a)?.especiais || {} : (a.especiais || {});

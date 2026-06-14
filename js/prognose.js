@@ -322,25 +322,47 @@ window.PROGNOSE = {
     h += '</div>';
     h += '<div style="flex-shrink:0;width:20px;display:flex;align-items:center;justify-content:flex-end">' + htmlBandeira(aC, 20) + '</div>';
     h += '</div>';
-    // Percentuais e legendas alinhados com os segmentos da barra
-    h += '<div style="display:flex;gap:8px">';
-    h += '<div style="width:20px;flex-shrink:0"></div>';
-    h += '<div style="flex:1;display:flex;gap:2px">';
-    h += '<div style="flex:' + c.home + ';min-width:0;overflow:visible">';
-    h += '<div style="font-size:.72rem;font-weight:900;color:#86efac;white-space:nowrap">' + pH + '%</div>';
-    h += '<div style="font-size:.61rem;color:rgba(134,239,172,.7);white-space:nowrap">Vitória</div>';
-    h += '</div>';
-    h += '<div style="flex:' + c.draw + ';min-width:0;overflow:visible;text-align:center">';
-    h += '<div style="font-size:.72rem;font-weight:700;color:var(--texto2);white-space:nowrap">' + pD + '%</div>';
-    h += '<div style="font-size:.61rem;color:var(--texto2);white-space:nowrap">Empate</div>';
-    h += '</div>';
-    h += '<div style="flex:' + c.away + ';min-width:0;overflow:visible;text-align:right">';
-    h += '<div style="font-size:.72rem;font-weight:900;color:#fca5a5;white-space:nowrap">' + pA + '%</div>';
-    h += '<div style="font-size:.61rem;color:rgba(252,165,165,.7);white-space:nowrap">Vitória</div>';
-    h += '</div>';
-    h += '</div>';
-    h += '<div style="width:20px;flex-shrink:0"></div>';
-    h += '</div>';
+    // Percentuais e legendas: layout adaptativo para evitar sobreposição
+    // Quando as probabilidades são muito desiguais, exibimos os 3 valores em linha separada
+    const minSegPct = Math.min(c.home, c.draw, c.away) * 100;
+    const useStackedLabels = minSegPct < 8; // segmento muito pequeno → layout empilhado abaixo
+    if (useStackedLabels) {
+      // Layout alternativo: 3 colunas fixas abaixo da barra, sem overflow
+      h += '<div style="display:flex;justify-content:space-between;margin-top:4px;gap:4px">';
+      h += '<div style="min-width:0">';
+      h += '<div style="font-size:.72rem;font-weight:900;color:#86efac;white-space:nowrap">' + pH + '%</div>';
+      h += '<div style="font-size:.61rem;color:rgba(134,239,172,.7);white-space:nowrap">Vitória</div>';
+      h += '</div>';
+      h += '<div style="min-width:0;text-align:center">';
+      h += '<div style="font-size:.72rem;font-weight:700;color:var(--texto2);white-space:nowrap">' + pD + '%</div>';
+      h += '<div style="font-size:.61rem;color:var(--texto2);white-space:nowrap">Empate</div>';
+      h += '</div>';
+      h += '<div style="min-width:0;text-align:right">';
+      h += '<div style="font-size:.72rem;font-weight:900;color:#fca5a5;white-space:nowrap">' + pA + '%</div>';
+      h += '<div style="font-size:.61rem;color:rgba(252,165,165,.7);white-space:nowrap">Vitória</div>';
+      h += '</div>';
+      h += '</div>';
+    } else {
+      // Layout padrão: proporcional aos segmentos
+      h += '<div style="display:flex;gap:8px">';
+      h += '<div style="width:20px;flex-shrink:0"></div>';
+      h += '<div style="flex:1;display:flex;gap:2px">';
+      h += '<div style="flex:' + c.home + ';min-width:0;overflow:visible">';
+      h += '<div style="font-size:.72rem;font-weight:900;color:#86efac;white-space:nowrap">' + pH + '%</div>';
+      h += '<div style="font-size:.61rem;color:rgba(134,239,172,.7);white-space:nowrap">Vitória</div>';
+      h += '</div>';
+      h += '<div style="flex:' + c.draw + ';min-width:0;overflow:visible;text-align:center">';
+      h += '<div style="font-size:.72rem;font-weight:700;color:var(--texto2);white-space:nowrap">' + pD + '%</div>';
+      h += '<div style="font-size:.61rem;color:var(--texto2);white-space:nowrap">Empate</div>';
+      h += '</div>';
+      h += '<div style="flex:' + c.away + ';min-width:0;overflow:visible;text-align:right">';
+      h += '<div style="font-size:.72rem;font-weight:900;color:#fca5a5;white-space:nowrap">' + pA + '%</div>';
+      h += '<div style="font-size:.61rem;color:rgba(252,165,165,.7);white-space:nowrap">Vitória</div>';
+      h += '</div>';
+      h += '</div>';
+      h += '<div style="width:20px;flex-shrink:0"></div>';
+      h += '</div>';
+    }
     h += '</div>';
 
     // ── 2. Gols esperados como pills com bandeira ──

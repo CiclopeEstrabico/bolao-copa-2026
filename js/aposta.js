@@ -259,6 +259,14 @@ async function salvarCadastro() {
   apelido = apelido.substring(0, 10);
 
   if (!nome) { alert("Informe seu nome."); return; }
+
+  // Desabilita o botão durante o salvamento para evitar cliques duplos
+  const btnSalvar = document.querySelector("#aposta-main .btn-primario");
+  if (btnSalvar) {
+    btnSalvar.disabled = true;
+    btnSalvar.textContent = "Salvando...";
+  }
+
   _apostador.nome = nome;
   _apostador.apelido = apelido || nome.split(" ")[0].replace(/[^A-Za-zÀ-ÖØ-öø-ÿ. ]/g, '').substring(0, 10);
   if (_apostador.apelido.length > 0) {
@@ -287,7 +295,20 @@ async function salvarCadastro() {
   if (_apostador.ordem !== undefined) apostadorLimpo.ordem = _apostador.ordem;
 
   _apostador = apostadorLimpo;
-  await gravarApostador(_apostador);
+
+  try {
+    await gravarApostador(_apostador);
+  } catch (e) {
+    console.error("[aposta] Erro ao gravar cadastro no Firestore:", e);
+    // Restaura o estado para permitir nova tentativa
+    _apostador.novo = true;
+    if (btnSalvar) {
+      btnSalvar.disabled = false;
+      btnSalvar.textContent = "Salvar e Começar";
+    }
+    alert("Erro ao salvar seu cadastro. Verifique sua conexão e tente novamente.");
+    return;
+  }
 
   // Sincroniza apelido no doc do token (se estava vazio)
   if (_apostador.token && _apostador.apelido) {
@@ -491,10 +512,63 @@ function renderEspeciaisAposta(res) {
   return h;
 }
 
+/**
+ * Garante que o documento pai apostadores/{id} existe no Firestore antes de
+ * qualquer escrita na subcoleção dados/palpites.
+ *
+ * Para apostadores já cadastrados (99% dos casos) o .get() confirma que o doc
+ * existe e retorna imediatamente — custo: 1 Read, 0 Writes.
+ *
+ * Para o caso raro de doc pai ausente (apostador fantasma / race condition no
+ * cadastro), (re)cria o documento com os dados do _apostador em memória.
+ *
+ * Retorna false se _apostador não tiver os dados mínimos para ser gravado
+ * (novo = true ainda não passou por salvarCadastro) — bloqueia o write.
+ */
+async function _garantirDocPaiExiste() {
+  if (!_apostador?.id) return false;
+
+  // Apostador ainda não concluiu o cadastro — não deixa salvar nada
+  if (_apostador.novo === true) return false;
+
+  try {
+    const paiRef = APP.db.collection("apostadores").doc(_apostador.id);
+    const paiSnap = await paiRef.get();
+    if (!paiSnap.exists) {
+      // Doc pai ausente: recria a partir dos dados em memória.
+      // Só chega aqui em casos de race condition ou cadastro incompleto antigo.
+      const apostadorLimpo = {
+        id: _apostador.id,
+        nome: _apostador.nome || "",
+        apelido: _apostador.apelido || "",
+        token: _apostador.token || "",
+        ativo: _apostador.ativo !== undefined ? _apostador.ativo : true,
+        novo: false,
+        criado_em: _apostador.criado_em || new Date().toISOString(),
+      };
+      if (_apostador.especiais) apostadorLimpo.especiais = _apostador.especiais;
+      if (_apostador.ordem !== undefined) apostadorLimpo.ordem = _apostador.ordem;
+      await paiRef.set(apostadorLimpo, { merge: true });
+      console.warn("[aposta] Doc pai recriado para", _apostador.id);
+    }
+    return true;
+  } catch (e) {
+    console.error("[aposta] Erro ao verificar/recriar doc pai:", e);
+    return false;
+  }
+}
+
 async function gravarEspecialAposta(sel) {
   const key = sel.dataset.key;
   if (!_apostador.especiais) _apostador.especiais = {};
   _apostador.especiais[key] = sel.value;
+
+  // Garante doc pai antes de escrever na subcoleção
+  const paiOk = await _garantirDocPaiExiste();
+  if (!paiOk) {
+    console.warn("[aposta] gravarEspecialAposta bloqueado: cadastro incompleto.");
+    return;
+  }
 
   const docRef = APP.db.collection("apostadores").doc(_apostador.id).collection("dados").doc("palpites");
   await docRef.set({ especiais: _apostador.especiais, token: _apostador.token || "" }, { merge: true });
@@ -627,6 +701,14 @@ async function salvarTodosPalpites(silencioso = false) {
   }
 
   if (houveMudanca) {
+    // ── Garante que o doc pai existe antes de escrever na subcoleção ──
+    const paiOk = await _garantirDocPaiExiste();
+    if (!paiOk) {
+      console.warn("[aposta] salvarTodosPalpites bloqueado: cadastro incompleto.");
+      if (!silencioso) exibirToastAposta("❌ Erro: cadastro incompleto. Recarregue a página.", false);
+      return;
+    }
+
     // ── Novo formato: 1 documento compacto (1 write) ──────────────────────────
     mapaCompacto.token = _apostador.token || "";
     if (window.APP?.configStatus?.liberado_grupos === true) {

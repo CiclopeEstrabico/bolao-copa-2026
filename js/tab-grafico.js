@@ -274,7 +274,8 @@ window._graficoIrEvolucao = function () {
 // ── Labels de valor por métrica ────────────────────────────────────────────
 function _fmtVal(metricaAtiva, val, shortFmt = false) {
   if (metricaAtiva === 'pct') {
-    return shortFmt ? Math.round(parseFloat(val)) + '%' : val + '%';
+    // Mesmo formato do gráfico de Projeção: XX.X%
+    return parseFloat(val).toFixed(1) + '%';
   }
   if (metricaAtiva === 'pts') {
     return val.toFixed(1); // sempre XX.X, inclusive em landscape
@@ -737,10 +738,10 @@ function _renderChance(rankingCompleto, chances) {
   }
 
   const chartHeight = (isMobile && isLandscape) ? '180px' : '280px';
-  const marginBot = (isMobile && isLandscape) ? '65px' : '80px';
+  const marginBot = (isMobile && isLandscape) ? '70px' : '86px';
   const shortFmt = isMobile && isLandscape;
-  // Valor rotacionado (vertical) em landscape/desktop para evitar sobreposição com 70+ barras
-  const valVertical = !(isMobile && !isLandscape); // true em landscape e desktop
+  // Valor sempre vertical — evita sobreposição em todos os modos incluindo portrait mobile
+  const valVertical = true;
 
   let h = '<div class="card" style="padding:20px 10px;">';
 
@@ -763,21 +764,21 @@ function _renderChance(rankingCompleto, chances) {
   h += `<div style="display:flex;align-items:flex-end;gap:${gap}px;height:${chartHeight};padding-bottom:10px;border-bottom:1px solid var(--borda);margin-bottom:${marginBot};position:relative;${minWidthStyle}">`;
 
   const rankingHumanosC = ranking.filter(a => !a.isModelo);
-  for (const a of ranking) {
+  for (let _ci = 0; _ci < ranking.length; _ci++) {
+    const a = ranking[_ci];
     if (a.isModelo) continue; // Modelo não tem chance calculada vs humanos — não exibir
     const val = chances[a.id] || 0;
     const perc = (val / maxVal) * 100;
     const cor = _rainbowColor(rankingHumanosC.indexOf(a), rankingHumanosC.length);
     const valFmt = shortFmt ? Math.round(val) + '%' : val.toFixed(1) + '%';
+    // Posição entre humanos
+    const posNum = rankingHumanosC.indexOf(a) + 1;
+    const posStr = `${posNum}\u00ba- `;
     h += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative;height:100%;justify-content:flex-end;z-index:1">`;
-    if (valVertical) {
-      const barPercSafe = Math.max(2, perc);
-      h += `<div style="position:absolute;bottom:calc(${barPercSafe.toFixed(1)}% + 4px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${valFmt}</div>`;
-    } else {
-      h += `<div style="font-size:${valFontSize};font-weight:800;color:var(--texto);margin-bottom:2px;white-space:nowrap">${valFmt}</div>`;
-    }
+    const barPercSafe = Math.max(2, perc);
+    h += `<div style="position:absolute;bottom:calc(${barPercSafe.toFixed(1)}% + 4px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${valFmt}</div>`;
     h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2, perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
-    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${a.nome}</div>`;
+    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${posStr}${a.nome}</div>`;
     h += '</div>';
   }
 
@@ -859,7 +860,8 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
     const targetColW = Math.floor(screenPx / targetVisible);
     barWidth = Math.max(14, Math.min(24, targetColW - 2));
     gap = 2; // gap mínimo — barras quase encostadas
-    valFontSize = '.68rem';
+    // pct mostra XX.X% (mais largo) — usar fonte menor igual ao gráfico Projeção
+    valFontSize = (metricaAtiva === 'pct') ? '.52rem' : '.68rem';
     nameFontSize = '.70rem';
 
     const minPx = n * (barWidth + gap) + gap;
@@ -915,31 +917,32 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
   }
 
   const chartHeight = (isMobile && isLandscape) ? '180px' : '280px';
-  const marginBot = (isMobile && isLandscape) ? '65px' : '80px';
+  const marginBot = (isMobile && isLandscape) ? '70px' : '86px';
   const shortFmt = isMobile && isLandscape;
-  // Valor rotacionado (vertical) em landscape/desktop para evitar sobreposição com 70+ barras
-  const valVertical = !(isMobile && !isLandscape); // true em landscape e desktop
+  // Valor rotacionado (vertical) em landscape/desktop E portrait mobile para evitar sobreposição
+  const valVertical = true; // sempre vertical — evita sobreposição em todos os modos
 
   h += `<div style="display:flex;align-items:flex-end;gap:${gap}px;height:${chartHeight};padding-bottom:10px;border-bottom:1px solid var(--borda);margin-bottom:${marginBot};position:relative;${minWidthStyle}">`;
   // Índice arco-íris apenas entre apostadores não-Modelo (ordem no ranking filtrado)
   const rankingHumanos = ranking.filter(a => !a.isModelo);
-  for (const a of ranking) {
+  for (let _bi = 0; _bi < ranking.length; _bi++) {
+    const a = ranking[_bi];
     const val = a[metricaAtiva];
     const perc = (val / maxVal) * 100;
     const cor = a.isModelo ? '#b8cfe8' : _rainbowColor(rankingHumanos.indexOf(a), rankingHumanos.length);
+    // Posição: apenas para não-Modelo (posição real no ranking filtrado entre humanos)
+    const posNum = a.isModelo ? null : (rankingHumanos.indexOf(a) + 1);
+    const posStr = posNum !== null ? `${posNum}\u00ba- ` : '';
     const nomeBarra = a.isModelo
       ? `<span style='font-weight:normal;color:#b8cfe8'>${a.nome}</span>`
-      : a.nome;
+      : `${posStr}${a.nome}`;
     h += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative;height:100%;justify-content:flex-end;z-index:1">`;
-    if (valVertical) {
-      // Label vertical ancorado logo acima do topo da barra
-      const barPercSafe = Math.max(2, perc);
-      h += `<div style="position:absolute;bottom:calc(${barPercSafe.toFixed(1)}% + 4px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${_fmtVal(metricaAtiva, val, shortFmt)}</div>`;
-    } else {
-      h += `<div style="font-size:${valFontSize};font-weight:800;color:var(--texto);margin-bottom:4px;white-space:nowrap">${_fmtVal(metricaAtiva, val, shortFmt)}</div>`;
-    }
+    // Label vertical ancorado logo acima do topo da barra (sempre vertical)
+    const barPercSafe = Math.max(2, perc);
+    h += `<div style="position:absolute;bottom:calc(${barPercSafe.toFixed(1)}% + 4px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${_fmtVal(metricaAtiva, val, shortFmt)}</div>`;
     h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2, perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
-    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${nomeBarra}</div>`;
+    // Nome centralizado abaixo da barra
+    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${nomeBarra}</div>`;
     h += '</div>';
   }
 
@@ -1405,6 +1408,16 @@ function _graficoExibirMacaco(cache) {
     return { id: a.id, nome: (a.apelido || a.nome || '?').substring(0, 14), pts: st.total, isModelo: false };
   }).sort((a, b) => b.pts - a.pts);
 
+  // Inserir Modelo na posição correta do ranking
+  const modeloGrafM = window.getModelo ? window.getModelo() : null;
+  if (modeloGrafM && APP._modeloCarregado) {
+    const stMod = calcularPontosApostador(APP.palpitesModelo || {}, res, modeloGrafM, espOficiaisGraf);
+    const itemMod = { id: modeloGrafM.id, nome: 'Modelo', pts: stMod.total, isModelo: true };
+    const insertIdx = rankingCompleto.findIndex(a => a.pts < stMod.total);
+    if (insertIdx === -1) rankingCompleto.push(itemMod);
+    else rankingCompleto.splice(insertIdx, 0, itemMod);
+  }
+
   const loading = document.getElementById('macaco-loading');
   if (loading) {
     loading.outerHTML = _renderMacaco(rankingCompleto, cache);
@@ -1413,7 +1426,7 @@ function _graficoExibirMacaco(cache) {
 
 function _renderMacaco(rankingCompleto, cache) {
   const filtro = window._graficoFiltroApos;
-  let ranking = rankingCompleto.filter(a => filtro.has(a.id) && !a.isModelo);
+  let ranking = rankingCompleto.filter(a => filtro.has(a.id));
   if (!ranking.length) return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador selecionado.</div>';
 
   // Ordenação: rank preserva ordem da classificação (rankingCompleto já ordenado com desempates)
@@ -1466,8 +1479,9 @@ function _renderMacaco(rankingCompleto, cache) {
 
   const chartHeight = (isMobile && isLandscape) ? '180px' : '280px';
   const chartHeightPx = (isMobile && isLandscape) ? 180 : 280;
-  const marginBot = (isMobile && isLandscape) ? '65px' : '80px';
-  const valVertical = !(isMobile && !isLandscape);
+  const marginBot = (isMobile && isLandscape) ? '70px' : '86px';
+  // Sempre vertical — evita sobreposição em todos os modos incluindo portrait mobile
+  const valVertical = true;
 
   // Percentuais das linhas do macaco (0% = topo, 100% = base do chart)
   const mediaPerc = Math.max(0, Math.min(100, (1 - media / maxVal) * 100));
@@ -1476,11 +1490,19 @@ function _renderMacaco(rankingCompleto, cache) {
 
   let h = '<div class="card" style="padding:20px 10px;">';
 
-  // Cabeçalho
-  h += `<div style="text-align:center;margin-bottom:14px">
+  // Cabeçalho com legenda integrada
+  const COR_MACACO_LINHA = '#8B5E3C';
+  h += `<div style="text-align:center;margin-bottom:6px">
     <span style="font-size:.85rem;font-weight:700;color:var(--dourado)">Macaco Médio</span>
-    <span style="font-size:.78rem;font-weight:700;color:${'#8B5E3C'};margin-left:8px;white-space:nowrap">🐒 ${media.toFixed(1)} pts</span>
+    <span style="font-size:.78rem;font-weight:700;color:${COR_MACACO_LINHA};margin-left:8px;white-space:nowrap">🐒 ${media.toFixed(1)} pts</span>
   </div>`;
+  // Legenda abaixo do título — tipo de traço + ícone + valor
+  h += `<div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">`;
+  h += `<div style="display:flex;align-items:center;gap:5px;font-size:.66rem;color:var(--texto2)">`;
+  h += `<svg width="28" height="10" style="flex-shrink:0"><line x1="0" y1="5" x2="28" y2="5" stroke="${COR_MACACO_LINHA}" stroke-width="3" stroke-dasharray="6,3"/></svg>`;
+  h += `🐒 Média &nbsp;<strong style="color:${COR_MACACO_LINHA}">${media.toFixed(1)} pts</strong>`;
+  h += `</div>`;
+  h += `</div>`;
 
   let minWidthStyle = '';
   if (needsScroll) {
@@ -1489,23 +1511,29 @@ function _renderMacaco(rankingCompleto, cache) {
     minWidthStyle = `min-width:${minPx}px;`;
   }
 
+  // Wrapper relativo para posicionar os labels do eixo Y à direita
+  h += `<div style="position:relative;">`;
   h += `<div style="display:flex;align-items:flex-end;gap:${gap}px;height:${chartHeight};padding-bottom:10px;border-bottom:1px solid var(--borda);margin-bottom:${marginBot};position:relative;${minWidthStyle}">`;
 
   // ── Barras dos apostadores (cores arco-íris, igual pontos, z-index:1) ──
-  const COR_MACACO_LINHA = '#8B5E3C';
-  for (const a of ranking) {
+  const rankingHumanosM = ranking.filter(a => !a.isModelo);
+  for (let _mi = 0; _mi < ranking.length; _mi++) {
+    const a = ranking[_mi];
     const val = a.pts;
     const perc = (val / maxVal) * 100;
-    const cor = _rainbowColor(ranking.indexOf(a), ranking.length);
+    const cor = a.isModelo ? '#b8cfe8' : _rainbowColor(rankingHumanosM.indexOf(a), rankingHumanosM.length);
+    const posNum = a.isModelo ? null : (rankingHumanosM.indexOf(a) + 1);
+    const posStr = posNum !== null ? `${posNum}\u00ba- ` : '';
+    const nomeLabel = a.isModelo
+      ? `<span style='font-weight:normal;color:#b8cfe8'>${a.nome}</span>`
+      : `${posStr}${a.nome}`;
     h += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative;height:100%;justify-content:flex-end;z-index:1">`;
-    if (valVertical) {
-      const barPercSafe = Math.max(2, perc);
-      h += `<div style="position:absolute;bottom:calc(${barPercSafe.toFixed(1)}% + 4px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${val.toFixed(1)}</div>`;
-    } else {
-      h += `<div style="font-size:${valFontSize};font-weight:800;color:var(--texto);margin-bottom:4px;white-space:nowrap">${val.toFixed(1)}</div>`;
-    }
+    // Valor sempre vertical
+    const barPercSafe = Math.max(2, perc);
+    h += `<div style="position:absolute;bottom:calc(${barPercSafe.toFixed(1)}% + 4px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${val.toFixed(1)}</div>`;
     h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2, perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
-    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${a.nome}</div>`;
+    // Nome centralizado abaixo
+    h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${nomeLabel}</div>`;
     h += '</div>';
   }
 
@@ -1519,8 +1547,14 @@ function _renderMacaco(rankingCompleto, cache) {
   // Linha da média
   h += `<div style="position:absolute;left:0;right:0;top:${mediaPerc.toFixed(1)}%;height:0;border-top:3px dashed ${COR_MACACO_LINHA};pointer-events:none;z-index:2"></div>`;
 
+  // ── Labels do eixo Y (à direita, fora do fluxo) ──
+  h += `<div style="position:absolute;right:-2px;top:${sigmaHiPerc.toFixed(1)}%;transform:translateY(-50%);font-size:.68rem;font-weight:700;color:rgba(139,94,60,0.85);pointer-events:none;z-index:3;line-height:1">+σ</div>`;
+  h += `<div style="position:absolute;right:-2px;top:${mediaPerc.toFixed(1)}%;transform:translateY(-50%);font-size:.72rem;font-weight:900;color:${COR_MACACO_LINHA};pointer-events:none;z-index:3;line-height:1">μ</div>`;
+  h += `<div style="position:absolute;right:-2px;top:${sigmaLoPerc.toFixed(1)}%;transform:translateY(-50%);font-size:.68rem;font-weight:700;color:rgba(139,94,60,0.85);pointer-events:none;z-index:3;line-height:1">−σ</div>`;
+
   h += '</div>';
-  if (needsScroll) h += '</div>';
+  h += '</div>'; // fecha wrapper relativo
+  if (needsScroll) h += '</div>'; // fecha wrapper scroll
 
   h += `<div style="text-align:center;font-size:.62rem;color:var(--texto2);margin-top:6px">10.000 macacos · chutes: 1-0, 1-1, 0-1 (prob. igual)</div>`;
 
@@ -1582,20 +1616,36 @@ window._graficoExportarJPG = function () {
     rankingExp.forEach(a => { a.chance = chances[a.id] || 0; });
     rankingExp = rankingExp.sort((a, b) => b.chance - a.chance);
   } else if (metricaAtiva === 'macaco') {
+    // Inserir Modelo antes de ordenar
+    const modeloGrafExp = window.getModelo ? window.getModelo() : null;
+    if (modeloGrafExp && APP._modeloCarregado) {
+      const stMod = calcularPontosApostador(APP.palpitesModelo || {}, res, modeloGrafExp, espOficiaisGraf);
+      rankingExp.push({
+        id: modeloGrafExp.id,
+        nome: 'Modelo',
+        pts: stMod.total,
+        isModelo: true,
+      });
+    }
     rankingExp = rankingExp.sort((a, b) => b.pts - a.pts);
   } else {
     rankingExp = rankingExp.sort((a, b) => b[metricaAtiva] - a[metricaAtiva]);
   }
 
-  // Aplicar filtro ativo (igual à tela) e remover Modelo
-  rankingExp = rankingExp.filter(a => !a.isModelo && (!_expFiltro || _expFiltro.has(a.id)));
+  // Aplicar filtro ativo (igual à tela); para macaco, incluir Modelo se no filtro
+  if (metricaAtiva === 'macaco') {
+    rankingExp = rankingExp.filter(a => !_expFiltro || _expFiltro.has(a.id));
+  } else {
+    // Aplicar filtro ativo (igual à tela) e remover Modelo
+    rankingExp = rankingExp.filter(a => !a.isModelo && (!_expFiltro || _expFiltro.has(a.id)));
+  }
 
   const n = rankingExp.length;
   if (!n) { alert('Nenhum apostador para exportar.'); return; }
 
   // ── Dimensões do canvas (paisagem fixa) ──
   const PADDING_LEFT = 20;
-  const PADDING_RIGHT = 20;
+  const PADDING_RIGHT = metricaAtiva === 'macaco' ? 38 : 20; // extra space for greek labels on macaco
   const PADDING_TOP = 80;  // espaço para título + labels verticais de valor
   const PADDING_BOTTOM = 120; // espaço para nomes verticais
   const CHART_HEIGHT = 260;
@@ -1627,10 +1677,35 @@ window._graficoExportarJPG = function () {
 
   const macacoCache = (metricaAtiva === 'macaco') ? (window._graficoMacacoCache || { media: 0, sigma: 0 }) : null;
   if (macacoCache && macacoCache.media > 0) {
-    ctx.fillStyle = '#8B5E3C';
+    const COR_MAC_LEG = '#8B5E3C';
+    // Linha 1: valor central da média
+    ctx.fillStyle = COR_MAC_LEG;
     ctx.font = 'bold 12px system-ui, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`🐒 ${macacoCache.media.toFixed(1)} pts`, TOTAL_W / 2, 48);
+    ctx.fillText(`🐒 ${macacoCache.media.toFixed(1)} pts`, TOTAL_W / 2, 46);
+
+    // Linha 2: legenda inline — μ (média) e ±σ (banda)
+    const LEG_Y = 64;
+    const CX = TOTAL_W / 2;
+    // item μ (linha sólida grossa)
+    const SEG = 28;
+    ctx.save();
+    ctx.strokeStyle = COR_MAC_LEG; ctx.lineWidth = 3; ctx.setLineDash([6, 4]);
+    ctx.beginPath(); ctx.moveTo(CX - 120, LEG_Y - 3); ctx.lineTo(CX - 120 + SEG, LEG_Y - 3); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = COR_MAC_LEG; ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText('μ  Média  ' + macacoCache.media.toFixed(1) + ' pts', CX - 120 + SEG + 5, LEG_Y);
+
+    // item ±σ (banda)
+    ctx.fillStyle = 'rgba(139,94,60,0.38)';
+    ctx.fillRect(CX + 30, LEG_Y - 8, SEG, 11);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(139,94,60,0.70)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(CX + 30, LEG_Y - 8); ctx.lineTo(CX + 30 + SEG, LEG_Y - 8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(CX + 30, LEG_Y + 3); ctx.lineTo(CX + 30 + SEG, LEG_Y + 3); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = 'rgba(139,94,60,0.85)'; ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText('±σ  Banda ±1 desvio', CX + 30 + SEG + 5, LEG_Y);
   }
 
   const vals = rankingExp.map(a =>
@@ -1653,13 +1728,14 @@ window._graficoExportarJPG = function () {
   ctx.stroke();
 
   // Barras e labels
+  const rankingExpHumanos = rankingExp.filter(a => !a.isModelo);
   rankingExp.forEach((a, i) => {
     const val = vals[i];
     const perc = val / maxVal;
     const barH = Math.max(2, Math.floor(perc * CHART_HEIGHT));
     const x = PADDING_LEFT + i * (BAR_WIDTH + GAP) + GAP;
     const y = CHART_BOTTOM - barH;
-    const cor = _rainbowColor(i, n);
+    const cor = a.isModelo ? '#b8cfe8' : _rainbowColor(rankingExpHumanos.indexOf(a), rankingExpHumanos.length);
 
     // Barra
     ctx.fillStyle = cor;
@@ -1675,7 +1751,7 @@ window._graficoExportarJPG = function () {
     ctx.font = 'bold 8px system-ui, sans-serif'; // +10% vs original
     ctx.textAlign = 'left';
     const valLabel = metricaAtiva === 'pct'
-      ? val + '%'
+      ? parseFloat(val).toFixed(1) + '%'
       : metricaAtiva === 'chance'
         ? val.toFixed(1) + '%'
         : (metricaAtiva === 'pts' || metricaAtiva === 'macaco')
@@ -1686,14 +1762,17 @@ window._graficoExportarJPG = function () {
     ctx.fillText(valLabel, 0, 0);
     ctx.restore();
 
-    // Nome vertical abaixo
+    // Nome vertical abaixo — centralizado na barra (textAlign center + translate ao centro)
+    // Inclui prefixo de posição (ex: "1º- Fulano") para não-Modelo
+    const posNumExp = a.isModelo ? null : (rankingExpHumanos.indexOf(a) + 1);
+    const nomeLabelExp = posNumExp !== null ? `${posNumExp}\u00ba- ${a.nome}` : a.nome;
     ctx.save();
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '10px system-ui, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.translate(x + BAR_WIDTH / 2 + 4, CHART_BOTTOM + 8);
+    ctx.fillStyle = a.isModelo ? '#b8cfe8' : '#94a3b8';
+    ctx.font = (a.isModelo ? '' : '') + '10px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.translate(x + BAR_WIDTH / 2, CHART_BOTTOM + 8);
     ctx.rotate(Math.PI / 2); // texto de baixo pra cima
-    ctx.fillText(a.nome, 0, 0);
+    ctx.fillText(nomeLabelExp, 0, 0);
     ctx.restore();
   });
 
@@ -1719,6 +1798,14 @@ window._graficoExportarJPG = function () {
     ctx.save(); ctx.strokeStyle = COR_MAC; ctx.lineWidth = 3;
     ctx.setLineDash([6, 4]);
     ctx.beginPath(); ctx.moveTo(xL, yMedia); ctx.lineTo(xR, yMedia); ctx.stroke();
+    ctx.restore();
+    // Labels do eixo Y (letras gregas à direita)
+    ctx.save();
+    ctx.font = 'bold 11px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(139,94,60,0.85)'; ctx.fillText('+σ', xR + 4, ySigmaHi + 4);
+    ctx.fillStyle = COR_MAC; ctx.fillText('μ', xR + 4, yMedia + 4);
+    ctx.fillStyle = 'rgba(139,94,60,0.85)'; ctx.fillText('−σ', xR + 4, ySigmaLo + 4);
     ctx.restore();
   }
 

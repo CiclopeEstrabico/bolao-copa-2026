@@ -949,6 +949,17 @@ async function criarToken() {
 
 async function deletarToken(tokenDocId) {
   if (!_adminAutenticado()) return alert("Não autorizado.");
+
+  // Bloquear exclusão se o token já está em uso por algum apostador.
+  // O tokenDocId pode ser o próprio secret (tokens novos) ou tok_X (legados).
+  // Verificamos se algum apostador usa esse docId como token OU o campo .token corresponde.
+  const tokensUsados = new Set((APP.apostadores || []).map(a => a.token).filter(Boolean));
+  const aptComToken = (APP.apostadores || []).find(a => a.token === tokenDocId);
+  if (aptComToken || tokensUsados.has(tokenDocId)) {
+    const nomeApt = aptComToken ? (aptComToken.apelido || aptComToken.nome || aptComToken.id) : tokenDocId;
+    return alert("⚠️ TOKEN EM USO\n\nEste token já está sendo utilizado pelo apostador \"" + nomeApt + "\" e não pode ser excluído.\n\nPara remover o token, primeiro exclua o apostador na aba Apostadores.");
+  }
+
   if (!confirm("🗑 DELEÇÃO DE TOKEN\n\nVocê vai deletar este token do banco de dados permanentemente.\n\nDeseja CONFIRMAR a exclusão deste token?")) return;
   try {
     await APP.db.collection("tokens").doc(tokenDocId).delete();

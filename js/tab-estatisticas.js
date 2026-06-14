@@ -243,7 +243,7 @@ window.renderEstatisticas = function () {
     }
   }
 
-  // --- Montanha Russa: maior Σ|Δposição| (mín 5 jogos) ---
+  // --- Montanha Russa: maior Σ|Δposição| / nJogos (mín 5 jogos) ---
   const montanhaScores = {};
   if (totalJogos >= 5 && snapshots.length >= 2) {
     for (const r2 of ranking) {
@@ -254,7 +254,8 @@ window.renderEstatisticas = function () {
         const posDepois = snapshots[i].find(x => x.participante.id === aId)?.posicao || 0;
         soma += Math.abs(posDepois - posAntes);
       }
-      montanhaScores[aId] = soma;
+      // Média por jogo (divisão pelo número de snapshots – 1 = número de intervalos)
+      montanhaScores[aId] = snapshots.length > 1 ? soma / (snapshots.length - 1) : 0;
     }
   }
   const destMontanha = obterDestaques(r => montanhaScores[r.participante.id] !== undefined ? montanhaScores[r.participante.id] : -1, true, true, score => totalJogos >= 5 && score > 0);
@@ -301,21 +302,23 @@ window.renderEstatisticas = function () {
   const _tubaraoArr = destTubarao.bestArr;
   const tubaraoScore = destTubarao.bestScore;
 
-  // --- Derreteu: maior queda desde o melhor histórico (mín 10 jogos) ---
+  // --- Derreteu: maior queda nos últimos 20 jogos (oposto de Fênix, mín 15 jogos) ---
   const derreteuScores = {};
-  if (totalJogos >= 10 && snapshots.length > 0) {
-    for (const r2 of ranking) {
-      const aId = r2.participante.id;
-      const posAtual = r2.posicao;
-      let melhorPos = posAtual;
-      for (const snap of snapshots) {
-        const posSnap = snap.find(x => x.participante.id === aId)?.posicao || posAtual;
-        if (posSnap < melhorPos) melhorPos = posSnap;
-      }
-      derreteuScores[aId] = posAtual - melhorPos;
+  if (totalJogos >= 15) {
+    const ultimos20IdsDer = jogosOrdenadosSeq.slice(-20).map(j => j.id);
+    const resAntDerreteu = {};
+    for (const [id, val] of Object.entries(res)) {
+      if (!ultimos20IdsDer.includes(id)) resAntDerreteu[id] = val;
+    }
+    const rankingAntDerreteu = gerarRanking(pals, resAntDerreteu, apos, esp);
+    for (let i = 0; i < ranking.length; i++) {
+      const aId = ranking[i].participante.id;
+      const posAtual = ranking[i].posicao;
+      const posAnt = rankingAntDerreteu.findIndex(x => x.participante.id === aId) + 1;
+      derreteuScores[aId] = posAtual - posAnt; // positivo = caiu
     }
   }
-  const destDerreteu = obterDestaques(r => derreteuScores[r.participante.id] || 0, false, true, score => totalJogos >= 10 && score > 0);
+  const destDerreteu = obterDestaques(r => derreteuScores[r.participante.id] || 0, false, true, score => totalJogos >= 15 && score > 0);
   const _derreteuArr = destDerreteu.bestArr;
   const derreteuScore = destDerreteu.bestScore;
 
@@ -723,7 +726,7 @@ window.renderEstatisticas = function () {
 
   h += _dCard("🥶", "Pé Frio",
     jogosFeitos.length === 0 ? '—' : _tieName(_peFrioArr),
-    jogosFeitos.length === 0 ? '— (sem jogos)' : (!peFrioApo || maiorSeqFria === 0 ? '—' : maiorSeqFria + ' seguidos zerado'),
+    jogosFeitos.length === 0 ? '— (sem jogos)' : (!peFrioApo || maiorSeqFria === 0 ? '—' : maiorSeqFria + ' zerados seguidos'),
     "#7dd3fc", "Quem teve a maior sequência seguida de jogos com zero pontos — o recorde de fase ruim da Copa.");
 
   h += _dCard("🏄", "Maré Alta",
@@ -753,9 +756,9 @@ window.renderEstatisticas = function () {
 
   // ── Linha 2 ──────────────────────────────────────────────────────────────
   h += _dCard("🧈", "Derreteu",
-    totalJogos < 10 ? '—' : (_derreteuArr ? _tieName(_derreteuArr) : '—'),
-    totalJogos < 10 ? '— (< 10 jogos)' : (!_derreteuArr || derreteuScore === 0 ? '—' : '−' + derreteuScore + ' posições'),
-    "#f97316", "Quem mais caiu desde a melhor posição que já ocupou na Copa. Mínimo 10 jogos.");
+    totalJogos < 15 ? '—' : (_derreteuArr ? _tieName(_derreteuArr) : '—'),
+    totalJogos < 15 ? '— (< 15 jogos)' : (!_derreteuArr || derreteuScore === 0 ? '—' : '−' + derreteuScore + ' posições'),
+    "#f97316", "Quem mais caiu no ranking nos últimos 20 jogos. Oposto do Fênix. Começa a ser calculado a partir do 15º jogo da Copa.");
 
   h += _dCard("🏰", "Rei da Colina",
     _reiArr ? _tieName(_reiArr) : '—',
@@ -769,13 +772,13 @@ window.renderEstatisticas = function () {
 
   h += _dCard("🎢", "Montanha Russa",
     totalJogos < 5 ? '—' : (_montanhaArr ? _tieName(_montanhaArr) : '—'),
-    totalJogos < 5 ? '— (< 5 jogos)' : (!_montanhaArr || montanhaScore === 0 ? '—' : montanhaScore + ' posições de variação'),
-    "#e879f9", "Quem mais oscilou de posição no ranking: soma das variações absolutas Σ|Δposição| entre cada snapshot. Mínimo 5 jogos.");
+    totalJogos < 5 ? '— (< 5 jogos)' : (!_montanhaArr || montanhaScore === 0 ? '—' : montanhaScore.toFixed(2) + ' pos./jogo'),
+    "#e879f9", "Quem mais oscilou de posição no ranking: média de |Δposição| por jogo. Mínimo 5 jogos.");
 
   h += _dCard("🐢", "Tartaruga",
     totalJogos < 10 ? '—' : (_tartarugaArr ? _tieName(_tartarugaArr) : '—'),
-    totalJogos < 10 ? '— (< 10 jogos)' : (!_tartarugaArr ? '—' : tartarugaScore + ' posições de variação'),
-    "#84cc16", "Quem menos oscilou de posição — sempre no mesmo lugar. Mesma fórmula da Montanha Russa, mas o menor valor vence. Mínimo 10 jogos.");
+    totalJogos < 10 ? '— (< 10 jogos)' : (!_tartarugaArr ? '—' : tartarugaScore.toFixed(2) + ' pos./jogo'),
+    "#84cc16", "Quem menos oscilou de posição — sempre no mesmo lugar. Média de |Δposição| por jogo, o menor valor vence. Mínimo 10 jogos.");
 
   h += _dCard("🔮", "Vidente",
     jogosFeitos.length === 0 ? '—' : _tieName(_melhorResArr),
@@ -933,7 +936,7 @@ window.renderEstatisticas = function () {
       h += '<div class="fav-apostadores-row">';
       h += '<div style="display:flex;align-items:center;gap:8px;font-weight:600;min-width:0;">' +
            htmlBandeira(code, 18) +
-           '<span class="stat-time-nome" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (info?.name || code) + '</span>' +
+           '<span class="stat-time-nome" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left">' + (info?.name || code) + '</span>' +
            (campeaoOficial ? '<span style="color:var(--dourado);margin-left:4px" title="Campeão Confirmado">✓</span>' : '') +
            '</div>';
       h += '<div style="background:var(--fundo2);border-radius:5px;height:10px;overflow:hidden;border:1px solid var(--borda)">' +
@@ -1185,10 +1188,13 @@ function _dCard(icon, label, nome, sub, cor, tooltip) {
 
 function _jogoStatRow(jogoId, hC, aC, r, acertos, total, cor) {
   const pct = total ? Math.round(acertos / total * 100) : 0;
+  const isMob = window.innerWidth <= 600;
+  const hName = isMob ? getSigla(hC) : getShortName(hC);
+  const aName = isMob ? getSigla(aC) : getShortName(aC);
   return '<div onclick="PROGNOSE.abrirModal(\'' + jogoId + '\')" onmouseover="this.style.background=\'rgba(255,255,255,0.04)\'" onmouseout="this.style.background=\'\'" style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;transition:background 0.15s">' +
-    htmlBandeira(hC, 16) + ' <span class="stat-time-nome">' + getShortName(hC) + '</span>' +
+    htmlBandeira(hC, 16) + ' <span class="stat-time-nome">' + hName + '</span>' +
     '<span style="font-size:.72rem;color:var(--texto2);font-weight:700">' + r.homeGoals + '×' + r.awayGoals + '</span>' +
-    htmlBandeira(aC, 16) + ' <span class="stat-time-nome">' + getShortName(aC) + '</span>' +
+    htmlBandeira(aC, 16) + ' <span class="stat-time-nome">' + aName + '</span>' +
     '<div style="flex:1;background:var(--fundo2);border-radius:3px;height:6px;margin:0 6px">' +
     '<div style="width:' + pct + '%;height:100%;background:' + cor + ';border-radius:3px"></div></div>' +
     '<span style="font-size:.7rem;color:' + cor + ';font-weight:700;min-width:40px;text-align:right">' + acertos + '/' + total + '</span></div>';
