@@ -42,6 +42,12 @@ window.renderCompilacao = function () {
   const pals = APP.palpites || {};
   if (!apos.length) { el.innerHTML = '<div class="card"><p style="color:var(--texto2)">Nenhum apostador cadastrado.</p></div>'; return; }
 
+  // Cache: evita re-renderizar quando nada mudou (BONUS: melhora performance mobile)
+  const cacheKey = JSON.stringify({ fase: window._compFase, ordem: window._compOrdem, resKeys: Object.keys(res).join(','), apLen: apos.length });
+  if (window._compilacaoCacheKey === cacheKey && el.dataset.rendered === '1') return;
+  window._compilacaoCacheKey = cacheKey;
+
+
   // Filtros de fase
   const fases = ["todos", "grupos", "16avos", "oitavas", "quartas", "semis", "terceiro", "final"];
   const faseAtiva = window._compFase || "todos";
@@ -275,6 +281,7 @@ window.renderCompilacao = function () {
   h += '</div>';
 
   el.innerHTML = h;
+  el.dataset.rendered = '1'; // marca como renderizado para o cache
 
   // Tooltip unificado (hover desktop + toque mobile) — cobre os <th> dos apostadores
   window.injetarTooltipsMobile(el);

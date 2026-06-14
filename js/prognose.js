@@ -632,30 +632,28 @@ window.PROGNOSE = {
       h += '</div>';
       h += '</div>';
 
-      // Detalhamento extra de acertos/erros
+      // Detalhamento extra como barras (mesmo padrão das métricas acima)
       const pctErros = Math.round(s.errosResultado / s.total * 100);
       const pctBonus = Math.round(s.bonus1 / s.total * 100);
       const pctPlac3 = Math.round(s.placar3 / s.total * 100);
       const pctPlac5 = Math.round(s.placar5 / s.total * 100);
 
-      h += '<div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:6px;margin-top:10px">';
-      h += '<div style="background:var(--fundo2);border-radius:8px;padding:8px 6px;text-align:center;border:1px solid rgba(239,68,68,.15)">';
-      h += '<div style="font-size:.54rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">Erraram Resultado</div>';
-      h += '<div style="font-size:.9rem;font-weight:800;color:#fca5a5">' + s.errosResultado + '/' + s.total + ' <span style="font-size:.62rem;font-weight:500;opacity:.85">(' + pctErros + '%)</span></div>';
-      h += '</div>';
-      h += '<div style="background:var(--fundo2);border-radius:8px;padding:8px 6px;text-align:center;border:1px solid rgba(155,247,62,.15)">';
-      h += '<div style="font-size:.54rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">Tiveram Bônus+1</div>';
-      h += '<div style="font-size:.9rem;font-weight:800;color:#9bf73e">' + s.bonus1 + '/' + s.total + ' <span style="font-size:.62rem;font-weight:500;opacity:.85">(' + pctBonus + '%)</span></div>';
-      h += '</div>';
-      h += '<div style="background:var(--fundo2);border-radius:8px;padding:8px 6px;text-align:center;border:1px solid rgba(255,255,102,.15)">';
-      h += '<div style="font-size:.54rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">Placares+3</div>';
-      h += '<div style="font-size:.9rem;font-weight:800;color:#ffff66">' + s.placar3 + '/' + s.total + ' <span style="font-size:.62rem;font-weight:500;opacity:.85">(' + pctPlac3 + '%)</span></div>';
-      h += '</div>';
-      h += '<div style="background:var(--fundo2);border-radius:8px;padding:8px 6px;text-align:center;border:1px solid rgba(249,115,22,.15)">';
-      h += '<div style="font-size:.54rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">Placares+5</div>';
-      h += '<div style="font-size:.9rem;font-weight:800;color:#fb923c">' + s.placar5 + '/' + s.total + ' <span style="font-size:.62rem;font-weight:500;opacity:.85">(' + pctPlac5 + '%)</span></div>';
-      h += '</div>';
-      h += '</div>';
+      const metricasBars = [
+        { label: 'Erraram resultado', count: s.errosResultado, pct: pctErros, cor: 'rgba(239,68,68,.55)', corTexto: '#fca5a5' },
+        { label: 'Bônus+1 (gols/diferença)', count: s.bonus1, pct: pctBonus, cor: 'rgba(155,247,62,.55)', corTexto: '#9bf73e' },
+        { label: 'Acertaram placar (+3)', count: s.placar3, pct: pctPlac3, cor: 'rgba(255,255,102,.55)', corTexto: '#ffff66' },
+        { label: 'Acertaram placar (+5)', count: s.placar5, pct: pctPlac5, cor: 'rgba(249,115,22,.55)', corTexto: '#fb923c' },
+      ];
+      metricasBars.forEach(({ label, count, pct, cor, corTexto }) => {
+        h += '<div style="margin-bottom:10px">';
+        h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">';
+        h += '<span style="font-size:.7rem;font-weight:600;color:var(--texto)">' + label + '</span>';
+        h += '<span style="font-size:.72rem;font-weight:800;color:' + corTexto + '">' + count + '/' + s.total + ' <span style="font-size:.62rem;font-weight:600;opacity:.85">(' + pct + '%)</span></span>';
+        h += '</div>';
+        h += '<div style="background:var(--fundo2);border-radius:4px;height:8px;overflow:hidden">';
+        h += '<div style="width:' + pct + '%;height:100%;background:' + cor + ';border-radius:4px;transition:width .5s ease"></div>';
+        h += '</div></div>';
+      });
 
       h += '</div>';
     }

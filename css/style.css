@@ -231,6 +231,8 @@ select{appearance:none;cursor:pointer}
     top: 0 !important;
     z-index: 5 !important;
     background: var(--fundo2) !important;
+    /* box-shadow como borda inferior verde: funciona com border-collapse:collapse */
+    box-shadow: 0 2px 0 0 var(--verde-light) !important;
     border-bottom: 2px solid var(--verde-light) !important;
   }
   .compilacao-table thead th:first-child {
@@ -239,6 +241,7 @@ select{appearance:none;cursor:pointer}
     left: 0 !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
+    box-shadow: 2px 2px 0 0 var(--verde-light) !important;
   }
   .compilacao-table thead th.col-resultado {
     position: sticky !important;
@@ -246,14 +249,18 @@ select{appearance:none;cursor:pointer}
     left: 115px !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
+    box-shadow: 2px 2px 0 0 var(--verde-light) !important;
   }
 }
 @media (max-width: 600px) {
+  /* No mobile, sticky dentro do compilacao-wrap (overflow:auto).
+   * Usar box-shadow inset em vez de border para evitar conflito com border-collapse:collapse. */
   .compilacao-table thead th {
     position: sticky !important;
     top: 0 !important;
     z-index: 5 !important;
     background: var(--fundo2) !important;
+    box-shadow: 0 2px 0 0 var(--verde-light) !important;
     border-bottom: 2px solid var(--verde-light) !important;
   }
   .compilacao-table thead th:first-child {
@@ -262,6 +269,7 @@ select{appearance:none;cursor:pointer}
     left: 0 !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
+    box-shadow: 2px 2px 0 0 var(--verde-light) !important;
   }
   .compilacao-table thead th.col-resultado {
     position: sticky !important;
@@ -269,6 +277,7 @@ select{appearance:none;cursor:pointer}
     left: 115px !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
+    box-shadow: 2px 2px 0 0 var(--verde-light) !important;
   }
 }
 
@@ -321,6 +330,13 @@ select{appearance:none;cursor:pointer}
 .compilacao-table th,.compilacao-table td{padding:5px 6px;border:1px solid var(--borda);white-space:nowrap;text-align:center}
 .compilacao-table th:first-child,.compilacao-table td:first-child{position:sticky;left:0;z-index:2;background:var(--fundo2)}
 .compilacao-table th{background:var(--fundo2);color:var(--texto2);font-size:.64rem;font-weight:700}
+/* Suprimir a borda inferior verde nas células TH dentro do frozen-thead (o container já tem a borda) */
+.frozen-thead .compilacao-table thead th,
+.frozen-thead .stat-full-table thead th,
+.frozen-thead .rank-table thead th,
+.frozen-thead table thead th {
+  border-bottom-color: var(--borda) !important;
+}
 .col-jogo, .stat-col-jogo{text-align:left !important;min-width:80px;white-space:normal !important}
 .celula-placar{background:rgba(34,197,94,.22);color:#86efac;font-weight:700}
 .celula-res{background:rgba(34,197,94,.1);color:#86efac}
@@ -335,9 +351,15 @@ select{appearance:none;cursor:pointer}
 .modal-overlay.aberto{opacity:1;pointer-events:all}
 .modal-box{width:100%;max-width:560px;max-height:calc(100dvh - env(safe-area-inset-top, 0px));min-height:60vh;background:var(--card);border-radius:var(--radius) var(--radius) 0 0;padding:20px;overflow-y:auto;transform:translateY(100%);transition:transform .28s cubic-bezier(.16,1,.3,1);position:relative}
 .modal-overlay.aberto .modal-box{transform:translateY(0)}
-@media(min-width:600px){.modal-overlay{align-items:center}.modal-box{border-radius:var(--radius);max-height:92vh;min-height:0}}
+@media(min-width:600px){.modal-overlay{align-items:center}.modal-box{border-radius:var(--radius);max-height:92vh;min-height:0;max-width:720px}}
 .modal-close{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.08);border:none;border-radius:50%;width:28px;height:28px;color:var(--texto2);font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--trans)}
 .modal-close:hover{background:rgba(255,255,255,.15);color:var(--texto)}
+/* Scrollbar do modal: premium, igual ao compilacao */
+.modal-box{scrollbar-width:thin;scrollbar-color:var(--verde) rgba(255,255,255,.06)}
+.modal-box::-webkit-scrollbar{width:6px}
+.modal-box::-webkit-scrollbar-track{background:rgba(255,255,255,.04);border-radius:99px}
+.modal-box::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--verde-dark),var(--verde-light));border-radius:99px;border:1px solid rgba(13,17,23,.6);box-shadow:0 0 5px rgba(0,200,120,.3)}
+.modal-box::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,var(--verde),#00ffaa)}
 .modal-tabs{display:flex;border-bottom:1px solid var(--borda);margin:-4px 0 14px;gap:0}
 .modal-tab{padding:8px 14px;font-size:.76rem;font-weight:600;color:var(--texto2);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:var(--trans)}
 .modal-tab.ativo{color:var(--verde-light);border-bottom-color:var(--verde-light)}

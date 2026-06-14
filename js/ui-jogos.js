@@ -1,8 +1,8 @@
 /**
  * ui-jogos.js v3 - layout grid, penaltis centrados, 2 toggles, stats no modal
  */
-let _ordemJogos = localStorage.getItem("bolao_ordem") || "dias";
-let _modoGrupos = localStorage.getItem("bolao_grupos_modo") || "baixo";
+let _ordemJogos = "dias";    // padrão: Por Dia (ignora localStorage para reset automático)
+let _modoGrupos = "baixo";   // padrão: Grupos no Fim
 
 function setOrdemJogos(v) { _ordemJogos = v; localStorage.setItem("bolao_ordem", v); renderAbaAtiva(); }
 function setModoGrupos(v) { _modoGrupos = v; localStorage.setItem("bolao_grupos_modo", v); renderAbaAtiva(); }
