@@ -194,6 +194,24 @@ select{appearance:none;cursor:pointer}
   .compilacao-wrap{
     max-height:calc(100vh - 130px);
   }
+  /* Reduz a coluna Resultado em 25% (de ~75px para 56px) */
+  .compilacao-table th.col-resultado,
+  .compilacao-table td.col-resultado {
+    width: 56px !important;
+    min-width: 56px !important;
+    max-width: 56px !important;
+  }
+  /* Reduz cada coluna de cada apostador em 12% (de max-width:50px para 44px) */
+  .compilacao-table th:not(.col-jogo):not(.col-resultado) {
+    max-width: 44px !important;
+    min-width: 44px !important;
+    width: 44px !important;
+  }
+  .compilacao-table td:not(.col-jogo):not(.col-resultado) {
+    max-width: 44px !important;
+    min-width: 44px !important;
+    width: 44px !important;
+  }
 }
 
 /* Coluna resultado sticky na horizontal (ao rolar pra direita) */

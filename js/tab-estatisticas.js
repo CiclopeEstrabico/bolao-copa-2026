@@ -955,7 +955,7 @@ window.renderEstatisticas = function () {
   h += '<div class="card card-sem-padding"><div class="card-titulo">📈 Estatísticas Avançadas por Jogo</div><div class="compilacao-wrap"><table class="compilacao-table stat-full-table" style="font-size:.7rem">';
   h += '<thead><tr>';
   h += '<th class="stat-col-jogo" style="text-align:left;position:sticky;left:0;background:var(--fundo2);z-index:2;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Jogo</th>';
-  h += '<th class="col-resultado" title="Placar oficial do jogo">Resultado</th>';
+  h += '<th class="col-resultado" title="Placar oficial do jogo">' + (window.innerWidth <= 600 ? 'Result' : 'Resultado') + '</th>';
   h += '<th title="Nº de apostadores que apostaram na vitória do Time 1 (mandante)">Apostas T1</th>';
   h += '<th title="Nº de apostadores que apostaram em empate">Apostas Emp</th>';
   h += '<th title="Nº de apostadores que apostaram na vitória do Time 2 (visitante)">Apostas T2</th>';

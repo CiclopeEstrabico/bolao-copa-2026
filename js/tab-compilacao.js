@@ -112,7 +112,7 @@ window.renderCompilacao = function () {
   let h = '';
   h += '<div class="compilacao-wrap"><table class="compilacao-table"><thead><tr>';
   h += '<th class="col-jogo">Jogo</th>';
-  h += '<th class="col-resultado">Resultado</th>';
+  h += '<th class="col-resultado">' + (window.innerWidth <= 600 ? 'Result' : 'Resultado') + '</th>';
   for (const a of ranking) {
     const nomeA = a.apelido || a.nome || "?";
     const nomeEscaped = (a.nome || nomeA).replace(/'/g, "\\'");
