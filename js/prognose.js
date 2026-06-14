@@ -240,13 +240,16 @@ window.PROGNOSE = {
       ov.addEventListener("click", e => { if (e.target === ov) this.fecharModal(); });
       ov._clickEv = true;
 
-      // Swipe down para fechar (mobile)
-      let startY = 0, startScroll = 0;
+      // Swipe down para fechar (mobile) — só fecha se o scroll interno estiver no topo
+      let startY = 0, startScroll = 0, _swipingEl = null;
       ov.addEventListener("touchstart", e => {
         startY = e.touches[0].clientY;
         startScroll = box.scrollTop;
+        // Detectar se o toque começa dentro de um elemento com scroll próprio
+        _swipingEl = e.target.closest('[data-scroll-inner]');
       }, { passive: true });
       ov.addEventListener("touchmove", e => {
+        if (_swipingEl) return; // não interceptar scroll interno
         const dy = e.touches[0].clientY - startY;
         if (dy > 0 && startScroll <= 0) {
           box.style.transform = `translateY(${Math.min(dy * 0.6, 160)}px)`;
@@ -254,6 +257,7 @@ window.PROGNOSE = {
         }
       }, { passive: true });
       ov.addEventListener("touchend", e => {
+        if (_swipingEl) { _swipingEl = null; return; }
         const dy = e.changedTouches[0].clientY - startY;
         box.style.transition = "";
         box.style.transform = "";
@@ -280,6 +284,9 @@ window.PROGNOSE = {
       if (c) c.style.display = t === tab ? "" : "none";
       if (b) b.classList.toggle("ativo", t === tab);
     });
+    // Reset scroll do modal-box ao trocar de aba
+    const box = document.getElementById("modal-prog-body");
+    if (box) box.scrollTop = 0;
   },
 
   renderModal: function (gameId) {
@@ -288,16 +295,17 @@ window.PROGNOSE = {
     const hC = b.home || jogo?.home; const aC = b.away || jogo?.away;
     const hName = window.TEAMS_BY_CODE?.[hC]?.name || hC || "?";
     const aName = window.TEAMS_BY_CODE?.[aC]?.name || aC || "?";
-    const stats = this.statsPalpites(gameId);
 
     let h = '';
-    h += '<div class="modal-tabs" style="display:flex;justify-content:center;gap:3px;flex-wrap:wrap">';
-    h += '<button class="modal-tab ativo" id="mtab-prev" onclick="PROGNOSE._switchTab(\'prev\')">📊 Previsão</button>';
-    h += '<button class="modal-tab" id="mtab-pal" onclick="PROGNOSE._switchTab(\'pal\')">📈 Estatística (' + stats.total + ')</button>';
-    h += '<button class="modal-tab" id="mtab-listpal" onclick="PROGNOSE._switchTab(\'listpal\')">🗳 Palpites</button>';
-    h += '<button class="modal-tab" id="mtab-est" onclick="PROGNOSE._switchTab(\'est\')">🏟 Estádio</button>';
+    // 4 abas compactas — sem emoji, font menor, cabem em uma linha mesmo em telas pequenas
+    h += '<div class="modal-tabs" style="display:flex;justify-content:stretch;gap:0">';
+    h += '<button class="modal-tab ativo" id="mtab-prev" style="flex:1;padding:8px 2px;font-size:.7rem;white-space:nowrap" onclick="PROGNOSE._switchTab(\'prev\')">Previsão</button>';
+    h += '<button class="modal-tab" id="mtab-pal" style="flex:1;padding:8px 2px;font-size:.7rem;white-space:nowrap" onclick="PROGNOSE._switchTab(\'pal\')">Stats</button>';
+    h += '<button class="modal-tab" id="mtab-listpal" style="flex:1;padding:8px 2px;font-size:.7rem;white-space:nowrap" onclick="PROGNOSE._switchTab(\'listpal\')">Palpites</button>';
+    h += '<button class="modal-tab" id="mtab-est" style="flex:1;padding:8px 2px;font-size:.7rem;white-space:nowrap" onclick="PROGNOSE._switchTab(\'est\')">Estádio</button>';
     h += '</div>';
 
+    const stats = this.statsPalpites(gameId);
     h += '<div id="modal-content-prev">' + this._renderPrevisao(gameId, hC, aC, hName, aName) + '</div>';
     h += '<div id="modal-content-pal" style="display:none">' + this._renderPalpites(gameId, stats, hName, aName) + '</div>';
     h += '<div id="modal-content-listpal" style="display:none">' + this._renderListPalpites(gameId, hC, aC) + '</div>';
@@ -501,9 +509,8 @@ window.PROGNOSE = {
     const mDraw = modelo ? Math.round(modelo.draw * 100) : null;
     const mAway = modelo ? (100 - mHome - mDraw) : null;
 
-    let h = '<div style="text-align:center;font-size:.76rem;color:var(--texto2);margin-bottom:14px">';
-    h += s.total + ' apostador' + (s.total !== 1 ? 'es' : '') + ' · ' + total + ' palpites';
-    h += '</div>';
+    // Sem o texto "X apostadores · Y palpites" (removido por solicitação)
+    let h = '';
 
     // ── 6. Barras duplas: grupo vs modelo ──
     const labels = [[hName, pHome, mHome, 'rgba(34,197,94,.7)', 'rgba(34,197,94,.25)'], ['Empate', pDraw, mDraw, 'rgba(139,148,158,.7)', 'rgba(139,148,158,.2)'], [aName, pAway, mAway, 'rgba(248,113,113,.7)', 'rgba(248,113,113,.22)']];
@@ -512,8 +519,8 @@ window.PROGNOSE = {
       h += '<div style="margin-bottom:12px">';
       // Label do time/resultado
       h += '<div style="font-size:.72rem;font-weight:700;color:var(--texto);margin-bottom:4px">' + lbl + '</div>';
-      // Rótulo "Palpites XX%" acima da barra do grupo
-      h += '<div style="font-size:.63rem;color:var(--texto2);margin-bottom:2px">Palpites ' + pGrupo + '%</div>';
+      const countItem = lbl === hName ? s.home : lbl === aName ? s.away : s.draw;
+      h += '<div style="font-size:.63rem;color:var(--texto2);margin-bottom:2px">Palpites: ' + countItem + '/' + total + ' (' + pGrupo + '%)</div>';
       // Barra do grupo
       h += '<div style="background:var(--fundo2);border-radius:4px;height:9px;overflow:hidden;margin-bottom:5px">';
       h += '<div style="width:' + pGrupo + '%;height:100%;background:' + corSolid + ';border-radius:4px;transition:width .5s ease"></div>';
@@ -580,13 +587,7 @@ window.PROGNOSE = {
         h += '</div>';
       });
 
-      // Legenda dos placares
-      if (modelo) {
-        h += '<div style="display:flex;gap:14px;margin-top:4px">';
-        h += '<span style="font-size:.61rem;color:var(--texto2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:14px;height:5px;border-radius:2px;background:var(--verde)"></span>Apostadores</span>';
-        h += '<span style="font-size:.61rem;color:var(--texto2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:14px;height:5px;border-radius:2px;background:rgba(34,197,94,.28)"></span>Modelo</span>';
-        h += '</div>';
-      }
+      // Legenda removida (Apostadores/Modelo) — desnecessária
     }
 
     // ── Bloco 3: Desempenho do Grupo (só quando há resultado oficial) ──
@@ -720,6 +721,7 @@ window.PROGNOSE = {
       }
       
       rowsData.push({
+        apostadorId: a.id,
         apelido: a.apelido || a.nome || a.id,
         palpiteStr,
         pts,
@@ -741,17 +743,19 @@ window.PROGNOSE = {
       return '<p style="text-align:center;color:var(--texto2);padding:30px">Nenhum palpite cadastrado.</p>';
     }
 
-    let h = '<div style="max-height:360px;overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--borda);border-radius:var(--radius-sm);margin-top:5px">';
+    // data-scroll-inner evita que o swipe-down no modal feche quando o usuário estiver
+    // rolando a lista de palpites
+    let h = '<div data-scroll-inner="1" style="max-height:55vh;overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--borda);border-radius:var(--radius-sm);margin-top:5px">';
     h += '<table class="tabela-detalhe" style="width:100%;margin:0;border-collapse:collapse">';
     h += '<thead><tr style="position:sticky;top:0;z-index:10;background:var(--fundo2)">';
-    h += '<th style="text-align:left;padding:8px 10px;border-bottom:2px solid var(--borda)">Apostador</th>';
-    h += '<th style="text-align:center;padding:8px 10px;border-bottom:2px solid var(--borda)">Palpite</th>';
-    h += '<th style="text-align:right;padding:8px 10px;border-bottom:2px solid var(--borda)">Pontos</th>';
+    h += '<th style="text-align:left;padding:8px 10px;border-bottom:2px solid var(--verde-light)">Apostador</th>';
+    h += '<th style="text-align:center;padding:8px 10px;border-bottom:2px solid var(--verde-light)">Palpite</th>';
+    h += '<th style="text-align:right;padding:8px 10px;border-bottom:2px solid var(--verde-light)">Pontos</th>';
     h += '</tr></thead><tbody>';
 
     rowsData.forEach((row, idx) => {
       const bg = idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,.01)';
-      h += `<tr style="background:${bg}">`;
+      h += `<tr style="background:${bg};cursor:pointer" onclick="PROGNOSE._abrirPopupApostador('${row.apostadorId}')">`;
       h += `<td style="text-align:left;padding:8px 10px;font-weight:600;color:var(--texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px">${row.apelido}</td>`;
       h += `<td class="${row.cls}" style="text-align:center;padding:8px 10px;font-weight:700">${row.palpiteStr}</td>`;
       h += `<td class="${row.cls}" style="text-align:right;padding:8px 10px;font-weight:700">${row.ptsStr}</td>`;
@@ -760,6 +764,71 @@ window.PROGNOSE = {
 
     h += '</tbody></table></div>';
     return h;
+  },
+
+  _abrirPopupApostador: function (apostadorId) {
+    const a = (APP.apostadores || []).find(x => x.id === apostadorId);
+    if (!a) return;
+    const res = getResultados();
+    // Especiais extraídos do bracket da mesma forma que a aba Classificação
+    const esp = window.BRACKET?.extrairEspeciaisOficiais?.(res, APP.bracket || {}) || {};
+    const st = calcularPontosApostador(APP.palpites?.[a.id] || {}, res, a, esp);
+    const nomeCompleto = a.nome || a.apelido || apostadorId;
+    const apelido = a.apelido || a.nome || apostadorId;
+
+    // Cria mini-popup dentro do modal
+    const existing = document.getElementById('popup-apostador-detalhe');
+    if (existing) existing.remove();
+
+    const div = document.createElement('div');
+    div.id = 'popup-apostador-detalhe';
+    div.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center';
+    div.innerHTML = `
+      <div style="width:100%;max-width:480px;background:var(--card);border-radius:var(--radius) var(--radius) 0 0;padding:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div>
+            <div style="font-size:1rem;font-weight:800;color:var(--texto)">${apelido}</div>
+            <div style="font-size:.72rem;color:var(--texto2);margin-top:2px">${nomeCompleto !== apelido ? nomeCompleto : ''}</div>
+          </div>
+          <button onclick="document.getElementById('popup-apostador-detalhe')?.remove()" style="background:rgba(255,255,255,.08);border:none;border-radius:50%;width:28px;height:28px;color:var(--texto2);font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px">
+          <div style="background:var(--fundo2);border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:.55rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Pontos Totais</div>
+            <div style="font-size:1.2rem;font-weight:900;color:var(--verde-light)">${st.total.toFixed(1)}</div>
+          </div>
+          <div style="background:var(--fundo2);border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:.55rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Acertos Resultado</div>
+            <div style="font-size:1.2rem;font-weight:900;color:#38bdf8">${st.acertos_resultado}</div>
+          </div>
+          <div style="background:var(--fundo2);border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:.55rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Grupos</div>
+            <div style="font-size:1rem;font-weight:800;color:var(--texto)">${st.total_grupos.toFixed(1)} pts</div>
+          </div>
+          <div style="background:var(--fundo2);border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:.55rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Eliminatórias</div>
+            <div style="font-size:1rem;font-weight:800;color:var(--texto)">${st.total_eliminatorias.toFixed(1)} pts</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+          <div style="background:var(--fundo2);border-radius:8px;padding:8px 4px;text-align:center">
+            <div style="font-size:.5rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">Bônus+1</div>
+            <div style="font-size:.9rem;font-weight:800;color:#9bf73e">${st.acertos_bonus1}</div>
+          </div>
+          <div style="background:var(--fundo2);border-radius:8px;padding:8px 4px;text-align:center">
+            <div style="font-size:.5rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">Placar+3</div>
+            <div style="font-size:.9rem;font-weight:800;color:#ffff66">${st.acertos_placar_exato}</div>
+          </div>
+          <div style="background:var(--fundo2);border-radius:8px;padding:8px 4px;text-align:center">
+            <div style="font-size:.5rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">Placar+5</div>
+            <div style="font-size:.9rem;font-weight:800;color:#fb923c">${st.acertos_placar_alto}</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:.65rem;color:var(--texto2);text-align:center">Toque fora para fechar</div>
+      </div>
+    `;
+    div.addEventListener('click', e => { if (e.target === div) div.remove(); });
+    document.body.appendChild(div);
   },
 
   _renderEstadio: function (jogo) {
