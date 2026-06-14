@@ -211,12 +211,18 @@ window.renderCompilacao = function () {
     const escOf = resOficialEsp[rowE.key] || "";
     const resultadoOficialReal = escOf && _jogoOficialPorKey[rowE.key];
     const nomeOf = window.TEAMS_BY_CODE?.[escOf]?.name || (escOf ? escOf : "—");
-    h += '<td class="col-resultado" style="background:var(--fundo2);font-weight:700;font-size:.65rem;color:var(--dourado)">' + (resultadoOficialReal ? nomeOf : (gruposTravados ? nomeOf : "—")) + '</td>';
+    const siglaOf = escOf ? getSigla(escOf) : "—";
+    const displayOf = (window.innerWidth <= 600) ? siglaOf : nomeOf;
+    const tooltipOf = (window.innerWidth <= 600 && escOf) ? `title="${nomeOf}"` : '';
+    h += '<td class="col-resultado" ' + tooltipOf + ' style="background:var(--fundo2);font-weight:700;font-size:.65rem;color:var(--dourado)">' + (resultadoOficialReal ? displayOf : (gruposTravados ? displayOf : "—")) + '</td>';
 
     for (const a of ranking) {
       const espA = a.isModelo ? (window.getModelo ? window.getModelo() : a)?.especiais || {} : (a.especiais || {});
       const palE = (espA && espA[rowE.key]) || "";
       const nomePal = window.TEAMS_BY_CODE?.[palE]?.name || (palE ? palE : "—");
+      const siglaPal = palE ? getSigla(palE) : "—";
+      const displayPal = (window.innerWidth <= 600) ? siglaPal : nomePal;
+      const tooltipPal = (window.innerWidth <= 600 && palE) ? `title="${nomePal}"` : '';
       const acertou = resultadoOficialReal && palE === escOf;
       const podeVerEsp = resultadoOficialReal || gruposTravados;
       const cellStyle = '';
@@ -226,10 +232,10 @@ window.renderCompilacao = function () {
         continue;
       }
       if (acertou) {
-        h += '<td class="celula-pts-8" style="font-size:.62rem;' + cellStyle + '">' + nomePal + '</td>';
+        h += '<td class="celula-pts-8" ' + tooltipPal + ' style="font-size:.62rem;' + cellStyle + '">' + displayPal + '</td>';
       } else {
         const cor = escOf ? "var(--texto2)" : "var(--texto)";
-        h += '<td style="font-size:.62rem;text-align:center;color:' + cor + ';' + cellStyle + '">' + nomePal + '</td>';
+        h += '<td ' + tooltipPal + ' style="font-size:.62rem;text-align:center;color:' + cor + ';' + cellStyle + '">' + displayPal + '</td>';
       }
     }
     h += '</tr>';
