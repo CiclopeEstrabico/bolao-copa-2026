@@ -793,9 +793,10 @@ function _renderChance(rankingCompleto, chances) {
     const posNum = a.posicao;
     const posStr = posNum !== null ? `${posNum}\u00ba- ` : '';
     h += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative;height:100%;justify-content:flex-end;z-index:1">`;
-    const barPercSafe = Math.max(2, perc);
-    h += `<div style="position:absolute;bottom:calc(${barPercSafe.toFixed(1)}% + 4px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${valFmt}</div>`;
-    h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2, perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
+    const scaleFactor = (isMobile && !isLandscape) ? 0.82 : 0.90;
+    const barHeight = Math.max(2, perc * scaleFactor);
+    h += `<div style="position:absolute;bottom:calc(${barHeight.toFixed(1)}% + 4px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${valFmt}</div>`;
+    h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${barHeight.toFixed(1)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
     h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:translateX(-38%) rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${posStr}${a.nome}</div>`;
     h += '</div>';
   }
@@ -956,9 +957,10 @@ function _renderBarras(rankingCompleto, metricaAtiva) {
       : `${posStr}${a.nome}`;
     h += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative;height:100%;justify-content:flex-end;z-index:1">`;
     // Label vertical ancorado logo acima do topo da barra (sempre vertical)
-    const barPercSafe = Math.max(2, perc);
-    h += `<div style="position:absolute;bottom:calc(${barPercSafe.toFixed(1)}% + 4px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${_fmtVal(metricaAtiva, val, shortFmt)}</div>`;
-    h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2, perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
+    const scaleFactor = (isMobile && !isLandscape) ? 0.82 : 0.90;
+    const barHeight = Math.max(2, perc * scaleFactor);
+    h += `<div style="position:absolute;bottom:calc(${barHeight.toFixed(1)}% + 4px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${_fmtVal(metricaAtiva, val, shortFmt)}</div>`;
+    h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${barHeight.toFixed(1)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
     // Nome centralizado abaixo da barra
     h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:translateX(-38%) rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${nomeBarra}</div>`;
     h += '</div>';
@@ -1555,9 +1557,10 @@ function _renderMacaco(rankingCompleto, cache) {
       : `${posStr}${a.nome}`;
     h += `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;position:relative;height:100%;justify-content:flex-end;z-index:1">`;
     // Valor sempre vertical
-    const barPercSafe = Math.max(2, perc);
-    h += `<div style="position:absolute;bottom:calc(${barPercSafe.toFixed(1)}% + 4px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${val.toFixed(1)}</div>`;
-    h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${Math.max(2, perc)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
+    const scaleFactor = (isMobile && !isLandscape) ? 0.82 : 0.90;
+    const barHeight = Math.max(2, perc * scaleFactor);
+    h += `<div style="position:absolute;bottom:calc(${barHeight.toFixed(1)}% + 4px);left:50%;writing-mode:vertical-rl;transform:translateX(-50%) rotate(180deg);font-size:${valFontSize};font-weight:800;color:var(--texto);white-space:nowrap">${val.toFixed(1)}</div>`;
+    h += `<div style="width:${barWidth}px;background:${cor};border-radius:4px 4px 0 0;height:${barHeight.toFixed(1)}%;transition:height 0.4s ease;box-shadow:0 -2px 10px ${cor}60"></div>`;
     // Nome centralizado abaixo
     h += `<div style="position:absolute;top:calc(100% + 8px);left:50%;writing-mode:vertical-rl;transform:translateX(-38%) rotate(180deg);font-size:${nameFontSize};color:var(--texto2);font-weight:600;white-space:nowrap">${nomeLabel}</div>`;
     h += '</div>';
@@ -1731,12 +1734,12 @@ window._graficoExportarJPG = function () {
     // Desenhar emoji (30% maior, ~17px)
     ctx.font = 'bold 17px system-ui, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(emoji, startX, 46);
+    ctx.fillText(emoji, startX, 54);
     
     // Desenhar pontuação
     ctx.font = 'bold 13px system-ui, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(text, startX + wEmoji, 45);
+    ctx.fillText(text, startX + wEmoji, 53);
     ctx.restore();
   }
 
@@ -1803,6 +1806,7 @@ window._graficoExportarJPG = function () {
     ctx.fillStyle = a.isModelo ? '#b8cfe8' : '#94a3b8';
     ctx.font = '10px system-ui, sans-serif';
     ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
     // Âncora no topo da área de labels (logo abaixo do chart); rotate(-90°) faz X apontar pra cima
     // textAlign:'right' → texto termina na âncora → último char no topo (perto da barra), primeiro embaixo
     ctx.translate(x + BAR_WIDTH / 2, CHART_BOTTOM + 8);
