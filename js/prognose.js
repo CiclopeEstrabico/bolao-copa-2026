@@ -170,6 +170,7 @@ window.PROGNOSE = {
     const placarCount = {};
     let acertosResultado = 0, acertosPlacar = 0, somaPontos = 0;
     let maiorPts = 0, maiorPtsApelido = '';
+    let errosResultado = 0, bonus1 = 0, placar3 = 0, placar5 = 0;
     const apos = APP.apostadores || [];
     const apelidoMap = {};
     for (const a of apos) apelidoMap[a.id] = a.apelido || a.nome || a.id;
@@ -185,8 +186,24 @@ window.PROGNOSE = {
       if (temRes) {
         const jogoInfo = window.SCHEDULE_BY_ID?.[gameId];
         const br = calcularPontosBrutos(p, r);
-        if (br.acertou) acertosResultado++;
-        if (br.bonus_tipo === 'placar_exato') acertosPlacar++;
+        if (br.acertou) {
+          acertosResultado++;
+          if (br.bonus_tipo === 'placar_exato') {
+            acertosPlacar++;
+            const total_gols = r.homeGoals + r.awayGoals;
+            const cfg = window.CONFIG?.pontuacao;
+            const limiar = cfg?.limiar_placar_alto ?? 4;
+            if (total_gols >= limiar) {
+              placar5++;
+            } else {
+              placar3++;
+            }
+          } else if (br.bonus_pts === 1) {
+            bonus1++;
+          }
+        } else {
+          errosResultado++;
+        }
         const pts = aplicarFator(br.total_bruto, jogoInfo?.fase || 'grupos');
         somaPontos += pts;
         if (pts > maiorPts) { maiorPts = pts; maiorPtsApelido = apelidoMap[apId] || apId; }
@@ -196,7 +213,8 @@ window.PROGNOSE = {
     return {
       total, home, draw, away,
       topPlacares: Object.entries(placarCount).sort((a, b) => b[1] - a[1]).slice(0, 5),
-      acertosResultado, acertosPlacar, mediaPts, maiorPts, maiorPtsApelido
+      acertosResultado, acertosPlacar, mediaPts, maiorPts, maiorPtsApelido,
+      errosResultado, bonus1, placar3, placar5
     };
   },
 
@@ -256,7 +274,7 @@ window.PROGNOSE = {
   },
 
   _switchTab: function (tab) {
-    ["prev", "pal", "est"].forEach(t => {
+    ["prev", "pal", "listpal", "est"].forEach(t => {
       const c = document.getElementById("modal-content-" + t);
       const b = document.getElementById("mtab-" + t);
       if (c) c.style.display = t === tab ? "" : "none";
@@ -273,14 +291,16 @@ window.PROGNOSE = {
     const stats = this.statsPalpites(gameId);
 
     let h = '';
-    h += '<div class="modal-tabs" style="display:flex;justify-content:center;gap:6px">';
+    h += '<div class="modal-tabs" style="display:flex;justify-content:center;gap:3px;flex-wrap:wrap">';
     h += '<button class="modal-tab ativo" id="mtab-prev" onclick="PROGNOSE._switchTab(\'prev\')">📊 Previsão</button>';
-    h += '<button class="modal-tab" id="mtab-pal" onclick="PROGNOSE._switchTab(\'pal\')">🗳 Palpites (' + stats.total + ')</button>';
+    h += '<button class="modal-tab" id="mtab-pal" onclick="PROGNOSE._switchTab(\'pal\')">📈 Estatística (' + stats.total + ')</button>';
+    h += '<button class="modal-tab" id="mtab-listpal" onclick="PROGNOSE._switchTab(\'listpal\')">🗳 Palpites</button>';
     h += '<button class="modal-tab" id="mtab-est" onclick="PROGNOSE._switchTab(\'est\')">🏟 Estádio</button>';
     h += '</div>';
 
     h += '<div id="modal-content-prev">' + this._renderPrevisao(gameId, hC, aC, hName, aName) + '</div>';
     h += '<div id="modal-content-pal" style="display:none">' + this._renderPalpites(gameId, stats, hName, aName) + '</div>';
+    h += '<div id="modal-content-listpal" style="display:none">' + this._renderListPalpites(gameId, hC, aC) + '</div>';
     h += '<div id="modal-content-est" style="display:none">' + this._renderEstadio(jogo) + '</div>';
     return h;
   },
@@ -600,7 +620,7 @@ window.PROGNOSE = {
       h += '</div></div>';
 
       // Média de pontos e maior pontuação
-      h += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
+      h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">';
       h += '<div style="flex:1;min-width:100px;background:var(--fundo2);border-radius:8px;padding:8px 10px;text-align:center">';
       h += '<div style="font-size:.58rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">MÉDIA DE PONTOS</div>';
       h += '<div style="font-size:1rem;font-weight:900;color:#38bdf8">' + s.mediaPts.toFixed(1) + '</div>';
@@ -611,9 +631,134 @@ window.PROGNOSE = {
       h += '</div>';
       h += '</div>';
 
+      // Detalhamento extra de acertos/erros
+      const pctErros = Math.round(s.errosResultado / s.total * 100);
+      const pctBonus = Math.round(s.bonus1 / s.total * 100);
+      const pctPlac3 = Math.round(s.placar3 / s.total * 100);
+      const pctPlac5 = Math.round(s.placar5 / s.total * 100);
+
+      h += '<div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:6px;margin-top:10px">';
+      h += '<div style="background:var(--fundo2);border-radius:8px;padding:8px 6px;text-align:center;border:1px solid rgba(239,68,68,.15)">';
+      h += '<div style="font-size:.54rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">Erraram Resultado</div>';
+      h += '<div style="font-size:.9rem;font-weight:800;color:#fca5a5">' + s.errosResultado + '/' + s.total + ' <span style="font-size:.62rem;font-weight:500;opacity:.85">(' + pctErros + '%)</span></div>';
+      h += '</div>';
+      h += '<div style="background:var(--fundo2);border-radius:8px;padding:8px 6px;text-align:center;border:1px solid rgba(155,247,62,.15)">';
+      h += '<div style="font-size:.54rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">Tiveram Bônus+1</div>';
+      h += '<div style="font-size:.9rem;font-weight:800;color:#9bf73e">' + s.bonus1 + '/' + s.total + ' <span style="font-size:.62rem;font-weight:500;opacity:.85">(' + pctBonus + '%)</span></div>';
+      h += '</div>';
+      h += '<div style="background:var(--fundo2);border-radius:8px;padding:8px 6px;text-align:center;border:1px solid rgba(255,255,102,.15)">';
+      h += '<div style="font-size:.54rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">Placares+3</div>';
+      h += '<div style="font-size:.9rem;font-weight:800;color:#ffff66">' + s.placar3 + '/' + s.total + ' <span style="font-size:.62rem;font-weight:500;opacity:.85">(' + pctPlac3 + '%)</span></div>';
+      h += '</div>';
+      h += '<div style="background:var(--fundo2);border-radius:8px;padding:8px 6px;text-align:center;border:1px solid rgba(249,115,22,.15)">';
+      h += '<div style="font-size:.54rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">Placares+5</div>';
+      h += '<div style="font-size:.9rem;font-weight:800;color:#fb923c">' + s.placar5 + '/' + s.total + ' <span style="font-size:.62rem;font-weight:500;opacity:.85">(' + pctPlac5 + '%)</span></div>';
+      h += '</div>';
+      h += '</div>';
+
       h += '</div>';
     }
 
+    return h;
+  },
+
+  _renderListPalpites: function (gameId, hC, aC) {
+    const res = getResultados();
+    const r = res[gameId];
+    const temRes = r && r.homeGoals !== undefined;
+    const apostasAbertas = jogoAceita(gameId);
+    const podeVer = temRes || !apostasAbertas;
+
+    if (jogoEhSimulado(gameId) && apostasAbertas) {
+      return '<div style="text-align:center;padding:40px 20px;color:var(--texto2)">' +
+             '<div style="font-size:2rem;margin-bottom:10px">🎭</div>' +
+             '<div style="font-weight:700;color:var(--dourado)">Simulação Ativa</div>' +
+             '<div style="font-size:.75rem;margin-top:5px">Os palpites dos outros participantes não são revelados para jogos simulados com apostas ainda abertas.</div></div>';
+    }
+
+    if (!podeVer) {
+      return '<div style="text-align:center;padding:40px 20px;color:var(--texto2)">' +
+             '<div style="font-size:2rem;margin-bottom:10px">🔒</div>' +
+             '<div style="font-weight:700;color:var(--texto)">Palpites Ocultos</div>' +
+             '<div style="font-size:.75rem;margin-top:5px">Os palpites individuais só serão revelados após o fechamento das apostas para este jogo.</div></div>';
+    }
+
+    const todos = APP.palpites || {};
+    const apos = APP.apostadores || [];
+    const jogoInfo = window.SCHEDULE_BY_ID?.[gameId];
+
+    const rowsData = [];
+    for (const a of apos) {
+      if (a.id === "MODELO") continue;
+      const p = todos[a.id]?.[gameId];
+      let pts = 0;
+      let hasPalpite = p && p.homeGoals !== undefined;
+      let cls = "";
+      let palpiteStr = "·";
+      let ptsStr = "—";
+      
+      if (hasPalpite) {
+        palpiteStr = `${p.homeGoals}x${p.awayGoals}`;
+        if (temRes) {
+          const br = calcularPontosBrutos(p, r);
+          pts = aplicarFator(br.total_bruto, jogoInfo?.fase || 'grupos');
+          ptsStr = `${pts} pts`;
+          if (br.acertou) {
+            const bv = br.total_bruto;
+            if (bv >= 8) cls = "celula-pts-8";
+            else if (bv >= 6) cls = "celula-pts-6";
+            else if (bv >= 4) cls = "celula-pts-4";
+            else cls = "celula-pts-3";
+          } else {
+            cls = "celula-erro";
+          }
+        }
+      } else {
+        if (temRes) {
+          ptsStr = "0 pts";
+        }
+      }
+      
+      rowsData.push({
+        apelido: a.apelido || a.nome || a.id,
+        palpiteStr,
+        pts,
+        ptsStr,
+        cls,
+        hasPalpite
+      });
+    }
+
+    rowsData.sort((a, b) => {
+      if (temRes) {
+        if (b.pts !== a.pts) return b.pts - a.pts;
+      }
+      if (b.hasPalpite !== a.hasPalpite) return b.hasPalpite ? 1 : -1;
+      return a.apelido.localeCompare(b.apelido);
+    });
+
+    if (!rowsData.length) {
+      return '<p style="text-align:center;color:var(--texto2);padding:30px">Nenhum palpite cadastrado.</p>';
+    }
+
+    let h = '<div style="max-height:360px;overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--borda);border-radius:var(--radius-sm);margin-top:5px">';
+    h += '<table class="tabela-detalhe" style="width:100%;margin:0;border-collapse:collapse">';
+    h += '<thead><tr style="position:sticky;top:0;z-index:10;background:var(--fundo2)">';
+    h += '<th style="text-align:left;padding:8px 10px;border-bottom:2px solid var(--borda)">Apostador</th>';
+    h += '<th style="text-align:center;padding:8px 10px;border-bottom:2px solid var(--borda)">Palpite</th>';
+    h += '<th style="text-align:right;padding:8px 10px;border-bottom:2px solid var(--borda)">Pontos</th>';
+    h += '</tr></thead><tbody>';
+
+    rowsData.forEach((row, idx) => {
+      const bg = idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,.01)';
+      h += `<tr style="background:${bg}">`;
+      h += `<td style="text-align:left;padding:8px 10px;font-weight:600;color:var(--texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px">${row.apelido}</td>`;
+      h += `<td class="${row.cls}" style="text-align:center;padding:8px 10px;font-weight:700">${row.palpiteStr}</td>`;
+      h += `<td class="${row.cls}" style="text-align:right;padding:8px 10px;font-weight:700">${row.ptsStr}</td>`;
+      h += '</tr>';
+    });
+
+    h += '</tbody></table></div>';
     return h;
   },
 

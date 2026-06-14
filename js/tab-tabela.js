@@ -183,29 +183,7 @@ window.renderTabela = function() {
         }
       }, { passive: true });
 
-      // Show/hide on vertical scroll (zero-reflow)
-      const stickyTop = (() => {
-        let h = 0;
-        const header = document.querySelector('.header');
-        const tabs = document.querySelector('.tabs-wrap');
-        if (header) h += header.getBoundingClientRect().height;
-        if (tabs) h += tabs.getBoundingClientRect().height;
-        return h;
-      })();
-
-      function getAbsoluteTop(element) {
-        let top = 0;
-        while (element) {
-          top += element.offsetTop;
-          element = element.offsetParent;
-        }
-        return top;
-      }
-
-      let bracketTop = 0;
-      let bracketHeight = 0;
-      let labelHeight = 25;
-
+      // Show/hide on vertical scroll
       const update = () => {
         const currentFrozen = document.getElementById('frozen-bracket-labels');
         if (!currentFrozen) return;
@@ -216,9 +194,25 @@ window.renderTabela = function() {
           return;
         }
 
+        // Medir dinamicamente a altura acumulada do cabeçalho + abas
+        let stickyTop = 0;
+        const header = document.querySelector('.header');
+        const tabs = document.querySelector('.tabs-wrap');
+        if (header) stickyTop += header.getBoundingClientRect().height;
+        if (tabs) stickyTop += tabs.getBoundingClientRect().height;
+
+        // Medir dinamicamente a posição do contêiner de chaves
+        const rect = scroll.getBoundingClientRect();
+        const bracketTop = rect.top + window.scrollY;
+        const bracketHeight = rect.height;
+
+        const labelEl = scroll.querySelector('.bracket-fase-label');
+        const labelHeight = labelEl ? labelEl.offsetHeight : 25;
+
         const scrollTop = window.scrollY;
-        const labelsGone = scrollTop + stickyTop > bracketTop + labelHeight;
-        const tableVisible = scrollTop + stickyTop < bracketTop + bracketHeight;
+        // Começa a fixar assim que a linha de labels original é ultrapassada
+        const labelsGone = scrollTop + stickyTop > bracketTop + 8; // offset do padding-top do bracket-scroll
+        const tableVisible = scrollTop + stickyTop < bracketTop + bracketHeight - labelHeight;
 
         if (labelsGone && tableVisible) {
           currentFrozen.style.display = 'block';
@@ -229,12 +223,8 @@ window.renderTabela = function() {
         }
       };
 
-      // Calcular posições assim que o DOM assentar
+      // Inicializar
       requestAnimationFrame(() => {
-        bracketTop = getAbsoluteTop(scroll);
-        bracketHeight = scroll.offsetHeight;
-        const labelEl = scroll.querySelector('.bracket-fase-label');
-        if (labelEl) labelHeight = labelEl.offsetHeight;
         update();
       });
 

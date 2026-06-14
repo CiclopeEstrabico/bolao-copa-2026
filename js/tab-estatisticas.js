@@ -1022,11 +1022,12 @@ window.renderEstatisticas = function () {
     const dataHoraStr = formatarDataBRT(jogo.utc, false);
     const faseLbl = getFaseLabel(jogo);
     const dataHoraLbl = dataHoraStr + (faseLbl ? ", " + faseLbl : "");
-    h += `<tr style="${rowBg}">`;
+    const tooltipH = !isMobile ? ` title="${nomeTime(hC)}"` : '';
+    const tooltipA = !isMobile ? ` title="${nomeTime(aC)}"` : '';
     h += `<td class="${isMobile ? 'col-jogo' : 'stat-col-jogo'}" onclick="PROGNOSE.abrirModal('${jogo.id}')" style="text-align:left;padding:6px 8px;cursor:pointer">
             <div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">${dataHoraLbl}</div>
             <div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">
-              ${htmlBandeira(hC, 14)} <span class="${isMobile ? 'compilacao-time-nome comp-sigla' : 'stat-time-nome'}">${isMobile ? getSigla(hC) : hName}</span> <span style="color:var(--texto2)">×</span> <span class="${isMobile ? 'compilacao-time-nome comp-sigla' : 'stat-time-nome'}">${isMobile ? getSigla(aC) : aName}</span> ${htmlBandeira(aC, 14)}
+              ${htmlBandeira(hC, 14)} <span class="${isMobile ? 'compilacao-time-nome comp-sigla' : 'stat-time-nome'}"${tooltipH}>${isMobile ? getSigla(hC) : hName}</span> <span style="color:var(--texto2)">×</span> <span class="${isMobile ? 'compilacao-time-nome comp-sigla' : 'stat-time-nome'}"${tooltipA}>${isMobile ? getSigla(aC) : aName}</span> ${htmlBandeira(aC, 14)}
             </div>
           </td>`;
 
@@ -1144,11 +1145,10 @@ window.renderHtH = function () {
     const b = APP.bracket?.[jogo.id] || {}; const hC = b.home || jogo.home; const aC = b.away || jogo.away;
     const cor1 = v1 > v2 ? "var(--verde-ok)" : v1 < v2 ? "#f87171" : "var(--texto2)";
     const cor2 = v2 > v1 ? "var(--verde-ok)" : v2 < v1 ? "#f87171" : "var(--texto2)";
-    const isMob = window.innerWidth <= 600;
-    const hDisplay = isMob ? getSigla(hC) : getShortName(hC);
-    const aDisplay = isMob ? getSigla(aC) : getShortName(aC);
+    const tooltipH = !isMob ? ' title="' + nomeTime(hC).replace(/"/g, '&quot;') + '"' : '';
+    const tooltipA = !isMob ? ' title="' + nomeTime(aC).replace(/"/g, '&quot;') + '"' : '';
     rows += '<tr><td class="' + (isMob ? 'col-jogo' : 'stat-col-jogo') + '" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="text-align:left;font-size:.73rem;position:sticky;left:0;background:var(--fundo);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1);cursor:pointer">' +
-      '<div style="display:flex;align-items:center;gap:4px;width:100%">' + htmlBandeira(hC, 14) + ' <span class="' + (isMob ? 'compilacao-time-nome comp-sigla' : 'stat-time-nome') + '">' + hDisplay + '</span> <span style="color:var(--texto2)">×</span> <span class="' + (isMob ? 'compilacao-time-nome comp-sigla' : 'stat-time-nome') + '">' + aDisplay + '</span> ' + htmlBandeira(aC, 14) + '</div></td>' +
+      '<div style="display:flex;align-items:center;gap:4px;width:100%">' + htmlBandeira(hC, 14) + ' <span class="' + (isMob ? 'compilacao-time-nome comp-sigla' : 'stat-time-nome') + '"' + tooltipH + '>' + hDisplay + '</span> <span style="color:var(--texto2)">×</span> <span class="' + (isMob ? 'compilacao-time-nome comp-sigla' : 'stat-time-nome') + '"' + tooltipA + '>' + aDisplay + '</span> ' + htmlBandeira(aC, 14) + '</div></td>' +
       '<td onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="font-size:.72rem;cursor:pointer">' + r.homeGoals + '×' + r.awayGoals + '</td>' +
       '<td style="color:' + cor1 + ';font-weight:700">' + (p1 ? p1.homeGoals + '×' + p1.awayGoals + ' (' + v1 + 'pts)' : '—') + '</td>' +
       '<td style="color:' + cor2 + ';font-weight:700">' + (p2 ? p2.homeGoals + '×' + p2.awayGoals + ' (' + v2 + 'pts)' : '—') + '</td></tr>';
@@ -1199,10 +1199,12 @@ function _jogoStatRow(jogoId, hC, aC, r, acertos, total, cor) {
   const isMob = window.innerWidth <= 600;
   const hName = isMob ? getSigla(hC) : getShortName(hC);
   const aName = isMob ? getSigla(aC) : getShortName(aC);
+  const tooltipH = !isMob ? ' title="' + nomeTime(hC).replace(/"/g, '&quot;') + '"' : '';
+  const tooltipA = !isMob ? ' title="' + nomeTime(aC).replace(/"/g, '&quot;') + '"' : '';
   return '<div onclick="PROGNOSE.abrirModal(\'' + jogoId + '\')" onmouseover="this.style.background=\'rgba(255,255,255,0.04)\'" onmouseout="this.style.background=\'\'" style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;transition:background 0.15s">' +
-    htmlBandeira(hC, 16) + ' <span class="stat-time-nome">' + hName + '</span>' +
+    htmlBandeira(hC, 16) + ' <span class="stat-time-nome"' + tooltipH + '>' + hName + '</span>' +
     '<span style="font-size:.72rem;color:var(--texto2);font-weight:700">' + r.homeGoals + '×' + r.awayGoals + '</span>' +
-    htmlBandeira(aC, 16) + ' <span class="stat-time-nome">' + aName + '</span>' +
+    htmlBandeira(aC, 16) + ' <span class="stat-time-nome"' + tooltipA + '>' + aName + '</span>' +
     '<div style="flex:1;background:var(--fundo2);border-radius:3px;height:6px;margin:0 6px">' +
     '<div style="width:' + pct + '%;height:100%;background:' + cor + ';border-radius:3px"></div></div>' +
     '<span style="font-size:.7rem;color:' + cor + ';font-weight:700;min-width:40px;text-align:right">' + acertos + '/' + total + '</span></div>';

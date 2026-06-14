@@ -46,7 +46,7 @@
       frozen.className = 'frozen-thead';
       frozen.style.cssText =
         'position:fixed;left:0;right:0;z-index:50;overflow:hidden;pointer-events:none;display:none;' +
-        'background:var(--fundo2);border-bottom:1px solid var(--borda);box-shadow:0 2px 8px rgba(0,0,0,.3);';
+        'background:var(--fundo2);border-bottom:2px solid var(--verde-light);box-shadow:0 2px 8px rgba(0,0,0,.3);';
       document.body.appendChild(frozen);
       wrapper._frozenHeader = frozen;
     }
