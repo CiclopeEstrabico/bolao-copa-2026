@@ -595,56 +595,24 @@ window.PROGNOSE = {
     const temResBloco = res2[gameId] && res2[gameId].homeGoals !== undefined;
     if (temResBloco && s.total > 0) {
       const pctRes = Math.round(s.acertosResultado / s.total * 100);
-      const pctPlac = Math.round(s.acertosPlacar / s.total * 100);
 
       h += '<div style="margin-top:16px;border-top:1px solid var(--borda);padding-top:14px">';
       h += '<div style="font-size:.68rem;font-weight:700;color:var(--texto2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Desempenho do Grupo</div>';
 
-      // Acertaram Resultado
-      h += '<div style="margin-bottom:10px">';
-      h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">';
-      h += '<span style="font-size:.7rem;font-weight:600;color:var(--texto)">Acertaram resultado</span>';
-      h += '<span style="font-size:.72rem;font-weight:800;color:#38bdf8">' + s.acertosResultado + '/' + s.total + ' <span style="font-size:.62rem;font-weight:600;opacity:.85">(' + pctRes + '%)</span></span>';
-      h += '</div>';
-      h += '<div style="background:var(--fundo2);border-radius:4px;height:8px;overflow:hidden">';
-      h += '<div style="width:' + pctRes + '%;height:100%;background:rgba(56,189,248,.6);border-radius:4px;transition:width .5s ease"></div>';
-      h += '</div></div>';
-
-      // Acertaram Placar Exato
-      h += '<div style="margin-bottom:10px">';
-      h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">';
-      h += '<span style="font-size:.7rem;font-weight:600;color:var(--texto)">Acertaram placar exato</span>';
-      h += '<span style="font-size:.72rem;font-weight:800;color:#818cf8">' + s.acertosPlacar + '/' + s.total + ' <span style="font-size:.62rem;font-weight:600;opacity:.85">(' + pctPlac + '%)</span></span>';
-      h += '</div>';
-      h += '<div style="background:var(--fundo2);border-radius:4px;height:8px;overflow:hidden">';
-      h += '<div style="width:' + pctPlac + '%;height:100%;background:rgba(129,140,248,.5);border-radius:4px;transition:width .5s ease"></div>';
-      h += '</div></div>';
-
-      // Média de pontos e maior pontuação
-      h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">';
-      h += '<div style="flex:1;min-width:100px;background:var(--fundo2);border-radius:8px;padding:8px 10px;text-align:center">';
-      h += '<div style="font-size:.58rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">MÉDIA DE PONTOS</div>';
-      h += '<div style="font-size:1rem;font-weight:900;color:#38bdf8">' + s.mediaPts.toFixed(1) + '</div>';
-      h += '</div>';
-      h += '<div style="flex:1;min-width:100px;background:var(--fundo2);border-radius:8px;padding:8px 10px;text-align:center">';
-      h += '<div style="font-size:.58rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">MAIOR PONTUAÇÃO</div>';
-      h += '<div style="font-size:1rem;font-weight:900;color:#818cf8">' + s.maiorPts.toFixed(1) + '</div>';
-      h += '</div>';
-      h += '</div>';
-
-      // Detalhamento extra como barras (mesmo padrão das métricas acima)
+      // Todas as barras primeiro — cores do padrão da aba Palpites (celula-pts-*)
       const pctErros = Math.round(s.errosResultado / s.total * 100);
       const pctBonus = Math.round(s.bonus1 / s.total * 100);
       const pctPlac3 = Math.round(s.placar3 / s.total * 100);
       const pctPlac5 = Math.round(s.placar5 / s.total * 100);
 
-      const metricasBars = [
-        { label: 'Erraram resultado', count: s.errosResultado, pct: pctErros, cor: 'rgba(239,68,68,.55)', corTexto: '#fca5a5' },
-        { label: 'Bônus+1 (gols/diferença)', count: s.bonus1, pct: pctBonus, cor: 'rgba(155,247,62,.55)', corTexto: '#9bf73e' },
-        { label: 'Acertaram placar (+3)', count: s.placar3, pct: pctPlac3, cor: 'rgba(255,255,102,.55)', corTexto: '#ffff66' },
-        { label: 'Acertaram placar (+5)', count: s.placar5, pct: pctPlac5, cor: 'rgba(249,115,22,.55)', corTexto: '#fb923c' },
+      const barras = [
+        { label: 'Acertaram resultado',        count: s.acertosResultado, pct: pctRes,   cor: 'rgba(21,128,61,.55)',   corTexto: '#22c55e' },
+        { label: 'Erraram resultado',           count: s.errosResultado,  pct: pctErros, cor: 'rgba(239,68,68,.45)',   corTexto: '#fca5a5' },
+        { label: 'Bônus+1 (gols/diferença)',    count: s.bonus1,          pct: pctBonus, cor: 'rgba(124,252,0,.45)',   corTexto: '#9bf73e' },
+        { label: 'Acertaram placar (+3)',        count: s.placar3,         pct: pctPlac3, cor: 'rgba(255,255,0,.45)',   corTexto: '#ffff66' },
+        { label: 'Acertaram placar (+5)',        count: s.placar5,         pct: pctPlac5, cor: 'rgba(249,115,22,.50)',  corTexto: '#fb923c' },
       ];
-      metricasBars.forEach(({ label, count, pct, cor, corTexto }) => {
+      barras.forEach(({ label, count, pct, cor, corTexto }) => {
         h += '<div style="margin-bottom:10px">';
         h += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">';
         h += '<span style="font-size:.7rem;font-weight:600;color:var(--texto)">' + label + '</span>';
@@ -654,6 +622,18 @@ window.PROGNOSE = {
         h += '<div style="width:' + pct + '%;height:100%;background:' + cor + ';border-radius:4px;transition:width .5s ease"></div>';
         h += '</div></div>';
       });
+
+      // Caixinhas de resumo no final
+      h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">';
+      h += '<div style="flex:1;min-width:100px;background:var(--fundo2);border-radius:8px;padding:8px 10px;text-align:center">';
+      h += '<div style="font-size:.58rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">MÉDIA DE PONTOS</div>';
+      h += '<div style="font-size:1rem;font-weight:900;color:#38bdf8">' + s.mediaPts.toFixed(1) + '</div>';
+      h += '</div>';
+      h += '<div style="flex:1;min-width:100px;background:var(--fundo2);border-radius:8px;padding:8px 10px;text-align:center">';
+      h += '<div style="font-size:.58rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">MAIOR PONTUAÇÃO</div>';
+      h += '<div style="font-size:1rem;font-weight:900;color:#818cf8">' + s.maiorPts.toFixed(1) + '</div>';
+      h += '</div>';
+      h += '</div>';
 
       h += '</div>';
     }
