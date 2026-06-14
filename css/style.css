@@ -616,7 +616,7 @@ select{appearance:none;cursor:pointer}
 
 .celula-pts-8{background:rgba(249,115,22,0.25) !important;color:#fb923c !important;font-weight:900}
 .celula-pts-6{background:rgba(255,255,0,0.20) !important;color:#ffff66 !important;font-weight:700}
-.celula-pts-4{background:rgba(190,242,100,0.15) !important;color:#d9f99d !important;font-weight:700}
+.celula-pts-4{background:rgba(190,242,100,0.15) !important;color:#bef264 !important;font-weight:700}
 .celula-pts-3{background:rgba(34,197,94,0.20) !important;color:#86efac !important;font-weight:700}
 
 .celula-futuro{color:var(--texto2);font-style:italic}
