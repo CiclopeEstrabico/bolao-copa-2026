@@ -362,9 +362,9 @@ window.PROGNOSE = {
     h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">';
     h += '<div style="flex-shrink:0;width:20px;display:flex;align-items:center">' + htmlBandeira(hC, 20) + '</div>';
     h += '<div style="flex:1;display:flex;border-radius:6px;overflow:hidden;height:20px;gap:2px">';
-    h += '<div style="flex:' + c.home + ';background:rgba(34,197,94,.35);border-radius:4px 0 0 4px"></div>';
+    h += '<div style="flex:' + c.home + ';background:rgba(34,211,238,.35);border-radius:4px 0 0 4px"></div>';
     h += '<div style="flex:' + c.draw + ';background:rgba(139,148,158,.25)"></div>';
-    h += '<div style="flex:' + c.away + ';background:rgba(248,113,113,.32);border-radius:0 4px 4px 0"></div>';
+    h += '<div style="flex:' + c.away + ';background:rgba(167,139,250,.35);border-radius:0 4px 4px 0"></div>';
     h += '</div>';
     h += '<div style="flex-shrink:0;width:20px;display:flex;align-items:center;justify-content:flex-end">' + htmlBandeira(aC, 20) + '</div>';
     h += '</div>';
@@ -373,20 +373,38 @@ window.PROGNOSE = {
     const minSegPct = Math.min(c.home, c.draw, c.away) * 100;
     const useStackedLabels = minSegPct < 8; // segmento muito pequeno → layout empilhado abaixo
     if (useStackedLabels) {
-      // Layout alternativo: 3 colunas fixas abaixo da barra, sem overflow
+      // Layout alternativo: empate posicionado perto da barra cinza, não centralizado
+      const homeIsDominant = c.home > c.away;
       h += '<div style="display:flex;justify-content:space-between;margin-top:4px;gap:4px">';
-      h += '<div style="min-width:0">';
-      h += '<div style="font-size:.72rem;font-weight:900;color:#86efac;white-space:nowrap">' + pH + '%</div>';
-      h += '<div style="font-size:.61rem;color:rgba(134,239,172,.7);white-space:nowrap">Vitória</div>';
-      h += '</div>';
-      h += '<div style="min-width:0;text-align:center">';
-      h += '<div style="font-size:.72rem;font-weight:700;color:var(--texto2);white-space:nowrap">' + pD + '%</div>';
-      h += '<div style="font-size:.61rem;color:var(--texto2);white-space:nowrap">Empate</div>';
-      h += '</div>';
-      h += '<div style="min-width:0;text-align:right">';
-      h += '<div style="font-size:.72rem;font-weight:900;color:#fca5a5;white-space:nowrap">' + pA + '%</div>';
-      h += '<div style="font-size:.61rem;color:rgba(252,165,165,.7);white-space:nowrap">Vitória</div>';
-      h += '</div>';
+      if (homeIsDominant) {
+        // Time 1 dominante → empate fica mais à direita (perto da barra cinza)
+        h += '<div style="min-width:0">';
+        h += '<div style="font-size:.72rem;font-weight:900;color:#67e8f9;white-space:nowrap">' + pH + '%</div>';
+        h += '<div style="font-size:.61rem;color:rgba(103,232,249,.7);white-space:nowrap">Vitória</div>';
+        h += '</div>';
+        h += '<div style="min-width:0;text-align:right;margin-right:auto;padding-left:4px">';
+        h += '<div style="font-size:.72rem;font-weight:700;color:var(--texto2);white-space:nowrap">' + pD + '%</div>';
+        h += '<div style="font-size:.61rem;color:var(--texto2);white-space:nowrap">Empate</div>';
+        h += '</div>';
+        h += '<div style="min-width:0;text-align:right">';
+        h += '<div style="font-size:.72rem;font-weight:900;color:#c4b5fd;white-space:nowrap">' + pA + '%</div>';
+        h += '<div style="font-size:.61rem;color:rgba(196,181,253,.7);white-space:nowrap">Vitória</div>';
+        h += '</div>';
+      } else {
+        // Time 2 dominante → empate fica mais à esquerda (perto da barra cinza)
+        h += '<div style="min-width:0">';
+        h += '<div style="font-size:.72rem;font-weight:900;color:#67e8f9;white-space:nowrap">' + pH + '%</div>';
+        h += '<div style="font-size:.61rem;color:rgba(103,232,249,.7);white-space:nowrap">Vitória</div>';
+        h += '</div>';
+        h += '<div style="min-width:0;text-align:left;margin-left:auto;padding-right:4px">';
+        h += '<div style="font-size:.72rem;font-weight:700;color:var(--texto2);white-space:nowrap">' + pD + '%</div>';
+        h += '<div style="font-size:.61rem;color:var(--texto2);white-space:nowrap">Empate</div>';
+        h += '</div>';
+        h += '<div style="min-width:0;text-align:right">';
+        h += '<div style="font-size:.72rem;font-weight:900;color:#c4b5fd;white-space:nowrap">' + pA + '%</div>';
+        h += '<div style="font-size:.61rem;color:rgba(196,181,253,.7);white-space:nowrap">Vitória</div>';
+        h += '</div>';
+      }
       h += '</div>';
     } else {
       // Layout padrão: proporcional aos segmentos
@@ -394,16 +412,16 @@ window.PROGNOSE = {
       h += '<div style="width:20px;flex-shrink:0"></div>';
       h += '<div style="flex:1;display:flex;gap:2px">';
       h += '<div style="flex:' + c.home + ';min-width:0;overflow:visible">';
-      h += '<div style="font-size:.72rem;font-weight:900;color:#86efac;white-space:nowrap">' + pH + '%</div>';
-      h += '<div style="font-size:.61rem;color:rgba(134,239,172,.7);white-space:nowrap">Vitória</div>';
+      h += '<div style="font-size:.72rem;font-weight:900;color:#67e8f9;white-space:nowrap">' + pH + '%</div>';
+      h += '<div style="font-size:.61rem;color:rgba(103,232,249,.7);white-space:nowrap">Vitória</div>';
       h += '</div>';
       h += '<div style="flex:' + c.draw + ';min-width:0;overflow:visible;text-align:center">';
       h += '<div style="font-size:.72rem;font-weight:700;color:var(--texto2);white-space:nowrap">' + pD + '%</div>';
       h += '<div style="font-size:.61rem;color:var(--texto2);white-space:nowrap">Empate</div>';
       h += '</div>';
       h += '<div style="flex:' + c.away + ';min-width:0;overflow:visible;text-align:right">';
-      h += '<div style="font-size:.72rem;font-weight:900;color:#fca5a5;white-space:nowrap">' + pA + '%</div>';
-      h += '<div style="font-size:.61rem;color:rgba(252,165,165,.7);white-space:nowrap">Vitória</div>';
+      h += '<div style="font-size:.72rem;font-weight:900;color:#c4b5fd;white-space:nowrap">' + pA + '%</div>';
+      h += '<div style="font-size:.61rem;color:rgba(196,181,253,.7);white-space:nowrap">Vitória</div>';
       h += '</div>';
       h += '</div>';
       h += '<div style="width:20px;flex-shrink:0"></div>';
@@ -442,10 +460,13 @@ window.PROGNOSE = {
         const p = Math.max(0, Math.min(1, v / top1));
         const isEmpate = i === j;
 
-        // Heatmap base: verde-amarelo-vermelho
-        const hue = 60 * (1 - p);
-        const alpha = 0.08 + 0.58 * p;
-        let bg = `hsla(${hue}, 90%, 50%, ${alpha})`;
+        // Heatmap: azul-roxo (evita confundir com verde/vermelho de acertos/erros)
+        // Baixa prob = azul escuro (hue 220), alta prob = roxo vivo (hue 270)
+        const hue = 220 + 50 * p;
+        const sat = 70 + 25 * p;
+        const light = 25 + 35 * p;
+        const alpha = 0.15 + 0.75 * p;
+        let bg = `hsla(${hue}, ${sat}%, ${light}%, ${alpha})`;
 
         const fw = p > 0.75 ? '800' : p > 0.35 ? '600' : '400';
         const color = p > 0.5 ? '#fff' : 'var(--texto2)';
@@ -513,7 +534,7 @@ window.PROGNOSE = {
     let h = '';
 
     // ── 6. Barras duplas: grupo vs modelo ──
-    const labels = [[hName, pHome, mHome, 'rgba(34,197,94,.7)', 'rgba(34,197,94,.25)'], ['Empate', pDraw, mDraw, 'rgba(139,148,158,.7)', 'rgba(139,148,158,.2)'], [aName, pAway, mAway, 'rgba(248,113,113,.7)', 'rgba(248,113,113,.22)']];
+    const labels = [[hName, pHome, mHome, 'rgba(34,211,238,.7)', 'rgba(34,211,238,.25)'], ['Empate', pDraw, mDraw, 'rgba(139,148,158,.7)', 'rgba(139,148,158,.2)'], [aName, pAway, mAway, 'rgba(167,139,250,.7)', 'rgba(167,139,250,.22)']];
 
     labels.forEach(([lbl, pGrupo, pMod, corSolid, corFade]) => {
       h += '<div style="margin-bottom:12px">';
@@ -566,12 +587,12 @@ window.PROGNOSE = {
         // Barras empilhadas
         h += '<div style="flex:1;display:flex;flex-direction:column;gap:2px">';
         h += '<div style="background:var(--card);border-radius:3px;height:6px;overflow:hidden">';
-        h += '<div style="width:' + (ct / maxCt * 100) + '%;height:100%;background:var(--verde);border-radius:3px;transition:width .5s ease"></div>';
+        h += '<div style="width:' + (ct / maxCt * 100) + '%;height:100%;background:rgba(99,102,241,.6);border-radius:3px;transition:width .5s ease"></div>';
         h += '</div>';
         if (probMStr && modelo) {
           const modRelativo = Math.min((probM / (s.topPlacares[0][1] / total)) * 100, 100);
           h += '<div style="background:var(--card);border-radius:3px;height:6px;overflow:hidden">';
-          h += '<div style="width:' + modRelativo + '%;height:100%;background:rgba(34,197,94,.28);border-radius:3px;transition:width .5s ease"></div>';
+          h += '<div style="width:' + modRelativo + '%;height:100%;background:rgba(99,102,241,.28);border-radius:3px;transition:width .5s ease"></div>';
           h += '</div>';
         }
         h += '</div>';
@@ -700,6 +721,7 @@ window.PROGNOSE = {
       
       rowsData.push({
         apostadorId: a.id,
+        nome: a.nome || '',
         apelido: a.apelido || a.nome || a.id,
         palpiteStr,
         pts,
@@ -731,8 +753,11 @@ window.PROGNOSE = {
 
     rowsData.forEach((row, idx) => {
       const bg = idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,.01)';
-      h += `<tr style="background:${bg};cursor:pointer" onclick="PROGNOSE._abrirPopupApostador('${row.apostadorId}')">`;
-      h += `<td style="text-align:left;padding:8px 10px;font-weight:600;color:var(--texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px">${row.apelido}</td>`;
+      const rowNome = (row.nome || row.apelido || '').replace(/'/g, "\\'");
+      const rowApelido = row.apelido.replace(/'/g, "\\'");
+      const rowId = row.apostadorId.replace(/'/g, "\\'");
+      h += `<tr style="background:${bg};cursor:pointer" onclick="window.abrirModalApostador('${rowNome}','${rowApelido}',${row.pts || 0},'${rowId}')">`;
+      h += `<td style="text-align:left;padding:8px 10px;font-weight:600;color:var(--verde-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px">${row.apelido}</td>`;
       h += `<td class="${row.cls}" style="text-align:center;padding:8px 10px;font-weight:700">${row.palpiteStr}</td>`;
       h += `<td class="${row.cls}" style="text-align:right;padding:8px 10px;font-weight:700">${row.ptsStr}</td>`;
       h += '</tr>';

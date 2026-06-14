@@ -1297,7 +1297,7 @@ window.abrirModalCard = function(key) {
     }
   });
 
-  const top10 = candidatos.slice(0, 10);
+  const top15 = candidatos.slice(0, 15);
 
   // Montar HTML do modal
   let h = '<button class="modal-close" onclick="window.fecharModalStat()">✕</button>';
@@ -1307,10 +1307,10 @@ window.abrirModalCard = function(key) {
   h += '<div style="font-size:.7rem;color:var(--texto2);max-width:100%;margin:4px auto 0">' + cfg.desc + '</div>';
   h += '</div>';
 
-  if (!top10.length) {
+  if (!top15.length) {
     h += '<div style="text-align:center;padding:24px;color:var(--texto2);font-size:.8rem">Sem dados suficientes para este card.</div>';
   } else {
-    // Tabela Top 10
+    // Tabela Top 15
     h += '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">';
     h += '<table style="width:100%;border-collapse:collapse;font-size:.76rem">';
     h += '<thead><tr>';
@@ -1321,9 +1321,9 @@ window.abrirModalCard = function(key) {
     h += '</tr></thead><tbody>';
 
     let pos = 1;
-    for (let i = 0; i < top10.length; i++) {
-      const c = top10[i];
-      if (i > 0 && Math.abs(c.score - top10[i-1].score) > 0.0001) pos = i + 1;
+    for (let i = 0; i < top15.length; i++) {
+      const c = top15[i];
+      if (i > 0 && Math.abs(c.score - top15[i-1].score) > 0.0001) pos = i + 1;
       const apelido = c.r.participante.apelido || c.r.participante.nome || c.r.participante.id;
       const metricaStr = typeof cfg.format === 'function' ? cfg.format(c.score, c.r, cache) : c.score;
       const isMedal = pos <= 3;
@@ -1333,7 +1333,11 @@ window.abrirModalCard = function(key) {
 
       h += '<tr style="background:' + rowBg + '">';
       h += '<td style="text-align:center;padding:7px 6px;font-weight:800;color:' + posColor + '">' + pos + '</td>';
-      h += '<td style="text-align:left;padding:7px 6px;font-weight:600;color:var(--texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px">' + apelido + '</td>';
+      const nome = (c.r.participante.nome || apelido).replace(/'/g, "\\'");
+      const apelidoEsc = apelido.replace(/'/g, "\\'");
+      const apoId = (c.r.participante.id || '').replace(/'/g, "\\'");
+      const apoClk = "window.abrirModalApostador('" + nome + "','" + apelidoEsc + "'," + c.r.stats.total.toFixed(1) + ",'" + apoId + "')";
+      h += '<td onclick="' + apoClk + '" style="text-align:left;padding:7px 6px;font-weight:600;color:var(--verde-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;cursor:pointer">' + apelido + '</td>';
       h += '<td style="text-align:right;padding:7px 6px;font-weight:700;color:var(--verde-light);white-space:nowrap">' + metricaStr + '</td>';
       h += '<td style="text-align:right;padding:7px 6px;color:var(--texto2)">' + c.r.stats.total.toFixed(1) + '</td>';
       h += '</tr>';
