@@ -602,13 +602,12 @@ window.PROGNOSE = {
       // Média de pontos e maior pontuação
       h += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
       h += '<div style="flex:1;min-width:100px;background:var(--fundo2);border-radius:8px;padding:8px 10px;text-align:center">';
-      h += '<div style="font-size:.62rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.03em;margin-bottom:2px">Média de Pts</div>';
+      h += '<div style="font-size:.58rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">MÉDIA DE PONTOS</div>';
       h += '<div style="font-size:1rem;font-weight:900;color:#38bdf8">' + s.mediaPts.toFixed(1) + '</div>';
       h += '</div>';
       h += '<div style="flex:1;min-width:100px;background:var(--fundo2);border-radius:8px;padding:8px 10px;text-align:center">';
-      h += '<div style="font-size:.62rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.03em;margin-bottom:2px">Maior Pts</div>';
+      h += '<div style="font-size:.58rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">MAIOR PONTUAÇÃO</div>';
       h += '<div style="font-size:1rem;font-weight:900;color:#818cf8">' + s.maiorPts.toFixed(1) + '</div>';
-      h += '<div style="font-size:.58rem;color:var(--texto2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;margin-left:auto;margin-right:auto">' + s.maiorPtsApelido + '</div>';
       h += '</div>';
       h += '</div>';
 

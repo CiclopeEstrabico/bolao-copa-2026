@@ -6,6 +6,7 @@
  * 
  * This JS clones the <thead> into a fixed-position element that
  * sticks below the header+tabs bar, and syncs horizontal scroll.
+ * Uses a cached-position system to run layout-safe, zero-reflow updates.
  */
 (function () {
   if (typeof window === 'undefined') return;
@@ -20,6 +21,16 @@
     if (header) h += header.getBoundingClientRect().height;
     if (tabs) h += tabs.getBoundingClientRect().height;
     return h;
+  }
+
+  /** Retorna a posição do topo absoluto de um elemento na página */
+  function getAbsoluteTop(element) {
+    let top = 0;
+    while (element) {
+      top += element.offsetTop;
+      element = element.offsetParent;
+    }
+    return top;
   }
 
   /** Cria ou atualiza o header fixo para uma tabela */
@@ -66,7 +77,19 @@
     return { frozen, wrapper, table, thead };
   }
 
-  /** Atualiza a visibilidade e posição de todos os frozen headers */
+  function updateCachedPositions() {
+    _instances.forEach(inst => {
+      if (!inst) return;
+      const { table, thead } = inst;
+      if (table && thead) {
+        inst.tableTop = getAbsoluteTop(table);
+        inst.tableHeight = table.offsetHeight;
+        inst.theadHeight = thead.offsetHeight;
+      }
+    });
+  }
+
+  /** Atualiza a visibilidade e posição de todos os frozen headers (zero-reflow) */
   function updateAll() {
     if (window.innerWidth > MOBILE_BREAKPOINT) {
       // Desktop: esconde todos os frozen headers
@@ -75,11 +98,12 @@
     }
 
     const stickyTop = getStickyTop();
+    const scrollTop = window.scrollY;
 
     _instances.forEach(inst => {
       if (!inst) return;
-      const { frozen, wrapper, table, thead } = inst;
-      if (!frozen || !wrapper || !table || !thead) return;
+      const { frozen, wrapper } = inst;
+      if (!frozen || !wrapper) return;
 
       // Se a aba está oculta (display:none), esconder frozen
       if (!wrapper.offsetParent) {
@@ -87,13 +111,14 @@
         return;
       }
 
-      const tableRect = table.getBoundingClientRect();
-      const theadRect = thead.getBoundingClientRect();
+      const tableTop = inst.tableTop || 0;
+      const tableHeight = inst.tableHeight || 0;
+      const theadHeight = inst.theadHeight || 0;
 
       // Mostrar frozen header quando o thead original está acima do stickyTop
       // e a tabela ainda está parcialmente visível
-      const theadHidden = theadRect.bottom < stickyTop + 2;
-      const tableStillVisible = tableRect.bottom > stickyTop + 40;
+      const theadHidden = scrollTop + stickyTop > tableTop + theadHeight;
+      const tableStillVisible = scrollTop + stickyTop < tableTop + tableHeight;
 
       if (theadHidden && tableStillVisible) {
         frozen.style.display = 'block';
@@ -130,6 +155,15 @@
     const inst = setupFrozenHeader(table, wrapper);
     if (inst) {
       _instances.push(inst);
+
+      // Calcular posições no próximo frame para garantir layout estabelecido
+      requestAnimationFrame(() => {
+        inst.tableTop = getAbsoluteTop(table);
+        inst.tableHeight = table.offsetHeight;
+        inst.theadHeight = table.querySelector('thead')?.offsetHeight || 40;
+        updateAll();
+      });
+
       // Sync horizontal scroll
       wrapper.addEventListener('scroll', () => {
         if (inst.frozen && inst.frozen.style.display !== 'none') {
@@ -148,9 +182,12 @@
       if (inst && inst.frozen) inst.frozen.remove();
     });
     _instances.length = 0;
+
+    const oldBracket = document.getElementById('frozen-bracket-labels');
+    if (oldBracket) oldBracket.remove();
   };
 
-  // Listener global de scroll
+  // Listener global de scroll (zero-reflow)
   let ticking = false;
   window.addEventListener('scroll', () => {
     if (!ticking) {
@@ -162,8 +199,9 @@
     }
   }, { passive: true });
 
-  // Listener de resize (pra limpar em transição mobile→desktop)
+  // Listener de resize (pra recalcular posições e limpar em transição mobile→desktop)
   window.addEventListener('resize', () => {
+    updateCachedPositions();
     requestAnimationFrame(updateAll);
   }, { passive: true });
 })();

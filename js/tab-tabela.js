@@ -183,7 +183,7 @@ window.renderTabela = function() {
         }
       }, { passive: true });
 
-      // Show/hide on vertical scroll
+      // Show/hide on vertical scroll (zero-reflow)
       const stickyTop = (() => {
         let h = 0;
         const header = document.querySelector('.header');
@@ -193,21 +193,60 @@ window.renderTabela = function() {
         return h;
       })();
 
-      let ticking = false;
+      function getAbsoluteTop(element) {
+        let top = 0;
+        while (element) {
+          top += element.offsetTop;
+          element = element.offsetParent;
+        }
+        return top;
+      }
+
+      let bracketTop = 0;
+      let bracketHeight = 0;
+      let labelHeight = 25;
+
       const update = () => {
-        const scrollRect = scroll.getBoundingClientRect();
-        const labelsGone = scrollRect.top < stickyTop;
-        const tableVisible = scrollRect.bottom > stickyTop + 40;
+        const currentFrozen = document.getElementById('frozen-bracket-labels');
+        if (!currentFrozen) return;
+
+        const abaTabela = document.getElementById("aba-tabela");
+        if (!abaTabela || abaTabela.classList.contains("hidden")) {
+          currentFrozen.style.display = 'none';
+          return;
+        }
+
+        const scrollTop = window.scrollY;
+        const labelsGone = scrollTop + stickyTop > bracketTop + labelHeight;
+        const tableVisible = scrollTop + stickyTop < bracketTop + bracketHeight;
+
         if (labelsGone && tableVisible) {
-          frozen.style.display = 'block';
-          frozen.style.top = stickyTop + 'px';
+          currentFrozen.style.display = 'block';
+          currentFrozen.style.top = stickyTop + 'px';
           innerBar.style.transform = 'translateX(' + (-scroll.scrollLeft) + 'px)';
         } else {
-          frozen.style.display = 'none';
+          currentFrozen.style.display = 'none';
         }
       };
+
+      // Calcular posições assim que o DOM assentar
+      requestAnimationFrame(() => {
+        bracketTop = getAbsoluteTop(scroll);
+        bracketHeight = scroll.offsetHeight;
+        const labelEl = scroll.querySelector('.bracket-fase-label');
+        if (labelEl) labelHeight = labelEl.offsetHeight;
+        update();
+      });
+
+      let ticking = false;
       window.addEventListener('scroll', () => {
-        if (!ticking) { ticking = true; requestAnimationFrame(() => { update(); ticking = false; }); }
+        if (!ticking) {
+          ticking = true;
+          requestAnimationFrame(() => {
+            update();
+            ticking = false;
+          });
+        }
       }, { passive: true });
     });
   }

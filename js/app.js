@@ -360,6 +360,10 @@ function mudarAba(aba) {
   document.body.classList.toggle("aba-grafico-ativa", aba === "grafico");
   document.body.classList.toggle("aba-tabela-ativa", aba === "tabela");
 
+  if (window.limparFrozenHeaders) {
+    window.limparFrozenHeaders();
+  }
+
   renderAbaAtiva(true);
 }
 function renderAbaAtiva(resetScroll = false) {
