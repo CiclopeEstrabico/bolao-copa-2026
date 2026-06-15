@@ -383,7 +383,7 @@ window.PROGNOSE = {
         h += '<div style="font-size:.61rem;color:rgba(103,232,249,.7);white-space:nowrap">Vitória</div>';
         h += '</div>';
         h += '<div style="flex:1"></div>'; /* spacer */
-        h += '<div style="min-width:0;text-align:center;padding:0 2px">';
+        h += '<div style="min-width:0;text-align:center;padding:0 2px;margin-right:6%">';
         h += '<div style="font-size:.72rem;font-weight:700;color:var(--texto2);white-space:nowrap">' + pD + '%</div>';
         h += '<div style="font-size:.61rem;color:var(--texto2);white-space:nowrap">Empate</div>';
         h += '</div>';
@@ -397,7 +397,7 @@ window.PROGNOSE = {
         h += '<div style="font-size:.72rem;font-weight:900;color:#67e8f9;white-space:nowrap">' + pH + '%</div>';
         h += '<div style="font-size:.61rem;color:rgba(103,232,249,.7);white-space:nowrap">Vitória</div>';
         h += '</div>';
-        h += '<div style="min-width:0;text-align:center;padding:0 2px">';
+        h += '<div style="min-width:0;text-align:center;padding:0 2px;margin-left:6%">';
         h += '<div style="font-size:.72rem;font-weight:700;color:var(--texto2);white-space:nowrap">' + pD + '%</div>';
         h += '<div style="font-size:.61rem;color:var(--texto2);white-space:nowrap">Empate</div>';
         h += '</div>';
@@ -690,6 +690,15 @@ window.PROGNOSE = {
     const apos = APP.apostadores || [];
     const jogoInfo = window.SCHEDULE_BY_ID?.[gameId];
 
+    // Obter posições do ranking para exibir na lista (rank prefix)
+    const esp = window.BRACKET?.extrairEspeciaisOficiais?.(res, APP.bracket || {}) || {};
+    const ranking = gerarRanking(todos, res, apos, esp);
+    const rankMap = {};
+    ranking.forEach(item => {
+      const pId = item.participante.id || item.participante.token;
+      if (pId) rankMap[pId] = item.posicao;
+    });
+
     const rowsData = [];
     for (const a of apos) {
       if (a.id === "MODELO") continue;
@@ -721,6 +730,8 @@ window.PROGNOSE = {
           ptsStr = "0 pts";
         }
       }
+
+      const rank = rankMap[a.id] || 1;
       
       rowsData.push({
         apostadorId: a.id,
@@ -730,7 +741,8 @@ window.PROGNOSE = {
         pts,
         ptsStr,
         cls,
-        hasPalpite
+        hasPalpite,
+        rank
       });
     }
 
@@ -760,7 +772,7 @@ window.PROGNOSE = {
       const rowApelido = row.apelido.replace(/'/g, "\\'");
       const rowId = row.apostadorId.replace(/'/g, "\\'");
       h += `<tr style="background:${bg};cursor:pointer" onclick="window.abrirModalApostador('${rowNome}','${rowApelido}',${row.pts || 0},'${rowId}')">`;
-      h += `<td style="text-align:left;padding:8px 10px;font-weight:600;color:var(--verde-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px">${row.apelido}</td>`;
+      h += `<td style="text-align:left;padding:8px 10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px">${row.rank}° - ${row.apelido}</td>`;
       h += `<td class="${row.cls}" style="text-align:center;padding:8px 10px;font-weight:700">${row.palpiteStr}</td>`;
       h += `<td class="${row.cls}" style="text-align:right;padding:8px 10px;font-weight:700">${row.ptsStr}</td>`;
       h += '</tr>';
