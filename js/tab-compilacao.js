@@ -198,7 +198,7 @@ window.renderCompilacao = function () {
         const ph = r.penaltis_home ?? 0; const pa = r.penaltis_away ?? 0;
         resHtml += '<div style="font-size:.58rem;color:var(--amber);margin-top:1px;font-weight:700">PEN ' + ph + 'x' + pa + '</div>';
       }
-      h += '<td class="col-resultado" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="background:var(--fundo2);color:var(--verde-ok);vertical-align:middle;cursor:pointer">' + resHtml + '</td>';
+      h += '<td class="col-resultado" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="background:var(--fundo2);color:var(--texto);vertical-align:middle;cursor:pointer">' + resHtml + '</td>';
     } else {
       h += '<td class="col-resultado" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="background:var(--fundo2);color:var(--texto2);cursor:pointer">–</td>';
     }

@@ -630,8 +630,8 @@ window.PROGNOSE = {
       const pctPlac5 = Math.round(s.placar5 / s.total * 100);
 
       const barras = [
-        { label: 'Acertaram resultado',        count: s.acertosResultado, pct: pctRes,   cor: 'rgba(21,128,61,.55)',   corTexto: '#22c55e' },
         { label: 'Erraram resultado',           count: s.errosResultado,  pct: pctErros, cor: 'rgba(239,68,68,.45)',   corTexto: '#fca5a5' },
+        { label: 'Acertaram resultado',        count: s.acertosResultado, pct: pctRes,   cor: 'rgba(21,128,61,.55)',   corTexto: '#22c55e' },
         { label: 'Bônus+1 (gols/diferença)',    count: s.bonus1,          pct: pctBonus, cor: 'rgba(124,252,0,.45)',   corTexto: '#9bf73e' },
         { label: 'Acertaram placar (+3)',        count: s.placar3,         pct: pctPlac3, cor: 'rgba(255,255,0,.45)',   corTexto: '#ffff66' },
         { label: 'Acertaram placar (+5)',        count: s.placar5,         pct: pctPlac5, cor: 'rgba(249,115,22,.50)',  corTexto: '#fb923c' },
