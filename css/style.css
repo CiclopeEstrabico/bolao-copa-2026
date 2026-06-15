@@ -49,8 +49,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(13, 17, 23, .96);
-  backdrop-filter: blur(16px);
+  background: var(--fundo);
   border-bottom: 1px solid var(--borda);
   padding: 10px 16px;
   padding-left: max(16px, env(safe-area-inset-left));
@@ -97,8 +96,7 @@ body {
   position: sticky;
   top: 63px;
   z-index: 90;
-  background: rgba(13, 17, 23, .97);
-  backdrop-filter: blur(12px);
+  background: var(--fundo);
   border-bottom: 1px solid var(--borda);
   overflow-x: auto;
   scrollbar-width: none;
@@ -1004,7 +1002,9 @@ select {
 
 @media(max-width:600px) {
   .compilacao-wrap {
-    max-height: calc(100vh - 130px);
+    max-height: none !important;
+    overflow-y: clip !important;
+    overflow-x: auto !important;
   }
 
   /* Reduz a coluna Resultado em 25% (de ~75px para 56px) */
@@ -1070,32 +1070,31 @@ select {
 
 @media (max-width: 600px) {
 
-  /* No mobile, sticky dentro do compilacao-wrap (overflow:auto).
-   * box-shadow verde só embaixo (0 2px), sombra de separação lateral separada. */
+  /* No mobile, o JS (mobile-sticky-header) cuida do cabeçalho fixo.
+   * Por isso desativamos o posicionamento sticky nativo e removemos as bordas nesta etapa. */
   .compilacao-table thead th {
-    position: sticky !important;
-    top: 0 !important;
+    position: relative !important;
+    top: auto !important;
     z-index: 5 !important;
     background: var(--fundo2) !important;
-    box-shadow: inset 0 -1px 0 0 var(--verde-light) !important;
   }
 
   .compilacao-table thead th:first-child {
     position: sticky !important;
-    top: 0 !important;
+    top: auto !important;
     left: 0 !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
-    box-shadow: inset 0 -1px 0 0 var(--verde-light), 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 
   .compilacao-table thead th.col-resultado {
     position: sticky !important;
-    top: 0 !important;
+    top: auto !important;
     left: 115px !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
-    box-shadow: inset 0 -1px 0 0 var(--verde-light), 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 }
 
@@ -2777,11 +2776,12 @@ details[open]>summary span:last-child {
   box-shadow: inset 0 -1px 0 0 var(--verde-light) !important;
 }
 
-/* ── FINAL Mobile overrides: rank-table e stat-full-table sem borda no thead ── */
+/* ── FINAL Mobile overrides: rank-table, stat-full-table e compilacao-table sem borda no thead ── */
 /* Estas regras DEVEM ser as últimas do arquivo para vencer qualquer cascade anterior. */
 @media (max-width: 600px) {
   .rank-table thead th,
-  .stat-full-table thead th {
+  .stat-full-table thead th,
+  .compilacao-table thead th {
     border: none !important;
     border-top: none !important;
     border-bottom: none !important;
@@ -2795,11 +2795,14 @@ details[open]>summary span:last-child {
   }
 
   .stat-full-table thead th:first-child,
-  .stat-full-table thead th.col-jogo {
+  .stat-full-table thead th.col-jogo,
+  .compilacao-table thead th:first-child,
+  .compilacao-table thead th.col-jogo {
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 
-  .stat-full-table thead th.col-resultado {
+  .stat-full-table thead th.col-resultado,
+  .compilacao-table thead th.col-resultado {
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 }

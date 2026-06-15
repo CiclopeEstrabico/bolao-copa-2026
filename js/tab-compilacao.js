@@ -328,6 +328,15 @@ window.renderCompilacao = function () {
   el.innerHTML = h;
   el.dataset.rendered = '1'; // marca como renderizado para o cache
 
+  // Registrar cabeçalho fixo no mobile para a tabela de palpites
+  if (window.innerWidth <= 600 && window.registrarFrozenHeader) {
+    const table = el.querySelector(".compilacao-table");
+    const wrapper = el.querySelector(".compilacao-wrap");
+    if (table && wrapper) {
+      window.registrarFrozenHeader(table, wrapper);
+    }
+  }
+
   // Tooltip unificado (hover desktop + toque mobile) — cobre os <th> dos apostadores
   window.injetarTooltipsMobile(el);
 };
