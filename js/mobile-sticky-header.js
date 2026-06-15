@@ -36,7 +36,7 @@
       frozen.className = 'frozen-thead';
       frozen.style.cssText =
         'position:fixed;left:0;right:0;z-index:50;overflow:hidden;pointer-events:none;display:none;' +
-        'background:var(--fundo2);border-bottom:2px solid var(--verde-light);box-shadow:0 2px 8px rgba(0,0,0,.3);' +
+        'background:var(--fundo2);border-bottom:1px solid var(--verde-light);box-shadow:0 2px 8px rgba(0,0,0,.3);' +
         'will-change:transform,opacity;';
       document.body.appendChild(frozen);
       wrapper._frozenHeader = frozen;
@@ -96,14 +96,16 @@
       const tableHeight = tableRect.height;
       const theadHeight = thead.getBoundingClientRect().height || 40;
 
-      // O thead está oculto quando seu bottom (tableTop + theadHeight) ficou acima do stickyTop
-      const theadHidden = tableTop + theadHeight < stickyTop;
+      // O thead está oculto/sticky assim que o topo dele passa da barra sticky
+      const theadHidden = tableTop < stickyTop;
       // A tabela ainda está visível (parte dela está abaixo do stickyTop)
       const tableStillVisible = tableTop + tableHeight > stickyTop;
 
       if (theadHidden && tableStillVisible) {
         frozen.style.display = 'block';
-        frozen.style.top = stickyTop + 'px';
+        // Se a tabela está acabando, empurra o header fixo para cima
+        const currentTop = Math.min(stickyTop, tableTop + tableHeight - theadHeight);
+        frozen.style.top = currentTop + 'px';
         // Sincronizar scroll horizontal
         const innerTable = frozen.querySelector('table');
         if (innerTable) {
