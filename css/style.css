@@ -1036,7 +1036,7 @@ select {
   left: 115px;
   z-index: 3;
   background: var(--fundo2);
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 1px 0 0 0 #292d35, 2px 0 5px rgba(0, 0, 0, 0.1);
 }
 
 /* Sticky vertical para o cabeçalho da compilação — top:0 porque o scroll é interno ao compilacao-wrap */
@@ -1055,7 +1055,7 @@ select {
     left: 0 !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
-    box-shadow: inset 0 -1px 0 0 var(--verde-light), 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: inset 0 -1px 0 0 var(--verde-light), 1px 0 0 0 #292d35, 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 
   .compilacao-table thead th.col-resultado {
@@ -1064,7 +1064,7 @@ select {
     left: 115px !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
-    box-shadow: inset 0 -1px 0 0 var(--verde-light), 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: inset 0 -1px 0 0 var(--verde-light), 1px 0 0 0 #292d35, 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 }
 
@@ -1085,7 +1085,7 @@ select {
     left: 0 !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 1px 0 0 0 #292d35, 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 
   .compilacao-table thead th.col-resultado {
@@ -1094,7 +1094,7 @@ select {
     left: 115px !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 1px 0 0 0 #292d35, 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 }
 
@@ -2265,7 +2265,7 @@ select {
     background: var(--fundo2) !important;
     border: none !important;
     border-bottom: none !important;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 1px 0 0 0 #292d35, 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 
   .stat-full-table thead th.col-resultado {
@@ -2276,7 +2276,7 @@ select {
     background: var(--fundo2) !important;
     border: none !important;
     border-bottom: none !important;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 1px 0 0 0 #292d35, 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 
   .stat-full-table tbody td:first-child,
@@ -2285,7 +2285,7 @@ select {
     left: 0 !important;
     z-index: 2 !important;
     background: var(--card2) !important;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 1px 0 0 0 #292d35, 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 
   .stat-full-table tbody td.col-resultado {
@@ -2293,7 +2293,7 @@ select {
     left: 115px !important;
     z-index: 3 !important;
     background: var(--fundo2) !important;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 1px 0 0 0 #292d35, 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 
   /* Ajusta tamanho das outras colunas no mobile */
@@ -2323,7 +2323,7 @@ select {
     background: var(--fundo2) !important;
     border: none !important;
     border-bottom: none !important;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 1px 0 0 0 #292d35, 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 
   .rank-table tbody td.col-apostador {
@@ -2331,7 +2331,7 @@ select {
     left: 0 !important;
     z-index: 2 !important;
     background: var(--fundo) !important;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 1px 0 0 0 #292d35, 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 }
 
@@ -2719,7 +2719,7 @@ details[open]>summary span:last-child {
 
 @media (min-width: 601px) {
   .rank-table thead th.col-apostador {
-    box-shadow: inset 0 -1px 0 0 var(--verde-light), 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: inset 0 -1px 0 0 var(--verde-light), 1px 0 0 0 #292d35, 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 }
 
@@ -2731,7 +2731,7 @@ details[open]>summary span:last-child {
   }
 
   .rank-table thead th.col-apostador {
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 1px 0 0 0 #292d35, 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 
   .rank-table tbody td.col-apostador {
@@ -2765,7 +2765,7 @@ details[open]>summary span:last-child {
     background: var(--fundo2) !important;
     border: none !important;
     border-bottom: none !important;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 1px 0 0 0 #292d35, 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 }
 
@@ -2791,18 +2791,18 @@ details[open]>summary span:last-child {
   }
 
   .rank-table thead th.col-apostador {
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 1px 0 0 0 #292d35, 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 
   .stat-full-table thead th:first-child,
   .stat-full-table thead th.col-jogo,
   .compilacao-table thead th:first-child,
   .compilacao-table thead th.col-jogo {
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 1px 0 0 0 #292d35, 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 
   .stat-full-table thead th.col-resultado,
   .compilacao-table thead th.col-resultado {
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 1px 0 0 0 #292d35, 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 }

@@ -104,9 +104,9 @@
 
       if (theadHidden && tableStillVisible) {
         frozen.style.display = 'block';
-        // Se a tabela está acabando, empurra o header fixo para cima
+        // Se a tabela está acabando, empurra o header fixo para cima (sobrepomos 1px com o topo para evitar gap subpixel)
         const currentTop = Math.min(stickyTop, tableTop + tableHeight - theadHeight);
-        frozen.style.top = currentTop + 'px';
+        frozen.style.top = (currentTop - 1) + 'px';
         
         // Alinha horizontalmente o container com o wrapper da tabela (clip de overflow)
         frozen.style.left = wrapperRect.left + 'px';

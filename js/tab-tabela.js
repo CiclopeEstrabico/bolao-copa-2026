@@ -216,7 +216,7 @@ window.renderTabela = function() {
 
         if (labelsGone && tableVisible) {
           currentFrozen.style.display = 'block';
-          currentFrozen.style.top = stickyTop + 'px';
+          currentFrozen.style.top = (stickyTop - 1) + 'px';
           innerBar.style.transform = 'translateX(' + (-scroll.scrollLeft) + 'px)';
         } else {
           currentFrozen.style.display = 'none';

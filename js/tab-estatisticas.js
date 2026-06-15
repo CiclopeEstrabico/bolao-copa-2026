@@ -1150,7 +1150,7 @@ window.renderHtH = function () {
     const cor2 = v2 > v1 ? "var(--verde-ok)" : v2 < v1 ? "#f87171" : "var(--texto2)";
     const tooltipH = '';
     const tooltipA = '';
-    rows += '<tr><td class="' + (isMob ? 'col-jogo' : 'stat-col-jogo') + '" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="text-align:left;font-size:.73rem;position:sticky;left:0;background:var(--fundo);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1);cursor:pointer">' +
+    rows += '<tr><td class="' + (isMob ? 'col-jogo' : 'stat-col-jogo') + '" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="text-align:left;font-size:.73rem;position:sticky;left:0;background:var(--fundo);z-index:1;box-shadow:1px 0 0 0 #292d35, 2px 0 5px rgba(0,0,0,0.1);cursor:pointer">' +
       '<div style="display:flex;align-items:center;gap:4px;width:100%">' + htmlBandeira(hC, 14) + ' <span class="' + (isMob ? 'compilacao-time-nome comp-sigla' : 'stat-time-nome') + '"' + tooltipH + '>' + hDisplay + '</span> <span style="color:var(--texto2)">×</span> <span class="' + (isMob ? 'compilacao-time-nome comp-sigla' : 'stat-time-nome') + '"' + tooltipA + '>' + aDisplay + '</span> ' + htmlBandeira(aC, 14) + '</div></td>' +
       '<td onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="font-size:.72rem;cursor:pointer">' + r.homeGoals + '×' + r.awayGoals + '</td>' +
       '<td style="color:' + cor1 + ';font-weight:700">' + (p1 ? p1.homeGoals + '×' + p1.awayGoals + ' (' + v1 + 'pts)' : '—') + '</td>' +
@@ -1169,7 +1169,7 @@ window.renderHtH = function () {
   h += '<div style="font-size:1.1rem;font-weight:900;color:' + corTot1 + '">' + pts1.toFixed(1) + ' pts<div style="font-size:.72rem;color:var(--texto2)">' + n1 + '</div></div>';
   h += '<div style="font-size:.8rem;color:var(--texto2)">' + ganhou1 + '–' + empHtH + '–' + ganhou2 + '</div>';
   h += '<div style="font-size:1.1rem;font-weight:900;color:' + corTot2 + '">' + pts2.toFixed(1) + ' pts<div style="font-size:.72rem;color:var(--texto2)">' + n2 + '</div></div></div>';
-  h += '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="compilacao-table" style="min-width:350px"><thead><tr><th class="' + (window.innerWidth <= 600 ? 'col-jogo' : 'stat-col-jogo') + '" style="text-align:left;position:sticky;left:0;background:var(--card);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Jogo</th><th>Resultado</th><th>' + n1 + '</th><th>' + n2 + '</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  h += '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="compilacao-table" style="min-width:350px"><thead><tr><th class="' + (window.innerWidth <= 600 ? 'col-jogo' : 'stat-col-jogo') + '" style="text-align:left;position:sticky;left:0;background:var(--card);z-index:1;box-shadow:1px 0 0 0 #292d35, 2px 0 5px rgba(0,0,0,0.1)">Jogo</th><th>Resultado</th><th>' + n1 + '</th><th>' + n2 + '</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
   out.innerHTML = h;
 };
 
