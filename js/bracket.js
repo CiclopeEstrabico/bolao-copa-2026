@@ -268,27 +268,14 @@ window.BRACKET = (() => {
   function descricaoPosicao(pos) {
     if (!pos) return "A definir";
     const grupoMatch = pos.match(/^([12])([A-L])$/);
-    if (grupoMatch) return (grupoMatch[1] === "1" ? "1.°" : "2.°") + ` Grupo ${grupoMatch[2]}`;
+    if (grupoMatch) return grupoMatch[1] + "° Grp " + grupoMatch[2];
     const tercMatch = pos.match(/^3X(\d+)$/);
-    if (tercMatch) {
-      // Labels per FIFA regulations Art.12.6 / Annex C — each slot's eligible source groups
-      const tercLabels = {
-        "3X1": "3.° (Grupos A/B/C/D/F)",   // vs 1E
-        "3X2": "3.° (Grupos C/D/F/G/H)",   // vs 1I
-        "3X3": "3.° (Grupos C/E/F/H/I)",   // vs 1A
-        "3X4": "3.° (Grupos E/H/I/J/K)",   // vs 1L
-        "3X5": "3.° (Grupos B/E/F/I/J)",   // vs 1D
-        "3X6": "3.° (Grupos A/E/H/I/J)",   // vs 1G
-        "3X7": "3.° (Grupos E/F/G/I/J)",   // vs 1B
-        "3X8": "3.° (Grupos D/E/I/J/L)",   // vs 1K
-      };
-      return tercLabels[pos] || `3.° lugar #${tercMatch[1]}`;
-    }
-    if (pos.startsWith("WR32_")) return `Venc. 16avos #${pos.slice(5)}`;
-    if (pos.startsWith("WR16_")) return `Venc. Oitavas #${pos.slice(5)}`;
-    if (pos.startsWith("WQF_")) return `Venc. Quartas #${pos.slice(4)}`;
-    if (pos.startsWith("WSF_")) return `Venc. Semi #${pos.slice(4)}`;
-    if (pos.startsWith("LSF_")) return `Perdedor Semi #${pos.slice(4)}`;
+    if (tercMatch) return "3° #" + tercMatch[1];
+    if (pos.startsWith("WR32_")) return "V.16avos #" + pos.slice(5);
+    if (pos.startsWith("WR16_")) return "V.Oitavas #" + pos.slice(5);
+    if (pos.startsWith("WQF_")) return "V.QF #" + pos.slice(4);
+    if (pos.startsWith("WSF_")) return "V.SF #" + pos.slice(4);
+    if (pos.startsWith("LSF_")) return "P.SF #" + pos.slice(4);
     return pos;
   }
 

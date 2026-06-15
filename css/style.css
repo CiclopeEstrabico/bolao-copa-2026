@@ -2313,6 +2313,109 @@ select {
   height: 8px
 }
 
+/* ── Mobile compact bracket card ── */
+.bracket-card-mob {
+  cursor: pointer;
+  background: var(--card2);
+  border: 1px solid var(--borda);
+  border-radius: 3px;
+  overflow: hidden;
+  transition: border-color .15s
+}
+.bracket-card-mob:active {
+  border-color: var(--verde-light)
+}
+
+.bracket-time-mob {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 3px;
+  font-size: .58rem;
+  line-height: 1.1;
+  border-bottom: 1px solid var(--borda)
+}
+.bracket-time-mob:last-child {
+  border-bottom: none
+}
+.bracket-time-mob .flag {
+  flex-shrink: 0
+}
+.bracket-time-mob .flag-empty {
+  flex-shrink: 0
+}
+.bracket-time-mob.winner {
+  color: var(--verde-ok);
+  font-weight: 700;
+  background: rgba(34, 197, 94, .06)
+}
+.bracket-time-mob.loser {
+  color: var(--texto2);
+  opacity: .6
+}
+
+.bm-code {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .56rem;
+  letter-spacing: -.01em
+}
+.bm-gol {
+  font-weight: 800;
+  font-size: .6rem;
+  min-width: 8px;
+  text-align: right
+}
+
+/* Inline sub-label for "3° Lugar" inside merged final column */
+.bracket-fase-label-inline {
+  font-size: .5rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--texto2);
+  text-align: center;
+  padding: 2px 0;
+  letter-spacing: .04em
+}
+
+/* ── Mobile bracket layout: no horizontal scroll, all fits ── */
+@media (max-width: 600px) {
+  .bracket-scroll {
+    overflow-x: hidden !important;
+    gap: 1px;
+    padding: 4px 0 8px;
+    min-height: auto
+  }
+
+  .bracket-fase {
+    min-width: 0 !important;
+    flex: 1 1 0;
+  }
+
+  .bracket-fase-label {
+    font-size: .48rem !important;
+    padding: 3px 2px !important;
+    margin: 0 1px !important;
+    letter-spacing: .02em
+  }
+
+  .bracket-coluna {
+    padding: 2px 1px;
+    gap: 0
+  }
+
+  .bracket-spacer {
+    height: 3px
+  }
+
+  .bracket-card-mob {
+    margin: 0
+  }
+}
+
 /* ===== APOSTA PROGRESSO & ESTATISTICAS & RANK ===== */
 .stat-table-wrap,
 .rank-table-wrap {
