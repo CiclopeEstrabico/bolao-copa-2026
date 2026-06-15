@@ -2247,13 +2247,14 @@ select {
   }
 
   /* Cabeçalho da tabela de estatísticas no mobile: NÃO usar sticky aqui (frozen-thead JS cuida).
-     Apenas garante z-index e background opaco para evitar bleed-through. */
+     Sem borda verde — ela vem do frozen-thead container no scroll. */
   .stat-full-table thead th {
     position: relative !important;
     top: auto !important;
     z-index: 5 !important;
     background: var(--fundo2) !important;
-    border-bottom: 2px solid var(--verde-light) !important;
+    border: none !important;
+    border-bottom: none !important;
   }
 
   .stat-full-table thead th:first-child,
@@ -2263,7 +2264,8 @@ select {
     left: 0 !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
-    border-bottom: 2px solid var(--verde-light) !important;
+    border: none !important;
+    border-bottom: none !important;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 
@@ -2273,7 +2275,8 @@ select {
     left: 115px !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
-    border-bottom: 2px solid var(--verde-light) !important;
+    border: none !important;
+    border-bottom: none !important;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 
@@ -2303,12 +2306,13 @@ select {
   }
 
   /* Cabeçalho da tabela de classificação no mobile: NÃO usar sticky aqui (frozen-thead JS cuida).
-     Apenas garante z-index e background opaco. Sem borda verde aqui — ela vem do frozen-thead container no scroll. */
+     Sem borda — ela vem do frozen-thead container no scroll. */
   .rank-table thead th {
     position: relative !important;
     top: auto !important;
     z-index: 5 !important;
     background: var(--fundo2) !important;
+    border: none !important;
     border-bottom: none !important;
   }
 
@@ -2318,6 +2322,7 @@ select {
     left: 0 !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
+    border: none !important;
     border-bottom: none !important;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
@@ -2682,6 +2687,8 @@ details[open]>summary span:last-child {
 
 @media (max-width: 600px) {
   .stat-full-table thead th {
+    border: none !important;
+    border-bottom: none !important;
     box-shadow: none !important;
   }
 
@@ -2719,6 +2726,8 @@ details[open]>summary span:last-child {
 
 @media (max-width: 600px) {
   .rank-table thead th {
+    border: none !important;
+    border-bottom: none !important;
     box-shadow: none !important;
   }
 
@@ -2744,6 +2753,7 @@ details[open]>summary span:last-child {
     top: auto !important;
     z-index: 5 !important;
     background: var(--fundo2) !important;
+    border: none !important;
     border-bottom: none !important;
     box-shadow: none !important;
   }
@@ -2754,14 +2764,42 @@ details[open]>summary span:last-child {
     left: 0 !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
+    border: none !important;
     border-bottom: none !important;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 }
 
 /* ── Modal Prognósticos - Palpites ─────────────────────────────────────── */
-.tabela-detalhe thead th {
+.modal-box .tabela-detalhe thead th {
   border: 1px solid #292d35 !important;
   border-bottom: 1px solid #292d35 !important;
   box-shadow: inset 0 -2px 0 0 var(--verde-light) !important;
+}
+
+/* ── FINAL Mobile overrides: rank-table e stat-full-table sem borda no thead ── */
+/* Estas regras DEVEM ser as últimas do arquivo para vencer qualquer cascade anterior. */
+@media (max-width: 600px) {
+  .rank-table thead th,
+  .stat-full-table thead th {
+    border: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    box-shadow: none !important;
+  }
+
+  .rank-table thead th.col-apostador {
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .stat-full-table thead th:first-child,
+  .stat-full-table thead th.col-jogo {
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .stat-full-table thead th.col-resultado {
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
+  }
 }
