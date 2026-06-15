@@ -456,7 +456,7 @@ window.PROGNOSE = {
     h += '</div>';
 
     // ── 4. Matriz Dixon-Coles com headers separados (time + gols) ──
-    const stats = this.statsPalpites(gameId);
+
 
     h += '<div style="font-size:.68rem;font-weight:700;color:var(--texto2);margin-bottom:6px">';
     h += 'Matriz Dixon-Coles';
@@ -723,7 +723,7 @@ window.PROGNOSE = {
       this._listPalpitesCurrentDir = this._listPalpitesCurrentDir === 'asc' ? 'desc' : 'asc';
     } else {
       this._listPalpitesCurrentSort = col;
-      this._listPalpitesCurrentDir = col === 'apelido' ? 'asc' : 'asc';
+      this._listPalpitesCurrentDir = col === 'apelido' ? 'asc' : 'desc';
     }
     const container = document.getElementById('modal-content-listpal');
     if (container) {
@@ -878,70 +878,6 @@ window.PROGNOSE = {
     return h;
   },
 
-  _abrirPopupApostador: function (apostadorId) {
-    const a = (APP.apostadores || []).find(x => x.id === apostadorId);
-    if (!a) return;
-    const res = getResultados();
-    // Especiais extraídos do bracket da mesma forma que a aba Classificação
-    const esp = window.BRACKET?.extrairEspeciaisOficiais?.(res, APP.bracket || {}) || {};
-    const st = calcularPontosApostador(APP.palpites?.[a.id] || {}, res, a, esp);
-    const nomeCompleto = a.nome || a.apelido || apostadorId;
-    const apelido = a.apelido || a.nome || apostadorId;
-
-    // Cria mini-popup dentro do modal
-    const existing = document.getElementById('popup-apostador-detalhe');
-    if (existing) existing.remove();
-
-    const div = document.createElement('div');
-    div.id = 'popup-apostador-detalhe';
-    div.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px';
-    div.innerHTML = `
-      <div style="width:100%;max-width:400px;background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.4)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-          <div>
-            <div style="font-size:1rem;font-weight:800;color:var(--texto)">${apelido}</div>
-            <div style="font-size:.72rem;color:var(--texto2);margin-top:2px">${nomeCompleto !== apelido ? nomeCompleto : ''}</div>
-          </div>
-          <button onclick="document.getElementById('popup-apostador-detalhe')?.remove()" style="background:rgba(255,255,255,.08);border:none;border-radius:50%;width:28px;height:28px;color:var(--texto2);font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px">
-          <div style="background:var(--fundo2);border-radius:8px;padding:10px;text-align:center">
-            <div style="font-size:.55rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Pontos Totais</div>
-            <div style="font-size:1.2rem;font-weight:900;color:var(--verde-light)">${st.total.toFixed(1)}</div>
-          </div>
-          <div style="background:var(--fundo2);border-radius:8px;padding:10px;text-align:center">
-            <div style="font-size:.55rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Acertos Resultado</div>
-            <div style="font-size:1.2rem;font-weight:900;color:#38bdf8">${st.acertos_resultado}</div>
-          </div>
-          <div style="background:var(--fundo2);border-radius:8px;padding:10px;text-align:center">
-            <div style="font-size:.55rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Grupos</div>
-            <div style="font-size:1rem;font-weight:800;color:var(--texto)">${st.total_grupos.toFixed(1)} pts</div>
-          </div>
-          <div style="background:var(--fundo2);border-radius:8px;padding:10px;text-align:center">
-            <div style="font-size:.55rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Eliminatórias</div>
-            <div style="font-size:1rem;font-weight:800;color:var(--texto)">${st.total_eliminatorias.toFixed(1)} pts</div>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
-          <div style="background:var(--fundo2);border-radius:8px;padding:8px 4px;text-align:center">
-            <div style="font-size:.5rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">Bônus+1</div>
-            <div style="font-size:.9rem;font-weight:800;color:#9bf73e">${st.acertos_bonus1}</div>
-          </div>
-          <div style="background:var(--fundo2);border-radius:8px;padding:8px 4px;text-align:center">
-            <div style="font-size:.5rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">Placar+3</div>
-            <div style="font-size:.9rem;font-weight:800;color:#ffff66">${st.acertos_placar_exato}</div>
-          </div>
-          <div style="background:var(--fundo2);border-radius:8px;padding:8px 4px;text-align:center">
-            <div style="font-size:.5rem;color:var(--texto2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px">Placar+5</div>
-            <div style="font-size:.9rem;font-weight:800;color:#fb923c">${st.acertos_placar_alto}</div>
-          </div>
-        </div>
-        <div style="margin-top:10px;font-size:.65rem;color:var(--texto2);text-align:center">Toque fora para fechar</div>
-      </div>
-    `;
-    div.addEventListener('click', e => { if (e.target === div) div.remove(); });
-    document.body.appendChild(div);
-  },
 
   _renderEstadio: function (jogo) {
     if (!jogo?.cidade) return '<p style="text-align:center;color:var(--texto2);padding:30px">Informações não disponíveis.</p>';
