@@ -68,7 +68,11 @@ window.renderGrafico = function () {
       isModelo: false,
       posicao: pId ? posMap[pId] : null
     };
-  }).sort((a, b) => b.pts - a.pts);
+  }).sort((a, b) => {
+    if (b.pts !== a.pts) return b.pts - a.pts;
+    if (b.placar !== a.placar) return b.placar - a.placar;
+    return b.res - a.res;
+  });
 
   // Inserir Modelo na posição correta
   const modeloGraf = window.getModelo ? window.getModelo() : null;
