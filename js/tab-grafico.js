@@ -1116,15 +1116,20 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
 
   svg += '</svg>';
 
-  let legenda = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;justify-content:center">';
-  for (const s of series) {
-    const ultimo = s.pontos[s.pontos.length - 1] ?? 0;
-    legenda += `<div style="display:flex;align-items:center;gap:5px;font-size:.72rem;font-weight:600;color:var(--texto)">
-      <div style="width:20px;height:3px;background:${s.cor};border-radius:2px"></div>
-      ${s.nome} <span style="color:var(--texto2);font-weight:400">${ultimo} pts</span>
-    </div>`;
+  // Legend: hidden on mobile (names already on chart lines)
+  const isMobLeg = window.innerWidth <= 600;
+  let legenda = '';
+  if (!isMobLeg) {
+    legenda = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;justify-content:center">';
+    for (const s of series) {
+      const ultimo = s.pontos[s.pontos.length - 1] ?? 0;
+      legenda += `<div style="display:flex;align-items:center;gap:5px;font-size:.72rem;font-weight:600;color:var(--texto)">
+        <div style="width:20px;height:3px;background:${s.cor};border-radius:2px"></div>
+        ${s.nome} <span style="color:var(--texto2);font-weight:400">${ultimo} pts</span>
+      </div>`;
+    }
+    legenda += '</div>';
   }
-  legenda += '</div>';
 
   const _btnBaseEv = 'background:var(--fundo2);border:1.5px solid var(--borda2);border-radius:var(--radius-sm);padding:8px 14px;color:var(--texto);font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit';
   const exportBtn = `<div style="display:flex;justify-content:center;margin-top:12px"><button onclick="_graficoExportarEvolucaoJPG()" style="${_btnBaseEv}">📷 Exportar JPG</button></div>`;
@@ -1219,9 +1224,10 @@ window._graficoExportarEvolucaoJPG = function () {
   if (!series.length) { alert('Nenhum apostador para exportar.'); return; }
 
   // ── Canvas ──
+  // Portrait format — stretches vertically for better readability
   const PAD = { top: 50, right: 130, bottom: 60, left: 55 };
-  const W = 1280;
-  const H = 520;
+  const W = 720;
+  const H = 1280;
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
   const nMatches = jogosComRes.length;
