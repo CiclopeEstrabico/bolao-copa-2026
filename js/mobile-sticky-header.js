@@ -62,10 +62,21 @@
     clonedThead.style.pointerEvents = 'auto';
     cloneTable.appendChild(clonedThead);
 
+    const isCompilacao = wrapper.classList.contains('compilacao-wrap') &&
+                         !wrapper.classList.contains('rank-table-wrap') &&
+                         !wrapper.classList.contains('stat-table-wrap');
+    const offset = isCompilacao ? 6 : 0;
+
+    if (isCompilacao) {
+      frozen.style.borderTop = '6px solid var(--fundo)';
+    } else {
+      frozen.style.borderTop = 'none';
+    }
+
     frozen.innerHTML = '';
     frozen.appendChild(cloneTable);
 
-    return { frozen, wrapper, table, thead };
+    return { frozen, wrapper, table, thead, offset };
   }
 
   /** Atualiza a visibilidade e posição de todos os frozen headers (zero-reflow) */
@@ -81,7 +92,7 @@
 
     _instances.forEach(inst => {
       if (!inst) return;
-      const { frozen, wrapper, table, thead } = inst;
+      const { frozen, wrapper, table, thead, offset = 0 } = inst;
       if (!frozen || !wrapper || !table || !thead) return;
 
       // Se a aba está oculta (display:none), esconder frozen
@@ -98,14 +109,14 @@
       const theadHeight = thead.getBoundingClientRect().height || 40;
 
       // O thead está oculto/sticky assim que o topo dele passa da barra sticky
-      const theadHidden = tableTop < stickyTop;
+      const theadHidden = tableTop < stickyTop + offset;
       // A tabela ainda está visível (parte dela está abaixo do stickyTop)
-      const tableStillVisible = tableTop + tableHeight > stickyTop;
+      const tableStillVisible = tableTop + tableHeight > stickyTop + offset;
 
       if (theadHidden && tableStillVisible) {
         frozen.style.display = 'block';
         // Se a tabela está acabando, empurra o header fixo para cima (sobrepomos 1px com o topo para evitar gap subpixel)
-        const currentTop = Math.min(stickyTop, tableTop + tableHeight - theadHeight);
+        const currentTop = Math.min(stickyTop, tableTop + tableHeight - theadHeight - offset);
         frozen.style.top = (currentTop - 1) + 'px';
         
         // Alinha horizontalmente o container com o wrapper da tabela (clip de overflow)
