@@ -2303,13 +2303,13 @@ select {
   }
 
   /* Cabeçalho da tabela de classificação no mobile: NÃO usar sticky aqui (frozen-thead JS cuida).
-     Apenas garante z-index e background opaco. */
+     Apenas garante z-index e background opaco. Sem borda verde aqui — ela vem do frozen-thead container no scroll. */
   .rank-table thead th {
     position: relative !important;
     top: auto !important;
     z-index: 5 !important;
     background: var(--fundo2) !important;
-    border-bottom: 2px solid var(--verde-light) !important;
+    border-bottom: none !important;
   }
 
   .rank-table thead th.col-apostador {
@@ -2318,7 +2318,7 @@ select {
     left: 0 !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
-    border-bottom: 2px solid var(--verde-light) !important;
+    border-bottom: none !important;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 
@@ -2463,26 +2463,26 @@ select {
 }
 
 .celula-pts-8 {
-  background: rgba(249, 115, 22, 0.065) !important;
+  background: rgba(249, 115, 22, 0.07) !important;
   color: #f5a050 !important;
   font-weight: 500
 }
 
 .celula-pts-6 {
-  background: rgba(200, 160, 0, 0.06) !important;
+  background: rgba(200, 160, 0, 0.07) !important;
   color: #d4b456 !important;
   font-weight: 500
 }
 
 .celula-pts-4 {
-  background: rgba(178, 222, 74, 0.084) !important;
+  background: rgba(178, 222, 74, 0.08) !important;
   color: #6dde4a !important;
   font-weight: 500
 }
 
 .celula-pts-3 {
-  background: rgba(22, 163, 74, 0.1) !important;
-  color: #16a34a !important;
+  background: rgba(22, 163, 74, 0.08) !important;
+  color: #159443 !important;
   font-weight: 500
 }
 
@@ -2737,13 +2737,14 @@ details[open]>summary span:last-child {
 @media (max-width: 600px) {
 
   /* thead não precisa ser sticky: frozen-thead JS duplica e fixa.
-     Aqui só garantimos background opaco para evitar bleed-through. */
+     Aqui só garantimos background opaco para evitar bleed-through.
+     Sem borda verde — ela vem do frozen-thead container no scroll. */
   .rank-table thead th {
     position: relative !important;
     top: auto !important;
     z-index: 5 !important;
     background: var(--fundo2) !important;
-    border-bottom: 2px solid var(--verde-light) !important;
+    border-bottom: none !important;
     box-shadow: none !important;
   }
 
@@ -2753,7 +2754,7 @@ details[open]>summary span:last-child {
     left: 0 !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
-    border-bottom: 2px solid var(--verde-light) !important;
+    border-bottom: none !important;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 }
