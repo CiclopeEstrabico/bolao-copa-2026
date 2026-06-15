@@ -891,7 +891,7 @@ window.renderEstatisticas = function () {
       if (br.acertou) acertos++;
     }
     return { jogo, acertos, totalApostas, pct: totalApostas ? Math.round(acertos / totalApostas * 100) : 0 };
-  }).filter(x => x.acertos > 0).sort((a, b) => b.pct - a.pct);
+  }).filter(x => x.totalApostas > 0).sort((a, b) => b.pct - a.pct);
 
   if (jogoStats.length) {
     h += '<div class="card"><div class="card-titulo">📊 Jogos por Acerto</div>';
