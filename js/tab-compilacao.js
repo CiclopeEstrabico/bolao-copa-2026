@@ -88,7 +88,18 @@ window.renderCompilacao = function () {
 
   // Cache: evita re-renderizar quando nada mudou (BONUS: melhora performance mobile)
   const cacheKey = JSON.stringify({ fase: window._compFase, ordem: window._compOrdem, resKeys: Object.keys(res).join(','), apLen: apos.length });
-  if (window._compilacaoCacheKey === cacheKey && el.dataset.rendered === '1') return;
+  if (window._compilacaoCacheKey === cacheKey && el.dataset.rendered === '1') {
+    // Mesmo sem re-renderizar o HTML, se o frozen-thead foi limpo (ao mudar de aba e voltar), precisamos registrar novamente!
+    if (window.innerWidth <= 600 && window.registrarFrozenHeader) {
+      const table = el.querySelector(".compilacao-table");
+      const wrapper = el.querySelector(".compilacao-wrap");
+      if (table && wrapper && (!wrapper._frozenHeader || !document.body.contains(wrapper._frozenHeader))) {
+        wrapper._frozenHeader = null;
+        window.registrarFrozenHeader(table, wrapper);
+      }
+    }
+    return;
+  }
   window._compilacaoCacheKey = cacheKey;
 
 
