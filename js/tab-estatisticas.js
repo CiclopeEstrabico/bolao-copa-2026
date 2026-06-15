@@ -1338,7 +1338,7 @@ window.abrirModalCard = function(key) {
       const apelidoEsc = apelido.replace(/'/g, "\\'");
       const apoId = (c.r.participante.id || '').replace(/'/g, "\\'");
       const apoClk = "window.abrirModalApostador('" + nome + "','" + apelidoEsc + "'," + c.r.stats.total.toFixed(1) + ",'" + apoId + "')";
-      h += '<td onclick="' + apoClk + '" style="text-align:left;padding:7px 6px;font-weight:600;color:var(--verde-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;cursor:pointer">' + apelido + '</td>';
+      h += '<td onclick="' + apoClk + '" style="text-align:left;padding:7px 6px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;cursor:pointer">' + apelido + '</td>';
       h += '<td style="text-align:right;padding:7px 6px;font-weight:700;color:var(--verde-light);white-space:nowrap">' + metricaStr + '</td>';
       h += '<td style="text-align:right;padding:7px 6px;color:var(--texto2)">' + c.r.stats.total.toFixed(1) + '</td>';
       h += '</tr>';
