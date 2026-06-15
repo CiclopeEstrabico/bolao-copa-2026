@@ -2463,25 +2463,25 @@ select {
 }
 
 .celula-pts-8 {
-  background: rgba(249, 115, 22, 0.05) !important;
+  background: rgba(249, 115, 22, 0.065) !important;
   color: #f5a050 !important;
   font-weight: 500
 }
 
 .celula-pts-6 {
-  background: rgba(200, 160, 0, 0.04) !important;
+  background: rgba(200, 160, 0, 0.06) !important;
   color: #d4b456 !important;
   font-weight: 500
 }
 
 .celula-pts-4 {
-  background: rgba(123, 222, 74, 0.164) !important;
-  color: #4ade80 !important;
+  background: rgba(178, 222, 74, 0.084) !important;
+  color: #6dde4a !important;
   font-weight: 500
 }
 
 .celula-pts-3 {
-  background: rgba(22, 163, 74, 0.098) !important;
+  background: rgba(22, 163, 74, 0.1) !important;
   color: #16a34a !important;
   font-weight: 500
 }
@@ -2743,6 +2743,7 @@ details[open]>summary span:last-child {
     top: auto !important;
     z-index: 5 !important;
     background: var(--fundo2) !important;
+    border-bottom: 2px solid var(--verde-light) !important;
     box-shadow: none !important;
   }
 
@@ -2752,6 +2753,7 @@ details[open]>summary span:last-child {
     left: 0 !important;
     z-index: 8 !important;
     background: var(--fundo2) !important;
+    border-bottom: 2px solid var(--verde-light) !important;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 }
