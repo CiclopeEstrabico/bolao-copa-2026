@@ -20,15 +20,15 @@ function _rainbowColor(i, n) {
 
 // Métricas disponíveis
 const _METRICAS = [
-  { id: 'pts', label: 'Pontos' },
-  { id: 'evolucao', label: 'Evolução' },
-  { id: 'chance', label: 'Projeção' },
-  { id: 'pct', label: 'Pontos %' },
-  { id: 'res', label: 'Resultados' },
-  { id: 'bonus1', label: 'Bônus+1' },
-  { id: 'placar', label: 'Placar+3' },
-  { id: 'placar_alto', label: 'Placar+5' },
-  { id: 'macaco', label: 'Macaco' },
+  { id: 'pts', label: 'Pontos', short: 'Pontos' },
+  { id: 'evolucao', label: 'Evolução', short: 'Evolução' },
+  { id: 'chance', label: 'Projeção', short: 'Projeção' },
+  { id: 'pct', label: 'Pontos %', short: 'Pontos %' },
+  { id: 'res', label: 'Resultados', short: 'Results' },
+  { id: 'bonus1', label: 'Bônus+1', short: 'Bônus+1' },
+  { id: 'placar', label: 'Placar+3', short: 'Placar+3' },
+  { id: 'placar_alto', label: 'Placar+5', short: 'Placar+5' },
+  { id: 'macaco', label: 'Macaco', short: 'Macaco' },
 ];
 
 window.renderGrafico = function () {
@@ -100,8 +100,8 @@ window.renderGrafico = function () {
   }
 
   // ── Toggle de métrica ──
-  let h = '<div class="toggle-bar" style="margin-bottom:12px;flex-wrap:wrap;justify-content:center;gap:5px">';
-  h += '<span class="toggle-label">Métrica:</span>';
+  const _isMob = window.innerWidth <= 600;
+  let h = '<div class="grafico-toggle-grid">';
   _METRICAS.forEach(m => {
     const ativo = metricaAtiva === m.id;
     const onclick = m.id === 'evolucao'
@@ -111,7 +111,8 @@ window.renderGrafico = function () {
         : m.id === 'macaco'
           ? 'onclick="_graficoIrMacaco()"'
           : `onclick="window._graficoMetrica='${m.id}';renderAbaAtiva()"`;
-    h += `<button class="btn-toggle${ativo ? ' ativo' : ''}" ${onclick}>${m.label}</button>`;
+    const txt = _isMob ? m.short : m.label;
+    h += `<button class="btn-toggle${ativo ? ' ativo' : ''}" ${onclick}>${txt}</button>`;
   });
   h += '</div>';
 
@@ -1063,7 +1064,9 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
 
   const isDesktop = window.innerWidth > 850;
   const W = isDesktop ? Math.max(800, Math.min(window.innerWidth - 60, 1400)) : 600;
-  const H = isDesktop ? 340 : 280;
+  // Full-viewport height: subtract header/tabs/toolbar (~200px mobile, ~240px desktop)
+  const viewH = window.innerHeight || 700;
+  const H = Math.max(320, viewH - (isDesktop ? 240 : 200));
   const PAD = { top: 20, right: 100, bottom: 40, left: 48 };
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;

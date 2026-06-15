@@ -562,6 +562,30 @@ body {
   color: var(--texto)
 }
 
+/* Grafico metric toggle: desktop flex, mobile 5-col grid */
+.grafico-toggle-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+  margin-bottom: 10px
+}
+
+@media(max-width:600px) {
+  .grafico-toggle-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px 4px;
+    justify-items: stretch
+  }
+  .grafico-toggle-grid .btn-toggle {
+    padding: 6px 2px;
+    font-size: .66rem;
+    text-align: center;
+    min-width: 0
+  }
+}
+
 .toggle-sep {
   width: 1px;
   height: 16px;
@@ -1263,7 +1287,9 @@ select {
   overflow-y: auto;
   transform: translateY(100%);
   transition: transform .28s cubic-bezier(.16, 1, .3, 1);
-  position: relative
+  position: relative;
+  display: flex;
+  flex-direction: column
 }
 
 .modal-overlay.aberto .modal-box {
@@ -1281,29 +1307,46 @@ select {
     min-height: 80vh;
     max-width: 720px
   }
+
+  /* Stat card modal: auto height, tall enough for 15 rows */
+  #modal-stat .modal-box {
+    min-height: auto;
+    max-height: 94vh;
+    height: auto
+  }
 }
 
 .modal-close {
   position: absolute;
   top: 12px;
   right: 12px;
-  background: rgba(255, 255, 255, .08);
+  background: rgba(239, 68, 68, .18);
   border: none;
   border-radius: 50%;
   width: 28px;
   height: 28px;
-  color: var(--texto2);
+  color: #fca5a5;
   font-size: .9rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: var(--trans)
+  transition: var(--trans);
+  z-index: 15
 }
 
 .modal-close:hover {
-  background: rgba(255, 255, 255, .15);
-  color: var(--texto)
+  background: rgba(239, 68, 68, .35);
+  color: #fff
+}
+
+/* Full-height modal content wrapper — fills remaining modal space */
+.modal-content-fill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden
 }
 
 /* Scrollbar do modal: premium, igual ao compilacao */
@@ -1358,10 +1401,19 @@ select {
   background: linear-gradient(180deg, var(--verde), #00ffaa)
 }
 
-.modal-tabs {
+.modal-tabs-row {
   display: flex;
+  align-items: center;
+  gap: 0;
   border-bottom: 1px solid var(--borda);
   margin: -4px 0 14px;
+  flex-shrink: 0
+}
+
+.modal-tabs {
+  display: flex;
+  flex: 1;
+  min-width: 0;
   gap: 0
 }
 
@@ -1380,6 +1432,55 @@ select {
 .modal-tab.ativo {
   color: var(--verde-light);
   border-bottom-color: var(--verde-light)
+}
+
+.modal-close-tab {
+  flex-shrink: 0;
+  background: rgba(239,68,68,.18);
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  color: #fca5a5;
+  font-size: .9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--trans);
+  margin-left: 6px;
+  margin-right: 2px
+}
+
+.modal-close-tab:hover {
+  background: rgba(239,68,68,.35);
+  color: #fff
+}
+
+@media(max-width:600px) {
+  .modal-tabs-row {
+    margin: -4px 0 8px
+  }
+  .modal-tab {
+    padding: 8px 4px;
+    font-size: .68rem;
+    flex: 1;
+    text-align: center;
+    white-space: nowrap
+  }
+  .modal-close-tab {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+    background: rgba(239,68,68,.18);
+    color: #fca5a5;
+    margin-left: 4px;
+    margin-right: 0
+  }
+  .modal-close-tab:hover {
+    background: rgba(239,68,68,.35);
+    color: #fff
+  }
 }
 
 /* PROGNOSTICO */
@@ -1448,20 +1549,69 @@ select {
 .matriz-poisson {
   width: 100%;
   border-collapse: collapse;
-  font-size: .68rem
+  font-size: .68rem;
+  table-layout: fixed
 }
 
 .matriz-poisson th,
 .matriz-poisson td {
-  padding: 3px;
+  padding: 4px 2px;
   text-align: center;
-  border: 1px solid var(--borda)
+  border: 1px solid var(--borda);
+  vertical-align: middle;
+  height: 38px
 }
 
 .matriz-poisson th {
   background: var(--fundo2);
   color: var(--texto2);
-  font-size: .62rem
+  font-size: .62rem;
+  height: auto
+}
+
+/* Split header: team name row/col */
+.matriz-poisson .matriz-team-header {
+  font-weight: 800;
+  font-size: .58rem;
+  color: var(--texto);
+  letter-spacing: .02em;
+  padding: 4px 2px;
+  text-align: center;
+  background: var(--fundo2);
+  border: 1px solid var(--borda);
+  border-left: none;
+  height: 24px
+}
+
+.matriz-poisson .matriz-team-header-vert {
+  font-weight: 800;
+  font-size: .58rem;
+  color: var(--texto);
+  letter-spacing: .02em;
+  padding: 2px 0;
+  text-align: center;
+  background: var(--fundo2);
+  border: 1px solid var(--borda);
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  vertical-align: middle;
+  width: 24px;
+  min-width: 24px;
+  max-width: 24px;
+  height: auto
+}
+
+.matriz-poisson .matriz-goal-header {
+  font-size: .62rem;
+  font-weight: 600;
+  color: var(--texto2);
+  background: var(--fundo2);
+  padding: 3px 2px;
+  width: 24px;
+  min-width: 24px;
+  max-width: 24px
 }
 
 .cell-hot {
@@ -1573,6 +1723,14 @@ select {
     max-width: 86px;
     overflow: hidden;
     line-height: 1.2
+  }
+
+  /* PONTOS column ~20% wider on mobile to fit 3-digit scores */
+  .rank-table th.col-stat-pts,
+  .rank-table td.col-stat-pts {
+    width: 104px !important;
+    min-width: 104px !important;
+    max-width: 104px !important
   }
 }
 

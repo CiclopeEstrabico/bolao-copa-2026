@@ -265,7 +265,7 @@ window.PROGNOSE = {
       }, { passive: true });
     }
 
-    box.innerHTML = '<button class="modal-close" onclick="PROGNOSE.fecharModal()">✕</button>' + this.renderModal(gameId);
+    box.innerHTML = this.renderModal(gameId);
     ov.classList.add("aberto");
     document.body.style.overflow = "hidden";
     this._switchTab("prev");
@@ -281,7 +281,15 @@ window.PROGNOSE = {
     ["prev", "pal", "listpal", "est"].forEach(t => {
       const c = document.getElementById("modal-content-" + t);
       const b = document.getElementById("mtab-" + t);
-      if (c) c.style.display = t === tab ? "" : "none";
+      if (c) {
+        if (t === tab) {
+          // listpal uses flex column to fill height; others use block with scroll
+          c.style.display = t === 'listpal' ? 'flex' : '';
+          if (t === 'listpal') c.style.flexDirection = 'column';
+        } else {
+          c.style.display = 'none';
+        }
+      }
       if (b) b.classList.toggle("ativo", t === tab);
     });
     // Reset scroll do modal-box ao trocar de aba
@@ -297,19 +305,24 @@ window.PROGNOSE = {
     const aName = window.TEAMS_BY_CODE?.[aC]?.name || aC || "?";
 
     let h = '';
-    // 4 abas compactas — sem emoji, font menor, cabem em uma linha mesmo em telas pequenas
-    h += '<div class="modal-tabs" style="display:flex;justify-content:stretch;gap:0">';
-    h += '<button class="modal-tab ativo" id="mtab-prev" style="flex:1;padding:8px 2px;font-size:.7rem;white-space:nowrap" onclick="PROGNOSE._switchTab(\'prev\')">Previsão</button>';
-    h += '<button class="modal-tab" id="mtab-pal" style="flex:1;padding:8px 2px;font-size:.7rem;white-space:nowrap" onclick="PROGNOSE._switchTab(\'pal\')">Stats</button>';
-    h += '<button class="modal-tab" id="mtab-listpal" style="flex:1;padding:8px 2px;font-size:.7rem;white-space:nowrap" onclick="PROGNOSE._switchTab(\'listpal\')">Palpites</button>';
-    h += '<button class="modal-tab" id="mtab-est" style="flex:1;padding:8px 2px;font-size:.7rem;white-space:nowrap" onclick="PROGNOSE._switchTab(\'est\')">Estádio</button>';
+    // Tabs row with integrated close button
+    h += '<div class="modal-tabs-row">';
+    h += '<div class="modal-tabs">';
+    h += '<button class="modal-tab ativo" id="mtab-prev" onclick="PROGNOSE._switchTab(\'prev\')">Previsão</button>';
+    h += '<button class="modal-tab" id="mtab-pal" onclick="PROGNOSE._switchTab(\'pal\')">Stats</button>';
+    h += '<button class="modal-tab" id="mtab-listpal" onclick="PROGNOSE._switchTab(\'listpal\')">Palpites</button>';
+    h += '<button class="modal-tab" id="mtab-est" onclick="PROGNOSE._switchTab(\'est\')">Estádio</button>';
+    h += '</div>';
+    h += '<button class="modal-close-tab" onclick="PROGNOSE.fecharModal()" title="Fechar">✕</button>';
     h += '</div>';
 
     const stats = this.statsPalpites(gameId);
-    h += '<div id="modal-content-prev">' + this._renderPrevisao(gameId, hC, aC, hName, aName) + '</div>';
-    h += '<div id="modal-content-pal" style="display:none">' + this._renderPalpites(gameId, stats, hName, aName) + '</div>';
-    h += '<div id="modal-content-listpal" style="display:none">' + this._renderListPalpites(gameId, hC, aC) + '</div>';
-    h += '<div id="modal-content-est" style="display:none">' + this._renderEstadio(jogo) + '</div>';
+    h += '<div class="modal-content-fill">';
+    h += '<div id="modal-content-prev" style="overflow-y:auto;flex:1;min-height:0">' + this._renderPrevisao(gameId, hC, aC, hName, aName) + '</div>';
+    h += '<div id="modal-content-pal" style="display:none;overflow-y:auto;flex:1;min-height:0">' + this._renderPalpites(gameId, stats, hName, aName) + '</div>';
+    h += '<div id="modal-content-listpal" style="display:none;flex:1;min-height:0;flex-direction:column">' + this._renderListPalpites(gameId, hC, aC) + '</div>';
+    h += '<div id="modal-content-est" style="display:none;overflow-y:auto;flex:1;min-height:0">' + this._renderEstadio(jogo) + '</div>';
+    h += '</div>';
     return h;
   },
 
@@ -442,42 +455,69 @@ window.PROGNOSE = {
     h += '</div>';
     h += '</div>';
 
-    // ── 4. Matriz Dixon-Coles ──
+    // ── 4. Matriz Dixon-Coles com headers separados (time + gols) ──
     const stats = this.statsPalpites(gameId);
 
     h += '<div style="font-size:.68rem;font-weight:700;color:var(--texto2);margin-bottom:6px">';
     h += 'Matriz Dixon-Coles';
     h += '</div>';
-    h += '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="matriz-poisson"><thead><tr><th></th>';
-    for (let j = 0; j < c.N; j++) h += '<th>' + aName.substring(0, 3) + '&nbsp;' + (j === c.N-1 ? '6+' : j) + '</th>';
-    h += '</tr></thead><tbody>';
+
+    // Number of columns: 2 header cols (team name rotated + goal numbers) + N data cols
+    const totalCols = 2 + c.N;
+    h += '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="matriz-poisson">';
+
+    // Colgroup forces exact widths with table-layout:fixed
+    h += '<colgroup>';
+    h += '<col style="width:24px">';   // vertical team name
+    h += '<col style="width:22px">';   // goal numbers
+    for (let j = 0; j < c.N; j++) h += '<col>';  // data columns (auto-fill remaining)
+    h += '</colgroup>';
+
+    // Row 1: top-left corner (2x2 empty) + away team name spanning N cols
+    h += '<thead>';
+    h += '<tr>';
+    h += '<th rowspan="2" colspan="2" style="border:1px solid var(--borda);border-right:none"></th>';
+    h += '<th colspan="' + c.N + '" class="matriz-team-header" style="font-size:.65rem;padding:5px 2px;border-left:none">' + aName + '</th>';
+    h += '</tr>';
+    // Row 2: goal numbers for away team
+    h += '<tr>';
+    for (let j = 0; j < c.N; j++) {
+      h += '<th class="matriz-goal-header">' + (j === c.N - 1 ? '6+' : j) + '</th>';
+    }
+    h += '</tr>';
+    h += '</thead><tbody>';
 
     const allVals = c.matrix.flat().sort((a, b) => b - a);
     const top1 = allVals[0] || 1;
 
     for (let i = 0; i < c.N; i++) {
-      h += '<tr><th>' + hName.substring(0, 3) + '&nbsp;' + (i === c.N-1 ? '6+' : i) + '</th>';
+      h += '<tr>';
+      // First row of this home goal: home team name (rotated, spanning N rows)
+      if (i === 0) {
+        h += '<td rowspan="' + c.N + '" class="matriz-team-header-vert">' + hName + '</td>';
+      }
+      // Goal number for home team
+      h += '<th class="matriz-goal-header">' + (i === c.N - 1 ? '6+' : i) + '</th>';
+
       for (let j = 0; j < c.N; j++) {
         const v = c.matrix[i][j];
         const p = Math.max(0, Math.min(1, v / top1));
         const isEmpate = i === j;
 
-        // Heatmap: ciano claro transparente → roxo vibrante
-        // Baixa prob = ciano claro (hue 185), alta prob = indigo/roxo (hue 270)
-        const hue = 185 + 85 * p;
-        const sat = 55 + 40 * p;
-        const light = 30 + 30 * p;
-        const alpha = 0.10 + 0.80 * p;
-        let bg = `hsla(${hue}, ${sat}%, ${light}%, ${alpha})`;
+        // Escala termográfica: azul → roxo → vermelho
+        const hue = 240 + p * 120;   // 240 (azul) → 300 (roxo) → 360 (vermelho)
+        const sat = 60 + p * 30;      // 60% → 90%
+        const light = 20 + p * 35;    // 20% → 55%
+        const alpha = 0.20 + 0.80 * p;
+        let bg = `hsla(${hue.toFixed(0)}, ${sat.toFixed(0)}%, ${light.toFixed(0)}%, ${alpha.toFixed(2)})`;
 
         const fw = p > 0.75 ? '800' : p > 0.35 ? '600' : '400';
-        const color = p > 0.5 ? '#fff' : 'var(--texto2)';
+        const color = p > 0.4 ? '#fff' : 'rgba(255,255,255,.65)';
 
         // Diagonal de empates: anel âmbar sutil
-        const extra = isEmpate ? 'outline:1.5px solid rgba(234,179,8,.35);outline-offset:-1px;' : '';
-        const dot = '';
+        const extra = isEmpate ? 'outline:1.5px solid rgba(234,179,8,.4);outline-offset:-1px;' : '';
 
-        h += `<td style="background:${bg};color:${color};font-weight:${fw};${extra}${dot};position:relative">${(v * 100).toFixed(1)}%</td>`;
+        h += `<td style="background:${bg};color:${color};font-weight:${fw};${extra}">${(v * 100).toFixed(1)}%</td>`;
       }
       h += '</tr>';
     }
@@ -665,7 +705,36 @@ window.PROGNOSE = {
     return h;
   },
 
+  _listPalpitesCurrentSort: 'apelido',
+  _listPalpitesCurrentDir: 'asc',
+  _listPalpitesGameId: null,
+  _listPalpitesHC: null,
+  _listPalpitesAC: null,
+
   _renderListPalpites: function (gameId, hC, aC) {
+    this._listPalpitesGameId = gameId;
+    this._listPalpitesHC = hC;
+    this._listPalpitesAC = aC;
+    return this._buildListPalpitesHTML(gameId, hC, aC, this._listPalpitesCurrentSort, this._listPalpitesCurrentDir);
+  },
+
+  _sortListPalpites: function (col) {
+    if (this._listPalpitesCurrentSort === col) {
+      this._listPalpitesCurrentDir = this._listPalpitesCurrentDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      this._listPalpitesCurrentSort = col;
+      this._listPalpitesCurrentDir = col === 'apelido' ? 'asc' : 'asc';
+    }
+    const container = document.getElementById('modal-content-listpal');
+    if (container) {
+      container.innerHTML = this._buildListPalpitesHTML(
+        this._listPalpitesGameId, this._listPalpitesHC, this._listPalpitesAC,
+        this._listPalpitesCurrentSort, this._listPalpitesCurrentDir
+      );
+    }
+  },
+
+  _buildListPalpitesHTML: function (gameId, hC, aC, sortCol, sortDir) {
     const res = getResultados();
     const r = res[gameId];
     const temRes = r && r.homeGoals !== undefined;
@@ -690,7 +759,7 @@ window.PROGNOSE = {
     const apos = APP.apostadores || [];
     const jogoInfo = window.SCHEDULE_BY_ID?.[gameId];
 
-    // Obter posições do ranking para exibir na lista (rank prefix)
+    // Obter posições do ranking
     const esp = window.BRACKET?.extrairEspeciaisOficiais?.(res, APP.bracket || {}) || {};
     const ranking = gerarRanking(todos, res, apos, esp);
     const rankMap = {};
@@ -708,13 +777,15 @@ window.PROGNOSE = {
       let cls = "";
       let palpiteStr = "·";
       let ptsStr = "—";
+      let ptsNum = 0;
       
       if (hasPalpite) {
         palpiteStr = `${p.homeGoals}x${p.awayGoals}`;
         if (temRes) {
           const br = calcularPontosBrutos(p, r);
           pts = aplicarFator(br.total_bruto, jogoInfo?.fase || 'grupos');
-          ptsStr = `${pts} pts`;
+          ptsNum = pts;
+          ptsStr = `${pts}`;
           if (br.acertou) {
             const bv = br.total_bruto;
             if (bv >= 8) cls = "celula-pts-8";
@@ -727,7 +798,7 @@ window.PROGNOSE = {
         }
       } else {
         if (temRes) {
-          ptsStr = "0 pts";
+          ptsStr = "0";
         }
       }
 
@@ -738,7 +809,7 @@ window.PROGNOSE = {
         nome: a.nome || '',
         apelido: a.apelido || a.nome || a.id,
         palpiteStr,
-        pts,
+        pts: ptsNum,
         ptsStr,
         cls,
         hasPalpite,
@@ -746,24 +817,48 @@ window.PROGNOSE = {
       });
     }
 
-    // Sempre ordenar alfabeticamente, independente de ter resultado ou não
+    // Sort based on current column
     rowsData.sort((a, b) => {
+      // Always put non-palpites at the end
       if (b.hasPalpite !== a.hasPalpite) return b.hasPalpite ? 1 : -1;
-      return a.apelido.localeCompare(b.apelido);
+      
+      let cmp = 0;
+      switch (sortCol) {
+        case 'rank':
+          cmp = a.rank - b.rank;
+          break;
+        case 'apelido':
+          cmp = a.apelido.localeCompare(b.apelido);
+          break;
+        case 'palpite':
+          cmp = a.palpiteStr.localeCompare(b.palpiteStr);
+          break;
+        case 'pts':
+          cmp = a.pts - b.pts;
+          break;
+        default:
+          cmp = a.apelido.localeCompare(b.apelido);
+      }
+      return sortDir === 'desc' ? -cmp : cmp;
     });
 
     if (!rowsData.length) {
       return '<p style="text-align:center;color:var(--texto2);padding:30px">Nenhum palpite cadastrado.</p>';
     }
 
-    const isMob = window.innerWidth <= 600;
-    const tableMaxH = isMob ? 'calc(100dvh - 180px)' : 'calc(92vh - 160px)';
-    let h = '<div data-scroll-inner="1" style="max-height:' + tableMaxH + ';overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--borda);border-radius:var(--radius-sm);margin-top:5px">';
+    // Sort indicator arrows
+    const arrow = (col) => {
+      if (sortCol !== col) return ' <span style="opacity:.3;font-size:.55rem">⇅</span>';
+      return sortDir === 'asc' ? ' <span style="color:var(--verde-light);font-size:.55rem">▲</span>' : ' <span style="color:var(--verde-light);font-size:.55rem">▼</span>';
+    };
+
+    let h = '<div data-scroll-inner="1" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--borda);border-radius:var(--radius-sm);margin-top:5px;min-height:0">';
     h += '<table class="tabela-detalhe" style="width:100%;margin:0;border-collapse:collapse">';
     h += '<thead><tr style="position:sticky;top:0;z-index:10;background:var(--fundo2)">';
-    h += '<th style="text-align:left;padding:8px 10px;border-bottom:2px solid var(--verde-light)">Apostador</th>';
-    h += '<th style="text-align:center;padding:8px 10px;border-bottom:2px solid var(--verde-light)">Palpite</th>';
-    h += '<th style="text-align:right;padding:8px 10px;border-bottom:2px solid var(--verde-light)">Pontos</th>';
+    h += '<th style="text-align:center;padding:8px 6px;border-bottom:2px solid var(--verde-light);width:36px;cursor:pointer" onclick="PROGNOSE._sortListPalpites(\'rank\')">Pos' + arrow('rank') + '</th>';
+    h += '<th style="text-align:left;padding:8px 8px;border-bottom:2px solid var(--verde-light);cursor:pointer" onclick="PROGNOSE._sortListPalpites(\'apelido\')">Apostador' + arrow('apelido') + '</th>';
+    h += '<th style="text-align:center;padding:8px 6px;border-bottom:2px solid var(--verde-light);width:52px;cursor:pointer" onclick="PROGNOSE._sortListPalpites(\'palpite\')">Placar' + arrow('palpite') + '</th>';
+    h += '<th style="text-align:center;padding:8px 6px;border-bottom:2px solid var(--verde-light);width:42px;cursor:pointer" onclick="PROGNOSE._sortListPalpites(\'pts\')">Pts' + arrow('pts') + '</th>';
     h += '</tr></thead><tbody>';
 
     rowsData.forEach((row, idx) => {
@@ -771,10 +866,11 @@ window.PROGNOSE = {
       const rowNome = (row.nome || row.apelido || '').replace(/'/g, "\\'");
       const rowApelido = row.apelido.replace(/'/g, "\\'");
       const rowId = row.apostadorId.replace(/'/g, "\\'");
-      h += `<tr style="background:${bg};cursor:pointer" onclick="window.abrirModalApostador('${rowNome}','${rowApelido}',${row.pts || 0},'${rowId}')">`;
-      h += `<td style="text-align:left;padding:8px 10px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px">${row.rank}° - ${row.apelido}</td>`;
-      h += `<td class="${row.cls}" style="text-align:center;padding:8px 10px;font-weight:700">${row.palpiteStr}</td>`;
-      h += `<td class="${row.cls}" style="text-align:right;padding:8px 10px;font-weight:700">${row.ptsStr}</td>`;
+      h += `<tr style="background:${bg};cursor:pointer" onclick="window.abrirModalApostador('${rowNome}','${rowApelido}',${row.pts || 0},'${rowId}')">`;  
+      h += `<td style="text-align:center;padding:6px 4px;font-weight:700;color:var(--texto2);font-size:.72rem">${row.rank}°</td>`;
+      h += `<td style="text-align:left;padding:6px 8px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;font-size:.78rem">${row.apelido}</td>`;
+      h += `<td class="${row.cls}" style="text-align:center;padding:6px 4px;font-weight:700;font-size:.78rem">${row.palpiteStr}</td>`;
+      h += `<td class="${row.cls}" style="text-align:center;padding:6px 4px;font-weight:700;font-size:.78rem">${row.ptsStr}</td>`;
       h += '</tr>';
     });
 

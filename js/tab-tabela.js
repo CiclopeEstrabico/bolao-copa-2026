@@ -71,11 +71,8 @@ window.renderTabela = function() {
 
   function colOitavas() {
     let h = '';
-    for (let i = 0; i < r16Order.length; i++) {
-      const [r16a, r16b] = r16Order[i];
-      if (i > 0) h += '<div class="bracket-spacer"></div>';
+    for (const [r16a, r16b] of r16Order) {
       h += card(r16a);
-      h += '<div class="bracket-spacer" style="height:4px"></div>';
       h += card(r16b);
     }
     return h;
@@ -83,8 +80,7 @@ window.renderTabela = function() {
 
   function colQuartas() {
     let h = '';
-    for (let i = 0; i < sfOrder.length; i++) {
-      const [qfa, qfb] = sfOrder[i];
+    for (const [qfa, qfb] of sfOrder) {
       h += card(qfa);
       h += card(qfb);
     }
