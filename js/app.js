@@ -339,7 +339,9 @@ function atualizarBracket() {
 
 // ─── Roteador ─────────────────────────────────────────────────────────────────
 const ABAS = ["resultados", "classificacao", "tabela", "compilacao", "estatisticas", "grafico", "regras"];
+window.ABAS = ABAS;
 let _abaAtiva = "resultados";
+window.getAbaAtiva = () => _abaAtiva;
 
 function iniciarRoteador() {
   document.querySelectorAll("[data-tab]").forEach(btn =>
@@ -349,6 +351,7 @@ function iniciarRoteador() {
 }
 function mudarAba(aba) {
   if (!ABAS.includes(aba)) return;
+  window._abaAtiva = aba;
   _abaAtiva = aba; location.hash = aba;
   document.querySelectorAll("[data-tab]").forEach(b =>
     b.classList.toggle("ativa", b.dataset.tab === aba));
