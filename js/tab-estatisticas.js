@@ -896,15 +896,15 @@ window.renderEstatisticas = function () {
   if (jogoStats.length) {
     h += '<div class="card"><div class="card-titulo">📊 Jogos por Acerto</div>';
     h += '<div style="display:grid;gap:6px">';
-    const top3 = jogoStats.slice(0, 3);
-    const bot3 = jogoStats.slice(-3).reverse();
+    const top5 = jogoStats.slice(0, 5);
+    const bot5 = jogoStats.slice(-5).reverse();
     h += '<div style="font-size:.7rem;font-weight:700;color:var(--verde-ok);text-transform:uppercase;letter-spacing:.05em">Mais acertados</div>';
-    for (const s of top3) {
+    for (const s of top5) {
       const b = APP.bracket?.[s.jogo.id] || {}; const hC = b.home || s.jogo.home; const aC = b.away || s.jogo.away;
       h += _jogoStatRow(s.jogo.id, hC, aC, res[s.jogo.id], s.acertos, s.totalApostas, "var(--verde-ok)");
     }
     h += '<div style="font-size:.7rem;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:.05em;margin-top:8px">Menos acertados (mais difíceis)</div>';
-    for (const s of bot3) {
+    for (const s of bot5) {
       const b = APP.bracket?.[s.jogo.id] || {}; const hC = b.home || s.jogo.home; const aC = b.away || s.jogo.away;
       h += _jogoStatRow(s.jogo.id, hC, aC, res[s.jogo.id], s.acertos, s.totalApostas, "#f87171");
     }
