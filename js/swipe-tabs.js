@@ -1,139 +1,75 @@
 /**
- * swipe-tabs.js — Detecção de swipe horizontal para trocar abas (mobile)
+ * swipe-tabs.js — Swipe horizontal na BARRA DE ABAS para trocar de aba (mobile)
  *
  * Funcionalidades:
- * 1. Swipe na página para navegar entre abas (com exclusão de zonas de scroll-x)
- * 2. Swipe no modal prognose para navegar entre as 4 abas do modal
+ * 1. Swipe na barra de abas (.tabs-wrap) troca de aba
+ * 2. Swipe no modal prognose navega entre as 4 abas do modal
  * 3. Swipe-up no modal prognose (perto do topo) fecha o modal
- * 4. Feedback visual: indicador desliza na barra de tabs
+ * 4. Feedback visual: indicador verde desliza entre abas
  *
  * Só ativa em dispositivos touch. Desabilitado em desktop.
  */
 (function () {
   "use strict";
 
-  // ── Configuração ─────────────────────────────────────────────────────────
-  const MIN_DIST = 40;      // px mínimos de arraste horizontal para confirmar swipe
-  const ANGLE_RATIO = 1.3;  // dx deve ser >= 1.3× dy para ser swipe horizontal
-  const SWIPE_UP_DIST = 60; // px mínimos para swipe-up fechar modal
-  const DEAD_ZONE = 12;     // px antes de começar a decidir direção
+  const MIN_DIST = 30;      // px mínimos para confirmar swipe
+  const DEAD_ZONE = 8;      // px antes de decidir direção
+  const SWIPE_UP_DIST = 60; // px para swipe-up fechar modal
 
-  // ── Detecção de touch device ─────────────────────────────────────────────
   function isTouchDevice() {
     return "ontouchstart" in window || navigator.maxTouchPoints > 0;
   }
 
-  // ── Verifica se o toque está dentro de um container com scroll-x efetivo ─
-  function isInsideHorizontalScroller(target) {
-    let el = target;
-    // Limite de subida: não passa de .main ou modal-box para performance
-    const limit = document.querySelector(".main") || document.body;
-    while (el && el !== limit && el !== document.body) {
-      // Usa estilo inline + computado para detectar scroll horizontal
-      const ox = el.style.overflowX || "";
-      if (ox === "auto" || ox === "scroll") {
-        if (el.scrollWidth > el.clientWidth + 2) return true;
-      }
-      // Também checa computed style (pega CSS externo)
-      try {
-        const cs = getComputedStyle(el);
-        const cox = cs.overflowX;
-        if ((cox === "auto" || cox === "scroll") && el.scrollWidth > el.clientWidth + 2) {
-          return true;
-        }
-      } catch (e) { /* ignore */ }
-      el = el.parentElement;
-    }
-    return false;
-  }
-
-  // ── Verifica se um modal está aberto ─────────────────────────────────────
-  function isModalOpen() {
-    const m1 = document.getElementById("modal-prog");
-    const m2 = document.getElementById("modal-stat");
-    return (m1 && m1.classList.contains("aberto")) ||
-      (m2 && m2.classList.contains("aberto"));
-  }
-
-  // ── Verifica se o toque está na área "proibida" (header, tabs) ───────────
-  function isInHeaderOrTabs(target) {
-    return !!target.closest(".header, .tabs-wrap, .banner-simulacao");
-  }
-
   // ════════════════════════════════════════════════════════════════════════════
-  // 1. SWIPE PARA TROCAR ABAS PRINCIPAIS
+  // 1. SWIPE NA BARRA DE ABAS
   // ════════════════════════════════════════════════════════════════════════════
-  function initMainSwipe() {
+  function initTabBarSwipe() {
+    const tabsWrap = document.querySelector(".tabs-wrap");
+    if (!tabsWrap) return;
+
     let startX = 0, startY = 0;
-    let tracking = false;
-    let decided = false;    // já decidimos se é horizontal ou vertical?
-    let isHorizontal = false; // a decisão
+    let tracking = false, decided = false, isHoriz = false;
 
-    document.addEventListener("touchstart", function (e) {
-      // Ignora se modal aberto, multi-touch, ou em header/tabs
-      if (isModalOpen()) { tracking = false; return; }
+    tabsWrap.addEventListener("touchstart", function (e) {
       if (e.touches.length > 1) { tracking = false; return; }
-      if (isInHeaderOrTabs(e.target)) { tracking = false; return; }
-      // Ignora se dentro de scroller horizontal
-      if (isInsideHorizontalScroller(e.target)) { tracking = false; return; }
-
       tracking = true;
       decided = false;
-      isHorizontal = false;
+      isHoriz = false;
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
       clearIndicator();
     }, { passive: true });
 
-    document.addEventListener("touchmove", function (e) {
+    tabsWrap.addEventListener("touchmove", function (e) {
       if (!tracking) return;
 
-      const cx = e.touches[0].clientX;
-      const cy = e.touches[0].clientY;
-      const dx = cx - startX;
-      const dy = cy - startY;
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
       const adx = Math.abs(dx);
       const ady = Math.abs(dy);
 
-      // Dentro da dead-zone, não decidimos ainda
       if (!decided && adx < DEAD_ZONE && ady < DEAD_ZONE) return;
 
-      // Decidir direção uma única vez
       if (!decided) {
         decided = true;
-        isHorizontal = adx > ady * 0.9; // Critério generoso na decisão inicial
-        if (!isHorizontal) {
+        isHoriz = adx > ady;
+        if (!isHoriz) {
           tracking = false;
           clearIndicator();
           return;
         }
       }
 
-      if (!isHorizontal) return;
-
-      // Verifica se há aba na direção do swipe
-      const abas = window.ABAS;
-      const atual = window.getAbaAtiva ? window.getAbaAtiva() : null;
-      if (!abas || !atual) return;
-      const idx = abas.indexOf(atual);
-      if (dx < 0 && idx >= abas.length - 1) return; // última aba, sem wrap
-      if (dx > 0 && idx <= 0) return; // primeira aba, sem wrap
-
-      // Feedback visual
-      showIndicator(dx);
+      if (isHoriz) showIndicator(tabsWrap, dx);
     }, { passive: true });
 
-    document.addEventListener("touchend", function (e) {
+    tabsWrap.addEventListener("touchend", function (e) {
       clearIndicator();
-      if (!tracking || !decided || !isHorizontal) { tracking = false; return; }
+      if (!tracking || !decided || !isHoriz) { tracking = false; return; }
       tracking = false;
 
       const dx = e.changedTouches[0].clientX - startX;
-      const dy = e.changedTouches[0].clientY - startY;
-
-      // Verificar critérios finais de swipe
       if (Math.abs(dx) < MIN_DIST) return;
-      if (Math.abs(dx) < Math.abs(dy) * ANGLE_RATIO) return;
 
       const abas = window.ABAS;
       const atual = window.getAbaAtiva ? window.getAbaAtiva() : null;
@@ -143,76 +79,65 @@
       if (idx === -1) return;
 
       const nextIdx = dx < 0 ? idx + 1 : idx - 1;
-
-      // Sem wrap-around
       if (nextIdx < 0 || nextIdx >= abas.length) return;
 
       mudarAba(abas[nextIdx]);
-      scrollTabIntoView(abas[nextIdx]);
     }, { passive: true });
 
-    document.addEventListener("touchcancel", function () {
+    tabsWrap.addEventListener("touchcancel", function () {
       tracking = false;
       clearIndicator();
     }, { passive: true });
   }
 
-  // ── Feedback visual: indicador deslizante na barra de tabs ───────────────
-  function showIndicator(dx) {
-    const tabsWrap = document.querySelector(".tabs-wrap");
-    if (!tabsWrap) return;
-
+  // ── Feedback visual ──────────────────────────────────────────────────────
+  // O indicador é um div posicionado fixed (não absolute!) para não quebrar
+  // o position:sticky do .tabs-wrap.
+  function showIndicator(tabsWrap, dx) {
     const abas = window.ABAS;
     const atual = window.getAbaAtiva ? window.getAbaAtiva() : null;
     if (!abas || !atual) return;
     const idx = abas.indexOf(atual);
 
-    // Direção: qual aba é o alvo?
     const targetIdx = dx < 0 ? idx + 1 : idx - 1;
     if (targetIdx < 0 || targetIdx >= abas.length) return;
 
-    // Botões ativo e alvo
     const activeBtn = tabsWrap.querySelector('.tab-btn[data-tab="' + atual + '"]');
     const targetBtn = tabsWrap.querySelector('.tab-btn[data-tab="' + abas[targetIdx] + '"]');
     if (!activeBtn || !targetBtn) return;
 
-    // Cria/atualiza indicador
-    let indicator = document.getElementById("_swipe-ind");
-    if (!indicator) {
-      indicator = document.createElement("div");
-      indicator.id = "_swipe-ind";
-      Object.assign(indicator.style, {
-        position: "absolute",
-        bottom: "0",
+    let ind = document.getElementById("_swipe-ind");
+    if (!ind) {
+      ind = document.createElement("div");
+      ind.id = "_swipe-ind";
+      Object.assign(ind.style, {
+        position: "fixed",
         height: "2px",
         background: "var(--verde-light)",
         pointerEvents: "none",
-        zIndex: "95",
+        zIndex: "9999",
         borderRadius: "1px",
         transition: "none",
       });
-      tabsWrap.style.position = "relative";
-      tabsWrap.appendChild(indicator);
+      document.body.appendChild(ind);
     }
 
-    const wrapRect = tabsWrap.getBoundingClientRect();
     const activeRect = activeBtn.getBoundingClientRect();
     const targetRect = targetBtn.getBoundingClientRect();
 
-    // Posição do indicador: lerp entre ativo e alvo baseado no progresso
-    const progress = Math.min(Math.abs(dx) / (MIN_DIST * 2), 1);
-    const fromLeft = activeRect.left - wrapRect.left;
-    const toLeft = targetRect.left - wrapRect.left;
-    const fromW = activeRect.width;
-    const toW = targetRect.width;
+    // Progresso: 0 = no ativo, 1 = no alvo
+    const progress = Math.min(Math.abs(dx) / (MIN_DIST * 2.5), 1);
 
-    const curLeft = fromLeft + (toLeft - fromLeft) * progress;
-    const curW = fromW + (toW - fromW) * progress;
+    const curLeft = activeRect.left + (targetRect.left - activeRect.left) * progress;
+    const curW = activeRect.width + (targetRect.width - activeRect.width) * progress;
+    // Bottom da barra de abas
+    const bottom = activeRect.bottom;
 
-    indicator.style.left = curLeft + "px";
-    indicator.style.width = curW + "px";
-    indicator.style.opacity = String(0.4 + 0.6 * progress);
-    indicator.style.display = "block";
+    ind.style.left = curLeft + "px";
+    ind.style.width = curW + "px";
+    ind.style.top = (bottom - 2) + "px";
+    ind.style.opacity = String(0.4 + 0.6 * progress);
+    ind.style.display = "block";
   }
 
   function clearIndicator() {
@@ -220,16 +145,8 @@
     if (ind) ind.style.display = "none";
   }
 
-  // ── Scroll da barra de tabs ──────────────────────────────────────────────
-  function scrollTabIntoView(tabName) {
-    const tabsWrap = document.querySelector(".tabs-wrap");
-    if (!tabsWrap) return;
-    const btn = tabsWrap.querySelector('[data-tab="' + tabName + '"]');
-    if (btn) btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
-  }
-
   // ════════════════════════════════════════════════════════════════════════════
-  // 2. SWIPE NO MODAL PROGNOSE (trocar abas + swipe-up para fechar)
+  // 2. SWIPE NO MODAL PROGNOSE
   // ════════════════════════════════════════════════════════════════════════════
   const MODAL_TABS = ["prev", "pal", "listpal", "est"];
 
@@ -241,6 +158,19 @@
     return MODAL_TABS[0];
   }
 
+  function isInsideScrollable(target) {
+    let el = target;
+    while (el && el.id !== "modal-prog-body" && el !== document.body) {
+      try {
+        const cs = getComputedStyle(el);
+        if ((cs.overflowX === "auto" || cs.overflowX === "scroll") && el.scrollWidth > el.clientWidth + 2) return true;
+        if ((cs.overflowY === "auto" || cs.overflowY === "scroll") && el.scrollHeight > el.clientHeight + 2) return true;
+      } catch (e) { /* ignore */ }
+      el = el.parentElement;
+    }
+    return false;
+  }
+
   function initModalSwipe() {
     const ov = document.getElementById("modal-prog");
     if (!ov || ov._swipeTabsSetup) return;
@@ -250,14 +180,11 @@
     if (!box) return;
 
     let startX = 0, startY = 0;
-    let tracking = false;
-    let decided = false, isHoriz = false;
+    let tracking = false, decided = false, isHoriz = false;
 
     box.addEventListener("touchstart", function (e) {
       if (e.touches.length > 1) { tracking = false; return; }
-      if (isInsideHorizontalScroller(e.target)) { tracking = false; return; }
-      // Não interceptar se o toque é dentro de [data-scroll-inner] (tabela com scroll-y)
-      if (e.target.closest("[data-scroll-inner]")) { tracking = false; return; }
+      if (isInsideScrollable(e.target)) { tracking = false; return; }
 
       tracking = true;
       decided = false;
@@ -268,42 +195,37 @@
 
     box.addEventListener("touchmove", function (e) {
       if (!tracking) return;
+      if (decided) return;
+
       const dx = e.touches[0].clientX - startX;
       const dy = e.touches[0].clientY - startY;
+      if (Math.abs(dx) < DEAD_ZONE && Math.abs(dy) < DEAD_ZONE) return;
 
-      if (!decided && Math.abs(dx) < DEAD_ZONE && Math.abs(dy) < DEAD_ZONE) return;
-      if (!decided) {
-        decided = true;
-        isHoriz = Math.abs(dx) > Math.abs(dy) * 0.9;
-        if (!isHoriz) { tracking = false; return; }
-      }
+      decided = true;
+      isHoriz = Math.abs(dx) > Math.abs(dy);
+      if (!isHoriz) tracking = false;
     }, { passive: true });
 
     box.addEventListener("touchend", function (e) {
       if (!tracking) return;
       tracking = false;
-
       if (!ov.classList.contains("aberto")) return;
 
       const dx = e.changedTouches[0].clientX - startX;
       const dy = e.changedTouches[0].clientY - startY;
 
-      // Swipe-up para fechar (apenas se começou perto do topo e scroll está em 0)
-      if (!decided || !isHoriz) {
-        if (dy < -SWIPE_UP_DIST && Math.abs(dy) > Math.abs(dx) * ANGLE_RATIO) {
-          const boxRect = box.getBoundingClientRect();
-          const relY = startY - boxRect.top;
-          if (relY < 120 && box.scrollTop <= 0) {
-            PROGNOSE.fecharModal();
-            return;
-          }
+      // Swipe-up para fechar (se não decidiu horizontal E o toque foi perto do topo)
+      if (!isHoriz && dy < -SWIPE_UP_DIST && Math.abs(dy) > Math.abs(dx) * 1.3) {
+        const boxRect = box.getBoundingClientRect();
+        if ((startY - boxRect.top) < 120 && box.scrollTop <= 0) {
+          PROGNOSE.fecharModal();
+          return;
         }
-        return;
       }
 
-      // Swipe horizontal
+      // Swipe horizontal para trocar aba do modal
+      if (!decided || !isHoriz) return;
       if (Math.abs(dx) < MIN_DIST) return;
-      if (Math.abs(dx) < Math.abs(dy) * ANGLE_RATIO) return;
 
       const atual = getModalActiveTab();
       const idx = MODAL_TABS.indexOf(atual);
@@ -324,19 +246,22 @@
   function init() {
     if (!isTouchDevice()) return;
 
-    initMainSwipe();
+    initTabBarSwipe();
 
-    // Modal prognose: inicializa via MutationObserver quando ele existir/abrir
+    // Modal: inicializa quando existir
     const tryInitModal = () => {
       const ov = document.getElementById("modal-prog");
       if (ov && !ov._swipeTabsSetup) initModalSwipe();
     };
-
     tryInitModal();
 
-    // Observer genérico: detecta quando o modal aparece no DOM ou muda de classe
     const obs = new MutationObserver(() => tryInitModal());
-    obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+    const target = document.getElementById("modal-prog");
+    if (target) {
+      obs.observe(target, { attributes: true, attributeFilter: ["class"] });
+    } else {
+      obs.observe(document.body, { childList: true, subtree: true });
+    }
   }
 
   if (document.readyState === "loading") {
