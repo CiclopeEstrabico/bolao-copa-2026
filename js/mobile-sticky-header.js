@@ -35,7 +35,7 @@
       frozen = document.createElement('div');
       frozen.className = 'frozen-thead';
       frozen.style.cssText =
-        'position:fixed;left:0;right:0;z-index:50;overflow:hidden;pointer-events:none;display:none;' +
+        'position:fixed;z-index:50;overflow:hidden;pointer-events:none;display:none;' +
         'background:var(--fundo2);border-bottom:1px solid var(--verde-light);box-shadow:0 2px 8px rgba(0,0,0,.3);' +
         'will-change:transform,opacity;';
       document.body.appendChild(frozen);
@@ -92,6 +92,7 @@
 
       // Usa getBoundingClientRect() para posição sempre precisa (sem cache stale)
       const tableRect = table.getBoundingClientRect();
+      const wrapperRect = wrapper.getBoundingClientRect();
       const tableTop = tableRect.top;        // posição relativa ao viewport
       const tableHeight = tableRect.height;
       const theadHeight = thead.getBoundingClientRect().height || 40;
@@ -106,11 +107,13 @@
         // Se a tabela está acabando, empurra o header fixo para cima
         const currentTop = Math.min(stickyTop, tableTop + tableHeight - theadHeight);
         frozen.style.top = currentTop + 'px';
-        // Sincronizar scroll horizontal
-        const innerTable = frozen.querySelector('table');
-        if (innerTable) {
-          innerTable.style.transform = 'translateX(' + (-wrapper.scrollLeft) + 'px)';
-        }
+        
+        // Alinha horizontalmente o container com o wrapper da tabela (clip de overflow)
+        frozen.style.left = wrapperRect.left + 'px';
+        frozen.style.width = wrapperRect.width + 'px';
+
+        // Sincronizar scroll horizontal usando scrollLeft (permite sticky nativo nos ths do clone)
+        frozen.scrollLeft = wrapper.scrollLeft;
       } else {
         frozen.style.display = 'none';
       }
@@ -147,10 +150,7 @@
       // Sync horizontal scroll
       wrapper.addEventListener('scroll', () => {
         if (inst.frozen && inst.frozen.style.display !== 'none') {
-          const innerTable = inst.frozen.querySelector('table');
-          if (innerTable) {
-            innerTable.style.transform = 'translateX(' + (-wrapper.scrollLeft) + 'px)';
-          }
+          inst.frozen.scrollLeft = wrapper.scrollLeft;
         }
       }, { passive: true });
     }
