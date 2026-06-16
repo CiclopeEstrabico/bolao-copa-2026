@@ -212,20 +212,24 @@ window.renderEstatisticas = function () {
   const _tombArr = destQueda.bestArr;
   const maiorTombo = destQueda.bestScore;
 
-  // --- Fênix: maior salto nos últimos 20 jogos (mín 15) ---
+  // --- Fênix + Derreteu: compartilham o MESMO ranking sem os últimos 20 jogos ---
+  // Otimização: unifica dois gerarRanking() em um só (economia ~20k calcularPontosBrutos com 80 jogos)
   const recuperacoes20 = {};
+  const derreteuScores = {};
+  let _rankingAnt20 = null;
   if (totalJogos >= 15) {
     const ultimos20Ids = jogosOrdenadosSeq.slice(-20).map(j => j.id);
-    const resAntFenix = {};
+    const resAnt20 = {};
     for (const [id, val] of Object.entries(res)) {
-      if (!ultimos20Ids.includes(id)) resAntFenix[id] = val;
+      if (!ultimos20Ids.includes(id)) resAnt20[id] = val;
     }
-    const rankingAntFenix = gerarRanking(pals, resAntFenix, apos, esp);
+    _rankingAnt20 = gerarRanking(pals, resAnt20, apos, esp);
     for (let i = 0; i < ranking.length; i++) {
       const aId = ranking[i].participante.id;
       const posAtual = ranking[i].posicao;
-      const posAnt = rankingAntFenix.findIndex(x => x.participante.id === aId) + 1;
-      recuperacoes20[aId] = posAnt - posAtual;
+      const posAnt = _rankingAnt20.findIndex(x => x.participante.id === aId) + 1;
+      recuperacoes20[aId] = posAnt - posAtual;   // positivo = subiu (Fênix)
+      derreteuScores[aId] = posAtual - posAnt;   // positivo = caiu (Derreteu)
     }
   }
   const destFenix = obterDestaques(r => recuperacoes20[r.participante.id] || 0, true, true, score => totalJogos >= 15 && score > 0);
@@ -234,12 +238,74 @@ window.renderEstatisticas = function () {
   const maiorRecup = destFenix.bestScore;
 
   // --- Snapshots progressivos de ranking (reutilizados por 5 cards) ---
+  // OTIMIZAÇÃO: Scoring incremental O(J×N) em vez de O(J²×N).
+  // Com 80 jogos e 20 apostadores, reduz de ~166.000 para ~1.600 iterações de scoring.
   let snapshots = [];
   if (totalJogos >= 2) {
-    for (let i = 1; i <= jogosOrdenadosSeq.length; i++) {
-      const resSnap = {};
-      for (let k = 0; k < i; k++) resSnap[jogosOrdenadosSeq[k].id] = res[jogosOrdenadosSeq[k].id];
-      snapshots.push(gerarRanking(pals, resSnap, apos, esp));
+    // Inicializa acumuladores por apostador
+    const _accum = {};
+    for (const a of apos) {
+      _accum[a.id] = { total: 0, placarExato: 0, placarAlto: 0, resultado: 0 };
+    }
+    // Pré-calcular pontos especiais (não mudam entre snapshots)
+    const _espPts = {};
+    for (const a of apos) {
+      _espPts[a.id] = calcularPontosEspeciais(a, esp.campeao, esp.vice, esp.terceiro).total_especiais;
+    }
+
+    for (let i = 0; i < jogosOrdenadosSeq.length; i++) {
+      const jogo = jogosOrdenadosSeq[i];
+      const rSnap = res[jogo.id];
+      if (!rSnap || rSnap.homeGoals === undefined) continue;
+
+      // Atualizar acumulador incremental (+= pontos DESTE jogo apenas)
+      for (const a of apos) {
+        const p = pals[a.id]?.[jogo.id];
+        if (!p || p.homeGoals === undefined) continue;
+        const br = calcularPontosBrutos(p, rSnap);
+        const pts = aplicarFator(br.total_bruto, jogo.fase);
+        _accum[a.id].total += pts;
+        if (br.acertou) _accum[a.id].resultado++;
+        if (br.bonus_tipo === 'placar_exato') {
+          if (br.bonus_pts === (window.CONFIG?.pontuacao?.bonus_placar_exato_alto)) {
+            _accum[a.id].placarAlto++;
+          } else {
+            _accum[a.id].placarExato++;
+          }
+        }
+      }
+
+      // Gerar snapshot-ranking a partir dos acumuladores (sort rápido, sem re-scoring)
+      const snapItems = apos.map(a => ({
+        participante: a,
+        stats: {
+          total: Math.round((_accum[a.id].total + _espPts[a.id]) * 10) / 10,
+          acertos_placar_exato: _accum[a.id].placarExato,
+          acertos_placar_alto: _accum[a.id].placarAlto,
+          acertos_resultado: _accum[a.id].resultado,
+        }
+      }));
+      snapItems.sort((a, b) => {
+        if (b.stats.total !== a.stats.total) return b.stats.total - a.stats.total;
+        const totA = a.stats.acertos_placar_exato + a.stats.acertos_placar_alto;
+        const totB = b.stats.acertos_placar_exato + b.stats.acertos_placar_alto;
+        if (totB !== totA) return totB - totA;
+        return b.stats.acertos_resultado - a.stats.acertos_resultado;
+      });
+      let pos = 1;
+      const snap = snapItems.map((item, idx) => {
+        if (idx > 0) {
+          const prev = snapItems[idx - 1].stats;
+          const cur = item.stats;
+          const mesmoPts = cur.total === prev.total;
+          const mesmoExatos = (cur.acertos_placar_exato + cur.acertos_placar_alto) ===
+                              (prev.acertos_placar_exato + prev.acertos_placar_alto);
+          const mesmoRes = cur.acertos_resultado === prev.acertos_resultado;
+          if (!(mesmoPts && mesmoExatos && mesmoRes)) pos = idx + 1;
+        }
+        return { posicao: pos, ...item };
+      });
+      snapshots.push(snap);
     }
   }
 
@@ -302,24 +368,10 @@ window.renderEstatisticas = function () {
   const _tubaraoArr = destTubarao.bestArr;
   const tubaraoScore = destTubarao.bestScore;
 
-  // --- Derreteu: maior queda nos últimos 20 jogos (oposto de Fênix, mín 15 jogos) ---
-  const derreteuScores = {};
-  if (totalJogos >= 15) {
-    const ultimos20IdsDer = jogosOrdenadosSeq.slice(-20).map(j => j.id);
-    const resAntDerreteu = {};
-    for (const [id, val] of Object.entries(res)) {
-      if (!ultimos20IdsDer.includes(id)) resAntDerreteu[id] = val;
-    }
-    const rankingAntDerreteu = gerarRanking(pals, resAntDerreteu, apos, esp);
-    for (let i = 0; i < ranking.length; i++) {
-      const aId = ranking[i].participante.id;
-      const posAtual = ranking[i].posicao;
-      const posAnt = rankingAntDerreteu.findIndex(x => x.participante.id === aId) + 1;
-      derreteuScores[aId] = posAtual - posAnt; // positivo = caiu
-    }
-  }
+  // --- Derreteu: já calculado junto com Fênix (otimização: mesmo gerarRanking) ---
   const destDerreteu = obterDestaques(r => derreteuScores[r.participante.id] || 0, false, true, score => totalJogos >= 15 && score > 0);
   const _derreteuArr = destDerreteu.bestArr;
+  const derreteuScore = destDerreteu.bestScore;
 
   // --- Onisciente: quem acertou o placar exato com mais gols dentre todos os acertos de placar da Copa ---
   const oniscienteScores = {};
@@ -929,16 +981,18 @@ window.renderEstatisticas = function () {
       const pct = apos.length ? Math.round(ct / apos.length * 100) : 0;
       // Fix #4: campeão oficial vem de extrairEspeciaisOficiais, não de bracket["FNL"].home
       const campeaoOficial = esp.campeao && esp.campeao === code;
-      h += '<div class="fav-apostadores-row">';
-      h += '<div style="display:flex;align-items:center;gap:8px;font-weight:600;min-width:0;">' +
-           htmlBandeira(code, 18) +
-           '<span class="stat-time-nome" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left">' + (info?.name || code) + '</span>' +
-           (campeaoOficial ? '<span style="color:var(--dourado);margin-left:4px" title="Campeão Confirmado">✓</span>' : '') +
+      const isMobFav = window.innerWidth <= 600;
+      const favNameW = isMobFav ? '115px' : '320px';
+      h += '<div style="display:flex;align-items:center;gap:' + (isMobFav ? '16' : '12') + 'px;padding:' + (isMobFav ? '3px 6px' : '4px 8px') + ';border-radius:6px">';
+      h += '<div style="display:flex;align-items:center;gap:6px;font-weight:600;width:' + favNameW + ';flex-shrink:0;font-size:' + (isMobFav ? '.65' : '.72') + 'rem;min-width:0">' +
+           htmlBandeira(code, isMobFav ? 14 : 18) +
+           '<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (info?.name || code) + '</span>' +
+           (campeaoOficial ? '<span style="color:var(--dourado);margin-left:2px" title="Campeão Confirmado">✓</span>' : '') +
            '</div>';
-      h += '<div style="background:var(--fundo2);border-radius:5px;height:10px;overflow:hidden;border:1px solid var(--borda)">' +
+      h += '<div style="flex:1;background:var(--fundo2);border-radius:5px;height:10px;overflow:hidden;border:1px solid var(--borda)">' +
            '<div style="width:' + (ct / maxV * 100) + '%;height:100%;background:var(--verde);border-radius:5px"></div>' +
            '</div>';
-      h += '<span style="font-size:.75rem;color:var(--texto2);font-weight:700;text-align:right;white-space:nowrap">' +
+      h += '<span style="font-size:.7rem;color:var(--texto2);font-weight:700;text-align:right;white-space:nowrap;min-width:' + (isMobFav ? '34' : '40') + 'px;flex-shrink:0">' +
            ct + ' <span style="font-size:.65rem;font-weight:normal;opacity:0.85">(' + pct + '%)</span>' +
            '</span>';
       h += '</div>';
@@ -947,7 +1001,46 @@ window.renderEstatisticas = function () {
   }
 
 
-  h += '<div class="card card-sem-padding"><div class="card-titulo">📈 Estatísticas Avançadas por Jogo</div><div class="compilacao-wrap stat-table-wrap"><table class="compilacao-table stat-full-table" style="font-size:.7rem">';
+  // OTIMIZAÇÃO: Render cards imediatamente, defer tabela + HtH para o próximo frame
+  // Isso faz os 28 cards aparecerem instantaneamente no mobile.
+  h += '<div id="stat-table-deferred"><div class="card" style="text-align:center;padding:20px;color:var(--texto2)"><div class="spinner" style="margin:0 auto 8px"></div>Carregando tabela avançada...</div></div>';
+  h += '<div id="stat-hth-deferred"></div>';
+
+  el.innerHTML = h;
+
+  // Tooltip unificado (hover desktop + toque mobile) em todos os [title] da aba
+  window.injetarTooltipsMobile(el);
+
+  // Defer: tabela avançada + HtH aparecem no próximo frame, liberando o thread principal
+  requestAnimationFrame(() => {
+    _renderStatsTabelaDeferred(el, res, apos, pals, esp);
+  });
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DEFERRED: Tabela Avançada + Head-to-Head (renderizados após os 28 cards)
+// Otimização: libera o thread principal para que os cards apareçam instantaneamente
+// ══════════════════════════════════════════════════════════════════════════════
+function _renderStatsTabelaDeferred(el, res, apos, pals, esp) {
+  const tableContainer = document.getElementById('stat-table-deferred');
+  const hthContainer = document.getElementById('stat-hth-deferred');
+  if (!tableContainer) return;
+
+  // Cache de PROGNOSE: evita chamar Dixon-Coles 104 vezes redundantemente
+  const _progCache = {};
+  function _getCachedPrognose(hC, aC) {
+    const key = hC + '_' + aC;
+    if (_progCache[key] !== undefined) return _progCache[key];
+    if (window.PROGNOSE && typeof PROGNOSE.calcular === "function" && hC !== "TBD" && aC !== "TBD") {
+      const isNeutral = !['USA', 'CAN', 'MEX'].includes(hC) && !['USA', 'CAN', 'MEX'].includes(aC);
+      _progCache[key] = PROGNOSE.calcular(hC, aC, isNeutral);
+    } else {
+      _progCache[key] = null;
+    }
+    return _progCache[key];
+  }
+
+  let h = '<div class="card card-sem-padding"><div class="card-titulo">📈 Estatísticas Avançadas por Jogo</div><div class="compilacao-wrap stat-table-wrap"><table class="compilacao-table stat-full-table" style="font-size:.7rem">';
   h += '<thead><tr>';
   const isMobileHeader = window.innerWidth <= 600;
   h += `<th class="${isMobileHeader ? 'col-jogo' : 'stat-col-jogo'}" style="text-align:left;">Jogo</th>`;
@@ -979,7 +1072,6 @@ window.renderEstatisticas = function () {
     const hName = getShortName(hC);
     const aName = getShortName(aC);
 
-    // Bets
     let totalBets = 0, vH = 0, vD = 0, vA = 0;
     const placares = {};
     let aRes = 0, aPlac = 0;
@@ -1006,33 +1098,24 @@ window.renderEstatisticas = function () {
     const temRes = r && r.homeGoals !== undefined;
     const apostasAbertas = jogoAceita(jogo.id);
     const podeVer = (temRes && !jogoEhSimulado(jogo.id)) || !apostasAbertas;
-
     const strPlacarMais = mChutado ? `${mChutado[0]} <span style="font-size:.65rem;color:var(--texto2)">(${((mChutado[1] / totalBets) * 100).toFixed(1)}%)</span>` : '—';
 
-    // AI Prognosis
-    let prog = null;
-    if (window.PROGNOSE && typeof PROGNOSE.calcular === "function" && hC !== "TBD" && aC !== "TBD") {
-      const isNeutral = !['USA', 'CAN', 'MEX'].includes(hC) && !['USA', 'CAN', 'MEX'].includes(aC);
-      prog = PROGNOSE.calcular(hC, aC, isNeutral);
-    }
+    // AI Prognosis (cached)
+    const prog = _getCachedPrognose(hC, aC);
 
-    const rowBg = (r && r.homeGoals !== undefined) ? '' : ' opacity:0.65;';
-
+    const rowBg = temRes ? '' : ' opacity:0.65;';
     const isMobile = window.innerWidth <= 600;
     const dataHoraStr = formatarDataBRT(jogo.utc, false);
     const faseLbl = getFaseLabel(jogo);
     const dataHoraLbl = dataHoraStr + (faseLbl ? ", " + faseLbl : "");
-    const tooltipH = '';
-    const tooltipA = '';
     h += `<tr style="${rowBg}">`;
     h += `<td class="${isMobile ? 'col-jogo' : 'stat-col-jogo'}" onclick="PROGNOSE.abrirModal('${jogo.id}')" style="text-align:left;padding:6px 8px;cursor:pointer">
             <div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">${dataHoraLbl}</div>
             <div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">
-              ${htmlBandeira(hC, 14)} <span class="${isMobile ? 'compilacao-time-nome comp-sigla' : 'stat-time-nome'}"${tooltipH}>${isMobile ? getSigla(hC) : hName}</span> <span style="color:var(--texto2)">×</span> <span class="${isMobile ? 'compilacao-time-nome comp-sigla' : 'stat-time-nome'}"${tooltipA}>${isMobile ? getSigla(aC) : aName}</span> ${htmlBandeira(aC, 14)}
+              ${htmlBandeira(hC, 14)} <span class="${isMobile ? 'compilacao-time-nome comp-sigla' : 'stat-time-nome'}">${isMobile ? getSigla(hC) : hName}</span> <span style="color:var(--texto2)">×</span> <span class="${isMobile ? 'compilacao-time-nome comp-sigla' : 'stat-time-nome'}">${isMobile ? getSigla(aC) : aName}</span> ${htmlBandeira(aC, 14)}
             </div>
           </td>`;
 
-    // Result column
     if (temRes) {
       let resHtml = `${r.homeGoals}x${r.awayGoals}`;
       if (r.foi_penaltis) {
@@ -1055,7 +1138,7 @@ window.renderEstatisticas = function () {
       h += `<td colspan="6" style="color:var(--texto2);font-size:.75rem;letter-spacing:1px;opacity:0.6">🔒 Conteúdo bloqueado até o fechamento das apostas</td>`;
     }
 
-    h += `<td style="background:var(--fundo);border-left:1px solid var(--borda);border-right:1px solid var(--borda)"></td>`; // gap
+    h += `<td style="background:var(--fundo);border-left:1px solid var(--borda);border-right:1px solid var(--borda)"></td>`;
 
     if (podeVer && prog) {
       h += `<td><span style="color:var(--texto2)">${Math.round(prog.eloH)}</span></td>`;
@@ -1070,50 +1153,49 @@ window.renderEstatisticas = function () {
     } else {
       h += `<td colspan="7" style="color:var(--texto2);font-size:.65rem">Sem dados do modelo</td>`;
     }
-
     h += `</tr>`;
   }
   h += '</tbody></table></div></div>';
 
-  // Head-to-Head (se >= 2 apostadores)
+  // Head-to-Head
   let aposHtH = [...apos];
   const modHtH = window.getModelo ? window.getModelo() : null;
   if (modHtH && APP._modeloCarregado) {
     aposHtH.push(modHtH);
   }
 
+  let hthHtml = '';
   if (aposHtH.length >= 2) {
-    h += '<div class="card"><div class="card-titulo">⚔️ Head-to-Head</div>';
+    hthHtml += '<div class="card"><div class="card-titulo">⚔️ Head-to-Head</div>';
     if (APP._modoSimulacao) {
-      h += '<div style="color:#f87171;font-size:.8rem;padding:10px 0;text-align:center">🔒 O Head-to-Head fica indisponível no modo simulação para proteger a privacidade dos palpites.</div></div>';
+      hthHtml += '<div style="color:#f87171;font-size:.8rem;padding:10px 0;text-align:center">🔒 O Head-to-Head fica indisponível no modo simulação para proteger a privacidade dos palpites.</div></div>';
     } else {
-      h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">';
-      h += '<select id="hth-a1" style="flex:1" onchange="renderHtH()"><option value="">Apostador 1</option>';
-      for (const a of aposHtH) h += '<option value="' + a.id + '">' + (a.apelido || a.nome || a.token) + '</option>';
-      h += '</select><span style="align-self:center">vs</span>';
-      h += '<select id="hth-a2" style="flex:1" onchange="renderHtH()"><option value="">Apostador 2</option>';
-      for (const a of aposHtH) h += '<option value="' + a.id + '">' + (a.apelido || a.nome || a.token) + '</option>';
-      h += '</select></div>';
-      h += '<div id="hth-resultado"></div></div>';
+      hthHtml += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">';
+      hthHtml += '<select id="hth-a1" style="flex:1" onchange="renderHtH()"><option value="">Apostador 1</option>';
+      for (const a of aposHtH) hthHtml += '<option value="' + a.id + '">' + (a.apelido || a.nome || a.token) + '</option>';
+      hthHtml += '</select><span style="align-self:center">vs</span>';
+      hthHtml += '<select id="hth-a2" style="flex:1" onchange="renderHtH()"><option value="">Apostador 2</option>';
+      for (const a of aposHtH) hthHtml += '<option value="' + a.id + '">' + (a.apelido || a.nome || a.token) + '</option>';
+      hthHtml += '</select></div>';
+      hthHtml += '<div id="hth-resultado"></div></div>';
     }
   }
 
-  el.innerHTML = h;
+  tableContainer.innerHTML = h;
+  if (hthContainer) hthContainer.innerHTML = hthHtml;
 
-  // Tooltip unificado (hover desktop + toque mobile) em todos os [title] da aba
-  window.injetarTooltipsMobile(el);
+  // Tooltips + frozen header para o conteúdo deferred
+  window.injetarTooltipsMobile(tableContainer);
+  if (hthContainer) window.injetarTooltipsMobile(hthContainer);
 
-  // Frozen header para mobile:
-  // stat-table-wrap usa overflow-y:clip que propaga o sticky para a janela (não cria scroll interno).
-  // Por isso monitoramos o scroll da página (window), não do wrapper.
   requestAnimationFrame(() => {
-    const table = el.querySelector('.stat-full-table');
-    const wrapper = el.querySelector('.stat-table-wrap');
+    const table = tableContainer.querySelector('.stat-full-table');
+    const wrapper = tableContainer.querySelector('.stat-table-wrap');
     if (table && wrapper && window.registrarFrozenHeader) {
       window.registrarFrozenHeader(table, wrapper);
     }
   });
-};
+}
 
 window.renderHtH = function () {
   const id1 = document.getElementById("hth-a1")?.value;
@@ -1204,11 +1286,38 @@ function _jogoStatRow(jogoId, hC, aC, r, acertos, total, cor) {
   const aName = isMob ? getSigla(aC) : getShortName(aC);
   const tooltipH = !isMob ? ' title="' + nomeTime(hC).replace(/"/g, '&quot;') + '"' : '';
   const tooltipA = !isMob ? ' title="' + nomeTime(aC).replace(/"/g, '&quot;') + '"' : '';
-  return '<div onclick="PROGNOSE.abrirModal(\'' + jogoId + '\')" onmouseover="this.style.background=\'rgba(255,255,255,0.04)\'" onmouseout="this.style.background=\'\'" style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;transition:background 0.15s">' +
-    htmlBandeira(hC, 16) + ' <span class="stat-time-nome"' + tooltipH + '>' + hName + '</span>' +
-    '<span style="font-size:.72rem;color:var(--texto2);font-weight:700">' + r.homeGoals + '×' + r.awayGoals + '</span>' +
-    htmlBandeira(aC, 16) + ' <span class="stat-time-nome"' + tooltipA + '>' + aName + '</span>' +
-    '<div style="flex:1;background:var(--fundo2);border-radius:3px;height:6px;margin:0 6px">' +
+  const placar = r.homeGoals + '×' + r.awayGoals;
+
+  // Mobile: layout compacto com placar centralizado entre os times
+  // [flag1 sigla1] [placar] [sigla2 flag2] | ████░░ | 12/20
+  if (isMob) {
+    return '<div onclick="PROGNOSE.abrirModal(\'' + jogoId + '\')" style="display:flex;align-items:center;gap:16px;padding:5px 6px;cursor:pointer;border-radius:6px;transition:background 0.15s" onmouseover="this.style.background=\'rgba(255,255,255,0.04)\'" onmouseout="this.style.background=\'\'">' +
+      '<div style="display:flex;align-items:center;justify-content:center;gap:2px;min-width:0;width:115px;flex-shrink:0">' +
+        '<div style="display:flex;align-items:center;gap:2px;justify-content:flex-end;flex:1;min-width:0">' +
+          htmlBandeira(hC, 14) +
+          '<span style="font-size:.65rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + hName + '</span>' +
+        '</div>' +
+        '<span style="font-size:.68rem;color:var(--texto2);font-weight:800;padding:0 3px;flex-shrink:0">' + placar + '</span>' +
+        '<div style="display:flex;align-items:center;gap:2px;justify-content:flex-start;flex:1;min-width:0">' +
+          '<span style="font-size:.65rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + aName + '</span>' +
+          htmlBandeira(aC, 14) +
+        '</div>' +
+      '</div>' +
+      '<div style="flex:1;background:var(--fundo2);border-radius:3px;height:6px;min-width:20px">' +
+        '<div style="width:' + pct + '%;height:100%;background:' + cor + ';border-radius:3px"></div>' +
+      '</div>' +
+      '<span style="font-size:.67rem;color:' + cor + ';font-weight:700;min-width:34px;text-align:right;flex-shrink:0">' + acertos + '/' + total + '</span>' +
+    '</div>';
+  }
+
+  // Desktop: layout com container fixo para alinhar barras verticalmente
+  return '<div onclick="PROGNOSE.abrirModal(\'' + jogoId + '\')" onmouseover="this.style.background=\'rgba(255,255,255,0.04)\'" onmouseout="this.style.background=\'\'" style="display:flex;align-items:center;gap:12px;padding:6px 8px;cursor:pointer;border-radius:6px;transition:background 0.15s">' +
+    '<div style="display:flex;align-items:center;gap:5px;width:320px;flex-shrink:0;font-size:.72rem">' +
+      htmlBandeira(hC, 16) + '<span' + tooltipH + ' style="font-weight:600">' + hName + '</span> ' +
+      '<span style="color:var(--texto2);font-weight:700">' + placar + '</span> ' +
+      htmlBandeira(aC, 16) + '<span' + tooltipA + ' style="font-weight:600">' + aName + '</span>' +
+    '</div>' +
+    '<div style="flex:1;background:var(--fundo2);border-radius:3px;height:6px">' +
     '<div style="width:' + pct + '%;height:100%;background:' + cor + ';border-radius:3px"></div></div>' +
     '<span style="font-size:.7rem;color:' + cor + ';font-weight:700;min-width:40px;text-align:right">' + acertos + '/' + total + '</span></div>';
 }

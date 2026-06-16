@@ -170,6 +170,135 @@ window.renderCompilacao = function () {
     return b.pts - a.pts; // Default pts
   });
 
+  // ── OTIMIZAÇÃO: Renderização progressiva da tabela ──
+  // Gera a função que constrói HTML de linhas de jogos (reutilizada em ambos os batches)
+  function _gerarLinhasJogos(jogosSlice) {
+    let out = '';
+    for (const jogo of jogosSlice) {
+      const r = res[jogo.id];
+      const temRes = r && r.homeGoals !== undefined;
+      const b = APP.bracket?.[jogo.id] || {};
+      const hC = b.home || jogo.home; const aC = b.away || jogo.away;
+      const hDisplay = getSigla(hC);
+      const aDisplay = getSigla(aC);
+      const dataHoraStr = formatarDataBRT(jogo.utc, false);
+      const faseLbl = getFaseLabel(jogo);
+      const dataHora = dataHoraStr + (faseLbl ? ", " + faseLbl : "");
+      const gameFullName = nomeTime(hC) + ' x ' + nomeTime(aC);
+      out += '<tr><td class="col-jogo" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" title="' + gameFullName + '" style="position:sticky;left:0;background:var(--card2);padding:6px 8px;z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1);cursor:pointer">';
+      out += '<div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">' + dataHora + '</div>';
+      out += '<div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">' + htmlBandeira(hC, 14) + ' <span class="compilacao-time-nome comp-sigla">' + hDisplay + '</span> <span style="color:var(--texto2)">×</span> <span class="compilacao-time-nome comp-sigla">' + aDisplay + '</span> ' + htmlBandeira(aC, 14) + '</div></td>';
+      if (temRes) {
+        let resHtml = r.homeGoals + 'x' + r.awayGoals;
+        if (r.foi_penaltis) {
+          const ph = r.penaltis_home ?? 0; const pa = r.penaltis_away ?? 0;
+          resHtml += '<div style="font-size:.58rem;color:var(--amber);margin-top:1px;font-weight:700">PEN ' + ph + 'x' + pa + '</div>';
+        }
+        out += '<td class="col-resultado" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="background:var(--fundo2);color:var(--texto);vertical-align:middle;cursor:pointer">' + resHtml + '</td>';
+      } else {
+        out += '<td class="col-resultado" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="background:var(--fundo2);color:var(--texto2);cursor:pointer">–</td>';
+      }
+      for (const a of ranking) {
+        const meusPals = a.isModelo ? (APP.palpitesModelo || {}) : (pals[a.id] || {});
+        const p = meusPals[jogo.id];
+        if (!p || p.homeGoals === undefined) { out += '<td class="celula-sem">·</td>'; continue; }
+        const apostasAbertas = jogoAceita(jogo.id);
+        const podeVer = (temRes && !jogoEhSimulado(jogo.id)) || !apostasAbertas;
+        if (!podeVer) {
+          out += '<td class="celula-futuro" style="color:var(--texto2);opacity:0.3" title="Palpite oculto até o fechamento das apostas">🔒</td>';
+          continue;
+        }
+        if (!temRes) { out += '<td class="celula-futuro">' + p.homeGoals + 'x' + p.awayGoals + '</td>'; continue; }
+        const br = calcularPontosBrutos(p, r);
+        const pts = aplicarFator(br.total_bruto, jogo.fase);
+        let cls = "celula-erro";
+        if (br.acertou) {
+          const bv = br.total_bruto;
+          if (bv >= 8) cls = "celula-pts-8";
+          else if (bv >= 6) cls = "celula-pts-6";
+          else if (bv >= 4) cls = "celula-pts-4";
+          else cls = "celula-pts-3";
+        }
+        out += '<td class="' + cls + '" title="' + pts + 'pts">' + p.homeGoals + 'x' + p.awayGoals + '</td>';
+      }
+      out += '</tr>';
+    }
+    return out;
+  }
+
+  // Gera linhas de especiais + estatísticas (parte inferior da tabela)
+  function _gerarLinhasFooter() {
+    let out = '';
+    const brk = APP.bracket || {};
+    const resOficialEsp = window.BRACKET.extrairEspeciaisOficiais(res, brk);
+    const rowsEsp = [
+      { label: "🏆 Campeão", key: "campeao" },
+      { label: "🥈 Vice",    key: "vice" },
+      { label: "🥉 3º Lugar", key: "terceiro" }
+    ];
+    const gruposTravados = !(window.APP?.configStatus?.liberado_grupos);
+    const _resOficiais = getResultados();
+    const fnlOficial = !!_resOficiais["FNL"] && _resOficiais["FNL"].homeGoals !== undefined && !jogoEhSimulado("FNL");
+    const tplOficial = !!_resOficiais["TPL"] && _resOficiais["TPL"].homeGoals !== undefined && !jogoEhSimulado("TPL");
+    const _jogoOficialPorKey = { campeao: fnlOficial, vice: fnlOficial, terceiro: tplOficial };
+
+    for (const rowE of rowsEsp) {
+      out += '<tr style="background:rgba(234,179,8,0.05)"><td class="col-jogo" style="position:sticky;left:0;background:var(--card2);z-index:1;font-weight:700;font-size:.68rem">' + rowE.label + '</td>';
+      const escOf = resOficialEsp[rowE.key] || "";
+      const resultadoOficialReal = escOf && _jogoOficialPorKey[rowE.key];
+      const nomeOf = window.TEAMS_BY_CODE?.[escOf]?.name || (escOf ? escOf : "—");
+      const siglaOf = escOf ? getSigla(escOf) : "—";
+      const displayOf = (window.innerWidth <= 600) ? siglaOf : nomeOf;
+      const tooltipOf = (window.innerWidth <= 600 && escOf) ? `title="${nomeOf}"` : '';
+      out += '<td class="col-resultado" ' + tooltipOf + ' style="background:var(--fundo2);font-weight:700;font-size:.65rem;color:var(--dourado)">' + (resultadoOficialReal ? displayOf : (gruposTravados ? displayOf : "—")) + '</td>';
+      for (const a of ranking) {
+        const espA = a.isModelo ? (window.getModelo ? window.getModelo() : a)?.especiais || {} : (a.especiais || {});
+        const palE = (espA && espA[rowE.key]) || "";
+        const nomePal = window.TEAMS_BY_CODE?.[palE]?.name || (palE ? palE : "—");
+        const siglaPal = palE ? getSigla(palE) : "—";
+        const displayPal = (window.innerWidth <= 600) ? siglaPal : nomePal;
+        const tooltipPal = (window.innerWidth <= 600 && palE) ? `title="${nomePal}"` : '';
+        const acertou = resultadoOficialReal && palE === escOf;
+        const podeVerEsp = resultadoOficialReal || gruposTravados;
+        if (!podeVerEsp) {
+          out += '<td style="font-size:.62rem;text-align:center;color:var(--texto2);opacity:0.3" title="Palpite oculto até o fechamento dos grupos">🔒</td>';
+          continue;
+        }
+        if (acertou) {
+          out += '<td class="celula-pts-8" ' + tooltipPal + ' style="font-size:.62rem">' + displayPal + '</td>';
+        } else {
+          const cor = escOf ? "var(--texto2)" : "var(--texto)";
+          out += '<td ' + tooltipPal + ' style="font-size:.62rem;text-align:center;color:' + cor + '">' + displayPal + '</td>';
+        }
+      }
+      out += '</tr>';
+    }
+
+    const maxPtsGeral = calcularMaxPontosPossiveis(res);
+    const lbls = [
+      { title: "Qtd. de Acertos (Resultado)", val: a => a.res,    cor: "var(--texto)" },
+      { title: "Qtd. de Placar Exato",        val: a => a.placar, cor: "var(--texto)" },
+      { title: "% Resultado Correto", val: a => a.jogos_com_palpite ? ((a.res    / a.jogos_com_palpite) * 100).toFixed(1) + "%" : "0.0%", cor: "var(--texto2)" },
+      { title: "% Placar Exato",      val: a => a.jogos_com_palpite ? ((a.placar / a.jogos_com_palpite) * 100).toFixed(1) + "%" : "0.0%", cor: "var(--texto2)" },
+      { title: "Pontos Totais Alcançados", val: a => a.pts.toFixed(1), cor: "var(--dourado)" },
+      { title: "% dos Pontos Possíveis",  val: a => maxPtsGeral ? ((a.pts / maxPtsGeral) * 100).toFixed(1) + "%" : "0.0%", cor: "var(--dourado)" }
+    ];
+    for (const L of lbls) {
+      out += '<tr><td class="col-jogo" style="position:sticky;left:0;background:var(--fundo2);font-weight:700;font-size:.7rem;border-top:1px solid var(--borda)">' + L.title + '</td>';
+      out += '<td class="col-resultado" style="background:var(--fundo2);border-top:1px solid var(--borda)"></td>';
+      for (const a of ranking) {
+        out += '<td style="font-weight:800;color:' + L.cor + ';font-size:.75rem;background:var(--fundo2);border-top:1px solid var(--borda)">' + L.val(a) + '</td>';
+      }
+      out += '</tr>';
+    }
+    return out;
+  }
+
+  // Renderização progressiva: primeiros BATCH_SIZE jogos imediatamente, restante deferred
+  const BATCH_SIZE = 30;
+  const jogosBatch1 = jogos.slice(0, BATCH_SIZE);
+  const jogosBatch2 = jogos.slice(BATCH_SIZE);
+
   let h = '';
   h += '<div class="compilacao-wrap"><table class="compilacao-table"><thead><tr>';
   h += '<th class="col-jogo">Jogo</th>';
@@ -188,146 +317,14 @@ window.renderCompilacao = function () {
   }
   h += '</tr></thead><tbody>';
 
-  for (const jogo of jogos) {
-    const r = res[jogo.id];
-    const temRes = r && r.homeGoals !== undefined;
-    const b = APP.bracket?.[jogo.id] || {};
-    const hC = b.home || jogo.home; const aC = b.away || jogo.away;
-    const hDisplay = getSigla(hC);
-    const aDisplay = getSigla(aC);
-    const dataHoraStr = formatarDataBRT(jogo.utc, false);
-    const faseLbl = getFaseLabel(jogo);
-    const dataHora = dataHoraStr + (faseLbl ? ", " + faseLbl : "");
-    const gameFullName = nomeTime(hC) + ' x ' + nomeTime(aC);
-    h += '<tr><td class="col-jogo" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" title="' + gameFullName + '" style="position:sticky;left:0;background:var(--card2);padding:6px 8px;z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1);cursor:pointer">';
-    h += '<div style="font-size:.6rem;color:var(--texto2);margin-bottom:3px">' + dataHora + '</div>';
-    h += '<div style="display:flex;align-items:center;gap:4px;font-weight:700;width:100%">' + htmlBandeira(hC, 14) + ' <span class="compilacao-time-nome comp-sigla">' + hDisplay + '</span> <span style="color:var(--texto2)">×</span> <span class="compilacao-time-nome comp-sigla">' + aDisplay + '</span> ' + htmlBandeira(aC, 14) + '</div></td>';
-    // Resultado oficial
-    if (temRes) {
-      let resHtml = r.homeGoals + 'x' + r.awayGoals;
-      if (r.foi_penaltis) {
-        const ph = r.penaltis_home ?? 0; const pa = r.penaltis_away ?? 0;
-        resHtml += '<div style="font-size:.58rem;color:var(--amber);margin-top:1px;font-weight:700">PEN ' + ph + 'x' + pa + '</div>';
-      }
-      h += '<td class="col-resultado" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="background:var(--fundo2);color:var(--texto);vertical-align:middle;cursor:pointer">' + resHtml + '</td>';
-    } else {
-      h += '<td class="col-resultado" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="background:var(--fundo2);color:var(--texto2);cursor:pointer">–</td>';
-    }
-    // Palpites de cada apostador (incluindo MODELO)
-    for (const a of ranking) {
-      const meusPals = a.isModelo ? (APP.palpitesModelo || {}) : (pals[a.id] || {});
-      const p = meusPals[jogo.id];
-      if (!p || p.homeGoals === undefined) { h += '<td class="celula-sem">·</td>'; continue; }
+  // Batch 1: primeiras linhas renderizadas imediatamente
+  h += _gerarLinhasJogos(jogosBatch1);
 
-      // REGRA DE VISIBILIDADE: mesma regra aplicada a todos, incluindo MODELO
-      const apostasAbertas = jogoAceita(jogo.id);
-      const podeVer = (temRes && !jogoEhSimulado(jogo.id)) || !apostasAbertas;
-
-      if (!podeVer) {
-        h += '<td class="celula-futuro" style="color:var(--texto2);opacity:0.3" title="Palpite oculto até o fechamento das apostas">🔒</td>';
-        continue;
-      }
-
-      const cellStyle = '';
-
-      if (!temRes) { h += '<td class="celula-futuro" style="' + cellStyle + '">' + p.homeGoals + 'x' + p.awayGoals + '</td>'; continue; }
-      const br = calcularPontosBrutos(p, r);
-      const pts = aplicarFator(br.total_bruto, jogo.fase);
-      let cls = "celula-erro";
-      if (br.acertou) {
-        const bv = br.total_bruto;
-        if (bv >= 8) cls = "celula-pts-8";
-        else if (bv >= 6) cls = "celula-pts-6";
-        else if (bv >= 4) cls = "celula-pts-4";
-        else cls = "celula-pts-3";
-      }
-      h += '<td class="' + cls + '" style="' + cellStyle + '" title="' + pts + 'pts">' + p.homeGoals + 'x' + p.awayGoals + '</td>';
-    }
-    h += '</tr>';
+  // Se não há mais linhas, renderiza footer inline
+  if (jogosBatch2.length === 0) {
+    h += _gerarLinhasFooter();
   }
 
-  // --- Linhas de Especiais (Campeão, Vice, 3º) ---
-  // Derivados automaticamente do bracket (igual à aba Classificação)
-  const brk = APP.bracket || {};
-  const resOficialEsp = window.BRACKET.extrairEspeciaisOficiais(res, brk);
-
-  const rowsEsp = [
-    { label: "🏆 Campeão", key: "campeao" },
-    { label: "🥈 Vice",    key: "vice" },
-    { label: "🥉 3º Lugar", key: "terceiro" }
-  ];
-
-  // Visibilidade dos especiais: exibe se grupos travados OU resultado oficial real conhecido.
-  // Nunca exibe resultado simulado como se fosse oficial.
-  // Campeão e Vice dependem do jogo FNL; 3º Lugar depende do jogo TPL.
-  const gruposTravados = !(window.APP?.configStatus?.liberado_grupos);
-  const _resOficiais = getResultados();
-  const fnlOficial = !!_resOficiais["FNL"] && _resOficiais["FNL"].homeGoals !== undefined && !jogoEhSimulado("FNL");
-  const tplOficial = !!_resOficiais["TPL"] && _resOficiais["TPL"].homeGoals !== undefined && !jogoEhSimulado("TPL");
-  const _jogoOficialPorKey = { campeao: fnlOficial, vice: fnlOficial, terceiro: tplOficial };
-
-  for (const rowE of rowsEsp) {
-    h += '<tr style="background:rgba(234,179,8,0.05)"><td class="col-jogo" style="position:sticky;left:0;background:var(--card2);z-index:1;font-weight:700;font-size:.68rem">' + rowE.label + '</td>';
-
-    // Resultado oficial derivado automaticamente — só considerado "real" se o jogo
-    // específico de cada posição já tiver resultado oficial (não simulado).
-    const escOf = resOficialEsp[rowE.key] || "";
-    const resultadoOficialReal = escOf && _jogoOficialPorKey[rowE.key];
-    const nomeOf = window.TEAMS_BY_CODE?.[escOf]?.name || (escOf ? escOf : "—");
-    const siglaOf = escOf ? getSigla(escOf) : "—";
-    const displayOf = (window.innerWidth <= 600) ? siglaOf : nomeOf;
-    const tooltipOf = (window.innerWidth <= 600 && escOf) ? `title="${nomeOf}"` : '';
-    h += '<td class="col-resultado" ' + tooltipOf + ' style="background:var(--fundo2);font-weight:700;font-size:.65rem;color:var(--dourado)">' + (resultadoOficialReal ? displayOf : (gruposTravados ? displayOf : "—")) + '</td>';
-
-    for (const a of ranking) {
-      const espA = a.isModelo ? (window.getModelo ? window.getModelo() : a)?.especiais || {} : (a.especiais || {});
-      const palE = (espA && espA[rowE.key]) || "";
-      const nomePal = window.TEAMS_BY_CODE?.[palE]?.name || (palE ? palE : "—");
-      const siglaPal = palE ? getSigla(palE) : "—";
-      const displayPal = (window.innerWidth <= 600) ? siglaPal : nomePal;
-      const tooltipPal = (window.innerWidth <= 600 && palE) ? `title="${nomePal}"` : '';
-      const acertou = resultadoOficialReal && palE === escOf;
-      const podeVerEsp = resultadoOficialReal || gruposTravados;
-      const cellStyle = '';
-
-      if (!podeVerEsp) {
-        h += '<td style="font-size:.62rem;text-align:center;color:var(--texto2);opacity:0.3" title="Palpite oculto até o fechamento dos grupos">🔒</td>';
-        continue;
-      }
-      if (acertou) {
-        h += '<td class="celula-pts-8" ' + tooltipPal + ' style="font-size:.62rem;' + cellStyle + '">' + displayPal + '</td>';
-      } else {
-        const cor = escOf ? "var(--texto2)" : "var(--texto)";
-        h += '<td ' + tooltipPal + ' style="font-size:.62rem;text-align:center;color:' + cor + ';' + cellStyle + '">' + displayPal + '</td>';
-      }
-    }
-    h += '</tr>';
-  }
-
-
-  // Estatisticas de Aproveitamento (Linhas Finais)
-  // maxPtsGeral: mesmo critério de scoring.js — base(3) + bonus_alto(5) × fator,
-  // para todos os jogos já realizados. Consistente com calcularMaxPontosPossiveis.
-  const maxPtsGeral = calcularMaxPontosPossiveis(res);
-
-  const lbls = [
-    { title: "Qtd. de Acertos (Resultado)", val: a => a.res,    cor: "var(--texto)" },
-    { title: "Qtd. de Placar Exato",        val: a => a.placar, cor: "var(--texto)" },
-    { title: "% Resultado Correto", val: a => a.jogos_com_palpite ? ((a.res    / a.jogos_com_palpite) * 100).toFixed(1) + "%" : "0.0%", cor: "var(--texto2)" },
-    { title: "% Placar Exato",      val: a => a.jogos_com_palpite ? ((a.placar / a.jogos_com_palpite) * 100).toFixed(1) + "%" : "0.0%", cor: "var(--texto2)" },
-    { title: "Pontos Totais Alcançados", val: a => a.pts.toFixed(1), cor: "var(--dourado)" },
-    { title: "% dos Pontos Possíveis",  val: a => maxPtsGeral ? ((a.pts / maxPtsGeral) * 100).toFixed(1) + "%" : "0.0%", cor: "var(--dourado)" }
-  ];
-
-  for (const L of lbls) {
-    h += '<tr><td class="col-jogo" style="position:sticky;left:0;background:var(--fundo2);font-weight:700;font-size:.7rem;border-top:1px solid var(--borda)">' + L.title + '</td>';
-    h += '<td class="col-resultado" style="background:var(--fundo2);border-top:1px solid var(--borda)"></td>';
-    for (const a of ranking) {
-      const cellStyle = 'background:var(--fundo2);';
-      h += '<td style="font-weight:800;color:' + L.cor + ';font-size:.75rem;' + cellStyle + 'border-top:1px solid var(--borda)">' + L.val(a) + '</td>';
-    }
-    h += '</tr>';
-  }
   h += '</tbody></table></div>';
   h += toggleBarHtml;
 
@@ -337,7 +334,7 @@ window.renderCompilacao = function () {
   h += '</div>';
 
   el.innerHTML = h;
-  el.dataset.rendered = '1'; // marca como renderizado para o cache
+  el.dataset.rendered = '1';
 
   // Registrar cabeçalho fixo no mobile para a tabela de palpites
   if (window.innerWidth <= 600 && window.registrarFrozenHeader) {
@@ -350,6 +347,24 @@ window.renderCompilacao = function () {
 
   // Tooltip unificado (hover desktop + toque mobile) — cobre os <th> dos apostadores
   window.injetarTooltipsMobile(el);
+
+  // Batch 2: linhas restantes + footer appendadas assincronamente
+  if (jogosBatch2.length > 0) {
+    const _appendRestante = function () {
+      const tbody = el.querySelector('.compilacao-table tbody');
+      if (!tbody) return;
+      const frag = document.createElement('template');
+      frag.innerHTML = _gerarLinhasJogos(jogosBatch2) + _gerarLinhasFooter();
+      tbody.appendChild(frag.content);
+      // Re-injetar tooltips nos novos nós
+      window.injetarTooltipsMobile(el);
+    };
+    if (typeof requestIdleCallback === 'function') {
+      requestIdleCallback(_appendRestante, { timeout: 150 });
+    } else {
+      setTimeout(_appendRestante, 30);
+    }
+  }
 };
 
 window.exportarCompilacaoJson = function () {

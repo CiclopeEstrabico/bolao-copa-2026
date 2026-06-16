@@ -498,17 +498,12 @@ window.injetarTooltipsMobile = function (containerEl, seletor) {
     const r = el.getBoundingClientRect();
     const tw = Math.min(240, window.innerWidth - 16);
     tipEl.style.maxWidth = tw + 'px';
-
-    // Tenta posicionar acima; se não couber, coloca abaixo
     const tipH = tipEl.offsetHeight || 40;
     let top = r.top - tipH - 8;
     if (top < 8) top = r.bottom + 8;
-
-    // Centraliza horizontalmente, mas não sai da tela
     let left = r.left + r.width / 2 - tw / 2;
     if (left < 8) left = 8;
     if (left + tw > window.innerWidth - 8) left = window.innerWidth - tw - 8;
-
     tipEl.style.top  = top  + 'px';
     tipEl.style.left = left + 'px';
   }
@@ -522,39 +517,44 @@ window.injetarTooltipsMobile = function (containerEl, seletor) {
     document.addEventListener('scroll', _hideTip, { passive: true, capture: true });
   }
 
-  // Aplica listeners em cada [title] do container
+  // OTIMIZAÇÃO: Converter title → data-tt em batch, sem adicionar listeners individuais.
+  // Em vez de O(N) addEventListener, usamos event delegation no container.
   containerEl.querySelectorAll(seletor).forEach(function (el) {
     const txt = el.getAttribute('title');
     if (!txt) return;
-    el.removeAttribute('title');     // Remove o tooltip nativo do browser
+    el.removeAttribute('title');
     el.setAttribute('data-tt', txt);
+  });
 
-    // Desktop: hover
-    el.addEventListener('mouseenter', function () { _showTip(this); });
-    el.addEventListener('mouseleave', _hideTip);
+  // Event delegation: um único par de listeners no container cobre todos os [data-tt]
+  if (!containerEl._ttDelegated) {
+    containerEl._ttDelegated = true;
 
-    // Se o elemento for clicável nativamente (tem onclick),
-    // ignoramos o tooltip via toque para não conflitar com a ação de clique,
-    // garantindo que continue funcionando na aba Palpites e Tabela.
-    if (el.hasAttribute('onclick') || el.tagName.toLowerCase() === 'a' || el.tagName.toLowerCase() === 'button') {
-      return;
-    }
+    // Desktop: hover via mouseenter/mouseleave com delegation
+    containerEl.addEventListener('mouseenter', function (e) {
+      const el = e.target.closest('[data-tt]');
+      if (el) _showTip(el);
+    }, true); // capture phase for delegation
+    containerEl.addEventListener('mouseleave', function (e) {
+      const el = e.target.closest('[data-tt]');
+      if (el) _hideTip();
+    }, true);
 
-    // Para o iOS disparar o evento de 'click' rápido em elementos normais (como <th>, <span>),
-    // é OBRIGATÓRIO usar cursor: pointer (help não funciona para habilitar o click delegation no Safari).
-    el.style.cursor = 'pointer';
-
-    // Mobile/Teclado: clique único para fazer toggle do tooltip
-    el.addEventListener('click', function (e) {
-      e.stopPropagation(); // Evita que o listener do document feche imediatamente
-      const isVisible = tipEl.style.opacity === '1' && tipEl._anchor === this;
+    // Mobile: click delegation para toggle de tooltip
+    containerEl.addEventListener('click', function (e) {
+      const el = e.target.closest('[data-tt]');
+      if (!el) return;
+      // Se o elemento tem onclick ou é um link/botão, não intercepta
+      if (el.hasAttribute('onclick') || el.tagName === 'A' || el.tagName === 'BUTTON') return;
+      e.stopPropagation();
+      const isVisible = tipEl.style.opacity === '1' && tipEl._anchor === el;
       _hideTip();
       if (!isVisible) {
-        tipEl._anchor = this;
-        _showTip(this);
+        tipEl._anchor = el;
+        _showTip(el);
       }
     });
-  });
+  }
 };
 
 
