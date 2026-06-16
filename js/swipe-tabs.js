@@ -36,8 +36,9 @@
     while (el && el.id !== "modal-prog-body" && el !== document.body) {
       try {
         const cs = getComputedStyle(el);
+        // Só bloquear swipe horizontal se o elemento tiver scroll HORIZONTAL
+        // Scroll vertical não deve impedir swipe entre abas
         if ((cs.overflowX === "auto" || cs.overflowX === "scroll") && el.scrollWidth > el.clientWidth + 2) return true;
-        if ((cs.overflowY === "auto" || cs.overflowY === "scroll") && el.scrollHeight > el.clientHeight + 2) return true;
       } catch (e) { /* ignore */ }
       el = el.parentElement;
     }

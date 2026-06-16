@@ -31,6 +31,16 @@ const _METRICAS = [
   { id: 'macaco', label: 'Macaco', short: 'Macaco' },
 ];
 
+// Métrica onde o Modelo aparece por default
+function _isModeloDefaultOn(metrica) {
+  return metrica !== 'evolucao' && metrica !== 'macaco';
+}
+
+// Retorna se o Modelo deve ser visível agora (checa o filtro)
+function _isModeloVisivel() {
+  return !!(window._graficoFiltroApos && window._graficoFiltroApos.has('Modelo'));
+}
+
 window.renderGrafico = function () {
   const el = document.getElementById("aba-grafico");
   if (!el) return;
@@ -74,7 +84,7 @@ window.renderGrafico = function () {
     return b.res - a.res;
   });
 
-  // Inserir Modelo na posição correta
+  // Inserir Modelo na posição correta (sempre computar para dropdown, mas filtrar na renderização)
   const modeloGraf = window.getModelo ? window.getModelo() : null;
   if (modeloGraf && APP._modeloCarregado) {
     const stMod = calcularPontosApostador(APP.palpitesModelo || {}, res, modeloGraf, espOficiaisGraf);
@@ -96,7 +106,24 @@ window.renderGrafico = function () {
 
   // Inicializar filtro com todos os apostadores por padrão
   if (!window._graficoFiltroApos) {
-    window._graficoFiltroApos = new Set(rankingCompleto.map(a => a.id));
+    const ids = rankingCompleto.filter(a => !a.isModelo).map(a => a.id);
+    // Modelo default ON/OFF depende da métrica
+    if (_isModeloDefaultOn(metricaAtiva) && rankingCompleto.some(a => a.isModelo)) ids.push('Modelo');
+    window._graficoFiltroApos = new Set(ids);
+  }
+
+  // Quando não customizado, ajustar filtro por métrica:
+  // - Evolução: top 10 humanos (sem Modelo)
+  // - Outras: todos os humanos (+ Modelo conforme default da métrica)
+  if (!window._graficoFiltroCustomizado) {
+    if (metricaAtiva === 'evolucao') {
+      const top10Ids = rankingCompleto.filter(a => !a.isModelo).slice(0, 10).map(a => a.id);
+      window._graficoFiltroApos = new Set(top10Ids);
+    } else {
+      const allIds = rankingCompleto.filter(a => !a.isModelo).map(a => a.id);
+      if (_isModeloDefaultOn(metricaAtiva) && rankingCompleto.some(a => a.isModelo)) allIds.push('Modelo');
+      window._graficoFiltroApos = new Set(allIds);
+    }
   }
 
   // ── Toggle de métrica ──
@@ -165,12 +192,19 @@ window.renderGrafico = function () {
 // ── Dropdown filtro ────────────────────────────────────────────────────────
 function _renderFiltroDropdown(rankingCompleto, metricaAtiva) {
   const filtro = window._graficoFiltroApos;
-  const selecionados = rankingCompleto.filter(a => filtro.has(a.id));
-  const label = selecionados.length === rankingCompleto.length
-    ? 'Todos os apostadores'
-    : selecionados.length === 0
-      ? 'Nenhum selecionado'
-      : selecionados.map(a => a.nome).join(', ');
+  const todos = rankingCompleto;
+  const selecionados = todos.filter(a => filtro.has(a.id));
+  const humanos = todos.filter(a => !a.isModelo);
+
+  // Label do botão
+  let label;
+  if (selecionados.length === todos.length) {
+    label = 'Todos os apostadores';
+  } else if (selecionados.length === 0) {
+    label = 'Nenhum selecionado';
+  } else {
+    label = selecionados.map(a => a.nome).join(', ');
+  }
 
   let h = `<div style="position:relative;margin-bottom:12px;z-index:50">`;
 
@@ -186,17 +220,48 @@ function _renderFiltroDropdown(rankingCompleto, metricaAtiva) {
   // Painel dropdown
   h += `<div id="grafico-dropdown" onclick="event.stopPropagation()" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;
     background:var(--card);border:1.5px solid var(--borda2);border-radius:var(--radius-sm);
-    box-shadow:0 8px 24px rgba(0,0,0,.5);max-height:260px;overflow-y:auto;z-index:100">`;
+    box-shadow:0 8px 24px rgba(0,0,0,.5);max-height:300px;overflow-y:auto;z-index:100">`;
 
-  // Opções: Todos / Nenhum
-  h += `<div style="display:flex;gap:0;border-bottom:1px solid var(--borda)">`;
-  h += `<button onclick="_graficoSelecionarTodos()" style="flex:1;padding:8px;font-size:.72rem;font-weight:700;background:none;border:none;border-right:1px solid var(--borda);color:var(--verde-light);cursor:pointer">✓ Todos</button>`;
-  h += `<button onclick="_graficoSelecionarNenhum()" style="flex:1;padding:8px;font-size:.72rem;font-weight:700;background:none;border:none;color:var(--texto2);cursor:pointer">✕ Limpar</button>`;
+  // ── Header de colunas (sortable) + checkbox master ──
+  const ddOrdem = window._graficoDropdownOrdem || 'rank';
+  const todosCheck = selecionados.length === todos.length;
+  const algunsCheck = selecionados.length > 0 && selecionados.length < todos.length;
+  const arrowRank = ddOrdem === 'rank' ? ' ▲' : '';
+  const arrowNome = ddOrdem === 'nome' ? ' ▲' : '';
+  const colAtivoStyle = 'color:var(--dourado);';
+  const colInativoStyle = 'color:var(--texto2);';
+
+  h += `<div style="display:flex;align-items:center;gap:0;border-bottom:1.5px solid var(--borda);background:var(--card);position:sticky;top:0;z-index:2">`;
+  // Checkbox master (margin-right matches rows)
+  h += `<div style="padding:6px 8px 6px 14px;flex-shrink:0;margin-right:10px">
+    <input type="checkbox" id="grafico-master-check" ${todosCheck ? 'checked' : ''}
+      onchange="window._graficoMasterToggle(this.checked)"
+      style="width:16px;height:16px;accent-color:var(--dourado);cursor:pointer">
+  </div>`;
+  // Spacer para alinhar com o dot de cor das linhas (10px dot + 6px margin)
+  h += `<div style="width:16px;flex-shrink:0"></div>`;
+  // Coluna # (rank) — min-width alinha com a posição nas linhas (28px + 4px margin)
+  h += `<button onclick="event.stopPropagation();window._graficoDropdownOrdem='rank';window._graficoDropdownAberto=true;renderAbaAtiva()"
+    style="background:none;border:none;cursor:pointer;padding:6px 0;font-size:.70rem;font-weight:700;${ddOrdem === 'rank' ? colAtivoStyle : colInativoStyle}font-family:inherit;white-space:nowrap;min-width:28px;margin-right:4px;text-align:left">#${arrowRank}</button>`;
+  // Coluna Apostador (nome)
+  h += `<button onclick="event.stopPropagation();window._graficoDropdownOrdem='nome';window._graficoDropdownAberto=true;renderAbaAtiva()"
+    style="background:none;border:none;cursor:pointer;padding:6px 4px;font-size:.70rem;font-weight:700;${ddOrdem === 'nome' ? colAtivoStyle : colInativoStyle}font-family:inherit;flex:1;text-align:left">Apostador${arrowNome}</button>`;
   h += `</div>`;
 
-  // Lista de apostadores (incluindo Modelo)
-  const humanos = rankingCompleto.filter(x => !x.isModelo);
-  rankingCompleto.forEach((a, i) => {
+  // Set indeterminate via script
+  if (algunsCheck) {
+    h += `<script>document.getElementById('grafico-master-check')&&(document.getElementById('grafico-master-check').indeterminate=true)</script>`;
+  }
+
+  // ── Lista de apostadores (incluindo Modelo como apostador regular) ──
+  // Ordenar conforme coluna clicada
+  let listaOrdenada = [...todos];
+  if (ddOrdem === 'nome') {
+    listaOrdenada.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  }
+  // Se 'rank', já vem na ordem do rankingCompleto (por pontos com desempates)
+
+  listaOrdenada.forEach((a) => {
     const ativo = filtro.has(a.id);
     const hIdx = humanos.indexOf(a);
     let cor = '#b8cfe8';
@@ -205,16 +270,20 @@ function _renderFiltroDropdown(rankingCompleto, metricaAtiva) {
         ? _EVOLUCAO_CORES_DISTINTAS[hIdx % _EVOLUCAO_CORES_DISTINTAS.length]
         : _rainbowColor(hIdx, humanos.length);
     }
-    const nomeBadge = a.isModelo
-      ? `<span style="font-weight:normal;color:#b8cfe8">${a.nome}</span>`
-      : a.nome;
-    h += `<label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--borda);transition:background .1s"
-      onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">
-      <input type="checkbox" ${ativo ? 'checked' : ''} onchange="window._graficoToggleApos('${a.id}')"
-        style="width:16px;height:16px;accent-color:${cor};cursor:pointer;flex-shrink:0">
-      <div style="width:10px;height:10px;border-radius:50%;background:${cor};flex-shrink:0"></div>
-      <span style="font-size:.82rem;font-weight:600;color:var(--texto)">${nomeBadge}</span>
-      <span style="margin-left:auto;font-size:.72rem;color:var(--texto2)">${a.pts} pts</span>
+    const posNum = a.isModelo ? null : a.posicao;
+    const posStr = posNum !== null && posNum !== undefined ? `${posNum}º` : '';
+    const nomeStyle = a.isModelo ? 'font-weight:500;color:#b8cfe8' : 'font-weight:600;color:var(--texto)';
+    const nomeTxt = a.isModelo ? `🤖 ${a.nome}` : a.nome;
+    const bgBase = a.isModelo ? 'rgba(184,207,232,0.04)' : '';
+    h += `<label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:0;padding:0;cursor:pointer;border-bottom:1px solid var(--borda);transition:background .1s;background:${bgBase}"
+      onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background='${bgBase}'">
+      <div style="padding:7px 8px 7px 14px;flex-shrink:0;margin-right:10px">
+        <input type="checkbox" ${ativo ? 'checked' : ''} onchange="window._graficoToggleApos('${a.id}')"
+          style="width:16px;height:16px;accent-color:${cor};cursor:pointer">
+      </div>
+      <div style="width:10px;height:10px;border-radius:50%;background:${cor};flex-shrink:0;margin-right:6px"></div>
+      <span style="font-size:.70rem;font-weight:700;color:var(--texto2);min-width:28px;flex-shrink:0;margin-right:4px">${posStr}</span>
+      <span style="font-size:.80rem;${nomeStyle};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${nomeTxt}</span>
     </label>`;
   });
 
@@ -251,33 +320,36 @@ window._graficoToggleApos = function (id) {
   } else {
     window._graficoFiltroApos.add(id);
   }
+  // Marcar que o user customizou o Modelo explicitamente
+  if (id === 'Modelo') window._graficoModeloCustomizado = true;
   window._graficoFiltroCustomizado = true;
   window._graficoDropdownAberto = true;
   renderAbaAtiva();
 };
 
-window._graficoSelecionarTodos = function () {
+// Checkbox master: seleciona/deseleciona todos (incluindo Modelo)
+window._graficoMasterToggle = function (checked) {
   const dd = document.getElementById('grafico-dropdown');
   if (dd) {
     window._graficoDropdownScrollTop = dd.scrollTop;
   }
   const ids = (APP.apostadores || []).map(a => a.id);
-  if (APP.modelo || (window.getModelo && window.getModelo())) ids.push("Modelo");
-  window._graficoFiltroApos = new Set(ids);
+  const modeloGraf = window.getModelo ? window.getModelo() : null;
+  if (checked && modeloGraf && APP._modeloCarregado) ids.push('Modelo');
+  window._graficoFiltroApos = checked ? new Set(ids) : new Set();
   window._graficoFiltroCustomizado = true;
+  window._graficoModeloCustomizado = true;
   window._graficoDropdownAberto = true;
   renderAbaAtiva();
 };
 
+// Legacy compat
+window._graficoSelecionarTodos = function () {
+  window._graficoMasterToggle(true);
+};
+
 window._graficoSelecionarNenhum = function () {
-  const dd = document.getElementById('grafico-dropdown');
-  if (dd) {
-    window._graficoDropdownScrollTop = dd.scrollTop;
-  }
-  window._graficoFiltroApos = new Set();
-  window._graficoFiltroCustomizado = true;
-  window._graficoDropdownAberto = true;
-  renderAbaAtiva();
+  window._graficoMasterToggle(false);
 };
 
 window._graficoIrEvolucao = function () {
@@ -1063,10 +1135,12 @@ function _renderEvolucao(res, pals, apos, rankingCompleto) {
     return '<div class="card" style="text-align:center;color:var(--texto2);padding:30px">Nenhum apostador selecionado.</div>';
 
   const isDesktop = window.innerWidth > 850;
+  const isMobPortrait = !isDesktop && window.innerWidth <= window.innerHeight;
   const W = isDesktop ? Math.max(800, Math.min(window.innerWidth - 60, 1400)) : 600;
-  // Full-viewport height: subtract header/tabs/toolbar (~200px mobile, ~240px desktop)
+  // Full-viewport height: mobile portrait usa praticamente a tela toda (só header + tabs ~130px)
   const viewH = window.innerHeight || 700;
-  const H = Math.max(320, viewH - (isDesktop ? 240 : 200));
+  const offsetPx = isDesktop ? 240 : (isMobPortrait ? 130 : 180);
+  const H = Math.max(isMobPortrait ? 400 : 320, viewH - offsetPx);
   const PAD = { top: 20, right: 100, bottom: 40, left: 48 };
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
@@ -1199,8 +1273,8 @@ window._graficoExportarEvolucaoJPG = function () {
     return { nome: (a.apelido || a.nome || '?').substring(0, 14), cor, pontos, isModelo: false };
   });
 
-  // Inserir Modelo (sempre na exportação, sem filtro)
-  if (modeloGraf && APP._modeloCarregado) {
+  // Inserir Modelo se está no filtro ativo
+  if (modeloGraf && APP._modeloCarregado && filtro && filtro.has('Modelo')) {
     const corMod = '#b8cfe8';
     const palMod = APP.palpitesModelo || {};
     let acc = 0;
@@ -1662,33 +1736,41 @@ window._graficoExportarJPG = function () {
     };
   });
 
+  // Inserir Modelo no ranking (para todas as métricas)
+  const modeloGrafExp = window.getModelo ? window.getModelo() : null;
+  if (modeloGrafExp && APP._modeloCarregado) {
+    const stMod = calcularPontosApostador(APP.palpitesModelo || {}, res, modeloGrafExp, espOficiaisGraf);
+    rankingExp.push({
+      id: 'Modelo',
+      nome: 'Modelo',
+      pts: stMod.total,
+      pct: stMod.pct_pontos,
+      res: stMod.acertos_resultado,
+      bonus1: stMod.acertos_bonus1,
+      placar: stMod.acertos_placar_exato + stMod.acertos_placar_alto,
+      placar_alto: stMod.acertos_placar_alto,
+      isModelo: true,
+      posicao: null
+    });
+  }
+
   if (metricaAtiva === 'chance') {
     const chances = window._graficoChanceCache || {};
     rankingExp.forEach(a => { a.chance = chances[a.id] || 0; });
     rankingExp = rankingExp.sort((a, b) => b.chance - a.chance);
-  } else if (metricaAtiva === 'macaco') {
-    // Inserir Modelo antes de ordenar
-    const modeloGrafExp = window.getModelo ? window.getModelo() : null;
-    if (modeloGrafExp && APP._modeloCarregado) {
-      const stMod = calcularPontosApostador(APP.palpitesModelo || {}, res, modeloGrafExp, espOficiaisGraf);
-      rankingExp.push({
-        id: modeloGrafExp.id,
-        nome: 'Modelo',
-        pts: stMod.total,
-        isModelo: true,
-      });
-    }
+  } else if (metricaAtiva === 'pts' || metricaAtiva === 'pct' || metricaAtiva === 'macaco') {
     rankingExp = rankingExp.sort((a, b) => b.pts - a.pts);
   } else {
-    rankingExp = rankingExp.sort((a, b) => b[metricaAtiva] - a[metricaAtiva]);
+    rankingExp = rankingExp.sort((a, b) => (b[metricaAtiva] || 0) - (a[metricaAtiva] || 0));
   }
 
-  // Aplicar filtro ativo (igual à tela); para macaco, incluir Modelo se no filtro
-  if (metricaAtiva === 'macaco') {
-    rankingExp = rankingExp.filter(a => !_expFiltro || _expFiltro.has(a.id));
-  } else {
-    // Aplicar filtro ativo (igual à tela) e remover Modelo
-    rankingExp = rankingExp.filter(a => !a.isModelo && (!_expFiltro || _expFiltro.has(a.id)));
+  // Aplicar filtro ativo (igual à tela) para todos, incluindo Modelo
+  rankingExp = rankingExp.filter(a => !_expFiltro || _expFiltro.has(a.id));
+
+  // Respeitar a ordenação selecionada na tela (Rank vs A→Z)
+  const ordemExport = window._graficoOrdem || 'rank';
+  if (ordemExport === 'az') {
+    rankingExp = rankingExp.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   }
 
   const n = rankingExp.length;
