@@ -7,16 +7,201 @@ const _EVOLUCAO_CORES_DISTINTAS = [
 ];
 
 /**
- * Retorna uma cor do espectro arco-íris para o índice i dentro de n barras.
- * Vai de vermelho (1º) → laranja → verde → azul → violeta (último).
- * Saturação e luminosidade fixas para ficar bonito no fundo escuro.
+ * Interpola entre stops RGB [[r,g,b], ...] para o índice i de n itens.
  */
-function _rainbowColor(i, n) {
-  if (n <= 1) return 'hsl(0,90%,60%)';
-  // Hue: 0° (vermelho) até 280° (violeta), passando pelo arco-íris
-  const hue = Math.round(0 + (i / (n - 1)) * 280);
-  return `hsl(${hue},90%,60%)`;
+function _interpStops(stops, i, n) {
+  if (n <= 1) { const m = stops[Math.floor(stops.length / 2)]; return `rgb(${m[0]},${m[1]},${m[2]})`; }
+  const t = i / (n - 1);
+  const pos = t * (stops.length - 1);
+  const lo = Math.floor(pos);
+  const hi = Math.min(lo + 1, stops.length - 1);
+  const frac = pos - lo;
+  const r = Math.round(stops[lo][0] + (stops[hi][0] - stops[lo][0]) * frac);
+  const g = Math.round(stops[lo][1] + (stops[hi][1] - stops[lo][1]) * frac);
+  const b = Math.round(stops[lo][2] + (stops[hi][2] - stops[lo][2]) * frac);
+  return `rgb(${r},${g},${b})`;
 }
+
+const _PALETAS = {
+  rainbow: {
+    label: 'Rainbow',
+    fn: (i, n) => {
+      if (n <= 1) return 'hsl(0,90%,60%)';
+      const hue = Math.round((i / (n - 1)) * 280);
+      return `hsl(${hue},90%,60%)`;
+    }
+  },
+  termo: {
+    label: 'Termo',
+    fn: (i, n) => {
+      // Escala termográfica clássica: preto → azul → magenta → vermelho → amarelo → branco
+      const stops = [
+        [0,0,0], [0,0,140], [0,0,255], [128,0,255], [200,0,200],
+        [255,0,100], [255,0,0], [255,100,0], [255,180,0], [255,255,0],
+        [255,255,128], [255,255,255]
+      ];
+      return _interpStops(stops, i, n);
+    }
+  },
+  pb: {
+    label: 'P&B',
+    fn: (i, n) => {
+      if (n <= 1) return 'rgb(200,200,200)';
+      // Branco → preto
+      const v = 240 - Math.round((i / (n - 1)) * 200);
+      return `rgb(${v},${v},${v})`;
+    }
+  },
+  neon: {
+    label: 'Neon',
+    fn: (i, n) => {
+      const neons = [
+        '#ff00ff', '#00ffff', '#ff3366', '#39ff14', '#ff6600',
+        '#bf00ff', '#00ff7f', '#ff0099', '#33ccff', '#ffff00',
+        '#ff4444', '#00ffcc', '#cc66ff', '#66ff33', '#ff6699',
+        '#3399ff', '#ff3300', '#00ff44', '#cc00ff', '#ffcc00'
+      ];
+      return neons[i % neons.length];
+    }
+  },
+  oceano: {
+    label: 'Oceano',
+    fn: (i, n) => {
+      const cores = [
+        '#0d47a1', '#1565c0', '#0288d1', '#0097a7', '#00838f',
+        '#00695c', '#26a69a', '#4db6ac', '#4fc3f7', '#00bcd4',
+        '#1e88e5', '#039be5', '#0277bd', '#00acc1', '#26c6da',
+        '#00897b', '#80cbc4', '#4dd0e1', '#29b6f6', '#0d47a1'
+      ];
+      return cores[i % cores.length];
+    }
+  },
+  pastel: {
+    label: 'Pastel',
+    fn: (i, n) => {
+      if (n <= 1) return 'hsl(0,70%,78%)';
+      const hue = Math.round((i / (n - 1)) * 330);
+      return `hsl(${hue},65%,76%)`;
+    }
+  },
+  terra: {
+    label: 'Terra',
+    fn: (i, n) => {
+      const cores = [
+        '#c17817', '#6d4c41', '#a0522d', '#2e7d32', '#cd853f',
+        '#558b2f', '#795548', '#daa520', '#4e342e', '#8bc34a',
+        '#a1887f', '#d2691e', '#33691e', '#bf360c', '#827717',
+        '#3e2723', '#9e9d24', '#ff8f00', '#4a148c', '#1b5e20'
+      ];
+      return cores[i % cores.length];
+    }
+  },
+  viridis: {
+    label: 'Viridis',
+    fn: (i, n) => {
+      // Matplotlib/MATLAB: roxo escuro → azul → verde-azulado → verde → amarelo
+      const stops = [
+        [68,1,84], [72,36,117], [65,68,135], [53,95,141], [42,120,142],
+        [33,145,140], [34,168,132], [68,191,112], [122,209,81], [189,223,38],
+        [253,231,37]
+      ];
+      return _interpStops(stops, i, n);
+    }
+  },
+  turbo: {
+    label: 'Turbo',
+    fn: (i, n) => {
+      // Google Turbo: máximo de cores distintas, percorrendo todo o espectro
+      const stops = [
+        [48,18,59], [67,62,133], [61,112,180], [35,158,170], [30,187,137],
+        [62,210,86], [122,220,38], [182,217,25], [230,195,21], [255,163,0],
+        [255,117,0], [250,67,0], [220,24,32], [165,0,38]
+      ];
+      return _interpStops(stops, i, n);
+    }
+  },
+  magma: {
+    label: 'Magma',
+    fn: (i, n) => {
+      // Matplotlib: preto → roxo → magenta → laranja → amarelo claro
+      const stops = [
+        [0,0,4], [18,13,50], [51,16,91], [89,17,110], [130,18,112],
+        [170,34,100], [204,71,78], [227,112,57], [241,163,47],
+        [248,210,67], [252,253,191]
+      ];
+      return _interpStops(stops, i, n);
+    }
+  },
+  quente: {
+    label: 'Quente',
+    fn: (i, n) => {
+      // Escala quente: preto → vermelho escuro → laranja → amarelo → branco
+      const stops = [
+        [30,0,0], [100,0,0], [180,0,0], [230,40,0], [255,100,0],
+        [255,160,0], [255,210,30], [255,240,100], [255,255,180], [255,255,240]
+      ];
+      return _interpStops(stops, i, n);
+    }
+  },
+  fria: {
+    label: 'Fria',
+    fn: (i, n) => {
+      // Escala fria: ciano claro → azul → índigo → roxo → magenta → rosa
+      const stops = [
+        [180,255,255], [100,220,255], [50,170,255], [30,120,240], [40,70,220],
+        [60,30,200], [90,10,180], [130,0,170], [170,20,160], [210,60,150],
+        [240,100,150]
+      ];
+      return _interpStops(stops, i, n);
+    }
+  },
+  crepusculo: {
+    label: 'Crepúsculo',
+    fn: (i, n) => {
+      // Pôr do sol: azul noite → roxo → rosa → vermelho → laranja → dourado
+      const stops = [
+        [20,20,80], [40,30,120], [80,30,150], [130,20,160], [180,30,140],
+        [210,50,100], [230,80,60], [240,120,40], [245,160,30], [250,200,50],
+        [255,230,80]
+      ];
+      return _interpStops(stops, i, n);
+    }
+  },
+  parula: {
+    label: 'Parula',
+    fn: (i, n) => {
+      // MATLAB default (2014+): azul escuro → ciano → verde-amarelo → amarelo
+      const stops = [
+        [53,42,135], [40,70,180], [30,110,200], [25,155,190], [30,180,160],
+        [60,195,115], [120,200,70], [180,200,45], [225,195,35], [250,210,40],
+        [249,251,14]
+      ];
+      return _interpStops(stops, i, n);
+    }
+  },
+  random: {
+    label: 'Random',
+    fn: (i, n) => {
+      // Seeded pseudo-random: hue espalhado, com variação de sat/light
+      const hue = (i * 137 + 73) % 360;
+      const sat = 65 + ((i * 53) % 30);
+      const light = 50 + ((i * 29) % 18);
+      return `hsl(${hue},${sat}%,${light}%)`;
+    }
+  }
+};
+
+const _PALETAS_IDS = Object.keys(_PALETAS);
+
+/** Retorna a cor da paleta ativa para o índice i de n itens */
+function _getCorPaleta(i, n) {
+  const id = window._graficoPaleta || 'rainbow';
+  const p = _PALETAS[id] || _PALETAS.rainbow;
+  return p.fn(i, n);
+}
+
+// Alias legado
+function _rainbowColor(i, n) { return _getCorPaleta(i, n); }
 
 // Métricas disponíveis
 const _METRICAS = [
@@ -143,8 +328,12 @@ window.renderGrafico = function () {
   });
   h += '</div>';
 
-  // ── Filtro dropdown estilo Excel ──
-  h += _renderFiltroDropdown(rankingCompleto, metricaAtiva);
+  // ── Filtro + Paleta (lado a lado) ──
+  const _isDesk = window.innerWidth > 850;
+  h += `<div style="display:flex;gap:8px;margin-bottom:12px;align-items:flex-start">`;
+  h += _renderFiltroDropdown(rankingCompleto, metricaAtiva, _isDesk);
+  h += _renderPaletaDropdown(_isDesk);
+  h += `</div>`;
 
   if (metricaAtiva === "evolucao") {
     h += _renderEvolucao(res, pals, apos, rankingCompleto);
@@ -190,31 +379,27 @@ window.renderGrafico = function () {
 };
 
 // ── Dropdown filtro ────────────────────────────────────────────────────────
-function _renderFiltroDropdown(rankingCompleto, metricaAtiva) {
+function _renderFiltroDropdown(rankingCompleto, metricaAtiva, isDesk) {
   const filtro = window._graficoFiltroApos;
   const todos = rankingCompleto;
   const selecionados = todos.filter(a => filtro.has(a.id));
   const humanos = todos.filter(a => !a.isModelo);
 
-  // Label do botão
-  let label;
-  if (selecionados.length === todos.length) {
-    label = 'Todos os apostadores';
-  } else if (selecionados.length === 0) {
-    label = 'Nenhum selecionado';
-  } else {
-    label = selecionados.map(a => a.nome).join(', ');
-  }
+  // Badge de contagem
+  const badge = `${selecionados.length}/${todos.length}`;
 
-  let h = `<div style="position:relative;margin-bottom:12px;z-index:50">`;
+  const containerStyle = isDesk
+    ? 'position:relative;width:310px;z-index:50'
+    : 'position:relative;flex:1;min-width:0;z-index:50';
+  let h = `<div style="${containerStyle}">`;
 
   // Botão que abre o dropdown
   h += `<button onclick="_graficoToggleDropdown(event)"
     style="width:100%;background:var(--fundo2);border:1.5px solid var(--borda2);border-radius:var(--radius-sm);
-           padding:9px 14px;color:var(--texto);font-size:.82rem;font-weight:600;cursor:pointer;
-           display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:inherit;text-align:left">
-    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">👤 ${label}</span>
-    <span style="flex-shrink:0;color:var(--texto2);font-size:.7rem">▼</span>
+           padding:9px 12px;color:var(--texto);font-size:.80rem;font-weight:600;cursor:pointer;
+           display:flex;align-items:center;justify-content:space-between;gap:6px;font-family:inherit;text-align:left">
+    <span style="white-space:nowrap">👤 Filtro</span>
+    <span style="font-size:.68rem;color:var(--texto2);font-weight:400;white-space:nowrap">${badge} ▼</span>
   </button>`;
 
   // Painel dropdown
@@ -238,8 +423,8 @@ function _renderFiltroDropdown(rankingCompleto, metricaAtiva) {
       onchange="window._graficoMasterToggle(this.checked)"
       style="width:16px;height:16px;accent-color:var(--dourado);cursor:pointer">
   </div>`;
-  // Spacer para alinhar com o dot de cor das linhas (10px dot + 6px margin)
-  h += `<div style="width:16px;flex-shrink:0"></div>`;
+  // Spacer para alinhar com o dot de cor das linhas (10px dot + 10px margin)
+  h += `<div style="width:20px;flex-shrink:0"></div>`;
   // Coluna # (rank) — min-width alinha com a posição nas linhas (28px + 4px margin)
   h += `<button onclick="event.stopPropagation();window._graficoDropdownOrdem='rank';window._graficoDropdownAberto=true;renderAbaAtiva()"
     style="background:none;border:none;cursor:pointer;padding:6px 0;font-size:.70rem;font-weight:700;${ddOrdem === 'rank' ? colAtivoStyle : colInativoStyle}font-family:inherit;white-space:nowrap;min-width:28px;margin-right:4px;text-align:left">#${arrowRank}</button>`;
@@ -281,7 +466,7 @@ function _renderFiltroDropdown(rankingCompleto, metricaAtiva) {
         <input type="checkbox" ${ativo ? 'checked' : ''} onchange="window._graficoToggleApos('${a.id}')"
           style="width:16px;height:16px;accent-color:${cor};cursor:pointer">
       </div>
-      <div style="width:10px;height:10px;border-radius:50%;background:${cor};flex-shrink:0;margin-right:6px"></div>
+      <div style="width:10px;height:10px;border-radius:50%;background:${cor};flex-shrink:0;margin-right:10px"></div>
       <span style="font-size:.70rem;font-weight:700;color:var(--texto2);min-width:28px;flex-shrink:0;margin-right:4px">${posStr}</span>
       <span style="font-size:.80rem;${nomeStyle};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${nomeTxt}</span>
     </label>`;
@@ -293,6 +478,10 @@ function _renderFiltroDropdown(rankingCompleto, metricaAtiva) {
 
 window._graficoToggleDropdown = function (e) {
   e.stopPropagation();
+  // Fechar paleta se aberta
+  const palDD = document.getElementById('grafico-paleta-dd');
+  if (palDD) palDD.style.display = 'none';
+
   const dd = document.getElementById('grafico-dropdown');
   if (!dd) return;
   const aberto = dd.style.display !== 'none';
@@ -350,6 +539,85 @@ window._graficoSelecionarTodos = function () {
 
 window._graficoSelecionarNenhum = function () {
   window._graficoMasterToggle(false);
+};
+
+// ── Dropdown paleta de cores ───────────────────────────────────────────────
+function _renderPaletaDropdown(isDesk) {
+  const paletaAtiva = window._graficoPaleta || 'rainbow';
+  const p = _PALETAS[paletaAtiva] || _PALETAS.rainbow;
+
+  // Gerar swatch de preview: 6 mini quadrados
+  let swatch = '';
+  for (let i = 0; i < 6; i++) {
+    swatch += `<span style="display:inline-block;width:6px;height:10px;background:${p.fn(i, 6)};border-radius:1px"></span>`;
+  }
+
+  const containerStyle = isDesk
+    ? 'position:relative;width:200px;z-index:49'
+    : 'position:relative;width:35%;flex-shrink:0;z-index:49';
+  let h = `<div style="${containerStyle}">`;
+  // Botão
+  h += `<button onclick="window._graficoTogglePaleta(event)"
+    style="width:100%;background:var(--fundo2);border:1.5px solid var(--borda2);border-radius:var(--radius-sm);
+           padding:9px 10px;color:var(--texto);font-size:.80rem;font-weight:600;cursor:pointer;
+           display:flex;align-items:center;justify-content:space-between;gap:6px;font-family:inherit;white-space:nowrap">
+    <span style="display:flex;align-items:center;gap:5px;overflow:hidden">
+      <span style="display:flex;gap:1px;flex-shrink:0">${swatch}</span>
+      <span style="font-size:.72rem;color:var(--texto);overflow:hidden;text-overflow:ellipsis">${p.label}</span>
+    </span>
+    <span style="font-size:.68rem;color:var(--texto2);flex-shrink:0">▼</span>
+  </button>`;
+
+  // Painel dropdown
+  h += `<div id="grafico-paleta-dd" onclick="event.stopPropagation()" style="display:none;position:absolute;top:calc(100% + 4px);right:0;
+    background:var(--card);border:1.5px solid var(--borda2);border-radius:var(--radius-sm);
+    box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:100;min-width:150px">`;
+
+  _PALETAS_IDS.forEach(id => {
+    const pal = _PALETAS[id];
+    const ativo = id === paletaAtiva;
+    // Mini preview
+    let preview = '';
+    for (let i = 0; i < 8; i++) {
+      preview += `<span style="display:inline-block;width:6px;height:10px;background:${pal.fn(i, 8)};border-radius:1px"></span>`;
+    }
+    h += `<div onclick="window._graficoSetPaleta('${id}')"
+      style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--borda);
+             background:${ativo ? 'rgba(255,255,255,.06)' : ''};transition:background .1s"
+      onmouseover="this.style.background='rgba(255,255,255,.06)'" onmouseout="this.style.background='${ativo ? 'rgba(255,255,255,.06)' : ''}'">
+      <span style="display:flex;gap:1px;flex-shrink:0">${preview}</span>
+      <span style="font-size:.76rem;font-weight:${ativo ? '700' : '500'};color:${ativo ? 'var(--dourado)' : 'var(--texto)'}">${pal.label}</span>
+      ${ativo ? '<span style="margin-left:auto;font-size:.7rem;color:var(--dourado)">✓</span>' : ''}
+    </div>`;
+  });
+
+  h += `</div></div>`;
+  return h;
+}
+
+window._graficoTogglePaleta = function (e) {
+  e.stopPropagation();
+  // Fechar o outro dropdown se aberto
+  const filtroDD = document.getElementById('grafico-dropdown');
+  if (filtroDD) filtroDD.style.display = 'none';
+
+  const dd = document.getElementById('grafico-paleta-dd');
+  if (!dd) return;
+  const aberto = dd.style.display !== 'none';
+  dd.style.display = aberto ? 'none' : 'block';
+  if (!aberto) {
+    setTimeout(() => {
+      document.addEventListener('click', function _closePal() {
+        const d = document.getElementById('grafico-paleta-dd');
+        if (d) d.style.display = 'none';
+      }, { once: true });
+    }, 0);
+  }
+};
+
+window._graficoSetPaleta = function (id) {
+  window._graficoPaleta = id;
+  renderAbaAtiva();
 };
 
 window._graficoIrEvolucao = function () {
