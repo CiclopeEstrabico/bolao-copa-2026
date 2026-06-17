@@ -54,29 +54,23 @@
     if (!box) return;
 
     let startX = 0, startY = 0;
-    let tracking = false, decided = false, isHoriz = false;
+    let tracking = false;
 
     box.addEventListener("touchstart", function (e) {
       if (e.touches.length > 1) { tracking = false; return; }
       if (isInsideScrollable(e.target)) { tracking = false; return; }
 
       tracking = true;
-      decided = false;
-      isHoriz = false;
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
     }, { passive: true });
 
     box.addEventListener("touchmove", function (e) {
-      if (!tracking || decided) return;
-
-      const dx = e.touches[0].clientX - startX;
-      const dy = e.touches[0].clientY - startY;
-      if (Math.abs(dx) < DEAD_ZONE && Math.abs(dy) < DEAD_ZONE) return;
-
-      decided = true;
-      isHoriz = Math.abs(dx) > Math.abs(dy);
-      if (!isHoriz) tracking = false;
+      if (!tracking) return;
+      // Se o gesto se torna claramente vertical, desistir cedo para não conflitar
+      const dx = Math.abs(e.touches[0].clientX - startX);
+      const dy = Math.abs(e.touches[0].clientY - startY);
+      if (dy > 60 && dy > dx * 2.5) { tracking = false; }
     }, { passive: true });
 
     box.addEventListener("touchend", function (e) {
@@ -88,7 +82,7 @@
       const dy = e.changedTouches[0].clientY - startY;
 
       // Swipe-up para fechar
-      if (!isHoriz && dy < -SWIPE_UP_DIST && Math.abs(dy) > Math.abs(dx) * 1.3) {
+      if (dy < -SWIPE_UP_DIST && Math.abs(dy) > Math.abs(dx) * 1.3) {
         const boxRect = box.getBoundingClientRect();
         if ((startY - boxRect.top) < 120 && box.scrollTop <= 0) {
           PROGNOSE.fecharModal();
@@ -96,9 +90,9 @@
         }
       }
 
-      // Swipe horizontal para trocar aba do modal
-      if (!decided || !isHoriz) return;
+      // Swipe horizontal para trocar aba — exige dx dominante
       if (Math.abs(dx) < MIN_DIST) return;
+      if (Math.abs(dx) < Math.abs(dy) * 0.8) return; // gesto mais vertical que horizontal
 
       const atual = getModalActiveTab();
       const idx = MODAL_TABS.indexOf(atual);
