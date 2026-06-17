@@ -47,8 +47,8 @@ const _PALETAS = {
     label: 'P&B',
     fn: (i, n) => {
       if (n <= 1) return 'rgb(200,200,200)';
-      // Branco → preto
-      const v = 240 - Math.round((i / (n - 1)) * 200);
+      // Branco → cinza escuro (mín ~80 para contraste com fundo escuro)
+      const v = 240 - Math.round((i / (n - 1)) * 160);
       return `rgb(${v},${v},${v})`;
     }
   },

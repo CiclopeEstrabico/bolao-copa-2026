@@ -10,6 +10,11 @@ window.renderEstatisticas = function () {
   const esp = window.BRACKET.extrairEspeciaisOficiais(res, APP.bracket || {});
   if (!apos.length) { el.innerHTML = '<div class="card"><p style="color:var(--texto2)">Nenhum apostador cadastrado.</p></div>'; return; }
 
+  // Cache: evita re-renderizar quando nada mudou (mesma lógica do compilação)
+  const _statCacheKey = JSON.stringify({ resKeys: Object.keys(res).join(','), apLen: apos.length });
+  if (window._estatisticasCacheKey === _statCacheKey && el.dataset.rendered === '1') return;
+  window._estatisticasCacheKey = _statCacheKey;
+
   const ranking = gerarRanking(pals, res, apos, esp);
   const jogosFeitos = schedule
     .filter(j => res[j.id]?.homeGoals !== undefined)
@@ -309,6 +314,20 @@ window.renderEstatisticas = function () {
     }
   }
 
+  // Pré-indexar posições por apostador para evitar O(N) .find() em cada snapshot
+  // snapPosIdx[aId][snapIdx] = posicao
+  const snapPosIdx = {};
+  for (const a of apos) {
+    snapPosIdx[a.id] = new Array(snapshots.length);
+  }
+  for (let si = 0; si < snapshots.length; si++) {
+    for (const item of snapshots[si]) {
+      if (snapPosIdx[item.participante.id]) {
+        snapPosIdx[item.participante.id][si] = item.posicao;
+      }
+    }
+  }
+
   // --- Montanha Russa: maior Σ|Δposição| / nJogos (mín 5 jogos) ---
   const montanhaScores = {};
   if (totalJogos >= 5 && snapshots.length >= 2) {
@@ -316,8 +335,8 @@ window.renderEstatisticas = function () {
       const aId = r2.participante.id;
       let soma = 0;
       for (let i = 1; i < snapshots.length; i++) {
-        const posAntes  = snapshots[i-1].find(x => x.participante.id === aId)?.posicao || 0;
-        const posDepois = snapshots[i].find(x => x.participante.id === aId)?.posicao || 0;
+        const posAntes  = (snapPosIdx[aId] && snapPosIdx[aId][i-1]) || 0;
+        const posDepois = (snapPosIdx[aId] && snapPosIdx[aId][i]) || 0;
         soma += Math.abs(posDepois - posAntes);
       }
       // Média por jogo (divisão pelo número de snapshots – 1 = número de intervalos)
@@ -339,8 +358,8 @@ window.renderEstatisticas = function () {
     for (const r2 of ranking) {
       const aId = r2.participante.id;
       let seqAtual = 0, recorde = 0;
-      for (const snap of snapshots) {
-        const pos = snap.find(x => x.participante.id === aId)?.posicao || 99;
+      for (let _si = 0; _si < snapshots.length; _si++) {
+        const pos = (snapPosIdx[aId] && snapPosIdx[aId][_si]) || 99;
         if (pos === 1) { seqAtual++; recorde = Math.max(recorde, seqAtual); } else { seqAtual = 0; }
       }
       reiScores[aId] = recorde;
@@ -357,8 +376,8 @@ window.renderEstatisticas = function () {
       const aId = r2.participante.id;
       if (r2.posicao <= 5) { tubaraoScores[aId] = 0; continue; }
       let cnt = 0;
-      for (const snap of snapshots) {
-        const pos = snap.find(x => x.participante.id === aId)?.posicao || 99;
+      for (let _si2 = 0; _si2 < snapshots.length; _si2++) {
+        const pos = (snapPosIdx[aId] && snapPosIdx[aId][_si2]) || 99;
         if (pos <= 5) cnt++;
       }
       tubaraoScores[aId] = cnt;
@@ -1007,6 +1026,7 @@ window.renderEstatisticas = function () {
   h += '<div id="stat-hth-deferred"></div>';
 
   el.innerHTML = h;
+  el.dataset.rendered = '1';
 
   // Tooltip unificado (hover desktop + toque mobile) em todos os [title] da aba
   window.injetarTooltipsMobile(el);

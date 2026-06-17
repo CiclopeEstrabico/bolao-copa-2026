@@ -28,7 +28,7 @@ window.abrirModalApostador = function (nome, apelido, pts, apostadorId) {
 
   const div = document.createElement('div');
   div.id = 'popup-apostador-detalhe';
-  div.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px';
+  div.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0);backdrop-filter:blur(0px);display:flex;align-items:center;justify-content:center;padding:20px;transition:background .25s ease,backdrop-filter .25s ease';
 
   let inner = '';
   inner += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">';
@@ -73,9 +73,16 @@ window.abrirModalApostador = function (nome, apelido, pts, apostadorId) {
 
   inner += '<div style="margin-top:10px;font-size:.65rem;color:var(--texto2);text-align:center">Toque fora para fechar</div>';
 
-  div.innerHTML = '<div style="width:100%;max-width:400px;background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.4)">' + inner + '</div>';
+  div.innerHTML = '<div style="width:100%;max-width:400px;background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.4);transform:scale(.92);opacity:0;transition:transform .25s cubic-bezier(.34,1.56,.64,1),opacity .2s ease">' + inner + '</div>';
   div.addEventListener('click', e => { if (e.target === div) div.remove(); });
   document.body.appendChild(div);
+  // Trigger animation on next frame
+  requestAnimationFrame(() => {
+    div.style.background = 'rgba(0,0,0,.65)';
+    div.style.backdropFilter = 'blur(4px)';
+    const card = div.firstElementChild;
+    if (card) { card.style.transform = 'scale(1)'; card.style.opacity = '1'; }
+  });
 };
 
 window.renderCompilacao = function () {

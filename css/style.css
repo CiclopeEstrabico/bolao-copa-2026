@@ -518,15 +518,6 @@ body {
   display: none
 }
 
-.toggle-bar::-webkit-scrollbar {
-  height: 2px
-}
-
-.toggle-bar::-webkit-scrollbar-thumb {
-  background: var(--borda);
-  border-radius: 4px
-}
-
 .toggle-label {
   font-size: .73rem;
   color: var(--texto2);

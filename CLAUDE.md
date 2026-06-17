@@ -78,7 +78,7 @@ APP.palpitesModelo  // { gameId: { homeGoals, awayGoals } } (Palpites do Apostad
   - `palpites_eliminatorias` (Doc): `{ gerado_em, palpites: { [apostadorId]: { [gameId]: { hg, ag } } } }`
   - `tokens` (Doc): `{ [tokenDocId]: { id, numero, token, ativo, nome, apelido, criado_em, pago } }`
 - **`config`**:
-  - `status` (Doc): `{ liberado_grupos, liberado_16avos, liberado_oitavas, liberado_quartas, liberado_semis, liberado_final, liberado_terceiro, cache_res_ts, cache_grupos_ts, cache_elim_ts }`
+  - `status` (Doc): `{ liberado_grupos, liberado_16avos, liberado_oitavas, liberado_quartas, liberado_semis, liberado_finais, cache_res_ts, cache_grupos_ts, cache_elim_ts }`
 - **`tokens`**:
   - `id` (Doc): `{ id, numero, token, ativo, nome, apelido, criado_em, pago }`
 
