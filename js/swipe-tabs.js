@@ -129,11 +129,6 @@
     let decided = false;   // já decidimos se é swipe horizontal ou scroll vertical
     let isHSwipe = false;  // se decidido, é horizontal?
 
-    // Área de conteúdo principal — exclui header e tabs bar
-    function getContentArea() {
-      return document.querySelector(".main") || document.body;
-    }
-
     // Checa se um modal está aberto (prognose, apostador, stat, etc)
     function isModalOpen() {
       const prog = document.getElementById("modal-prog");
@@ -154,12 +149,8 @@
       // Multi-touch
       if (e.touches.length > 1) { tracking = false; return; }
 
-      const content = getContentArea();
-      // Só aceita toques dentro da área de conteúdo (não no header/tabs)
-      if (content && !content.contains(e.target)) { tracking = false; return; }
-
       // Se está dentro de um container com scroll horizontal, não rastreia
-      if (isInsideHScrollable(e.target, content || document.body)) { tracking = false; return; }
+      if (isInsideHScrollable(e.target, document.body)) { tracking = false; return; }
 
       tracking = true;
       decided = false;
