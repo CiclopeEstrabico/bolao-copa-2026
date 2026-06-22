@@ -113,7 +113,7 @@
   // ════════════════════════════════════════════════════════════════════════════
   // SWIPE NAS ABAS PRINCIPAIS (index.html — mobile only)
   // ════════════════════════════════════════════════════════════════════════════
-  const MAIN_TABS = ["resultados", "classificacao", "tabela", "compilacao", "estatisticas", "grafico", "regras"];
+  const MAIN_TABS = ["resultados", "tabela", "classificacao", "grafico", "compilacao", "estatisticas", "regras"];
 
   function getMainActiveTab() {
     const hash = location.hash.replace("#", "");
