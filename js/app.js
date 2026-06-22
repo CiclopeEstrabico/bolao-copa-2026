@@ -338,7 +338,7 @@ function atualizarBracket() {
 }
 
 // ─── Roteador ─────────────────────────────────────────────────────────────────
-const ABAS = ["resultados", "classificacao", "tabela", "compilacao", "estatisticas", "grafico", "regras"];
+const ABAS = ["resultados", "tabela", "classificacao", "grafico", "estatisticas", "regras", "compilacao"];
 let _abaAtiva = "resultados";
 
 function iniciarRoteador() {
@@ -362,6 +362,20 @@ function mudarAba(aba) {
 
   if (window.limparFrozenHeaders) {
     window.limparFrozenHeaders();
+  }
+
+  // Auto-scroll tab bar to keep active tab visible
+  const activeBtn = document.querySelector('[data-tab="' + aba + '"].ativa');
+  if (activeBtn) {
+    const nav = activeBtn.closest('.tabs');
+    if (nav) {
+      const navRect = nav.getBoundingClientRect();
+      const btnRect = activeBtn.getBoundingClientRect();
+      const offLeft = btnRect.left - navRect.left;
+      const offRight = btnRect.right - navRect.right;
+      if (offLeft < 0) nav.scrollLeft += offLeft - 12;
+      else if (offRight > 0) nav.scrollLeft += offRight + 12;
+    }
   }
 
   renderAbaAtiva(true);
