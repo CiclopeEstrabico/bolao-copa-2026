@@ -723,7 +723,7 @@ window.PROGNOSE = {
       this._listPalpitesCurrentDir = this._listPalpitesCurrentDir === 'asc' ? 'desc' : 'asc';
     } else {
       this._listPalpitesCurrentSort = col;
-      this._listPalpitesCurrentDir = col === 'apelido' ? 'asc' : 'desc';
+      this._listPalpitesCurrentDir = (col === 'apelido' || col === 'res') ? 'asc' : 'desc';
     }
     const container = document.getElementById('modal-content-listpal');
     if (container) {
@@ -769,20 +769,25 @@ window.PROGNOSE = {
     });
 
     const rowsData = [];
-    for (const a of apos) {
-      if (a.id === "MODELO") continue;
-      const p = todos[a.id]?.[gameId];
+    const _buildRow = (a, palpite, isModelo) => {
       let pts = 0;
-      let hasPalpite = p && p.homeGoals !== undefined;
+      let hasPalpite = palpite && palpite.homeGoals !== undefined;
       let cls = "";
       let palpiteStr = "·";
       let ptsStr = "—";
       let ptsNum = 0;
+      let resDir = "";
+      let resAcertou = false;
       
       if (hasPalpite) {
-        palpiteStr = `${p.homeGoals}x${p.awayGoals}`;
+        const hg = parseInt(palpite.homeGoals), ag = parseInt(palpite.awayGoals);
+        palpiteStr = `${palpite.homeGoals}x${palpite.awayGoals}`;
+        resDir = hg > ag ? 'V' : (hg < ag ? 'D' : 'E');
         if (temRes) {
-          const br = calcularPontosBrutos(p, r);
+          const rh = parseInt(r.homeGoals), ra = parseInt(r.awayGoals);
+          const realDir = rh > ra ? 'V' : (rh < ra ? 'D' : 'E');
+          resAcertou = (resDir === realDir);
+          const br = calcularPontosBrutos(palpite, r);
           pts = aplicarFator(br.total_bruto, jogoInfo?.fase || 'grupos');
           ptsNum = pts;
           ptsStr = `${pts}`;
@@ -802,25 +807,41 @@ window.PROGNOSE = {
         }
       }
 
-      const rank = rankMap[a.id] || 1;
+      const rank = isModelo ? Infinity : (rankMap[a.id] || 1);
       
       rowsData.push({
         apostadorId: a.id,
         nome: a.nome || '',
         apelido: a.apelido || a.nome || a.id,
         palpiteStr,
+        resDir,
+        resAcertou,
+        temRes,
         pts: ptsNum,
         ptsStr,
         cls,
         hasPalpite,
-        rank
+        rank,
+        isModelo
       });
+    };
+    for (const a of apos) {
+      if (a.id === "MODELO") continue;
+      _buildRow(a, todos[a.id]?.[gameId], false);
+    }
+    // MODELO row
+    const palsMod = APP.palpitesModelo || {};
+    if (palsMod[gameId] && palsMod[gameId].homeGoals !== undefined) {
+      _buildRow({ id: 'MODELO', nome: 'Modelo Estatístico', apelido: 'Modelo' }, palsMod[gameId], true);
     }
 
     // Sort based on current column
+    const _resDirOrder = { V: 1, E: 2, D: 3, '': 4 };
     rowsData.sort((a, b) => {
       // Always put non-palpites at the end
       if (b.hasPalpite !== a.hasPalpite) return b.hasPalpite ? 1 : -1;
+      // MODELO forced last only when sorting by position
+      if (sortCol === 'rank' && a.isModelo !== b.isModelo) return a.isModelo ? 1 : -1;
       
       let cmp = 0;
       switch (sortCol) {
@@ -829,6 +850,9 @@ window.PROGNOSE = {
           break;
         case 'apelido':
           cmp = a.apelido.localeCompare(b.apelido);
+          break;
+        case 'res':
+          cmp = (_resDirOrder[a.resDir] || 4) - (_resDirOrder[b.resDir] || 4);
           break;
         case 'palpite':
           cmp = a.palpiteStr.localeCompare(b.palpiteStr);
@@ -855,10 +879,11 @@ window.PROGNOSE = {
     let h = '<div data-scroll-inner="1" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--borda);border-radius:var(--radius-sm);margin-top:5px;min-height:0">';
     h += '<table class="tabela-detalhe" style="width:100%;margin:0;border-collapse:collapse">';
     h += '<thead><tr style="position:sticky;top:0;z-index:10;background:var(--fundo2)">';
-    h += '<th style="text-align:center;padding:8px 6px;border-bottom:2px solid var(--verde-light);width:36px;cursor:pointer" onclick="PROGNOSE._sortListPalpites(\'rank\')">Pos' + arrow('rank') + '</th>';
-    h += '<th style="text-align:left;padding:8px 8px;border-bottom:2px solid var(--verde-light);cursor:pointer" onclick="PROGNOSE._sortListPalpites(\'apelido\')">Apostador' + arrow('apelido') + '</th>';
-    h += '<th style="text-align:center;padding:8px 6px;border-bottom:2px solid var(--verde-light);width:52px;cursor:pointer" onclick="PROGNOSE._sortListPalpites(\'palpite\')">Placar' + arrow('palpite') + '</th>';
-    h += '<th style="text-align:center;padding:8px 6px;border-bottom:2px solid var(--verde-light);width:42px;cursor:pointer" onclick="PROGNOSE._sortListPalpites(\'pts\')">Pts' + arrow('pts') + '</th>';
+    h += '<th style="text-align:center;padding:8px 6px;border-bottom:2px solid var(--verde-light);width:32px;cursor:pointer" onclick="PROGNOSE._sortListPalpites(\'rank\')">Pos' + arrow('rank') + '</th>';
+    h += '<th style="text-align:left;padding:8px 4px;border-bottom:2px solid var(--verde-light);cursor:pointer" onclick="PROGNOSE._sortListPalpites(\'apelido\')">Apostador' + arrow('apelido') + '</th>';
+    h += '<th style="text-align:center;padding:8px 3px;border-bottom:2px solid var(--verde-light);width:30px;cursor:pointer" onclick="PROGNOSE._sortListPalpites(\'res\')">Res.' + arrow('res') + '</th>';
+    h += '<th style="text-align:center;padding:8px 4px;border-bottom:2px solid var(--verde-light);width:44px;cursor:pointer" onclick="PROGNOSE._sortListPalpites(\'palpite\')">Placar' + arrow('palpite') + '</th>';
+    h += '<th style="text-align:center;padding:8px 4px;border-bottom:2px solid var(--verde-light);width:36px;cursor:pointer" onclick="PROGNOSE._sortListPalpites(\'pts\')">Pts' + arrow('pts') + '</th>';
     h += '</tr></thead><tbody>';
 
     rowsData.forEach((row, idx) => {
@@ -866,11 +891,19 @@ window.PROGNOSE = {
       const rowNome = (row.nome || row.apelido || '').replace(/'/g, "\\'");
       const rowApelido = row.apelido.replace(/'/g, "\\'");
       const rowId = row.apostadorId.replace(/'/g, "\\'");
-      h += `<tr style="background:${bg};cursor:pointer" onclick="window.abrirModalApostador('${rowNome}','${rowApelido}',${row.pts || 0},'${rowId}')">`;  
-      h += `<td style="text-align:center;padding:6px 4px;font-weight:700;color:var(--texto2);font-size:.72rem">${row.rank}°</td>`;
-      h += `<td style="text-align:left;padding:6px 8px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;font-size:.78rem">${row.apelido}</td>`;
-      h += `<td class="${row.cls}" style="text-align:center;padding:6px 4px;font-weight:700;font-size:.78rem">${row.palpiteStr}</td>`;
-      h += `<td class="${row.cls}" style="text-align:center;padding:6px 4px;font-weight:700;font-size:.78rem">${row.ptsStr}</td>`;
+      const rankStr = row.isModelo ? '🤖' : row.rank + '°';
+      const apelidoColor = row.isModelo ? '#9ca3af' : '#fff';
+      const apelidoWeight = row.isModelo ? '500' : '600';
+      const clickAttr = row.isModelo ? '' : ` onclick="window.abrirModalApostador('${rowNome}','${rowApelido}',${row.pts || 0},'${rowId}')"`;
+      const cursorStyle = row.isModelo ? 'default' : 'pointer';
+      const resDirColor = !row.resDir ? 'var(--texto2)' : (!row.temRes ? '#fff' : (row.resAcertou ? 'var(--verde-ok)' : '#f87171'));
+      const separatorStyle = row.isModelo ? 'border-top:1px dashed var(--borda);' : '';
+      h += `<tr style="background:${bg};cursor:${cursorStyle};${separatorStyle}"${clickAttr}>`;
+      h += `<td style="text-align:center;padding:6px 3px;font-weight:700;color:var(--texto2);font-size:.72rem">${rankStr}</td>`;
+      h += `<td style="text-align:left;padding:6px 4px;font-weight:${apelidoWeight};color:${apelidoColor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;font-size:.78rem">${row.apelido}</td>`;
+      h += `<td style="text-align:center;padding:6px 2px;font-weight:700;font-size:.68rem;color:${resDirColor}">${row.resDir || '·'}</td>`;
+      h += `<td class="${row.cls}" style="text-align:center;padding:6px 3px;font-weight:700;font-size:.78rem">${row.palpiteStr}</td>`;
+      h += `<td class="${row.cls}" style="text-align:center;padding:6px 3px;font-weight:700;font-size:.78rem">${row.ptsStr}</td>`;
       h += '</tr>';
     });
 

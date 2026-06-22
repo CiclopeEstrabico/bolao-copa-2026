@@ -666,6 +666,148 @@ window.renderEstatisticas = function () {
     _lanterninhaArr = [empatadosLanterna[0], empatadosLanterna[1]];
   }
 
+  // ── 14 novos cálculos ──────────────────────────────────────────────────────
+  // Campeão do Avesso (palpites espelhados homeGoals↔awayGoals)
+  const demogorgonScores = {};
+  for (const a of apos) { let t = 0; for (const jogo of jogosFeitos) { const p = pals[a.id]?.[jogo.id]; if (!p || p.homeGoals === undefined) continue; t += aplicarFator(calcularPontosBrutos({ homeGoals: p.awayGoals, awayGoals: p.homeGoals }, res[jogo.id]).total_bruto, jogo.fase); } demogorgonScores[a.id] = t; }
+  const destDemogorgon = obterDestaques(r => demogorgonScores[r.participante.id] || 0, true, true);
+  const _demogorgonArr = destDemogorgon.bestArr;
+
+  // Gêmeos + Polos Opostos (loop triangular, todos os jogos apostados)
+  let gemeosBest = { par: null, dist: Infinity, nComum: 0 }, polosBest = { par: null, dist: -1, nComum: 0 };
+  const gemeosPerPerson = {}, polosPerPerson = {};
+  const gemeosPairs = [], polosPairs = [];
+  if (apos.length >= 2) {
+    for (const a of apos) { gemeosPerPerson[a.id] = Infinity; polosPerPerson[a.id] = -1; }
+    const _allPairs = [];
+    for (let _gi = 0; _gi < apos.length; _gi++) for (let _gj = _gi + 1; _gj < apos.length; _gj++) {
+      let _gs = 0, _gn = 0;
+      for (const jogo of schedule) { const pA = pals[apos[_gi].id]?.[jogo.id], pB = pals[apos[_gj].id]?.[jogo.id]; if (!pA || pA.homeGoals === undefined || !pB || pB.homeGoals === undefined) continue; _gs += Math.abs(parseInt(pA.homeGoals) - parseInt(pB.homeGoals)) + Math.abs(parseInt(pA.awayGoals) - parseInt(pB.awayGoals)); _gn++; }
+      if (_gn >= 5) { const _gm = _gs / _gn; _allPairs.push({ a1: apos[_gi], a2: apos[_gj], dist: _gm, nComum: _gn }); if (_gm < gemeosBest.dist) gemeosBest = { par: [apos[_gi], apos[_gj]], dist: _gm, nComum: _gn }; if (_gm > polosBest.dist) polosBest = { par: [apos[_gi], apos[_gj]], dist: _gm, nComum: _gn }; if (_gm < gemeosPerPerson[apos[_gi].id]) gemeosPerPerson[apos[_gi].id] = _gm; if (_gm < gemeosPerPerson[apos[_gj].id]) gemeosPerPerson[apos[_gj].id] = _gm; if (_gm > polosPerPerson[apos[_gi].id]) polosPerPerson[apos[_gi].id] = _gm; if (_gm > polosPerPerson[apos[_gj].id]) polosPerPerson[apos[_gj].id] = _gm; }
+    }
+    _allPairs.sort((a, b) => a.dist - b.dist);
+    for (let _pi = 0; _pi < Math.min(_allPairs.length, 10); _pi++) gemeosPairs.push(_allPairs[_pi]);
+    _allPairs.sort((a, b) => b.dist - a.dist);
+    for (let _pi = 0; _pi < Math.min(_allPairs.length, 10); _pi++) polosPairs.push(_allPairs[_pi]);
+  }
+  const _gemeosNomes = gemeosBest.par ? [gemeosBest.par[0].apelido || gemeosBest.par[0].nome, gemeosBest.par[1].apelido || gemeosBest.par[1].nome] : null;
+  const _polosNomes = polosBest.par ? [polosBest.par[0].apelido || polosBest.par[0].nome, polosBest.par[1].apelido || polosBest.par[1].nome] : null;
+
+  // Pés de Barro + Dragão Adormecido (aproveitamento grupos vs eliminatórias)
+  const pesBarroScores = {}, dragaoScores = {};
+  const _cfgPB = window.CONFIG?.pontuacao;
+  if (_cfgPB && jogosFeitos.length > 0) {
+    const _limiarPB = _cfgPB.limiar_placar_alto ?? 4;
+    for (const r2 of ranking) {
+      const aId = r2.participante.id; let ptsGrp = 0, maxGrp = 0, ptsElim = 0, maxElim = 0, nElim = 0;
+      for (const jogo of jogosFeitos) {
+        const p = pals[aId]?.[jogo.id]; if (!p || p.homeGoals === undefined) continue;
+        const rv = res[jogo.id], br = calcularPontosBrutos(p, rv), pts = aplicarFator(br.total_bruto, jogo.fase);
+        const tg = Number(rv.homeGoals) + Number(rv.awayGoals);
+        const mxBr = tg >= _limiarPB ? _cfgPB.resultado_base + _cfgPB.bonus_placar_exato_alto : _cfgPB.resultado_base + _cfgPB.bonus_placar_exato_baixo;
+        const mxPts = aplicarFator(mxBr, jogo.fase);
+        if (jogo.fase === "grupos") { ptsGrp += pts; maxGrp += mxPts; } else { ptsElim += pts; maxElim += mxPts; nElim++; }
+      }
+      if (nElim >= 4 && maxGrp > 0 && maxElim > 0) { const ag = ptsGrp / maxGrp, ae = ptsElim / maxElim; pesBarroScores[aId] = ag - ae; dragaoScores[aId] = ae - ag; }
+    }
+  }
+  const destPesBarro = obterDestaques(r => pesBarroScores[r.participante.id] ?? -Infinity, false, true, s => s !== -Infinity && s > 0);
+  const _pesBarroArr = destPesBarro.bestArr;
+  const destDragao = obterDestaques(r => dragaoScores[r.participante.id] ?? -Infinity, true, true, s => s !== -Infinity && s > 0);
+  const _dragaoArr = destDragao.bestArr;
+
+  // Bilhete Premiado (acerto de placar exato com menor probabilidade Dixon-Coles)
+  const loteriaScores = {}, loteriaDetalhes = {}, _progCacheEstat = {};
+  for (const a of apos) {
+    let minProb = Infinity, bestGame = null;
+    for (const jogo of jogosFeitos) {
+      const p = pals[a.id]?.[jogo.id]; if (!p || p.homeGoals === undefined) continue;
+      const br = calcularPontosBrutos(p, res[jogo.id]); if (br.bonus_tipo !== 'placar_exato') continue;
+      const _bL = APP.bracket?.[jogo.id] || {}, _hL = _bL.home || jogo.home, _aL = _bL.away || jogo.away;
+      if (_hL === 'TBD' || _aL === 'TBD') continue;
+      const _pk = _hL + '_' + _aL;
+      if (_progCacheEstat[_pk] === undefined) _progCacheEstat[_pk] = (window.PROGNOSE && typeof PROGNOSE.calcular === 'function') ? PROGNOSE.calcular(_hL, _aL) : null;
+      const prog = _progCacheEstat[_pk]; if (!prog || !prog.matrix) continue;
+      const rv = res[jogo.id], _hi = Math.min(Number(rv.homeGoals), prog.N - 1), _ai = Math.min(Number(rv.awayGoals), prog.N - 1);
+      const prob = prog.matrix[_hi]?.[_ai] || 0;
+      if (prob > 0 && prob < minProb) { minProb = prob; bestGame = { jogo, prob, placar: rv.homeGoals + '×' + rv.awayGoals, hC: _hL, aC: _aL }; }
+    }
+    if (minProb < Infinity) { loteriaScores[a.id] = 1 / minProb; loteriaDetalhes[a.id] = bestGame; }
+  }
+  const destLoteria = obterDestaques(r => loteriaScores[r.participante.id] || 0, true, true, s => s > 0);
+  const _loteriaArr = destLoteria.bestArr;
+  let _loteriaSub = '—';
+  if (destLoteria.bestApo) { const _dL = loteriaDetalhes[destLoteria.bestApo.participante.id]; if (_dL) _loteriaSub = (_dL.prob * 100).toFixed(1) + '% prob. (' + getSigla(_dL.hC) + ' ' + _dL.placar + ' ' + getSigla(_dL.aC) + ')'; }
+
+  // Técnico da Seleção (pontos nos jogos do Brasil)
+  const jogosBRA = jogosFeitos.filter(j => { const _b = APP.bracket?.[j.id] || {}; return (_b.home || j.home) === 'BRA' || (_b.away || j.away) === 'BRA'; });
+  const tecnicoScores = {};
+  for (const a of apos) { let t = 0; for (const jogo of jogosBRA) { const p = pals[a.id]?.[jogo.id]; if (!p || p.homeGoals === undefined) continue; t += aplicarFator(calcularPontosBrutos(p, res[jogo.id]).total_bruto, jogo.fase); } tecnicoScores[a.id] = t; }
+  const destTecnico = obterDestaques(r => tecnicoScores[r.participante.id] || 0, true, true, () => jogosBRA.length > 0);
+  const _tecnicoArr = destTecnico.bestArr;
+
+  // Matador de Canarinho (pontos de dano contra o Brasil: derrota=3, empate=2)
+  const matadorScores = {};
+  for (const a of apos) {
+    let dano = 0;
+    for (const jogo of schedule) {
+      const _bM = APP.bracket?.[jogo.id] || {}, _hM = _bM.home || jogo.home, _aM = _bM.away || jogo.away;
+      if (_hM === 'TBD' || _aM === 'TBD' || (_hM !== 'BRA' && _aM !== 'BRA')) continue;
+      const p = pals[a.id]?.[jogo.id]; if (!p || p.homeGoals === undefined) continue;
+      const hg = parseInt(p.homeGoals), ag = parseInt(p.awayGoals);
+      if (_hM === 'BRA') { if (hg < ag) dano += 3; else if (hg === ag) dano += 2; }
+      else { if (ag < hg) dano += 3; else if (ag === hg) dano += 2; }
+    }
+    matadorScores[a.id] = dano;
+  }
+  const destMatador = obterDestaques(r => matadorScores[r.participante.id] || 0, false, true);
+  const _matadorArr = destMatador.bestArr;
+
+  // Discreto (nunca Top 5 nem Bottom 5, menor distância do centro)
+  const discretoScores = {};
+  if (totalJogos >= 15 && snapshots.length >= 15 && apos.length >= 11) {
+    const _posCentral = (apos.length + 1) / 2;
+    for (const r2 of ranking) {
+      const aId = r2.participante.id; let elegivel = true, somaDist = 0, count = 0;
+      for (let _si3 = 0; _si3 < snapshots.length; _si3++) {
+        const pos = snapPosIdx[aId]?.[_si3]; if (!pos) continue;
+        if (pos <= 5 || pos >= apos.length - 4) { elegivel = false; break; }
+        somaDist += Math.abs(pos - _posCentral); count++;
+      }
+      if (elegivel && count > 0) discretoScores[aId] = somaDist / count;
+    }
+  }
+  const destDiscreto = obterDestaques(r => discretoScores[r.participante.id] ?? Infinity, true, false, s => s !== Infinity);
+  const _discretoArr = destDiscreto.bestArr;
+
+  // Faro de Campeão (pontos de palpites especiais)
+  const faroScores = {};
+  for (const a of apos) faroScores[a.id] = calcularPontosEspeciais(a, esp.campeao, esp.vice, esp.terceiro).total_especiais;
+  const destFaro = obterDestaques(r => faroScores[r.participante.id] || 0, true, true, s => s > 0);
+  const _faroArr = destFaro.bestArr;
+
+  // Diplomata (acertos de empates reais)
+  const jogosEmpate = jogosFeitos.filter(j => res[j.id].homeGoals === res[j.id].awayGoals);
+  const diplomataScores = {};
+  for (const a of apos) { let cnt = 0; for (const jogo of jogosEmpate) { const p = pals[a.id]?.[jogo.id]; if (!p || p.homeGoals === undefined) continue; if (parseInt(p.homeGoals) === parseInt(p.awayGoals)) cnt++; } diplomataScores[a.id] = cnt; }
+  const destDiplomata = obterDestaques(r => diplomataScores[r.participante.id] || 0, true, true, () => jogosEmpate.length > 0);
+  const _diplomataArr = destDiplomata.bestArr;
+
+  // Gladiador (acertos do lado vencedor em jogos sem empate)
+  const jogosSemEmpate = jogosFeitos.filter(j => res[j.id].homeGoals !== res[j.id].awayGoals);
+  const gladiadorScores = {};
+  for (const a of apos) { let cnt = 0; for (const jogo of jogosSemEmpate) { const rv = res[jogo.id], p = pals[a.id]?.[jogo.id]; if (!p || p.homeGoals === undefined) continue; const rW = rv.homeGoals > rv.awayGoals ? 'H' : 'A', bW = parseInt(p.homeGoals) > parseInt(p.awayGoals) ? 'H' : (parseInt(p.homeGoals) < parseInt(p.awayGoals) ? 'A' : 'D'); if (bW === rW) cnt++; } gladiadorScores[a.id] = cnt; }
+  const destGladiador = obterDestaques(r => gladiadorScores[r.participante.id] || 0, true, true, () => jogosSemEmpate.length > 0);
+  const _gladiadorArr = destGladiador.bestArr;
+
+  // Frangueiro + Pé de Anjo (distância média do saldo de gols)
+  const franqueiroScores = {};
+  for (const a of apos) { let soma = 0, n = 0; for (const jogo of jogosFeitos) { const p = pals[a.id]?.[jogo.id]; if (!p || p.homeGoals === undefined) continue; const rv = res[jogo.id]; soma += Math.abs((parseInt(p.homeGoals) - parseInt(p.awayGoals)) - (rv.homeGoals - rv.awayGoals)); n++; } if (n >= 10) franqueiroScores[a.id] = soma / n; }
+  const destFrangueiro = obterDestaques(r => franqueiroScores[r.participante.id] ?? -1, false, true, s => s >= 0);
+  const _franqueiroArr = destFrangueiro.bestArr;
+  const destPeAnjo = obterDestaques(r => franqueiroScores[r.participante.id] ?? Infinity, true, false, s => s !== Infinity);
+  const _peAnjoArr = destPeAnjo.bestArr;
+
   let h = "";
 
   // ─── CSS: Grid 7 colunas desktop, 2 colunas mobile ────────────────────────
@@ -784,11 +926,8 @@ window.renderEstatisticas = function () {
     }
   </style>`;
 
-  // ─── 28 Cards em ordem 4 linhas × 7 colunas ───────────────────────────────
-  // Linha 1: Sequências atuais + Trajetória 5 jogos + Fênix
-  // Linha 2: Trajetória histórica + Precisão
-  // Linha 3: Precisão + Perfil
-  // Linha 4: Perfil + Consistência
+  // ─── 42 Cards em 6 linhas × 7 colunas ─────────────────────────────────────
+  // L1: Sequências | L2: Trajetória | L3: Precisão | L4: Calibração | L5: Perfil | L6: Especiais
   // Cache stats data for modal detail views
   window.STATS_CACHE = {
     ranking, jogosFeitos, res, apos, pals, schedule, esp,
@@ -798,9 +937,18 @@ window.renderEstatisticas = function () {
     zebraScores, mediasGols, cloneScores, ovelhaScores,
     pacifistaScores, zebraApostas, conservScores, anarqScores, anarqJogos,
     dps, praForaScores, praForaDetalhes, oniscienteScores, oniscienteDetalhes,
-    totalJogos, snapshots
+    totalJogos, snapshots,
+    demogorgonScores, gemeosPerPerson, polosPerPerson,
+    gemeosPairs, polosPairs,
+    pesBarroScores, dragaoScores, loteriaScores, loteriaDetalhes,
+    tecnicoScores, matadorScores, discretoScores,
+    faroScores, diplomataScores, gladiadorScores,
+    franqueiroScores, jogosBRA, jogosEmpate, jogosSemEmpate
   };
 
+  // Ordenação visual CSS: 6 linhas × 7 colunas
+  const _cardOrder = ['pe_quente','pe_frio','mare_alta','mare_baixa','escalando','queda_livre','fenix','derreteu','rei_colina','tubarao','montanha_russa','tartaruga','pes_barro','dragao_adormecido','vidente','atirador','zebra_ouro','mestre_bonus','diplomata','gladiador','discreto','onisciente','pra_fora','ovelha_negra','frangueiro','pe_anjo','bilhete_premiado','lanterninha','centro_avante','zagueirao','pacifista','destemido','conservador','clone','anarquista','metronomo','campeao_avesso','gemeos','polos_opostos','tecnico_selecao','matador_canarinho','faro_campeao'];
+  h += '<style>' + _cardOrder.map((k,i) => '.stat-d-card[data-card-key="' + k + '"]{order:' + (i+1) + '}').join('') + '</style>';
   h += '<div class="stats-grid">';
 
   // ── Linha 1 ──────────────────────────────────────────────────────────────
@@ -947,6 +1095,77 @@ window.renderEstatisticas = function () {
     jogosFeitos.length === 0 ? '— (sem jogos)' : (_lanterninhaArr?.[0] ? _lanterninhaArr[0].stats.total.toFixed(1) + ' pts' : '—'),
     "#94a3b8", "lanterninha", "Quem está com menos pontos acumulados até agora. A lanterna da Copa.");
 
+  // ── Novos Cards ────────────────────────────────────────────────────────────
+  h += _dCard("🥷", "Discreto",
+    totalJogos < 15 || apos.length < 11 ? '—' : (_discretoArr ? _tieName(_discretoArr) : '—'),
+    totalJogos < 15 ? '— (< 15 jogos)' : (apos.length < 11 ? '— (poucos apost.)' : (!_discretoArr ? '—' : destDiscreto.bestScore.toFixed(2) + ' dist. média')),
+    "#64748b", "discreto", "Passou a Copa inteira no anonimato. Nunca Top 5 nem Bottom 5, gravitou no centro exato da tabela. O mestre da mediocridade estratégica.");
+
+  h += _dCard("🗿", "Pés de Barro",
+    !_pesBarroArr ? '—' : _tieName(_pesBarroArr),
+    !_pesBarroArr ? '— (< 4 jogos elim.)' : (destPesBarro.bestScore * 100).toFixed(1) + '% de queda',
+    "#a8a29e", "pes_barro", "Gigante com os pés de barro! Mandou bem nos grupos, desmoronou no mata-mata. Mín. 4 jogos eliminatórios.");
+
+  h += _dCard("🤝", "Diplomata",
+    jogosEmpate.length === 0 ? '—' : (_diplomataArr ? _tieName(_diplomataArr) : '—'),
+    jogosEmpate.length === 0 ? '— (sem empates)' : (!_diplomataArr || destDiplomata.bestScore === 0 ? '—' : destDiplomata.bestScore + ' empates acertados'),
+    "#7dd3fc", "diplomata", "Mestre do equilíbrio! Quem mais acertou jogos que terminaram empatados de verdade.");
+
+  h += _dCard("⚔️", "Gladiador",
+    jogosSemEmpate.length === 0 ? '—' : (_gladiadorArr ? _tieName(_gladiadorArr) : '—'),
+    jogosSemEmpate.length === 0 ? '— (sem decisivos)' : (!_gladiadorArr || destGladiador.bestScore === 0 ? '—' : destGladiador.bestScore + ' vencedores acertados'),
+    "#ef4444", "gladiador", "Sangue de gladiador! Quem mais acertou o lado vencedor em jogos sem empate.");
+
+  h += _dCard("🐉", "Dragão Adormecido",
+    !_dragaoArr ? '—' : _tieName(_dragaoArr),
+    !_dragaoArr ? '— (< 4 jogos elim.)' : '+' + (destDragao.bestScore * 100).toFixed(1) + '% de melhora',
+    "#22d3ee", "dragao_adormecido", "Estava quieto nos grupos, acordou no mata-mata e virou o jogo! Mín. 4 jogos eliminatórios.");
+
+  h += _dCard("🐔", "Frangueiro",
+    jogosFeitos.length < 10 ? '—' : (_franqueiroArr ? _tieName(_franqueiroArr) : '—'),
+    jogosFeitos.length < 10 ? '— (< 10 jogos)' : (!_franqueiroArr ? '—' : destFrangueiro.bestScore.toFixed(2) + ' gols dist./jogo'),
+    "#f97316", "frangueiro", "Sempre longe da realidade! Maior média de distância entre o saldo apostado e o real. Mín. 10 jogos.");
+
+  h += _dCard("👼", "Pé de Anjo",
+    jogosFeitos.length < 10 ? '—' : (_peAnjoArr ? _tieName(_peAnjoArr) : '—'),
+    jogosFeitos.length < 10 ? '— (< 10 jogos)' : (!_peAnjoArr ? '—' : destPeAnjo.bestScore.toFixed(2) + ' gols dist./jogo'),
+    "#34d399", "pe_anjo", "Toque divino! Mesmo errando o placar, fica colado no saldo real de gols. Precisão de craque. Mín. 10 jogos.");
+
+  h += _dCard("🍀", "Bilhete Premiado",
+    !_loteriaArr ? '—' : _tieName(_loteriaArr),
+    !_loteriaArr ? '— (sem acertos exatos)' : _loteriaSub,
+    "#fbbf24", "bilhete_premiado", "Acertou o inacertável! Cravou um placar exato que o modelo Dixon-Coles considerava quase impossível.");
+
+  h += _dCard("🙃", "Campeão do Avesso",
+    jogosFeitos.length === 0 ? '—' : (_demogorgonArr ? _tieName(_demogorgonArr) : '—'),
+    jogosFeitos.length === 0 ? '—' : (!_demogorgonArr || destDemogorgon.bestScore === 0 ? '—' : destDemogorgon.bestScore.toFixed(1) + ' pts invertidos'),
+    "#c084fc", "campeao_avesso", "Bem-vindo ao Mundo Invertido! Pontuação recalculada como se os resultados fossem espelhados: o placar do mandante vira do visitante e vice-versa. O campeão de cabeça pra baixo.");
+
+  h += _dCard("👯", "Gêmeos",
+    _gemeosNomes || '—',
+    !_gemeosNomes ? '— (< 5 jogos comuns)' : 'dist. média ' + gemeosBest.dist.toFixed(2),
+    "#a78bfa", "gemeos", "Quase telepatia! A dupla com os palpites mais parecidos da Copa inteira. Parece que combinaram — mas juram que não.");
+
+  h += _dCard("🧲", "Polos Opostos",
+    _polosNomes || '—',
+    !_polosNomes ? '— (< 5 jogos comuns)' : 'dist. média ' + polosBest.dist.toFixed(2),
+    "#f43f5e", "polos_opostos", "Nunca concordaram em nada! A dupla mais divergente da Copa inteira. Ou um estava certo... ou o outro.");
+
+  h += _dCard("🎙️", "Técnico da Seleção",
+    jogosBRA.length === 0 ? '—' : (_tecnicoArr ? _tieName(_tecnicoArr) : '—'),
+    jogosBRA.length === 0 ? '— (sem jogos BRA)' : (!_tecnicoArr || destTecnico.bestScore === 0 ? '—' : destTecnico.bestScore.toFixed(1) + ' pts jogos BRA'),
+    "#009c3b", "tecnico_selecao", "Escalou certo quando o Brasil entrou em campo! O apostador que mais pontuou nos jogos da Seleção.");
+
+  h += _dCard("🪓", "Matador de Canarinho",
+    _matadorArr ? _tieName(_matadorArr) : '—',
+    !_matadorArr || destMatador.bestScore === 0 ? '—' : destMatador.bestScore + ' pts contra BRA',
+    "#dc2626", "matador_canarinho", "Carrasco verde e amarelo! Acumulou dano apostando contra o Brasil: derrota = 3 pts, empate = 2 pts.");
+
+  h += _dCard("🏆", "Faro de Campeão",
+    _faroArr ? _tieName(_faroArr) : '—',
+    !_faroArr || destFaro.bestScore === 0 ? '— (sem especiais)' : destFaro.bestScore + ' pts especiais',
+    "#fbbf24", "faro_campeao", "Aposta especial impecável! Quem mais pontuou nos palpites de campeão, vice e terceiro colocado.");
+
   h += '</div>';
 
 
@@ -1021,7 +1240,7 @@ window.renderEstatisticas = function () {
 
 
   // OTIMIZAÇÃO: Render cards imediatamente, defer tabela + HtH para o próximo frame
-  // Isso faz os 28 cards aparecerem instantaneamente no mobile.
+  // Isso faz os 42 cards aparecerem instantaneamente no mobile.
   h += '<div id="stat-table-deferred"><div class="card" style="text-align:center;padding:20px;color:var(--texto2)"><div class="spinner" style="margin:0 auto 8px"></div>Carregando tabela avançada...</div></div>';
   h += '<div id="stat-hth-deferred"></div>';
 
@@ -1038,7 +1257,7 @@ window.renderEstatisticas = function () {
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
-// DEFERRED: Tabela Avançada + Head-to-Head (renderizados após os 28 cards)
+// DEFERRED: Tabela Avançada + Head-to-Head (renderizados após os 42 cards)
 // Otimização: libera o thread principal para que os cards apareçam instantaneamente
 // ══════════════════════════════════════════════════════════════════════════════
 function _renderStatsTabelaDeferred(el, res, apos, pals, esp) {
@@ -1373,7 +1592,21 @@ window.CARD_CONFIGS = {
   conservador:   { icon: '💤', label: 'Conservador',           desc: 'Maria vai com as outras! Quem mais vezes escolheu a direção de resultado (vitória 1, empate, vitória 2) que concentrou pelo menos 50% de todos os palpites do grupo naquela rodada.', getScore: (r,c) => c.conservScores[r.participante.id] || 0,        higherIsWinner: true,  isGoodCard: true,  format: v => v + 'x consenso' },
   anarquista:    { icon: '🎲', label: 'Anarquista',            desc: 'Rebelde sem causa! Quem mais se distanciou do placar consensual (mais votado) do grupo. Calculado somando a distância absoluta do chute em relação ao top placar: |(chute_home − chute_away) − (top_home − top_away)| dividido pelas apostas.', getScore: (r,c) => { const id = r.participante.id; return (c.anarqJogos[id] || 0) >= 3 ? (c.anarqScores[id] / c.anarqJogos[id]) : 0; }, higherIsWinner: true, isGoodCard: true, format: v => v.toFixed(1) + ' dist.', filterFn: s => s > 0 },
   metronomo:     { icon: '⚖️', label: 'Metrônomo',             desc: 'Reloginho suíço! O pontuador mais regular rodada após rodada. Calculado pelo desvio padrão (variação em torno da média) dos pontos obtidos por jogo. Menor desvio padrão indica regularidade extrema (mínimo 10 jogos).', getScore: (r,c) => c.dps[r.participante.id] ?? Infinity,         higherIsWinner: false, isGoodCard: true,  format: v => 'σ ' + v.toFixed(2), filterFn: s => s !== Infinity },
-  lanterninha:   { icon: '🕯️', label: 'Lanterninha',           desc: 'Farol de cauda! Quem está segurando a lanterna da Copa com o menor total de pontos acumulados na classificação geral. O importante é participar e torcer!', getScore: (r,c) => r.stats.total,                                    higherIsWinner: false, isGoodCard: false, format: v => v.toFixed(1) + ' pts' }
+  lanterninha:   { icon: '🕯️', label: 'Lanterninha',           desc: 'Farol de cauda! Quem está segurando a lanterna da Copa com o menor total de pontos acumulados na classificação geral. O importante é participar e torcer!', getScore: (r,c) => r.stats.total,                                    higherIsWinner: false, isGoodCard: false, format: v => v.toFixed(1) + ' pts' },
+  campeao_avesso:{ icon: '🙃', label: 'Campeão do Avesso',   desc: 'Bem-vindo ao Mundo Invertido! Aqui a pontuação é recalculada como se os resultados oficiais fossem espelhados: o placar do mandante vira do visitante e vice-versa. Se o jogo terminou 1×0, conta como se tivesse sido 0×1. Quem seria o campeão se a Copa fosse de cabeça pra baixo?', getScore: (r,c) => c.demogorgonScores[r.participante.id] || 0, higherIsWinner: true, isGoodCard: true, format: v => v.toFixed(1) + ' pts' },
+  gemeos:        { icon: '👯', label: 'Gêmeos',               desc: 'Quase telepatia! A dupla com os palpites mais parecidos da Copa inteira. Calculado comparando todos os pares possíveis de apostadores, somando a distância absoluta entre cada palpite (|golsA − golsB| para mandante e visitante) e dividindo pelo número de jogos em comum (mínimo 5 jogos apostados em comum). Parece que combinaram — mas juram que não.', getScore: (r,c) => c.gemeosPerPerson[r.participante.id] ?? Infinity, higherIsWinner: false, isGoodCard: true, format: v => 'dist. ' + v.toFixed(2), filterFn: s => s !== Infinity, customRender: (cache) => { const pairs = cache.gemeosPairs || []; if (!pairs.length) return null; let h = ''; pairs.forEach((p, i) => { const n1 = p.a1.apelido || p.a1.nome, n2 = p.a2.apelido || p.a2.nome; const bg = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,.02)'; const posColor = i < 3 ? ['#fbbf24','#c0c0c0','#cd7f32'][i] : 'var(--texto2)'; h += '<tr style="background:' + bg + '"><td style="text-align:center;padding:7px 6px;font-weight:800;color:' + posColor + '">' + (i+1) + '</td><td style="padding:7px 6px;font-weight:600;color:#fff;font-size:.76rem">' + n1 + ' <span style="color:var(--texto2)">&</span> ' + n2 + '</td><td style="text-align:right;padding:7px 6px;font-weight:700;color:var(--verde-light);white-space:nowrap">dist. ' + p.dist.toFixed(2) + '</td><td style="text-align:right;padding:7px 6px;color:var(--texto2)">' + p.nComum + ' jogos</td></tr>'; }); return h; } },
+  polos_opostos: { icon: '🧲', label: 'Polos Opostos',        desc: 'Nunca concordaram em nada! A dupla mais divergente da Copa inteira. Calculado da mesma forma que Gêmeos, mas buscando a maior distância média entre palpites ao invés da menor. Se um apostava em goleada, o outro chutava empate. Ou um estava certo… ou o outro (mínimo 5 jogos em comum).', getScore: (r,c) => c.polosPerPerson[r.participante.id] ?? -1, higherIsWinner: true, isGoodCard: true, format: v => 'dist. ' + v.toFixed(2), filterFn: s => s >= 0, customRender: (cache) => { const pairs = cache.polosPairs || []; if (!pairs.length) return null; let h = ''; pairs.forEach((p, i) => { const n1 = p.a1.apelido || p.a1.nome, n2 = p.a2.apelido || p.a2.nome; const bg = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,.02)'; const posColor = i < 3 ? ['#fbbf24','#c0c0c0','#cd7f32'][i] : 'var(--texto2)'; h += '<tr style="background:' + bg + '"><td style="text-align:center;padding:7px 6px;font-weight:800;color:' + posColor + '">' + (i+1) + '</td><td style="padding:7px 6px;font-weight:600;color:#fff;font-size:.76rem">' + n1 + ' <span style="color:var(--texto2)">&</span> ' + n2 + '</td><td style="text-align:right;padding:7px 6px;font-weight:700;color:var(--verde-light);white-space:nowrap">dist. ' + p.dist.toFixed(2) + '</td><td style="text-align:right;padding:7px 6px;color:var(--texto2)">' + p.nComum + ' jogos</td></tr>'; }); return h; } },
+  pes_barro:     { icon: '🗿', label: 'Pés de Barro',         desc: 'Gigante com os pés de barro! Quem mandou muito bem na fase de grupos mas desmoronou no mata-mata. Calculado comparando o aproveitamento percentual (pontos obtidos ÷ pontos máximos possíveis) de cada fase. A maior diferença positiva (grupos − eliminatórias) vence. Mínimo 4 jogos eliminatórios para garantir significância.', getScore: (r,c) => c.pesBarroScores[r.participante.id] ?? -Infinity, higherIsWinner: true, isGoodCard: false, format: v => (v * 100).toFixed(1) + '% queda', filterFn: s => s !== -Infinity && s > 0 },
+  dragao_adormecido:{ icon: '🐉', label: 'Dragão Adormecido', desc: 'Estava hibernando nos grupos e acordou furioso no mata-mata! Oposto do Pés de Barro — quem melhorou o aproveitamento percentual na passagem da fase de grupos para as eliminatórias. A maior diferença positiva (eliminatórias − grupos) vence. Mínimo 4 jogos eliminatórios.', getScore: (r,c) => c.dragaoScores[r.participante.id] ?? -Infinity, higherIsWinner: true, isGoodCard: true, format: v => '+' + (v * 100).toFixed(1) + '%', filterFn: s => s !== -Infinity && s > 0 },
+  bilhete_premiado:{ icon: '🍀', label: 'Bilhete Premiado',   desc: 'Loteria premiada! Cravou o placar exato de um jogo que o modelo Dixon-Coles considerava quase impossível. Calculado encontrando, dentre todos os acertos de placar exato do apostador, aquele cuja probabilidade estimada pelo modelo era a mais baixa. Quanto menor a probabilidade, mais impressionante o acerto.', getScore: (r,c) => c.loteriaScores[r.participante.id] || 0, higherIsWinner: true, isGoodCard: true, format: (v,r,c) => { const d = c.loteriaDetalhes[r.participante.id]; return d ? (d.prob * 100).toFixed(1) + '% (' + d.placar + ')' : '—'; }, filterFn: s => s > 0 },
+  tecnico_selecao:{ icon: '🎙️', label: 'Técnico da Seleção',  desc: 'Escalou certo quando o Brasil entrou em campo! Soma dos pontos obtidos exclusivamente nos jogos em que a Seleção Brasileira participou. Quem mais acumulou pontos nas partidas do Brasil é o verdadeiro técnico de sofá deste bolão.', getScore: (r,c) => c.tecnicoScores[r.participante.id] || 0, higherIsWinner: true, isGoodCard: true, format: v => v.toFixed(1) + ' pts', filterFn: (s,r,c) => c.jogosBRA.length > 0 },
+  matador_canarinho:{ icon: '🪓', label: 'Matador de Canarinho', desc: 'Carrasco verde e amarelo! Acumulou mais dano apostando contra o Brasil em todos os jogos do Brasil no cronograma. Cada palpite de derrota brasileira soma 3 pontos de dano, cada empate soma 2 pontos. Considera todos os jogos apostados, independente de já terem resultado oficial.', getScore: (r,c) => c.matadorScores[r.participante.id] || 0, higherIsWinner: true, isGoodCard: false, format: v => v + ' pts dano' },
+  discreto:      { icon: '🥷', label: 'Discreto',              desc: 'Mestre da invisibilidade! Passou a Copa inteira no anonimato: nunca apareceu no Top 5 nem caiu para o Bottom 5 do ranking em nenhuma rodada. Entre os elegíveis, quem gravitou mais perto do centro exato da tabela vence. Calculado pela distância média da posição central ao longo de todos os snapshots (mínimo 15 jogos e 11 apostadores).', getScore: (r,c) => c.discretoScores[r.participante.id] ?? Infinity, higherIsWinner: false, isGoodCard: true, format: v => v.toFixed(2) + ' dist.', filterFn: s => s !== Infinity },
+  faro_campeao:  { icon: '🏆', label: 'Faro de Campeão',      desc: 'Faro infalível! Quem mais pontuou com os palpites especiais de campeão, vice-campeão e terceiro colocado. Calculado somando os pontos de bônus obtidos por acertar as seleções finalistas do torneio. Cada acerto rende pontos configurados nas regras do bolão.', getScore: (r,c) => c.faroScores[r.participante.id] || 0, higherIsWinner: true, isGoodCard: true, format: v => v + ' pts', filterFn: s => s > 0 },
+  diplomata:     { icon: '🤝', label: 'Diplomata',             desc: 'Mestre do equilíbrio! Quem mais vezes acertou que um jogo terminaria empatado quando de fato terminou em empate. Calculado contando quantas vezes o apostador palpitou empate (gols iguais) E o jogo real também terminou empatado. Só jogos já encerrados contam.', getScore: (r,c) => c.diplomataScores[r.participante.id] || 0, higherIsWinner: true, isGoodCard: true, format: v => v + ' empates', filterFn: (s,r,c) => c.jogosEmpate.length > 0 },
+  gladiador:     { icon: '⚔️', label: 'Gladiador',             desc: 'Sangue de gladiador! Quem mais vezes acertou o lado vencedor em jogos que tiveram um vencedor definido (sem empate). Calculado contando os jogos onde o apostador palpitou vitória do mesmo lado que realmente venceu, excluindo jogos empatados.', getScore: (r,c) => c.gladiadorScores[r.participante.id] || 0, higherIsWinner: true, isGoodCard: true, format: v => v + ' acertos', filterFn: (s,r,c) => c.jogosSemEmpate.length > 0 },
+  frangueiro:    { icon: '🐔', label: 'Frangueiro',            desc: 'Sempre longe da realidade! Quem teve a maior média de distância absoluta entre o saldo de gols apostado e o saldo real. Calculado por |(palpH − palpA) − (realH − realA)| a cada jogo, somado e dividido pelo total de jogos apostados (mínimo 10 jogos).', getScore: (r,c) => c.franqueiroScores[r.participante.id] ?? -1, higherIsWinner: true, isGoodCard: false, format: v => v.toFixed(2) + ' dist./jogo', filterFn: s => s >= 0 },
+  pe_anjo:       { icon: '👼', label: 'Pé de Anjo',            desc: 'Toque divino nos palpites! Mesmo quando errou o placar, ficou colado no saldo real de gols. Calculado pela menor média de |(palpH − palpA) − (realH − realA)| por jogo. Precisão cirúrgica no feeling do resultado, mesmo sem cravar o placar exato (mínimo 10 jogos).', getScore: (r,c) => c.franqueiroScores[r.participante.id] ?? Infinity, higherIsWinner: false, isGoodCard: true, format: v => v.toFixed(2) + ' dist./jogo', filterFn: s => s !== Infinity }
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1437,7 +1670,8 @@ window.abrirModalCard = function(key) {
   h += '<div style="font-size:.7rem;color:var(--texto2);max-width:100%;margin:4px auto 0">' + cfg.desc + '</div>';
   h += '</div>';
 
-  if (!top15.length) {
+  const _hasCustomData = cfg.customRender ? cfg.customRender(cache) : null;
+  if (!top15.length && !_hasCustomData) {
     h += '<div style="text-align:center;padding:24px;color:var(--texto2);font-size:.8rem">Sem dados suficientes para este card.</div>';
   } else {
     // Tabela Top 15
@@ -1445,12 +1679,16 @@ window.abrirModalCard = function(key) {
     h += '<table style="width:100%;border-collapse:collapse;font-size:.76rem">';
     h += '<thead><tr>';
     h += '<th style="text-align:center;padding:8px 6px;border-bottom:1px solid var(--borda);color:var(--texto2);font-size:.65rem;width:32px">#</th>';
-    h += '<th style="text-align:left;padding:8px 6px;border-bottom:1px solid var(--borda);color:var(--texto2);font-size:.65rem">Apelido</th>';
+    h += '<th style="text-align:left;padding:8px 6px;border-bottom:1px solid var(--borda);color:var(--texto2);font-size:.65rem">' + (cfg.customRender ? 'Dupla' : 'Apelido') + '</th>';
     h += '<th style="text-align:right;padding:8px 6px;border-bottom:1px solid var(--borda);color:var(--texto2);font-size:.65rem">Métrica</th>';
-    h += '<th style="text-align:right;padding:8px 6px;border-bottom:1px solid var(--borda);color:var(--texto2);font-size:.65rem;width:50px">Pts</th>';
+    h += '<th style="text-align:right;padding:8px 6px;border-bottom:1px solid var(--borda);color:var(--texto2);font-size:.65rem;width:50px">' + (cfg.customRender ? 'Jogos' : 'Pts') + '</th>';
     h += '</tr></thead><tbody>';
 
     let pos = 1;
+    // Check if card has custom pair-based rendering (Gêmeos / Polos)
+    if (_hasCustomData) {
+      h += _hasCustomData;
+    } else {
     for (let i = 0; i < top15.length; i++) {
       const c = top15[i];
       if (i > 0 && Math.abs(c.score - top15[i-1].score) > 0.0001) pos = i + 1;
@@ -1472,11 +1710,16 @@ window.abrirModalCard = function(key) {
       h += '<td style="text-align:right;padding:7px 6px;color:var(--texto2)">' + c.r.stats.total.toFixed(1) + '</td>';
       h += '</tr>';
     }
+    }
     h += '</tbody></table></div>';
 
     // Legenda
     h += '<div style="font-size:.6rem;color:var(--texto2);text-align:center;margin-top:10px;opacity:.7">';
-    h += 'Desempate: ' + (cfg.isGoodCard ? 'mais pontos → melhor posição geral' : 'menos pontos → pior posição geral');
+    if (cfg.customRender) {
+      h += 'Ordenado por distância média de palpites';
+    } else {
+      h += 'Desempate: ' + (cfg.isGoodCard ? 'mais pontos → melhor posição geral' : 'menos pontos → pior posição geral');
+    }
     h += '</div>';
   }
 

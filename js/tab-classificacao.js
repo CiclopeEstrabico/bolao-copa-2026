@@ -1,3 +1,16 @@
+window._rankSortCol = 'pos';
+window._rankSortDir = 'asc';
+
+window._sortRanking = function(col) {
+  if (window._rankSortCol === col) {
+    window._rankSortDir = window._rankSortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    window._rankSortCol = col;
+    window._rankSortDir = (col === 'apostador') ? 'asc' : 'desc';
+  }
+  window.renderClassificacao();
+};
+
 window.renderClassificacao = function () {
   const el = document.getElementById("aba-classificacao");
   if (!el) return;
@@ -83,6 +96,29 @@ window.renderClassificacao = function () {
     else rankingComModelo.splice(insertIdx, 0, itemModelo);
   }
 
+  // --- SORT ---
+  const sortCol = window._rankSortCol || 'pos';
+  const sortDir = window._rankSortDir || 'asc';
+  if (sortCol !== 'pos') {
+    rankingComModelo = [...rankingComModelo].sort((a, b) => {
+      let cmp = 0;
+      const stA = a.stats, stB = b.stats;
+      switch (sortCol) {
+        case 'apostador':
+          const nA = a.participante.apelido || a.participante.nome || '';
+          const nB = b.participante.apelido || b.participante.nome || '';
+          cmp = nA.localeCompare(nB, 'pt-BR');
+          break;
+        case 'pts':    cmp = stA.total - stB.total; break;
+        case 'res':    cmp = stA.acertos_resultado - stB.acertos_resultado; break;
+        case 'bonus':  cmp = stA.acertos_bonus1 - stB.acertos_bonus1; break;
+        case 'placar': cmp = stA.acertos_placar_exato - stB.acertos_placar_exato; break;
+        case 'alto':   cmp = stA.acertos_placar_alto - stB.acertos_placar_alto; break;
+      }
+      return sortDir === 'desc' ? -cmp : cmp;
+    });
+  }
+
   // Jogos realizados recentes (ultimos 5) — mais antigo primeiro, mais recente à direita
   const jogosFeitosIds = (window.SCHEDULE || []).filter(j => res[j.id]?.homeGoals !== undefined)
     .sort((a, b) => new Date(a.utc) - new Date(b.utc)).slice(-5).map(j => j.id);
@@ -103,15 +139,23 @@ window.renderClassificacao = function () {
   // Denominador individual: pontos que realmente estiveram em jogo (bônus real por jogo)
   const maxPtsGeral = calcularMaxPontosPossiveis(res);
 
+  // Sort arrow helper
+  const _sArr = (col) => {
+    if (sortCol !== col) return ' <span style="opacity:.3;font-size:.5rem">⇅</span>';
+    return sortDir === 'asc' ? ' <span style="color:var(--verde-light);font-size:.5rem">▲</span>' : ' <span style="color:var(--verde-light);font-size:.5rem">▼</span>';
+  };
+
   // Tabela ranking
   const _isMobileClass = window.innerWidth <= 600;
   h += '<div class="card card-sem-padding"><div class="compilacao-wrap rank-table-wrap"><table class="tabela-detalhe rank-table">';
-  h += '<thead><tr><th style="width:36px">Pos</th><th class="col-apostador" style="text-align:left;position:sticky;left:0;background:var(--card);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1)">Apostador</th>';
-  h += '<th title="Pontos Totais" class="col-stat-rank col-stat-pts" style="text-align:left;padding-left:6px">🏆 Pontos</th>';
-  h += '<th title="Todos os resultados corretos" class="col-stat-rank" style="text-align:left;padding-left:6px">✓ Results</th>';
-  h += '<th title="Resultados que renderam Bônus+1" class="col-stat-rank" style="text-align:left;padding-left:6px">✨ Bônus+1</th>';
-  h += '<th title="Placares exatos com menos de 4 gols" class="col-stat-rank" style="text-align:left;padding-left:6px">🎯 Placar+3</th>';
-  h += '<th title="Placares exatos com 4 ou mais gols" class="col-stat-rank" style="text-align:left;padding-left:6px">🔥 Placar+5</th>';
+  h += '<thead><tr>';
+  h += '<th style="width:36px;cursor:pointer" onclick="window._sortRanking(\'pos\')">Pos' + _sArr('pos') + '</th>';
+  h += '<th class="col-apostador" style="text-align:left;position:sticky;left:0;background:var(--card);z-index:1;box-shadow:2px 0 5px rgba(0,0,0,0.1);cursor:pointer" onclick="window._sortRanking(\'apostador\')">Apostador' + _sArr('apostador') + '</th>';
+  h += '<th title="Pontos Totais" class="col-stat-rank col-stat-pts" style="text-align:left;padding-left:6px;cursor:pointer" onclick="window._sortRanking(\'pts\')">🏆 Pontos' + _sArr('pts') + '</th>';
+  h += '<th title="Todos os resultados corretos" class="col-stat-rank" style="text-align:left;padding-left:6px;cursor:pointer" onclick="window._sortRanking(\'res\')">✓ Results' + _sArr('res') + '</th>';
+  h += '<th title="Resultados que renderam Bônus+1" class="col-stat-rank" style="text-align:left;padding-left:6px;cursor:pointer" onclick="window._sortRanking(\'bonus\')">✨ Bônus+1' + _sArr('bonus') + '</th>';
+  h += '<th title="Placares exatos com menos de 4 gols" class="col-stat-rank" style="text-align:left;padding-left:6px;cursor:pointer" onclick="window._sortRanking(\'placar\')">🎯 Placar+3' + _sArr('placar') + '</th>';
+  h += '<th title="Placares exatos com 4 ou mais gols" class="col-stat-rank" style="text-align:left;padding-left:6px;cursor:pointer" onclick="window._sortRanking(\'alto\')">🔥 Placar+5' + _sArr('alto') + '</th>';
   h += '<th title="Últimos 5 jogos (esq=mais antigo → dir=mais recente). 🔥 Placar+5 · 🎯 Placar+3 · ✨ Resultado+Bônus · ✓ Resultado · ✗ Errou" style="text-align:center">Forma</th>';
   h += '</tr></thead><tbody>';
 
