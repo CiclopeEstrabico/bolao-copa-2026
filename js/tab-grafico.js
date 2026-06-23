@@ -2051,7 +2051,7 @@ window._graficoExportarJPG = function () {
   const PADDING_BOTTOM = 120; // espaço para nomes verticais
   const CHART_HEIGHT = 260;
   const BAR_WIDTH = Math.max(6, Math.min(28, Math.floor((Math.max(900, n * 14 + 40) - PADDING_LEFT - PADDING_RIGHT) / n - 1)));
-  const GAP = Math.max(1, Math.floor(4));
+  const GAP = 1;
   const TOTAL_W = Math.max(900, n * (BAR_WIDTH + GAP) + GAP + PADDING_LEFT + PADDING_RIGHT);
   const TOTAL_H = PADDING_TOP + CHART_HEIGHT + PADDING_BOTTOM;
 
