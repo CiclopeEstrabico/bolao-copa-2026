@@ -22,17 +22,31 @@
 
   /**
    * Checa se o target está dentro de um container com scroll horizontal ativo.
-   * Usado por ambos os swipe handlers para evitar interferência.
+   * Retorna o scrollable element ou null.
    */
-  function isInsideHScrollable(target, boundary) {
+  function findHScrollable(target, boundary) {
     let el = target;
     while (el && el !== boundary && el !== document.body) {
       try {
         const cs = getComputedStyle(el);
-        if ((cs.overflowX === "auto" || cs.overflowX === "scroll") && el.scrollWidth > el.clientWidth + 2) return true;
+        if ((cs.overflowX === "auto" || cs.overflowX === "scroll") && el.scrollWidth > el.clientWidth + 2) return el;
       } catch (e) { /* ignore */ }
       el = el.parentElement;
     }
+    return null;
+  }
+
+  /**
+   * Checa se um swipe na direção dada pode "escapar" de um scrollable container.
+   * Permite swipe-right (dx > 0, ir para tab anterior) se scrollLeft === 0.
+   * Permite swipe-left  (dx < 0, ir para próxima tab)  se scrollLeft está no máximo.
+   */
+  function canEscapeScroll(scrollEl, dx) {
+    if (!scrollEl) return true;
+    const sl = Math.round(scrollEl.scrollLeft);
+    const maxScroll = scrollEl.scrollWidth - scrollEl.clientWidth;
+    if (dx > 0 && sl <= 1) return true;      // swiping right, table not scrolled
+    if (dx < 0 && sl >= maxScroll - 1) return true;  // swiping left, table at end
     return false;
   }
 
@@ -62,7 +76,7 @@
 
     box.addEventListener("touchstart", function (e) {
       if (e.touches.length > 1) { tracking = false; return; }
-      if (isInsideHScrollable(e.target, box)) { tracking = false; return; }
+      if (findHScrollable(e.target, box)) { tracking = false; return; }
 
       tracking = true;
       startX = e.touches[0].clientX;
@@ -128,6 +142,7 @@
     let tracking = false;
     let decided = false;   // já decidimos se é swipe horizontal ou scroll vertical
     let isHSwipe = false;  // se decidido, é horizontal?
+    let hScrollEl = null;  // container com scroll horizontal (se houver)
 
     // Checa se um modal está aberto (prognose, apostador, stat, etc)
     function isModalOpen() {
@@ -149,8 +164,8 @@
       // Multi-touch
       if (e.touches.length > 1) { tracking = false; return; }
 
-      // Se está dentro de um container com scroll horizontal, não rastreia
-      if (isInsideHScrollable(e.target, document.body)) { tracking = false; return; }
+      // Guarda o scrollable element (se existir) para decidir depois
+      hScrollEl = findHScrollable(e.target, document.body);
 
       tracking = true;
       decided = false;
@@ -178,7 +193,14 @@
           return;
         }
         if (dx > dy * 1.5 && dx > 12) {
-          // Gesto horizontal → swipe de aba
+          // Gesto horizontal → swipe de aba (se não estivermos num scrollable,
+          // ou se o scrollable permite escapar nesta direção)
+          const signedDx = cx - startX;
+          if (hScrollEl && !canEscapeScroll(hScrollEl, signedDx)) {
+            // Scrollable ainda tem espaço nesta direção — abortar swipe
+            tracking = false;
+            return;
+          }
           decided = true;
           isHSwipe = true;
         }
