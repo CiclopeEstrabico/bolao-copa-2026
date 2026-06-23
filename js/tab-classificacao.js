@@ -99,7 +99,9 @@ window.renderClassificacao = function () {
   // --- SORT ---
   const sortCol = window._rankSortCol || 'pos';
   const sortDir = window._rankSortDir || 'asc';
-  if (sortCol !== 'pos') {
+  if (sortCol === 'pos' && sortDir === 'desc') {
+    rankingComModelo = [...rankingComModelo].reverse();
+  } else if (sortCol !== 'pos') {
     rankingComModelo = [...rankingComModelo].sort((a, b) => {
       let cmp = 0;
       const stA = a.stats, stB = b.stats;
