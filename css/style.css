@@ -149,7 +149,7 @@ body {
   border-bottom-color: var(--verde-light)
 }
 
-/* Desktop/landscape: Ã­cone + texto lado a lado */
+/* Desktop/landscape: ÃƒÂ­cone + texto lado a lado */
 .tab-btn {
   display: inline-flex;
   align-items: center;
@@ -171,7 +171,7 @@ body {
   display: none
 }
 
-/* SIMULAÃ‡ÃƒO - apenas badge pequeno */
+/* SIMULAÃƒâ€¡ÃƒÆ’O - apenas badge pequeno */
 .badge-sim {
   display: inline-flex;
   align-items: center;
@@ -1054,7 +1054,7 @@ select {
   box-shadow: 1px 0 0 0 #292d35, 2px 0 5px rgba(0, 0, 0, 0.1);
 }
 
-/* Sticky vertical para o cabeÃ§alho da compilaÃ§Ã£o â€” top:0 porque o scroll Ã© interno ao compilacao-wrap */
+/* Sticky vertical para o cabeÃƒÂ§alho da compilaÃƒÂ§ÃƒÂ£o Ã¢â‚¬â€ top:0 porque o scroll ÃƒÂ© interno ao compilacao-wrap */
 @media (min-width: 601px) {
   .compilacao-table thead th {
     position: sticky !important;
@@ -1085,7 +1085,7 @@ select {
 
 @media (max-width: 600px) {
 
-  /* No mobile, o JS (mobile-sticky-header) cuida do cabeÃ§alho fixo.
+  /* No mobile, o JS (mobile-sticky-header) cuida do cabeÃƒÂ§alho fixo.
    * Por isso desativamos o posicionamento sticky nativo e removemos as bordas nesta etapa. */
   .compilacao-table thead th {
     position: relative !important;
@@ -1121,7 +1121,7 @@ select {
 }
 
 
-/* â”€â”€ Scrollbar horizontal da compilaÃ§Ã£o â€” PREMIUM, em todos os breakpoints â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Scrollbar horizontal da compilaÃƒÂ§ÃƒÂ£o Ã¢â‚¬â€ PREMIUM, em todos os breakpoints Ã¢â€â‚¬Ã¢â€â‚¬ */
 
 /* Firefox */
 .compilacao-wrap,
@@ -1131,11 +1131,11 @@ select {
 }
 
 /* WebKit/Blink (Chrome, Safari, Edge, iOS Safari) */
-/* Barra superior E inferior sÃ£o a mesma scrollbar horizontal â€” height controla a espessura */
+/* Barra superior E inferior sÃƒÂ£o a mesma scrollbar horizontal Ã¢â‚¬â€ height controla a espessura */
 .compilacao-wrap::-webkit-scrollbar,
 .compilacao-top-scroll::-webkit-scrollbar {
   height: 8px;
-  /* espessura generosa â€” bem visÃ­vel e clicÃ¡vel */
+  /* espessura generosa Ã¢â‚¬â€ bem visÃƒÂ­vel e clicÃƒÂ¡vel */
 }
 
 .compilacao-wrap::-webkit-scrollbar-track,
@@ -1151,7 +1151,7 @@ select {
   background: linear-gradient(90deg, var(--verde-dark), var(--verde-light));
   border-radius: 99px;
   border: 2px solid rgba(13, 17, 23, .6);
-  /* "padding" visual â€” deixa o thumb mais fino que o track */
+  /* "padding" visual Ã¢â‚¬â€ deixa o thumb mais fino que o track */
   box-shadow: 0 0 6px rgba(0, 200, 120, .35);
   /* brilho verde sutil */
 }
@@ -1197,7 +1197,7 @@ select {
   font-weight: 700
 }
 
-/* Suprimir borda e sombra nos TH clonados dentro do frozen-thead (o container jÃ¡ tem a borda verde) */
+/* Suprimir borda e sombra nos TH clonados dentro do frozen-thead (o container jÃƒÂ¡ tem a borda verde) */
 .frozen-thead .compilacao-table thead th,
 .frozen-thead .stat-full-table thead th,
 .frozen-thead .rank-table thead th,
@@ -1331,7 +1331,7 @@ select {
   color: #fff
 }
 
-/* Full-height modal content wrapper â€” fills remaining modal space */
+/* Full-height modal content wrapper Ã¢â‚¬â€ fills remaining modal space */
 .modal-content-fill {
   flex: 1;
   display: flex;
@@ -1652,7 +1652,7 @@ select {
 }
 
 
-/* â”€â”€ CLASSIFICAÃ‡ÃƒO â€” tabela rank â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ CLASSIFICAÃƒâ€¡ÃƒÆ’O Ã¢â‚¬â€ tabela rank Ã¢â€â‚¬Ã¢â€â‚¬ */
 .tabela-detalhe {
   border-collapse: collapse
 }
@@ -1662,7 +1662,7 @@ select {
   vertical-align: middle
 }
 
-/* rank-table: desktop â€” ocupa tela inteira, colunas stat auto-distribuÃ­das */
+/* rank-table: desktop Ã¢â‚¬â€ ocupa tela inteira, colunas stat auto-distribuÃƒÂ­das */
 .rank-table {
   width: 100%;
   table-layout: auto
@@ -1748,7 +1748,7 @@ select {
   display: block
 }
 
-/* RESPONSIVE â€” mobile portrait only */
+/* RESPONSIVE Ã¢â‚¬â€ mobile portrait only */
 @media(max-width:600px) and (orientation:portrait) {
 
   /* Header compacto: logo menor + padding reduzido */
@@ -1760,7 +1760,7 @@ select {
     height: 32px !important
   }
 
-  /* Tabs: Ã­cone + micro-label, distribuÃ­dos igualmente */
+  /* Tabs: ÃƒÂ­cone + micro-label, distribuÃƒÂ­dos igualmente */
   .tabs-wrap {
     top: 45px;
     overflow-x: unset
@@ -1806,7 +1806,7 @@ select {
     color: var(--verde-light)
   }
 
-  /* Modelo subtexto: mobile mostra sÃ³ 'referÃªncia' */
+  /* Modelo subtexto: mobile mostra sÃƒÂ³ 'referÃƒÂªncia' */
   .modelo-subtexto-full {
     display: none
   }
@@ -1837,7 +1837,7 @@ select {
     display: none !important
   }
 
-  /* BotÃ£o Apostar flutuante no header (mobile portrait only) */
+  /* BotÃƒÂ£o Apostar flutuante no header (mobile portrait only) */
   .header-apostar-mob {
     display: flex;
     align-items: center;
@@ -1903,7 +1903,7 @@ select {
     padding: 14px
   }
 
-  /* Jogo row: layout ajustado para liberar espaÃ§o no mobile */
+  /* Jogo row: layout ajustado para liberar espaÃƒÂ§o no mobile */
   .jogo-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 86px minmax(0, 1fr) 30px;
@@ -2003,7 +2003,7 @@ select {
     max-width: 115px !important
   }
 
-  /* Coluna nome da classificaÃ§Ã£o: limitar a ~35% da largura original */
+  /* Coluna nome da classificaÃƒÂ§ÃƒÂ£o: limitar a ~35% da largura original */
   .col-apostador {
     width: 90px !important;
     min-width: 90px !important;
@@ -2110,7 +2110,7 @@ select {
     margin-right: auto;
   }
 
-  /* === ABA COMPILACAO â€” Desktop Full Width e Largura de Coluna === */
+  /* === ABA COMPILACAO Ã¢â‚¬â€ Desktop Full Width e Largura de Coluna === */
   body.aba-compilacao-ativa .main {
     max-width: 100% !important;
     padding-left: 16px;
@@ -2140,14 +2140,14 @@ select {
     width: 55px !important;
   }
 
-  /* === ABA GRAFICO â€” Desktop Full Width === */
+  /* === ABA GRAFICO Ã¢â‚¬â€ Desktop Full Width === */
   body.aba-grafico-ativa .main {
     max-width: 100% !important;
     padding-left: 16px;
     padding-right: 16px;
   }
 
-  /* === ABA CHAVES â€” bracket ocupa tela inteira e fases crescem uniformemente === */
+  /* === ABA CHAVES Ã¢â‚¬â€ bracket ocupa tela inteira e fases crescem uniformemente === */
   body.aba-tabela-ativa .main {
     max-width: 100% !important;
     padding-left: 8px;
@@ -2164,7 +2164,7 @@ select {
     min-width: 0;
   }
 
-  /* Final e 3Â° Lugar: cada card centralizado verticalmente no espaÃ§o das semis */
+  /* Final e 3Ã‚Â° Lugar: cada card centralizado verticalmente no espaÃƒÂ§o das semis */
   .bracket-coluna-final {
     justify-content: center;
   }
@@ -2221,7 +2221,7 @@ select {
   gap: 0
 }
 
-/* Quartas: 4 cards centered between 8 oitavas â€” space-around distributes evenly */
+/* Quartas: 4 cards centered between 8 oitavas Ã¢â‚¬â€ space-around distributes evenly */
 .bracket-coluna-qf {
   justify-content: space-around;
   gap: 0
@@ -2233,7 +2233,7 @@ select {
   gap: 0
 }
 
-/* Final + 3Â° lugar: 1 card each, centered between the 2 semis */
+/* Final + 3Ã‚Â° lugar: 1 card each, centered between the 2 semis */
 .bracket-coluna-final {
   justify-content: center;
   gap: 0
@@ -2304,7 +2304,7 @@ select {
   height: 8px
 }
 
-/* â”€â”€ Mobile compact bracket card â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Mobile compact bracket card Ã¢â€â‚¬Ã¢â€â‚¬ */
 .bracket-card-mob {
   cursor: pointer;
   background: var(--card2);
@@ -2361,7 +2361,7 @@ select {
   text-align: right
 }
 
-/* Inline sub-label for "3Â° Lugar" inside merged final column */
+/* Inline sub-label for "3Ã‚Â° Lugar" inside merged final column */
 .bracket-fase-label-inline {
   font-size: .5rem;
   font-weight: 700;
@@ -2372,7 +2372,7 @@ select {
   letter-spacing: .04em
 }
 
-/* â”€â”€ Mobile bracket layout: no horizontal scroll, all fits â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Mobile bracket layout: no horizontal scroll, all fits Ã¢â€â‚¬Ã¢â€â‚¬ */
 @media (max-width: 600px) {
   .bracket-scroll {
     overflow-x: hidden !important;
@@ -2416,7 +2416,7 @@ select {
 .card-sem-padding {
   padding: 0 !important;
   overflow: visible !important;
-  /* Permite que o sticky vertical funcione em toda a pÃ¡gina */
+  /* Permite que o sticky vertical funcione em toda a pÃƒÂ¡gina */
 }
 
 @media(min-width: 851px) {
@@ -2434,7 +2434,7 @@ select {
     overflow: visible !important;
   }
 
-  /* CabeÃ§alho da tabela de estatÃ­sticas fica sticky verticalmente no desktop (abaixo do header + tabs = 102px) */
+  /* CabeÃƒÂ§alho da tabela de estatÃƒÂ­sticas fica sticky verticalmente no desktop (abaixo do header + tabs = 102px) */
   .stat-full-table thead th {
     position: sticky !important;
     top: 102px !important;
@@ -2464,7 +2464,7 @@ select {
     box-shadow: none !important;
   }
 
-  /* CabeÃ§alho da tabela de classificaÃ§Ã£o fica sticky verticalmente no desktop (top = 102px) */
+  /* CabeÃƒÂ§alho da tabela de classificaÃƒÂ§ÃƒÂ£o fica sticky verticalmente no desktop (top = 102px) */
   .rank-table thead th {
     position: sticky !important;
     top: 102px !important;
@@ -2497,8 +2497,8 @@ select {
     /* clip permite que o sticky vertical se propague para a janela */
   }
 
-  /* CabeÃ§alho da tabela de estatÃ­sticas no mobile: NÃƒO usar sticky aqui (frozen-thead JS cuida).
-     Sem borda verde â€” ela vem do frozen-thead container no scroll. */
+  /* CabeÃƒÂ§alho da tabela de estatÃƒÂ­sticas no mobile: NÃƒÆ’O usar sticky aqui (frozen-thead JS cuida).
+     Sem borda verde Ã¢â‚¬â€ ela vem do frozen-thead container no scroll. */
   .stat-full-table thead th {
     position: relative !important;
     top: auto !important;
@@ -2556,8 +2556,8 @@ select {
     max-width: none !important;
   }
 
-  /* CabeÃ§alho da tabela de classificaÃ§Ã£o no mobile: NÃƒO usar sticky aqui (frozen-thead JS cuida).
-     Sem borda â€” ela vem do frozen-thead container no scroll. */
+  /* CabeÃƒÂ§alho da tabela de classificaÃƒÂ§ÃƒÂ£o no mobile: NÃƒÆ’O usar sticky aqui (frozen-thead JS cuida).
+     Sem borda Ã¢â‚¬â€ ela vem do frozen-thead container no scroll. */
   .rank-table thead th {
     position: relative !important;
     top: auto !important;
@@ -2604,7 +2604,7 @@ select {
 
 /* ===== POLISH VISUAL ===== */
 
-/* Mobile: jogo-col-home/away â€” texto truncado mas visÃ­vel */
+/* Mobile: jogo-col-home/away Ã¢â‚¬â€ texto truncado mas visÃƒÂ­vel */
 @media(max-width:600px) {
 
   .jogo-col-home>span,
@@ -2626,7 +2626,7 @@ select {
   border-bottom: 1px solid rgba(255, 255, 255, .08);
 }
 
-/* Simulado: linha com borda Ã¢mbar, SEM mudanÃ§a de fundo */
+/* Simulado: linha com borda ÃƒÂ¢mbar, SEM mudanÃƒÂ§a de fundo */
 .jogo-row.simulado {
   border-left: 3px solid var(--amber);
 }
@@ -2665,7 +2665,7 @@ select {
   padding: 3px 4px
 }
 
-/* Cards de estatÃ­stica */
+/* Cards de estatÃƒÂ­stica */
 .stat-highlight {
   background: linear-gradient(135deg, var(--fundo2), var(--card2));
   border: 1px solid var(--borda);
@@ -2689,7 +2689,7 @@ select {
   transform: translateY(-1px)
 }
 
-/* Compilacao: cÃ©lulas menores e mais legÃ­veis */
+/* Compilacao: cÃƒÂ©lulas menores e mais legÃƒÂ­veis */
 .compilacao-table th,
 .compilacao-table td {
   padding: 4px 5px;
@@ -2757,7 +2757,7 @@ select {
   white-space: nowrap
 }
 
-/* â”€â”€ RANK â€” valor + porcentagem nas colunas de stat â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ RANK Ã¢â‚¬â€ valor + porcentagem nas colunas de stat Ã¢â€â‚¬Ã¢â€â‚¬ */
 .stat-rank-cell {
   display: inline-flex;
   flex-direction: row;
@@ -2788,15 +2788,15 @@ details>summary::-webkit-details-marker {
 }
 
 details[open]>summary span:last-child {
-  content: "âˆ’";
+  content: "Ã¢Ë†â€™";
 }
 
-/* Header distinÃ§Ã£o admin */
+/* Header distinÃƒÂ§ÃƒÂ£o admin */
 .header-admin {
   background: linear-gradient(90deg, #1a0f00, #1C2333)
 }
 
-/* â”€â”€ Header action buttons (Salvar + Ranking) â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Header action buttons (Salvar + Ranking) Ã¢â€â‚¬Ã¢â€â‚¬ */
 .header-acoes {
   display: flex;
   align-items: center;
@@ -2879,7 +2879,7 @@ details[open]>summary span:last-child {
   }
 }
 
-/* â”€â”€ TAB APOSTAR â€” sem destaque especial de cor â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ TAB APOSTAR Ã¢â‚¬â€ sem destaque especial de cor Ã¢â€â‚¬Ã¢â€â‚¬ */
 .tab-btn-apostar.ativa {
   border-bottom-color: var(--verde-light)
 }
@@ -2899,15 +2899,15 @@ details[open]>summary span:last-child {
   }
 }
 
-/* CorreÃ§Ã£o de bordas transparentes em elementos sticky (para evitar vazamento de texto ao scrollar) */
+/* CorreÃƒÂ§ÃƒÂ£o de bordas transparentes em elementos sticky (para evitar vazamento de texto ao scrollar) */
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    REGRA: Em border-collapse:collapse, border-bottom de um TH sticky desaparece
-   ao scrollar. A barra verde Ã© renderizada APENAS via box-shadow.
+   ao scrollar. A barra verde ÃƒÂ© renderizada APENAS via box-shadow.
    A border real do TH usa cor opaca (#292d35) para selar gaps.
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 
-/* â”€â”€ CompilaÃ§Ã£o / Palpites â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ CompilaÃƒÂ§ÃƒÂ£o / Palpites Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .compilacao-table thead th {
   border: 1px solid #292d35 !important;
   border-bottom: 1px solid #292d35 !important;
@@ -2924,7 +2924,7 @@ details[open]>summary span:last-child {
   border: 1px solid #292d35 !important;
 }
 
-/* â”€â”€ EstatÃ­sticas (stat-full-table herda compilacao-table, reforÃ§a) â”€â”€â”€â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ EstatÃƒÂ­sticas (stat-full-table herda compilacao-table, reforÃƒÂ§a) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .stat-full-table thead th {
   border: 1px solid #292d35 !important;
   border-bottom: 1px solid #292d35 !important;
@@ -2953,7 +2953,7 @@ details[open]>summary span:last-child {
   }
 }
 
-/* â”€â”€ ClassificaÃ§Ã£o / Rank â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ ClassificaÃƒÂ§ÃƒÂ£o / Rank Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .rank-table thead th {
   border: 1px solid #292d35 !important;
   border-bottom: 1px solid #292d35 !important;
@@ -2993,12 +2993,12 @@ details[open]>summary span:last-child {
 
 /* Desktop rank-table sticky is handled above (at top:102px) */
 
-/* â”€â”€ Mobile: rank-table sticky dentro do rank-table-wrap (frozen-thead JS cuida do cabeÃ§alho) â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Mobile: rank-table sticky dentro do rank-table-wrap (frozen-thead JS cuida do cabeÃƒÂ§alho) Ã¢â€â‚¬Ã¢â€â‚¬ */
 @media (max-width: 600px) {
 
-  /* thead nÃ£o precisa ser sticky: frozen-thead JS duplica e fixa.
-     Aqui sÃ³ garantimos background opaco para evitar bleed-through.
-     Sem borda verde â€” ela vem do frozen-thead container no scroll. */
+  /* thead nÃƒÂ£o precisa ser sticky: frozen-thead JS duplica e fixa.
+     Aqui sÃƒÂ³ garantimos background opaco para evitar bleed-through.
+     Sem borda verde Ã¢â‚¬â€ ela vem do frozen-thead container no scroll. */
   .rank-table thead th {
     position: relative !important;
     top: auto !important;
@@ -3021,15 +3021,15 @@ details[open]>summary span:last-child {
   }
 }
 
-/* â”€â”€ Modal PrognÃ³sticos - Palpites â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Modal PrognÃƒÂ³sticos - Palpites Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .modal-box .tabela-detalhe thead th {
   border: 1px solid #292d35 !important;
   border-bottom: 1px solid #292d35 !important;
   box-shadow: inset 0 -1px 0 0 var(--verde-light) !important;
 }
 
-/* â”€â”€ FINAL Mobile overrides: rank-table, stat-full-table e compilacao-table sem borda no thead â”€â”€ */
-/* Estas regras DEVEM ser as Ãºltimas do arquivo para vencer qualquer cascade anterior. */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ FINAL Mobile overrides: rank-table, stat-full-table e compilacao-table sem borda no thead Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* Estas regras DEVEM ser as ÃƒÂºltimas do arquivo para vencer qualquer cascade anterior. */
 @media (max-width: 600px) {
   .rank-table thead th,
   .stat-full-table thead th,
@@ -3061,7 +3061,7 @@ details[open]>summary span:last-child {
 /* Desktop: mais espaco entre tabs + divisor elegante */
 @media (min-width: 601px) {
   .tab-btn {
-    padding: 10px 16px;
+    padding: 10px 18px;
     position: relative;
   }
   .tab-btn::after {
