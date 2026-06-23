@@ -3058,14 +3058,24 @@ details[open]>summary span:last-child {
     box-shadow: 1px 0 0 0 #292d35, 2px 0 5px rgba(0, 0, 0, 0.1) !important;
   }
 }
-/* Desktop: mais espaco entre tabs + divisor discreto */
+/* Desktop: mais espaco entre tabs + divisor elegante */
 @media (min-width: 601px) {
   .tab-btn {
     padding: 10px 16px;
-    border-right: 1px solid rgba(255, 255, 255, .06);
+    position: relative;
   }
-  .tab-btn:last-child,
-  .tab-btn-apostar {
-    border-right: none;
+  .tab-btn::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 20%;
+    height: 60%;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, rgba(0, 200, 120, .15) 40%, rgba(0, 200, 120, .15) 60%, transparent);
+    pointer-events: none;
+  }
+  .tab-btn:last-child::after,
+  .tab-btn-apostar::after {
+    display: none;
   }
 }
