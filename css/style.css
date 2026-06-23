@@ -3061,7 +3061,7 @@ details[open]>summary span:last-child {
 /* Desktop: mais espaco entre tabs + divisor discreto */
 @media (min-width: 601px) {
   .tab-btn {
-    padding: 10px 14px;
+    padding: 10px 16px;
     border-right: 1px solid rgba(255, 255, 255, .06);
   }
   .tab-btn:last-child,
