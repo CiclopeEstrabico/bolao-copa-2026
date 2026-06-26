@@ -270,7 +270,6 @@ function renderJogoRow(jogo, res, ehElim, isAdm, palApo, showFullDate = false, b
     h += '<div class="placar-inputs"><input type="number" class="placar-input" id="sim-hg-' + jogo.id + '" min="0" max="20" value="' + v1 + '" placeholder="-" oninput="_onInputPlacar(\'' + jogo.id + '\',' + ehElim + ')" onblur="_onBlurPlacar(\'' + jogo.id + '\',' + ehElim + ')"' + disAttr + '>';
     h += '<span class="vs">x</span>';
     h += '<input type="number" class="placar-input" id="sim-ag-' + jogo.id + '" min="0" max="20" value="' + v2 + '" placeholder="-" oninput="_onInputPlacar(\'' + jogo.id + '\',' + ehElim + ')" onblur="_onBlurPlacar(\'' + jogo.id + '\',' + ehElim + ')"' + disAttr + '></div>';
-    const isApostaPage = window.location.pathname.includes("aposta.html");
     if (ehElim && !isApostaPage) {
       h += '<div class="pen-wrap' + (isEmp ? " visivel" : "") + '" id="pen-wrap-' + jogo.id + '">';
       h += '<div class="pen-label">Penaltis</div>';
@@ -289,7 +288,6 @@ function renderJogoRow(jogo, res, ehElim, isAdm, palApo, showFullDate = false, b
   h += '<div class="jogo-col-away" onclick="if(window.PROGNOSE && !window.location.pathname.includes(\'aposta.html\')) PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="cursor:pointer">' + (!isApostaPage || aResolved ? htmlBandeira(aCode, 22) : '') + '<span style="color:' + (caway || "inherit") + ';font-weight:' + (caway ? 700 : 500) + '">' + aName + '</span></div>';
 
   // Col 5: acoes
-  const isApostaPage = window.location.pathname.includes("aposta.html");
   h += '<div class="jogo-col-acoes">';
   if (!isApostaPage && window.PROGNOSE) {
     h += '<button class="btn-prog" onclick="PROGNOSE.abrirModal(\'' + jogo.id + '\')" title="Info e Estatísticas">📊</button>';
