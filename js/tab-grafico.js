@@ -1873,9 +1873,16 @@ function _renderMacaco(rankingCompleto, cache) {
   const valVertical = true;
 
   // Percentuais das linhas do macaco (0% = topo, 100% = base do chart)
-  const mediaPerc = Math.max(0, Math.min(100, (1 - media / maxVal) * 100));
-  const sigmaHiPerc = Math.max(0, Math.min(100, (1 - (media + sigma) / maxVal) * 100));
-  const sigmaLoPerc = Math.max(0, Math.min(100, (1 - Math.max(0, media - sigma) / maxVal) * 100));
+  const _mScaleFactor = (isMobile && !isLandscape) ? 0.82 : 0.90;
+  // O container tem padding-bottom:10px; as barras alinham ao fundo do conteúdo (10px acima da borda).
+  // top% de uma linha = basePerc - (val/maxVal * scaleFactor * 100)
+  // onde basePerc = (chartHeightPx - 10) / chartHeightPx * 100
+  const _mChartPx = (isMobile && isLandscape) ? 180 : 280;
+  const _mBasePerc = (_mChartPx - 10) / _mChartPx * 100;
+  const _mLinePerc = (val) => Math.max(0, Math.min(100, _mBasePerc - (val / maxVal) * _mScaleFactor * 100));
+  const mediaPerc = _mLinePerc(media);
+  const sigmaHiPerc = _mLinePerc(media + sigma);
+  const sigmaLoPerc = _mLinePerc(Math.max(0, media - sigma));
 
   let h = '<div class="card" style="padding:20px 10px;">';
 
