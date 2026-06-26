@@ -234,6 +234,14 @@ function renderJogoRow(jogo, res, ehElim, isAdm, palApo, showFullDate = false, b
 
   let chome = "", caway = "";
 
+  const styleHome = hResolved
+    ? 'color:' + (chome || "inherit") + ';font-weight:' + (chome ? 700 : 500)
+    : 'color:var(--texto2);font-weight:400;font-style:italic;font-size:0.85rem';
+
+  const styleAway = aResolved
+    ? 'color:' + (caway || "inherit") + ';font-weight:' + (caway ? 700 : 500)
+    : 'color:var(--texto2);font-weight:400;font-style:italic;font-size:0.85rem';
+
   const rowCls = "jogo-row" + (temRes ? (isSim ? " simulado" : " realizado") : " futuro");
 
   let h = '<div class="' + rowCls + '">';
@@ -248,7 +256,7 @@ function renderJogoRow(jogo, res, ehElim, isAdm, palApo, showFullDate = false, b
   h += '</div>';
 
   // Col 2: home
-  h += '<div class="jogo-col-home" onclick="if(window.PROGNOSE && !window.location.pathname.includes(\'aposta.html\')) PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="cursor:pointer">' + '<span style="color:' + (chome || "inherit") + ';font-weight:' + (chome ? 700 : 500) + '">' + hName + '</span>' + (!isApostaPage || hResolved ? htmlBandeira(hCode, 22) : '') + '</div>';
+  h += '<div class="jogo-col-home" onclick="if(window.PROGNOSE && !window.location.pathname.includes(\'aposta.html\')) PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="cursor:pointer">' + '<span style="' + styleHome + '">' + hName + '</span>' + (!isApostaPage || hResolved ? htmlBandeira(hCode, 22) : '') + '</div>';
 
   h += '<div class="jogo-col-placar">';
   if (temRes && !isAdm) {
@@ -285,7 +293,7 @@ function renderJogoRow(jogo, res, ehElim, isAdm, palApo, showFullDate = false, b
   }
   h += '</div>';
   // Col 4: away
-  h += '<div class="jogo-col-away" onclick="if(window.PROGNOSE && !window.location.pathname.includes(\'aposta.html\')) PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="cursor:pointer">' + (!isApostaPage || aResolved ? htmlBandeira(aCode, 22) : '') + '<span style="color:' + (caway || "inherit") + ';font-weight:' + (caway ? 700 : 500) + '">' + aName + '</span></div>';
+  h += '<div class="jogo-col-away" onclick="if(window.PROGNOSE && !window.location.pathname.includes(\'aposta.html\')) PROGNOSE.abrirModal(\'' + jogo.id + '\')" style="cursor:pointer">' + (!isApostaPage || aResolved ? htmlBandeira(aCode, 22) : '') + '<span style="' + styleAway + '">' + aName + '</span></div>';
 
   // Col 5: acoes
   h += '<div class="jogo-col-acoes">';

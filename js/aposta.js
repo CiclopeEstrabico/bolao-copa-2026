@@ -418,7 +418,7 @@ function renderAposta() {
   }
 
   // Mesmo layout do resultados: grupos + toggle + jogos
-  h += renderJogosComToggle(resOficiais, tg, false, _palpitesLocais, _bracketApostador, resCompleto);
+  h += renderJogosComToggle(resOficiais, tg, false, _palpitesLocais, null, resCompleto);
 
   // Focus Guard: captura o input focado antes de destruir o DOM
   const _fgId = document.activeElement?.id || null;

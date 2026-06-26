@@ -268,14 +268,14 @@ window.BRACKET = (() => {
   function descricaoPosicao(pos) {
     if (!pos) return "A definir";
     const grupoMatch = pos.match(/^([12])([A-L])$/);
-    if (grupoMatch) return grupoMatch[1] + "° Grp " + grupoMatch[2];
+    if (grupoMatch) return grupoMatch[1] + "º " + grupoMatch[2];
     const tercMatch = pos.match(/^3X(\d+)$/);
-    if (tercMatch) return "3° #" + tercMatch[1];
-    if (pos.startsWith("WR32_")) return "V.16avos #" + pos.slice(5);
-    if (pos.startsWith("WR16_")) return "V.Oitavas #" + pos.slice(5);
-    if (pos.startsWith("WQF_")) return "V.QF #" + pos.slice(4);
-    if (pos.startsWith("WSF_")) return "V.SF #" + pos.slice(4);
-    if (pos.startsWith("LSF_")) return "P.SF #" + pos.slice(4);
+    if (tercMatch) return "3º #" + tercMatch[1];
+    if (pos.startsWith("WR32_")) return "V. 16avos #" + pos.slice(5);
+    if (pos.startsWith("WR16_")) return "V. Oitavas #" + pos.slice(5);
+    if (pos.startsWith("WQF_")) return "V. QF #" + pos.slice(4);
+    if (pos.startsWith("WSF_")) return "V. SF #" + pos.slice(4);
+    if (pos.startsWith("LSF_")) return "P. SF #" + pos.slice(4);
     return pos;
   }
 
