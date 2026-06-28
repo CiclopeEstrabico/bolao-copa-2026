@@ -33,6 +33,10 @@ RHO_MAX   = 0.2
 # Se True, ignora K_att/K_def do JSON e usa 1.0 (prior puro)
 USE_FLAT_K = False
 
+# Vantagem de sede: defina um valor (ex: 100) para sobrescrever o prior fitado.
+# Se None ou 0, usa o valor de home_adv do prior_params.json.
+HOME_ADV: float | None = None
+
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 RESULTS_DIR = os.path.join(SCRIPT_DIR, "results")
 OUTPUT_ROOT = os.path.join(RESULTS_DIR, "heatmaps_all")
@@ -435,12 +439,16 @@ def main():
     with open(kf_path,     "r", encoding="utf-8") as f: k_factors = json.load(f)
     with open(priors_path, "r", encoding="utf-8") as f: priors    = json.load(f)
 
+    if HOME_ADV:
+        priors['home_adv'] = float(HOME_ADV)
+
     print("=" * 70)
     print("  Copa do Mundo 2026 — Heatmaps (todos os jogos)")
     print("=" * 70)
     print(f"  k_factors  : {kf_path}")
     print(f"  prior_params: {priors_path}")
     print(f"  Modo K     : {'flat (K=1)' if USE_FLAT_K else 'GRU (K_att/K_def)'}")
+    print(f"  home_adv   : {priors['home_adv']:.1f}{'  [OVERRIDE]' if HOME_ADV else '  [prior fitado]'}")
     print(f"  Output root: {OUTPUT_ROOT}")
 
     total = 0

@@ -30,6 +30,10 @@ EPS_K     = 1e-2
 
 USE_K_FACTORS = True  # Mude para False para ignorar Katt e Kdef (fixa em 1.0)
 
+# Vantagem de sede: defina um valor (ex: 100) para sobrescrever o prior fitado.
+# Se None ou 0, usa o valor de home_adv do prior_params.json.
+HOME_ADV: float | None = None
+
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 RESULTS_DIR = os.path.join(SCRIPT_DIR, "results")
 HEATMAP_DIR = os.path.join(RESULTS_DIR, "heatmaps_oitavas")
@@ -401,6 +405,12 @@ def main():
         config = json.load(f)
     with open(os.path.join(RESULTS_DIR, "prior_params.json"), "r") as f:
         priors = json.load(f)
+
+    if HOME_ADV:
+        priors['home_adv'] = float(HOME_ADV)
+        print(f"    >> home_adv OVERRIDE: {HOME_ADV} (prior original: ignorado)")
+    else:
+        print(f"    >> home_adv (prior fitado): {priors['home_adv']:.1f}")
 
     weights = load_pt_weights(os.path.join(RESULTS_DIR, "model_best.pt"))
     print(f"    >> {len(weights)} tensores carregados")

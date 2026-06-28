@@ -29,7 +29,9 @@ from scipy.stats import poisson
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-HOME_ADV  = 100
+# Vantagem de sede: defina um valor (ex: 100) para sobrescrever o prior fitado.
+# Se None ou 0, usa o valor de home_adv do prior_params.json.
+HOME_ADV: float | None = None
 MAX_GOALS = 8
 RHO_MAX   = 0.2
 EPS_K     = 1e-2
@@ -406,7 +408,14 @@ def main():
         config = json.load(f)
     with open(os.path.join(RESULTS_DIR, "prior_params.json"), "r") as f:
         priors = json.load(f)
-    print("    Lendo pesos do modelo (.pt)...")
+
+    if HOME_ADV:
+        priors['home_adv'] = float(HOME_ADV)
+        print(f"    >> home_adv OVERRIDE: {HOME_ADV} (prior original: ignorado)")
+    else:
+        print(f"    >> home_adv (prior fitado): {priors['home_adv']:.1f}")
+
+    print("    Lendo pesos do modelo (.pt)...")    
     weights = load_pt_weights(os.path.join(RESULTS_DIR, "model_best.pt"))
     print(f"    >> {len(weights)} tensores carregados")
     print(f"    >> Priors: a={priors['a']:.4f}  b={priors['b']:.6f}  "
