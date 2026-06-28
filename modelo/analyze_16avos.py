@@ -1,64 +1,71 @@
+# -*- coding: utf-8 -*-
 """
-analyze_groups.py
+analyze_16avos.py
 =================
-Script 4 — Copa 2026 Modelling Pipeline  (v2 — K-att / K-def)
-Roda a rede uma vez para cada jogo da fase de grupos (72 jogos).
-Gera CSV analítico rico e heatmaps de probabilidade de placar.
+Script 5 — Copa 2026 Modelling Pipeline  (v2 — K-att / K-def)
+Analisa os 16 jogos dos 16-avos de final com o modelo Dixon-Coles/GRU.
 
-Mudanças v2:
-  - Usa prior_params.json para calcular λ_base e rho (não outputs diretos da rede)
-  - Exibe K_att e K_def de cada time no CSV e nos heatmaps
-  - λ_home = λ_base * K_att(home) * K_def(away)
-  - Colunas extras: k_att_a, k_def_a, k_att_b, k_def_b,
-    lambda_base_a, lambda_base_b, rho
-  - Seção de resumo por time ao final
-
-Roda sem torch. Dependências: numpy, pandas, scipy, matplotlib.
-
-Arquivos necessários:
-  copa2026_state.pkl   <- build_dataset.py
-  model_best.pt        <- train_model.py
-  model_config.json    <- train_model.py
-  prior_params.json    <- fit_priors.py
+Chaveamento oficial dos 16-avos de final usando apenas os nomes em inglês.
+Preencha a lista RAW_CONFRONTOS conforme os confrontos forem se definindo e os jogos acontecendo.
 """
 
-import os, json, pickle, zipfile, io, itertools
+import os, sys, json, pickle, zipfile, io
 import numpy as np
 import pandas as pd
 from scipy.stats import poisson
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-HOME_ADV  = 100
+
+# Fix encoding no Windows (PowerShell cp1252)
+if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+
+# ─────────────────────────────────────────────────────────────────────
+# PARÂMETROS & CONFIGURAÇÃO
+# ─────────────────────────────────────────────────────────────────────
 MAX_GOALS = 8
 RHO_MAX   = 0.2
 EPS_K     = 1e-2
+
 USE_K_FACTORS = True  # Mude para False para ignorar Katt e Kdef (fixa em 1.0)
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 RESULTS_DIR = os.path.join(SCRIPT_DIR, "results")
-HEATMAP_DIR = os.path.join(RESULTS_DIR, "heatmaps_groups")
+HEATMAP_DIR = os.path.join(RESULTS_DIR, "heatmaps_16avos")
 os.makedirs(RESULTS_DIR, exist_ok=True)
 os.makedirs(HEATMAP_DIR, exist_ok=True)
-OFFICIAL_GROUPS = {
-    'A': ['Mexico', 'South Africa', 'South Korea', 'Czech Republic'],
-    'B': ['Canada', 'Bosnia and Herzegovina', 'Qatar', 'Switzerland'],
-    'C': ['Brazil', 'Morocco', 'Haiti', 'Scotland'],
-    'D': ['United States', 'Paraguay', 'Australia', 'Turkey'],
-    'E': ['Germany', 'Curaçao', 'Ivory Coast', 'Ecuador'],
-    'F': ['Netherlands', 'Japan', 'Sweden', 'Tunisia'],
-    'G': ['Belgium', 'Egypt', 'Iran', 'New Zealand'],
-    'H': ['Spain', 'Cape Verde', 'Saudi Arabia', 'Uruguay'],
-    'I': ['France', 'Senegal', 'Iraq', 'Norway'],
-    'J': ['Argentina', 'Algeria', 'Austria', 'Jordan'],
-    'K': ['Portugal', 'DR Congo', 'Uzbekistan', 'Colombia'],
-    'L': ['England', 'Croatia', 'Ghana', 'Panama'],
-}
-HOSTS     = ['United States', 'Mexico', 'Canada']
-# HEATMAP_DIR já definido acima
 
+HOSTS = {'United States', 'Mexico', 'Canada'}
 
 # ─────────────────────────────────────────────────────────────────────
-# CARREGAR PESOS .pt → numpy
+# LISTA DE JOGOS (NOMES EM INGLÊS)
+# Formato aceito por linha:
+#   "Time A, Time B"            -> Jogo aguardando resultado
+#   "Time A, Time B, golsA, golsB" -> Jogo finalizado (ex: "Brazil, Japan, 2, 1")
+# Use "TBD" para adversários ainda indefinidos.
+# ─────────────────────────────────────────────────────────────────────
+RAW_CONFRONTOS = [
+    "South Africa, Canada",
+    "Brazil, Japan",
+    "Germany, TBD",
+    "Netherlands, Morocco",
+    "Ivory Coast, Norway",
+    "France, TBD",
+    "Mexico, TBD",
+    "England, TBD",
+    "Belgium, TBD",
+    "United States, TBD",
+    "Spain, TBD",
+    "Portugal, Croatia",
+    "Switzerland, TBD",
+    "Australia, Egypt",
+    "TBD, Cape Verde",
+    "Colombia, TBD",
+]
+
+# ─────────────────────────────────────────────────────────────────────
+# CARREGAR PESOS E METADADOS
 # ─────────────────────────────────────────────────────────────────────
 def load_pt_weights(path: str) -> dict:
     try:
@@ -85,7 +92,6 @@ def load_pt_weights(path: str) -> dict:
                     data_blobs[n.split('/')[-1]] = df_.read()
 
     import pickle as _pk
-
     dtype_map = {
         'FloatStorage':    np.float32,  'DoubleStorage':   np.float64,
         'HalfStorage':     np.float16,  'LongStorage':     np.int64,
@@ -129,17 +135,14 @@ def load_pt_weights(path: str) -> dict:
     result = PTUnpickler(io.BytesIO(raw_pkl)).load()
     return {k: v for k, v in result.items() if isinstance(v, np.ndarray)}
 
-
 # ─────────────────────────────────────────────────────────────────────
-# GRU + CABEÇA K-att/K-def em NumPy
+# GRU + DIXON COLES MODEL
 # ─────────────────────────────────────────────────────────────────────
 def _sigmoid(x):
     return 1.0 / (1.0 + np.exp(-np.clip(x, -30, 30)))
 
-
 def softplus_np(x):
     return np.log1p(np.exp(np.clip(x, -20, 20)))
-
 
 def gru_forward(seq, W_ih, W_hh, b_ih, b_hh):
     H = W_ih.shape[0] // 3
@@ -154,15 +157,11 @@ def gru_forward(seq, W_ih, W_hh, b_ih, b_hh):
         h   = (1 - z) * n + z * h
     return h
 
-
 def head_forward(hidden, w):
-    """(H,) → (2,) via head.0 (Linear+ReLU) e head.3 (Linear)"""
     x = np.maximum(0.0, w['head.0.weight'] @ hidden + w['head.0.bias'])
     return w['head.3.weight'] @ x + w['head.3.bias']
 
-
 def encode_team(seq, weights):
-    """Retorna K_att (float), K_def (float) para um time."""
     hidden = gru_forward(seq,
                          weights['gru.weight_ih_l0'],
                          weights['gru.weight_hh_l0'],
@@ -173,25 +172,16 @@ def encode_team(seq, weights):
     K_def  = float(softplus_np(raw_k[1])) + EPS_K
     return K_att, K_def
 
-
-# ─────────────────────────────────────────────────────────────────────
-# PRIORS
-# ─────────────────────────────────────────────────────────────────────
 def lambda_base(delta_eff_pts: float, p: dict) -> tuple:
-    de   = delta_eff_pts
-    lh   = float(np.exp(p['a'] + p['b'] * de + p['c'] * de ** 2))
-    la   = float(np.exp(p['a'] - p['b'] * de + p['c'] * de ** 2))
+    de = delta_eff_pts
+    lh = float(np.exp(p['a'] + p['b'] * de + p['c'] * de ** 2))
+    la = float(np.exp(p['a'] - p['b'] * de + p['c'] * de ** 2))
     return lh, la
-
 
 def rho_from_delta(delta_eff_pts: float, p: dict) -> float:
     arg = p['rho0_raw'] - p['rho1_neg'] * abs(delta_eff_pts) / 400.0
     return float(RHO_MAX * np.tanh(arg))
 
-
-# ─────────────────────────────────────────────────────────────────────
-# HELPERS
-# ─────────────────────────────────────────────────────────────────────
 def pad_seq(seq, sl, feat, nd, ng):
     arr = np.zeros((sl, feat), dtype=np.float32)
     n   = min(len(seq), sl)
@@ -207,14 +197,12 @@ def pad_seq(seq, sl, feat, nd, ng):
         arr[s+i, 5] = e.get('decay_weight', 1.0)
     return arr
 
-
 def dc_tau(x, y, la, lb, rho):
     if x == 0 and y == 0: return max(1e-6, 1 - la*lb*rho)
     if x == 1 and y == 0: return max(1e-6, 1 + la*rho)
     if x == 0 and y == 1: return max(1e-6, 1 + lb*rho)
     if x == 1 and y == 1: return max(1e-6, 1 - rho)
     return 1.0
-
 
 def score_matrix(la, lb, rho, mg=MAX_GOALS):
     M = np.array(
@@ -226,21 +214,25 @@ def score_matrix(la, lb, rho, mg=MAX_GOALS):
     M /= M.sum()
     return M
 
-
 def match_probs(M):
     p_win_a = float(np.sum(np.tril(M, -1)))
     p_draw  = float(np.trace(M))
     p_win_b = float(np.sum(np.triu(M,  1)))
     return p_win_a, p_draw, p_win_b
 
+def p_avanca_ko(M, la, lb):
+    p_win_home = float(np.sum(np.tril(M, -1)))
+    p_draw     = float(np.trace(M))
+    p_win_away = float(np.sum(np.triu(M,  1)))
+    p_pen_home = la / (la + lb)
+    p_adv_home = p_win_home + p_draw * p_pen_home
+    p_adv_away = p_win_away + p_draw * (1 - p_pen_home)
+    return p_adv_home, p_adv_away
 
 # ─────────────────────────────────────────────────────────────────────
-# HEATMAP
+# CÁLCULO EXPECTATIVA DE PONTOS
 # ─────────────────────────────────────────────────────────────────────
-# ─────────────────────────────────────────────────────────────────────
-# EXPECTATIVA DE PONTOS
-# ─────────────────────────────────────────────────────────────────────
-def compute_expected_points(M, fase_key="grupos"):
+def compute_expected_points(M, fase_key="16avos"):
     fatores = {
         'grupos': 1.0,
         '16avos': 1.2,
@@ -268,30 +260,30 @@ def compute_expected_points(M, fase_key="grupos"):
                     res_pal = 1 if Hp > Ap else (-1 if Hp < Ap else 0)
                     
                     if res_pal == res_ef:
-                        pts = 3 # resultado_base
+                        pts = 3 # base
                         if Hp == Hr and Ap == Ar:
                             gols = Hr + Ar
                             if gols >= 4:
-                                pts += 5 # bonus_placar_exato_alto
+                                pts += 5 # bonus_alto
                             else:
-                                pts += 3 # bonus_placar_exato_baixo
+                                pts += 3 # bonus_baixo
                         elif abs(Hp - Ap) == abs(Hr - Ar):
-                            pts += 1 # bonus_diferenca_gols
+                            pts += 1
                         elif Hp == Hr or Ap == Ar:
-                            pts += 1 # bonus_gols_um_time
+                            pts += 1
                             
                     val_ev += p_real * (pts * fator)
             EV[Hp, Ap] = val_ev
     return EV
 
-
 # ─────────────────────────────────────────────────────────────────────
-# HEATMAP
+# PLOT DUAL HEATMAPS
 # ─────────────────────────────────────────────────────────────────────
-def save_heatmap(M, EV, ta, tb, group, filepath, la, lb, rho,
-                 p_win_a, p_draw, p_win_b,
+def save_heatmap(M, EV, ta, tb, match_id, filepath,
+                 la, lb, rho, p_win_a, p_draw, p_win_b,
+                 p_adv_home, p_adv_away,
                  k_att_a, k_def_a, k_att_b, k_def_b,
-                 lb_a, lb_b, delta_elo):
+                 lb_a, lb_b, delta_elo, resultado=None):
     mg  = M.shape[0]
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 15))
 
@@ -302,8 +294,8 @@ def save_heatmap(M, EV, ta, tb, group, filepath, la, lb, rho,
     ax1.set_xticks(range(mg));  ax1.set_yticks(range(mg))
     ax1.set_xticklabels(range(mg), fontsize=10)
     ax1.set_yticklabels(range(mg), fontsize=10)
-    ax1.set_xlabel(f'Gols  {tb}', fontsize=11, fontweight='bold')
-    ax1.set_ylabel(f'Gols  {ta}', fontsize=11, fontweight='bold')
+    ax1.set_xlabel(f'Goals  {tb}', fontsize=11, fontweight='bold')
+    ax1.set_ylabel(f'Goals  {ta}', fontsize=11, fontweight='bold')
 
     max_prob_idx = np.unravel_index(np.argmax(M), M.shape)
 
@@ -314,7 +306,17 @@ def save_heatmap(M, EV, ta, tb, group, filepath, la, lb, rho,
             ax1.text(j, i, f'{val:.1f}%', ha='center', va='center',
                      fontsize=8, color=color, fontweight='bold')
 
-    # Highlight the most probable score
+    # Marca o resultado oficial (se disponível)
+    if resultado is not None:
+        rh, ra = resultado
+        if 0 <= rh < mg and 0 <= ra < mg:
+            ax1.add_patch(plt.Rectangle((ra - 0.5, rh - 0.5), 1, 1,
+                                       fill=False, edgecolor='blue',
+                                       linewidth=3, linestyle='-'))
+            ax1.text(ra, rh, f'★ {rh}-{ra}', ha='center', va='center',
+                     fontsize=9, color='blue', fontweight='bold')
+
+    # Destaca o mais provável
     ax1.add_patch(plt.Rectangle((max_prob_idx[1] - 0.5, max_prob_idx[0] - 0.5), 1, 1,
                                fill=False, edgecolor='green',
                                linewidth=3, linestyle='-'))
@@ -325,12 +327,13 @@ def save_heatmap(M, EV, ta, tb, group, filepath, la, lb, rho,
                                    linewidth=1.5, linestyle='--'))
 
     cbar1 = fig.colorbar(im1, ax=ax1, shrink=0.7)
-    cbar1.set_label('Probabilidade (%)', fontsize=9)
+    cbar1.set_label('Probability (%)', fontsize=9)
 
+    res_str = f"  [RESULTADO: {resultado[0]}-{resultado[1]}]" if resultado else ""
     ax1.set_title(
-        f'Grupo {group}  |  {ta}  vs  {tb}\n'
-        f'Distribuição de Probabilidade do Placar (%)\n'
-        f'Mais provável: {max_prob_idx[0]}x{max_prob_idx[1]} ({M[max_prob_idx]*100:.1f}%)',
+        f'{match_id}  |  {ta}  vs  {tb}{res_str}\n'
+        f'Score Probability Distribution (%)\n'
+        f'Most likely score: {max_prob_idx[0]}x{max_prob_idx[1]} ({M[max_prob_idx]*100:.1f}%)',
         fontsize=11, fontweight='bold', pad=8
     )
 
@@ -341,8 +344,8 @@ def save_heatmap(M, EV, ta, tb, group, filepath, la, lb, rho,
     ax2.set_xticks(range(mg));  ax2.set_yticks(range(mg))
     ax2.set_xticklabels(range(mg), fontsize=10)
     ax2.set_yticklabels(range(mg), fontsize=10)
-    ax2.set_xlabel(f'Palpite Gols  {tb}', fontsize=11, fontweight='bold')
-    ax2.set_ylabel(f'Palpite Gols  {ta}', fontsize=11, fontweight='bold')
+    ax2.set_xlabel(f'Guess Goals  {tb}', fontsize=11, fontweight='bold')
+    ax2.set_ylabel(f'Guess Goals  {ta}', fontsize=11, fontweight='bold')
 
     max_ev_idx = np.unravel_index(np.argmax(EV), EV.shape)
 
@@ -353,7 +356,7 @@ def save_heatmap(M, EV, ta, tb, group, filepath, la, lb, rho,
             ax2.text(j, i, f'{val:.2f}', ha='center', va='center',
                      fontsize=8, color=color, fontweight='bold')
 
-    # Highlight the best mathematical guess
+    # Destaca o melhor palpite matemático
     ax2.add_patch(plt.Rectangle((max_ev_idx[1] - 0.5, max_ev_idx[0] - 0.5), 1, 1,
                                fill=False, edgecolor='darkorange',
                                linewidth=3, linestyle='-'))
@@ -364,15 +367,15 @@ def save_heatmap(M, EV, ta, tb, group, filepath, la, lb, rho,
                                    linewidth=1.5, linestyle='--'))
 
     cbar2 = fig.colorbar(im2, ax=ax2, shrink=0.7)
-    cbar2.set_label('Expectativa de Pontos (EV)', fontsize=9)
+    cbar2.set_label('Expected Points (EV)', fontsize=9)
 
     ax2.set_title(
-        f'Expectativa de Pontos por Palpite (EV)\n'
-        f'Melhor Palpite Matemático: {max_ev_idx[0]}x{max_ev_idx[1]} ({EV[max_ev_idx]:.2f} pts)',
+        f'Expected Points per Guess (EV)\n'
+        f'Best Mathematical Guess: {max_ev_idx[0]}x{max_ev_idx[1]} ({EV[max_ev_idx]:.2f} pts)',
         fontsize=11, fontweight='bold', pad=8
     )
 
-    # Legendas gerais
+    # Legendas
     k_str = (f'{ta}: K_att={k_att_a:.3f}, K_def={k_def_a:.3f}   '
              f'{tb}: K_att={k_att_b:.3f}, K_def={k_def_b:.3f}')
     model_str = (f'λ_A={la:.2f} (base={lb_a:.2f})  λ_B={lb:.2f} (base={lb_b:.2f})  '
@@ -380,200 +383,199 @@ def save_heatmap(M, EV, ta, tb, group, filepath, la, lb, rho,
     fig.text(0.5, 0.05, k_str, ha='center', fontsize=9, color='#333333', fontweight='bold')
     fig.text(0.5, 0.035, model_str, ha='center', fontsize=9, color='#555555')
 
-    footer = (f'P({ta} vence) = {p_win_a*100:.1f}%     '
-              f'P(empate) = {p_draw*100:.1f}%     '
-              f'P({tb} vence) = {p_win_b*100:.1f}%')
-    fig.text(0.5, 0.015, footer, ha='center', fontsize=10,
+    footer = (f'P({ta} wins) = {p_win_a*100:.1f}%     '
+              f'P(draw 90m) = {p_draw*100:.1f}%     '
+              f'P({tb} wins) = {p_win_b*100:.1f}%\n'
+              f'P(to advance) → {ta}: {p_adv_home*100:.1f}%   {tb}: {p_adv_away*100:.1f}%')
+    fig.text(0.5, 0.01, footer, ha='center', fontsize=10,
              color='#111111', style='italic', fontweight='bold')
 
     plt.tight_layout(rect=[0, 0.07, 1, 1])
     plt.savefig(filepath, dpi=130, bbox_inches='tight')
     plt.close(fig)
 
-
 # ─────────────────────────────────────────────────────────────────────
-# MAIN
+# MAIN EXECUTION
 # ─────────────────────────────────────────────────────────────────────
 def main():
     print("=" * 65)
-    print("  analyze_groups.py — Copa 2026 Fase de Grupos (v2 K-att/K-def)  ")
+    print("  analyze_16avos.py — Copa 2026 16-avos de Final  ")
     print("=" * 65)
 
-    print("[1/5] Carregando artefatos...")
+    print("[1/4] Carregando artefatos...")
     with open(os.path.join(RESULTS_DIR, "copa2026_state.pkl"), "rb") as f:
         state = pickle.load(f)
     with open(os.path.join(RESULTS_DIR, "model_config.json"), "r") as f:
         config = json.load(f)
     with open(os.path.join(RESULTS_DIR, "prior_params.json"), "r") as f:
         priors = json.load(f)
-    print("    Lendo pesos do modelo (.pt)...")
+
     weights = load_pt_weights(os.path.join(RESULTS_DIR, "model_best.pt"))
     print(f"    >> {len(weights)} tensores carregados")
-    print(f"    >> Priors: a={priors['a']:.4f}  b={priors['b']:.6f}  "
-          f"home_adv={priors['home_adv']:.1f}")
+
+    kf_path = os.path.join(RESULTS_DIR, "k_factors_final.json")
+    if os.path.exists(kf_path):
+        with open(kf_path, "r") as f:
+            k_factors = json.load(f)
+        print(f"    >> k_factors_final.json carregado ({len(k_factors)} times)")
+    else:
+        k_factors = {}
+        print("    !! k_factors_final.json não encontrado — usando ELO do state.pkl")
 
     if config.get('FEAT_PER_GAME', 5) < 6:
-        print("    !! model_config antigo (FEAT_PER_GAME<6) — forçando 6")
         config['FEAT_PER_GAME'] = 6
 
     elos   = state['team_elos']
     forms  = state['team_forms']
-    hosts  = state['hosts']
+    hosts  = set(state['hosts'])
     nd     = config['NORM_DELTA_ELO']
     ng     = config['NORM_GOALS']
     sl     = config['SEQ_LEN']
     ft     = config['FEAT_PER_GAME']
 
-    all_teams = [t for g in OFFICIAL_GROUPS.values() for t in g]
-
-    # Pré-computa sequências e K-factors para todos os times
-    print("[2/5] Calculando K_att / K_def para todos os times...")
-    team_seqs = {}
-    team_K    = {}   # {team: (K_att, K_def)}
+    print("[2/4] Calculando K_att / K_def para todos os times...")
+    all_teams = list(elos.keys())
+    team_K    = {}
     for t in all_teams:
-        seq        = pad_seq(forms.get(t, []), sl, ft, nd, ng)
-        team_seqs[t] = seq
+        seq = pad_seq(forms.get(t, []), sl, ft, nd, ng)
         K_att, K_def = encode_team(seq, weights)
         if not USE_K_FACTORS:
             K_att, K_def = 1.0, 1.0
-        team_K[t]  = (K_att, K_def)
+        team_K[t] = (K_att, K_def)
 
-    print(f"  {'Time':<30} {'ELO':>6}  {'K_att':>6}  {'K_def':>6}  {'jogos':>6}")
-    print("  " + "-" * 58)
-    for t in sorted(all_teams, key=lambda x: -team_K[x][0]):
-        ka, kd = team_K[t]
-        n_games = len(forms.get(t, []))
-        h = " [H]" if t in hosts else ""
-        print(f"  {t+h:<30} {elos.get(t,1500):>6.0f}  {ka:>6.4f}  {kd:>6.4f}  {n_games:>6}")
+    def get_elo(team_en):
+        if team_en in k_factors:
+            return float(k_factors[team_en]['elo'])
+        return float(elos.get(team_en, 1500))
 
-    os.makedirs(HEATMAP_DIR, exist_ok=True)
+    print("\n[3/4] Analisando 16 jogos dos 16-avos...")
+    rows = []
 
-    print("\n[3/5] Analisando 72 jogos da fase de grupos...")
-    rows     = []
-    game_num = 0
+    for idx, line in enumerate(RAW_CONFRONTOS, 1):
+        parts = [p.strip() for p in line.split(',') if p.strip()]
+        if len(parts) < 2:
+            print(f"  [{idx:>2}/16] Linha inválida: {line}")
+            continue
+        
+        ta = parts[0]
+        tb = parts[1]
+        
+        resultado = None
+        if len(parts) >= 4:
+            try:
+                resultado = (int(parts[2]), int(parts[3]))
+            except ValueError:
+                pass
 
-    for group, teams in OFFICIAL_GROUPS.items():
-        for i, j in itertools.combinations(range(len(teams)), 2):
-            ta, tb   = teams[i], teams[j]
-            game_num += 1
+        ta_known = ta in elos and ta != "TBD"
+        tb_known = tb in elos and tb != "TBD"
 
-            elo_a = elos.get(ta, 1500)
-            elo_b = elos.get(tb, 1500)
-            d_raw = elo_a - elo_b
-            if ta in hosts: d_raw += priors['home_adv']
-            if tb in hosts: d_raw -= priors['home_adv']
+        if not ta_known and not tb_known:
+            print(f"  [{idx:>2}/16] R32_{idx}: {ta} vs {tb}  → Ambos TBD, pulando")
+            continue
 
-            # Lambda base dos priors
-            lb_home, lb_away = lambda_base(d_raw, priors)
-            rho = rho_from_delta(d_raw, priors)
+        if not ta_known:
+            print(f"  [{idx:>2}/16] R32_{idx}: {ta} TBD — usando ELO/K padrão")
+            elo_a = 1500.0
+            K_att_a = K_def_a = 1.0
+        else:
+            elo_a   = get_elo(ta)
+            K_att_a, K_def_a = team_K.get(ta, (1.0, 1.0))
 
-            # K-factors da rede
-            K_att_a, K_def_a = team_K[ta]
-            K_att_b, K_def_b = team_K[tb]
+        if not tb_known:
+            print(f"  [{idx:>2}/16] R32_{idx}: {tb} TBD — usando ELO/K padrão")
+            elo_b = 1500.0
+            K_att_b = K_def_b = 1.0
+        else:
+            elo_b   = get_elo(tb)
+            K_att_b, K_def_b = team_K.get(tb, (1.0, 1.0))
 
-            # Lambdas finais
-            la = lb_home * K_att_a * K_def_b
-            lb = lb_away * K_att_b * K_def_a
+        d_raw = elo_a - elo_b
+        if ta in hosts: d_raw += priors['home_adv']
+        if tb in hosts: d_raw -= priors['home_adv']
 
-            M = score_matrix(la, lb, rho)
-            p_win_a, p_draw, p_win_b = match_probs(M)
+        lb_home, lb_away = lambda_base(d_raw, priors)
+        rho    = rho_from_delta(d_raw, priors)
 
-            score_probs = {}
-            for x in range(MAX_GOALS):
-                for y in range(MAX_GOALS):
-                    score_probs[f'P_{x}_{y}'] = round(float(M[x, y]) * 100, 3)
+        la = lb_home * K_att_a * K_def_b
+        lb = lb_away * K_att_b * K_def_a
 
-            delta_raw_pure = elos.get(ta, 1500) - elos.get(tb, 1500)
-            row = {
-                'group':          group,
-                'game':           game_num,
-                'team_a':         ta,
-                'team_b':         tb,
-                'elo_a':          round(elo_a, 1),
-                'elo_b':          round(elo_b, 1),
-                'delta_elo':      round(delta_raw_pure, 1),
-                'delta_eff':      round(d_raw, 1),
-                'k_att_a':        round(K_att_a, 4),
-                'k_def_a':        round(K_def_a, 4),
-                'k_att_b':        round(K_att_b, 4),
-                'k_def_b':        round(K_def_b, 4),
-                'lambda_base_a':  round(lb_home, 4),
-                'lambda_base_b':  round(lb_away, 4),
-                'lambda_a':       round(la, 4),
-                'lambda_b':       round(lb, 4),
-                'rho':            round(rho, 4),
-                'p_win_a':        round(p_win_a * 100, 2),
-                'p_draw':         round(p_draw  * 100, 2),
-                'p_win_b':        round(p_win_b * 100, 2),
-                'expected_goals_a': round(la, 3),
-                'expected_goals_b': round(lb, 3),
-            }
-            row.update(score_probs)
-            rows.append(row)
+        M = score_matrix(la, lb, rho)
+        p_win_a, p_draw, p_win_b = match_probs(M)
+        p_adv_home, p_adv_away   = p_avanca_ko(M, la, lb)
+        EV = compute_expected_points(M, "16avos")
 
-            # Heatmap
-            safe_a = ta.replace(' ', '_').replace('/', '-')
-            safe_b = tb.replace(' ', '_').replace('/', '-')
-            fname  = f"Grupo_{group}_{safe_a}_vs_{safe_b}.png"
-            EV = compute_expected_points(M, "grupos")
-            save_heatmap(M, EV, ta, tb, group,
-                         os.path.join(HEATMAP_DIR, fname),
-                         la, lb, rho,
-                         p_win_a, p_draw, p_win_b,
-                         K_att_a, K_def_a, K_att_b, K_def_b,
-                         lb_home, lb_away, delta_raw_pure)
+        score_probs = {}
+        for x in range(MAX_GOALS):
+            for y in range(MAX_GOALS):
+                score_probs[f'P_{x}_{y}'] = round(float(M[x, y]) * 100, 3)
 
-            print(f"  [{game_num:>2}/72] Grupo {group}: {ta:<28} vs {tb:<28}  "
-                  f"LA={la:.2f}(base={lb_home:.2f},K={K_att_a:.2f})  "
-                  f"LB={lb:.2f}(base={lb_away:.2f},K={K_att_b:.2f})  "
-                  f"W={p_win_a*100:.0f}% D={p_draw*100:.0f}% L={p_win_b*100:.0f}%")
+        row = {
+            'id':              f"R32_{idx}",
+            'home':            ta,
+            'away':            tb,
+            'elo_home':        round(elo_a, 1),
+            'elo_away':        round(elo_b, 1),
+            'delta_elo':       round(elo_a - elo_b, 1),
+            'delta_eff':       round(d_raw, 1),
+            'k_att_home':      round(K_att_a, 4),
+            'k_def_home':      round(K_def_a, 4),
+            'k_att_away':      round(K_att_b, 4),
+            'k_def_away':      round(K_def_b, 4),
+            'lambda_home':     round(la, 4),
+            'lambda_away':     round(lb, 4),
+            'rho':             round(rho, 4),
+            'p_win_home':      round(p_win_a * 100, 2),
+            'p_draw':          round(p_draw  * 100, 2),
+            'p_win_away':      round(p_win_b * 100, 2),
+            'p_avanca_home':   round(p_adv_home * 100, 2),
+            'p_avanca_away':   round(p_adv_away * 100, 2),
+            'resultado_home':  resultado[0] if resultado else None,
+            'resultado_away':  resultado[1] if resultado else None,
+        }
+        row.update(score_probs)
+        rows.append(row)
 
-    print("\n[4/5] Salvando CSV...")
+        status = f"  RESULT: {resultado[0]}-{resultado[1]}" if resultado else "  (TBD)"
+        print(f"  [{idx:>2}/16] R32_{idx}  {ta} vs {tb}{status}")
+        print(f"         lam={la:.2f} vs {lb:.2f}  "
+              f"W={p_win_a*100:.0f}% D={p_draw*100:.0f}% L={p_win_b*100:.0f}%  "
+              f"P(adv): {p_adv_home*100:.1f}% / {p_adv_away*100:.1f}%")
+
+        # Heatmap
+        safe_a = ta.replace(' ', '_').replace('/', '-')
+        safe_b = tb.replace(' ', '_').replace('/', '-')
+        fname  = f"R32_{idx}_{safe_a}_vs_{safe_b}.png"
+        save_heatmap(M, EV, ta, tb, f"R32_{idx}",
+                     os.path.join(HEATMAP_DIR, fname),
+                     la, lb, rho,
+                     p_win_a, p_draw, p_win_b,
+                     p_adv_home, p_adv_away,
+                     K_att_a, K_def_a, K_att_b, K_def_b,
+                     lb_home, lb_away, elo_a - elo_b, resultado)
+
+    print("\n[4/4] Salvando CSV...")
     df = pd.DataFrame(rows)
     score_cols = [c for c in df.columns if c.startswith('P_')]
     main_cols  = [c for c in df.columns if not c.startswith('P_')]
     df = df[main_cols + sorted(score_cols, key=lambda c: (int(c.split('_')[1]), int(c.split('_')[2])))]
-    df.to_csv(os.path.join(RESULTS_DIR, "group_stage_analysis.csv"), index=False)
-    print("    >> group_stage_analysis.csv")
+    out_csv = os.path.join(RESULTS_DIR, "16avos_analysis.csv")
+    df.to_csv(out_csv, index=False)
+    print(f"    >> {out_csv}")
 
-    # Resumo por time (agregando como time A nos seus jogos)
-    print("\n[5/5] Resumo por time (média dos seus 3 jogos de grupo):")
-    team_summary = []
-    for t in all_teams:
-        games_a = df[df['team_a'] == t]
-        games_b = df[df['team_b'] == t]
-        xg_for  = list(games_a['lambda_a']) + list(games_b['lambda_b'])
-        xg_ag   = list(games_a['lambda_b']) + list(games_b['lambda_a'])
-        pw      = list(games_a['p_win_a']) + list(games_b['p_win_b'])
-        ka, kd  = team_K[t]
-        team_summary.append({
-            'team':      t,
-            'group':     next(g for g, ts in OFFICIAL_GROUPS.items() if t in ts),
-            'elo':       round(elos.get(t, 1500), 1),
-            'K_att':     round(ka, 4),
-            'K_def':     round(kd, 4),
-            'xg_for_avg':  round(np.mean(xg_for), 3) if xg_for else 0.0,
-            'xg_ag_avg':   round(np.mean(xg_ag),  3) if xg_ag  else 0.0,
-            'win_pct_avg': round(np.mean(pw),       1) if pw     else 0.0,
-        })
-
-    df_ts = pd.DataFrame(team_summary).sort_values('win_pct_avg', ascending=False)
-    df_ts.to_csv(os.path.join(RESULTS_DIR, "team_summary_analysis.csv"), index=False)
-    print("    >> team_summary_analysis.csv")
-    print(f"\n  {'Time':<30} {'Gr':>3}  {'ELO':>6}  {'K_att':>6}  {'K_def':>6}  "
-          f"{'xG_for':>7}  {'xG_ag':>7}  {'Win%':>5}")
-    print("  " + "-" * 80)
-    for _, r in df_ts.iterrows():
-        print(f"  {r['team']:<30} {r['group']:>3}  {r['elo']:>6.0f}  "
-              f"{r['K_att']:>6.4f}  {r['K_def']:>6.4f}  "
-              f"{r['xg_for_avg']:>7.3f}  {r['xg_ag_avg']:>7.3f}  "
-              f"{r['win_pct_avg']:>5.1f}%")
-
-    print(f"\n=== Concluído ===")
-    print(f"  group_stage_analysis.csv   ({len(rows)} jogos × {len(df.columns)} colunas)")
-    print(f"  team_summary_analysis.csv  ({len(team_summary)} times)")
-    print(f"  heatmaps/  ({len(rows)} arquivos PNG)")
-
+    print("\n" + "=" * 72)
+    print(f"  {'Jogo':<8}  {'Home':<18}  {'Away':<18}  "
+          f"{'Win%':>5}  {'Drw%':>5}  {'Los%':>5}  {'Av.H%':>6}  {'Av.A%':>6}  Res")
+    print("  " + "-" * 70)
+    for _, r in df.iterrows():
+        res_str = (f"{int(r['resultado_home'])}-{int(r['resultado_away'])}"
+                   if r['resultado_home'] is not None and not (
+                       isinstance(r['resultado_home'], float) and np.isnan(r['resultado_home']))
+                   else "  TBD")
+        print(f"  {r['id']:<8}  {r['home']:<18}  {r['away']:<18}  "
+              f"{r['p_win_home']:>5.1f}  {r['p_draw']:>5.1f}  {r['p_win_away']:>5.1f}  "
+              f"{r['p_avanca_home']:>6.1f}  {r['p_avanca_away']:>6.1f}  {res_str}")
+    print("=" * 72)
 
 if __name__ == "__main__":
     main()
