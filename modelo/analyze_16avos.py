@@ -46,22 +46,22 @@ HOSTS = {'United States', 'Mexico', 'Canada'}
 # Use "TBD" para adversários ainda indefinidos.
 # ─────────────────────────────────────────────────────────────────────
 RAW_CONFRONTOS = [
-    "South Africa, Canada",
-    "Brazil, Japan",
-    "Germany, TBD",
-    "Netherlands, Morocco",
-    "Ivory Coast, Norway",
-    "France, TBD",
-    "Mexico, TBD",
-    "England, TBD",
-    "Belgium, TBD",
-    "United States, TBD",
-    "Spain, TBD",
-    "Portugal, Croatia",
-    "Switzerland, TBD",
-    "Australia, Egypt",
-    "TBD, Cape Verde",
-    "Colombia, TBD",
+    "South Africa, Canada",       # 28/06 - Los Angeles
+    "Brazil, Japan",              # 29/06 - Houston
+    "Germany, Paraguay",          # 29/06 - Boston
+    "Netherlands, Morocco",       # 29/06 - Monterrey
+    "Ivory Coast, Norway",        # 30/06 - Dallas
+    "France, Sweden",             # 30/06 - Nova York
+    "Mexico, Ecuador",            # 30/06 - Cidade do México
+    "England, DR Congo",          # 01/07 - Atlanta
+    "Belgium, Senegal",           # 01/07 - Seattle
+    "United States, Bosnia",      # 01/07 - Santa Clara
+    "Spain, Austria",             # 02/07 - Los Angeles
+    "Portugal, Croatia",          # 02/07 - Toronto
+    "Switzerland, Algeria",       # 03/07 - Vancouver
+    "Australia, Egypt",           # 03/07 - Dallas
+    "Argentina, Cape Verde",      # 03/07 - Miami
+    "Colombia, Ghana",            # 03/07 - Kansas City
 ]
 
 # ─────────────────────────────────────────────────────────────────────

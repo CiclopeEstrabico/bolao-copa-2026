@@ -2,7 +2,7 @@
   "GRU_HIDDEN": 48,
   "FEAT_PER_GAME": 6,
   "SEQ_LEN": 20,
-  "best_val_nll": 2.5094234692422965,
+  "best_val_nll": 2.5062944512618217,
   "DROPOUT": 0.25,
   "NORM_DELTA_ELO": 400.0,
   "NORM_GOALS": 3.0,
