@@ -349,7 +349,7 @@ R32_CONFRONTOS = [
     "Mexico, Ecuador",            # 30/06 - Cidade do México
     "England, DR Congo",          # 01/07 - Atlanta
     "Belgium, Senegal",           # 01/07 - Seattle
-    "United States, Bosnia",      # 01/07 - Santa Clara
+    "United States, Bosnia and Herzegovina",      # 01/07 - Santa Clara
     "Spain, Austria",             # 02/07 - Los Angeles
     "Portugal, Croatia",          # 02/07 - Toronto
     "Switzerland, Algeria",       # 03/07 - Vancouver
