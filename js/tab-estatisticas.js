@@ -138,6 +138,8 @@ window.renderEstatisticas = function () {
   const jogosOrdenadosSeq = [...jogosFeitos].sort((a, b) => new Date(a.utc) - new Date(b.utc));
 
   // --- Pé Frio / Pé Quente (recordes históricos) ---
+  // Jogo sem palpite QUEBRA a sequência (tratado como interrupção, não como neutro).
+  // Sem isso, gaps de apostas conectariam blocos separados numa sequência artificial.
   const coldStreaks = {};
   const hotStreaks = {};
   for (const r2 of ranking) {
@@ -147,7 +149,11 @@ window.renderEstatisticas = function () {
     for (const jogo of jogosOrdenadosSeq) {
       const p = pals[aId]?.[jogo.id];
       const r2Val = res[jogo.id];
-      if (!p || p.homeGoals === undefined || !r2Val) continue;
+      if (!r2Val) continue; // jogo sem resultado ainda — ignora neutro
+      if (!p || p.homeGoals === undefined) {
+        seqFria = 0; seqQuente = 0; // sem palpite quebra ambas as sequências
+        continue;
+      }
       const br = calcularPontosBrutos(p, r2Val);
       const pts = aplicarFator(br.total_bruto, jogo.fase);
       if (pts === 0) { seqFria++; recFria = Math.max(recFria, seqFria); } else { seqFria = 0; }
@@ -166,6 +172,7 @@ window.renderEstatisticas = function () {
   const maiorSeqQuente = destPeQuente.bestScore;
 
   // --- Maré Alta / Maré Baixa (sequências ATUAIS) ---
+  // Jogo sem palpite QUEBRA a sequência, pelo mesmo motivo do Pé Frio/Quente.
   const maresAltas = {};
   const maresBaixas = {};
   for (const r2 of ranking) {
@@ -174,7 +181,11 @@ window.renderEstatisticas = function () {
     for (const jogo of jogosOrdenadosSeq) {
       const p = pals[aId]?.[jogo.id];
       const rv = res[jogo.id];
-      if (!p || p.homeGoals === undefined || !rv) continue;
+      if (!rv) continue; // jogo sem resultado — ignora neutro
+      if (!p || p.homeGoals === undefined) {
+        seqA = 0; seqB = 0; // sem palpite quebra ambas as sequências
+        continue;
+      }
       const br = calcularPontosBrutos(p, rv);
       const pts = aplicarFator(br.total_bruto, jogo.fase);
       if (br.acertou) { seqA++; } else { seqA = 0; }
@@ -310,7 +321,7 @@ window.renderEstatisticas = function () {
         }
         return { posicao: pos, ...item };
       });
-      snapshots.push(snap);
+      snapshots.push({ snap, gameId: jogo.id });
     }
   }
 
@@ -321,7 +332,7 @@ window.renderEstatisticas = function () {
     snapPosIdx[a.id] = new Array(snapshots.length);
   }
   for (let si = 0; si < snapshots.length; si++) {
-    for (const item of snapshots[si]) {
+    for (const item of snapshots[si].snap) {
       if (snapPosIdx[item.participante.id]) {
         snapPosIdx[item.participante.id][si] = item.posicao;
       }
@@ -329,18 +340,28 @@ window.renderEstatisticas = function () {
   }
 
   // --- Montanha Russa: maior Σ|Δposição| / nJogos (mín 5 jogos) ---
+  // Os 2 primeiros snapshots são descartados (ranking inicial ruidoso — empates
+  // gerais resolvidos por ordem de cadastro, não por mérito de apostas).
+  // Intervalos onde o apostador não apostou no jogo que gerou o snapshot são
+  // ignorados: a mudança de posição seria passiva (outros acumularam, ele ficou
+  // parado), não reflete volatilidade real de apostas.
+  const SNAP_WARMUP = 2;
   const montanhaScores = {};
-  if (totalJogos >= 5 && snapshots.length >= 2) {
+  if (totalJogos >= 5 && snapshots.length >= SNAP_WARMUP + 2) {
     for (const r2 of ranking) {
       const aId = r2.participante.id;
-      let soma = 0;
-      for (let i = 1; i < snapshots.length; i++) {
+      let soma = 0, nIntervalos = 0;
+      for (let i = SNAP_WARMUP + 1; i < snapshots.length; i++) {
+        // Pula se o apostador não apostou no jogo que gerou este snapshot
+        const gId = snapshots[i].gameId;
+        if (!pals[aId]?.[gId] || pals[aId][gId].homeGoals === undefined) continue;
         const posAntes  = (snapPosIdx[aId] && snapPosIdx[aId][i-1]) || 0;
         const posDepois = (snapPosIdx[aId] && snapPosIdx[aId][i]) || 0;
         soma += Math.abs(posDepois - posAntes);
+        nIntervalos++;
       }
-      // Média por jogo (divisão pelo número de snapshots – 1 = número de intervalos)
-      montanhaScores[aId] = snapshots.length > 1 ? soma / (snapshots.length - 1) : 0;
+      // Média por jogo (divisão pelo número de intervalos válidos)
+      montanhaScores[aId] = nIntervalos > 0 ? soma / nIntervalos : 0;
     }
   }
   const destMontanha = obterDestaques(r => montanhaScores[r.participante.id] !== undefined ? montanhaScores[r.participante.id] : -1, true, true, score => totalJogos >= 5 && score > 0);
@@ -370,13 +391,14 @@ window.renderEstatisticas = function () {
   const reiScore = destRei.bestScore;
 
   // --- Tubarão Banguela: mais snapshots no Top 5 e atualmente fora (mín 10 jogos) ---
+  // Os 2 primeiros snapshots são descartados (ranking inicial ruidoso).
   const tubaraoScores = {};
-  if (totalJogos >= 10 && snapshots.length > 0) {
+  if (totalJogos >= 10 && snapshots.length > SNAP_WARMUP) {
     for (const r2 of ranking) {
       const aId = r2.participante.id;
       if (r2.posicao <= 5) { tubaraoScores[aId] = 0; continue; }
       let cnt = 0;
-      for (let _si2 = 0; _si2 < snapshots.length; _si2++) {
+      for (let _si2 = SNAP_WARMUP; _si2 < snapshots.length; _si2++) {
         const pos = (snapPosIdx[aId] && snapPosIdx[aId][_si2]) || 99;
         if (pos <= 5) cnt++;
       }
@@ -601,19 +623,32 @@ window.renderEstatisticas = function () {
   const _anarqArr = destAnarquista.bestArr;
   const anarqMedia = destAnarquista.bestScore ? destAnarquista.bestScore.toFixed(1) : "—";
 
-  // --- Metrônomo: menor desvio padrão de pts/jogo (mín 10 jogos) ---
+  // --- Metrônomo: menor desvio padrão de aproveitamento/jogo (mín 10 jogos) ---
+  // Normaliza cada jogo pelo máximo possível naquela fase (base + bonus_alto × fator),
+  // evitando que a transição de grupos→eliminatórias infle artificialmente o DP.
   const dps = {};
-  for (const r2 of ranking) {
-    const aId = r2.participante.id;
-    const ptsPorJogo = jogosFeitos.map(jogo => {
-      const p = pals[aId]?.[jogo.id];
-      if (!p || p.homeGoals === undefined) return null;
-      const br = calcularPontosBrutos(p, res[jogo.id]);
-      return aplicarFator(br.total_bruto, jogo.fase);
-    }).filter(x => x !== null);
-    if (ptsPorJogo.length < 10) continue;
-    const media = ptsPorJogo.reduce((s, v) => s + v, 0) / ptsPorJogo.length;
-    dps[aId] = Math.sqrt(ptsPorJogo.reduce((s, v) => s + (v - media) ** 2, 0) / ptsPorJogo.length);
+  const _cfgMet = window.CONFIG?.pontuacao;
+  if (_cfgMet) {
+    const _limiarMet = _cfgMet.limiar_placar_alto ?? 4;
+    for (const r2 of ranking) {
+      const aId = r2.participante.id;
+      const aprovPorJogo = jogosFeitos.map(jogo => {
+        const p = pals[aId]?.[jogo.id];
+        if (!p || p.homeGoals === undefined) return null;
+        const br = calcularPontosBrutos(p, res[jogo.id]);
+        const pts = aplicarFator(br.total_bruto, jogo.fase);
+        // Máximo possível neste jogo (considera total de gols reais para bonus_alto/baixo)
+        const tgMet = Number(res[jogo.id].homeGoals) + Number(res[jogo.id].awayGoals);
+        const mxBrMet = tgMet >= _limiarMet
+          ? _cfgMet.resultado_base + _cfgMet.bonus_placar_exato_alto
+          : _cfgMet.resultado_base + _cfgMet.bonus_placar_exato_baixo;
+        const mxPtsMet = aplicarFator(mxBrMet, jogo.fase);
+        return mxPtsMet > 0 ? pts / mxPtsMet : 0; // aproveitamento [0..1]
+      }).filter(x => x !== null);
+      if (aprovPorJogo.length < 10) continue;
+      const media = aprovPorJogo.reduce((s, v) => s + v, 0) / aprovPorJogo.length;
+      dps[aId] = Math.sqrt(aprovPorJogo.reduce((s, v) => s + (v - media) ** 2, 0) / aprovPorJogo.length);
+    }
   }
   const destMetronome = obterDestaques(r => dps[r.participante.id] !== undefined ? dps[r.participante.id] : Infinity, true, false, score => score !== Infinity);
   const consistApo = destMetronome.bestApo;
@@ -708,7 +743,7 @@ window.renderEstatisticas = function () {
         const mxPts = aplicarFator(mxBr, jogo.fase);
         if (jogo.fase === "grupos") { ptsGrp += pts; maxGrp += mxPts; } else { ptsElim += pts; maxElim += mxPts; nElim++; }
       }
-      if (nElim >= 4 && maxGrp > 0 && maxElim > 0) { const ag = ptsGrp / maxGrp, ae = ptsElim / maxElim; pesBarroScores[aId] = ag - ae; dragaoScores[aId] = ae - ag; }
+      if (nElim >= 6 && maxGrp > 0 && maxElim > 0) { const ag = ptsGrp / maxGrp, ae = ptsElim / maxElim; pesBarroScores[aId] = ag - ae; dragaoScores[aId] = ae - ag; }
     }
   }
   const destPesBarro = obterDestaques(r => pesBarroScores[r.participante.id] ?? -Infinity, false, true, s => s !== -Infinity && s > 0);
@@ -1087,8 +1122,8 @@ window.renderEstatisticas = function () {
 
   h += _dCard("⚖️", "Metrônomo",
     jogosFeitos.length < 10 ? '—' : _tieName(_consistArr),
-    jogosFeitos.length < 10 || !consistApo ? '— (< 10 jogos)' : 'desvio ' + menorDP.toFixed(2) + ' pts/jogo',
-    "#34d399", "metronomo", "Quem pontua de forma mais consistente jogo a jogo, com menor variação entre rodadas boas e ruins. Calculado pelo desvio padrão dos pontos por jogo (mínimo 10 jogos).");
+    jogosFeitos.length < 10 || !consistApo ? '— (< 10 jogos)' : 'σ ' + menorDP.toFixed(3) + ' aproveitamento',
+    "#34d399", "metronomo", "Quem pontua de forma mais consistente jogo a jogo, com menor variação entre rodadas boas e ruins. Calculado pelo desvio padrão do aproveitamento por jogo (pontos obtidos ÷ pontos máximos possíveis naquele jogo), normalizando pelo fator de fase para comparar grupos e eliminatórias na mesma escala (mínimo 10 jogos).");
 
   h += _dCard("🕯️", "Lanterninha",
     jogosFeitos.length === 0 ? '—' : _tieName(_lanterninhaArr),
@@ -1103,7 +1138,7 @@ window.renderEstatisticas = function () {
 
   h += _dCard("🗿", "Pés de Barro",
     !_pesBarroArr ? '—' : _tieName(_pesBarroArr),
-    !_pesBarroArr ? '— (< 4 jogos elim.)' : (destPesBarro.bestScore * 100).toFixed(1) + '% de queda',
+    !_pesBarroArr ? '— (< 6 jogos elim.)' : (destPesBarro.bestScore * 100).toFixed(1) + '% de queda',
     "#a8a29e", "pes_barro", "Gigante com os pés de barro! Mandou bem nos grupos, desmoronou no mata-mata. Mín. 4 jogos eliminatórios.");
 
   h += _dCard("🤝", "Diplomata",
@@ -1118,7 +1153,7 @@ window.renderEstatisticas = function () {
 
   h += _dCard("🐉", "Dragão Adormecido",
     !_dragaoArr ? '—' : _tieName(_dragaoArr),
-    !_dragaoArr ? '— (< 4 jogos elim.)' : '+' + (destDragao.bestScore * 100).toFixed(1) + '% de melhora',
+    !_dragaoArr ? '— (< 6 jogos elim.)' : '+' + (destDragao.bestScore * 100).toFixed(1) + '% de melhora',
     "#22d3ee", "dragao_adormecido", "Estava quieto nos grupos, acordou no mata-mata e virou o jogo! Mín. 4 jogos eliminatórios.");
 
   h += _dCard("🐔", "Frangueiro",
@@ -1591,13 +1626,13 @@ window.CARD_CONFIGS = {
   pacifista:     { icon: '🕊️', label: 'Pacifista',             desc: 'Amante da paz! Quem mais vezes palpitou empate nas partidas. Calculado somando todos os palpites onde os gols previstos para o time da casa e visitante foram iguais.', getScore: (r,c) => c.pacifistaScores[r.participante.id] || 0,      higherIsWinner: true,  isGoodCard: true,  format: v => v + ' empates' },
   conservador:   { icon: '💤', label: 'Conservador',           desc: 'Maria vai com as outras! Quem mais vezes escolheu a direção de resultado (vitória 1, empate, vitória 2) que concentrou pelo menos 50% de todos os palpites do grupo naquela rodada.', getScore: (r,c) => c.conservScores[r.participante.id] || 0,        higherIsWinner: true,  isGoodCard: true,  format: v => v + 'x consenso' },
   anarquista:    { icon: '🎲', label: 'Anarquista',            desc: 'Rebelde sem causa! Quem mais se distanciou do placar consensual (mais votado) do grupo. Calculado somando a distância absoluta do chute em relação ao top placar: |(chute_home − chute_away) − (top_home − top_away)| dividido pelas apostas.', getScore: (r,c) => { const id = r.participante.id; return (c.anarqJogos[id] || 0) >= 3 ? (c.anarqScores[id] / c.anarqJogos[id]) : 0; }, higherIsWinner: true, isGoodCard: true, format: v => v.toFixed(1) + ' dist.', filterFn: s => s > 0 },
-  metronomo:     { icon: '⚖️', label: 'Metrônomo',             desc: 'Reloginho suíço! O pontuador mais regular rodada após rodada. Calculado pelo desvio padrão (variação em torno da média) dos pontos obtidos por jogo. Menor desvio padrão indica regularidade extrema (mínimo 10 jogos).', getScore: (r,c) => c.dps[r.participante.id] ?? Infinity,         higherIsWinner: false, isGoodCard: true,  format: v => 'σ ' + v.toFixed(2), filterFn: s => s !== Infinity },
+  metronomo:     { icon: '⚖️', label: 'Metrônomo',             desc: 'Reloginho suíço! O pontuador mais regular rodada após rodada. Calculado pelo desvio padrão do aproveitamento por jogo (pontos obtidos ÷ pontos máximos possíveis naquele jogo), normalizando pelo fator de fase para comparar grupos e eliminatórias na mesma escala. Menor desvio padrão indica regularidade extrema (mínimo 10 jogos).', getScore: (r,c) => c.dps[r.participante.id] ?? Infinity,         higherIsWinner: false, isGoodCard: true,  format: v => 'σ ' + v.toFixed(3), filterFn: s => s !== Infinity },
   lanterninha:   { icon: '🕯️', label: 'Lanterninha',           desc: 'Farol de cauda! Quem está segurando a lanterna da Copa com o menor total de pontos acumulados na classificação geral. O importante é participar e torcer!', getScore: (r,c) => r.stats.total,                                    higherIsWinner: false, isGoodCard: false, format: v => v.toFixed(1) + ' pts' },
   campeao_avesso:{ icon: '🙃', label: 'Campeão do Avesso',   desc: 'Bem-vindo ao Mundo Invertido! Aqui a pontuação é recalculada como se os resultados oficiais fossem espelhados: o placar do mandante vira do visitante e vice-versa. Se o jogo terminou 1×0, conta como se tivesse sido 0×1. Quem seria o campeão se a Copa fosse de cabeça pra baixo?', getScore: (r,c) => c.demogorgonScores[r.participante.id] || 0, higherIsWinner: true, isGoodCard: true, format: v => v.toFixed(1) + ' pts' },
   gemeos:        { icon: '👯', label: 'Gêmeos',               desc: 'Quase telepatia! A dupla com os palpites mais parecidos da Copa inteira. Calculado comparando todos os pares possíveis de apostadores, somando a distância absoluta entre cada palpite (|golsA − golsB| para mandante e visitante) e dividindo pelo número de jogos em comum (mínimo 5 jogos apostados em comum). Parece que combinaram — mas juram que não.', getScore: (r,c) => c.gemeosPerPerson[r.participante.id] ?? Infinity, higherIsWinner: false, isGoodCard: true, format: v => 'dist. ' + v.toFixed(2), filterFn: s => s !== Infinity, customRender: (cache) => { const pairs = cache.gemeosPairs || []; if (!pairs.length) return null; let h = ''; pairs.forEach((p, i) => { const n1 = p.a1.apelido || p.a1.nome, n2 = p.a2.apelido || p.a2.nome; const bg = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,.02)'; const posColor = i < 3 ? ['#fbbf24','#c0c0c0','#cd7f32'][i] : 'var(--texto2)'; h += '<tr style="background:' + bg + '"><td style="text-align:center;padding:7px 6px;font-weight:800;color:' + posColor + '">' + (i+1) + '</td><td style="padding:7px 6px;font-weight:600;color:#fff;font-size:.76rem">' + n1 + ' <span style="color:var(--texto2)">&</span> ' + n2 + '</td><td style="text-align:right;padding:7px 6px;font-weight:700;color:var(--verde-light);white-space:nowrap">dist. ' + p.dist.toFixed(2) + '</td><td style="text-align:right;padding:7px 6px;color:var(--texto2)">' + p.nComum + '</td></tr>'; }); return h; } },
   polos_opostos: { icon: '🧲', label: 'Polos Opostos',        desc: 'Nunca concordaram em nada! A dupla mais divergente da Copa inteira. Calculado da mesma forma que Gêmeos, mas buscando a maior distância média entre palpites ao invés da menor. Se um apostava em goleada, o outro chutava empate. Ou um estava certo… ou o outro (mínimo 5 jogos em comum).', getScore: (r,c) => c.polosPerPerson[r.participante.id] ?? -1, higherIsWinner: true, isGoodCard: true, format: v => 'dist. ' + v.toFixed(2), filterFn: s => s >= 0, customRender: (cache) => { const pairs = cache.polosPairs || []; if (!pairs.length) return null; let h = ''; pairs.forEach((p, i) => { const n1 = p.a1.apelido || p.a1.nome, n2 = p.a2.apelido || p.a2.nome; const bg = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,.02)'; const posColor = i < 3 ? ['#fbbf24','#c0c0c0','#cd7f32'][i] : 'var(--texto2)'; h += '<tr style="background:' + bg + '"><td style="text-align:center;padding:7px 6px;font-weight:800;color:' + posColor + '">' + (i+1) + '</td><td style="padding:7px 6px;font-weight:600;color:#fff;font-size:.76rem">' + n1 + ' <span style="color:var(--texto2)">&</span> ' + n2 + '</td><td style="text-align:right;padding:7px 6px;font-weight:700;color:var(--verde-light);white-space:nowrap">dist. ' + p.dist.toFixed(2) + '</td><td style="text-align:right;padding:7px 6px;color:var(--texto2)">' + p.nComum + '</td></tr>'; }); return h; } },
-  pes_barro:     { icon: '🗿', label: 'Pés de Barro',         desc: 'Gigante com os pés de barro! Quem mandou muito bem na fase de grupos mas desmoronou no mata-mata. Calculado comparando o aproveitamento percentual (pontos obtidos ÷ pontos máximos possíveis) de cada fase. A maior diferença positiva (grupos − eliminatórias) vence. Mínimo 4 jogos eliminatórios para garantir significância.', getScore: (r,c) => c.pesBarroScores[r.participante.id] ?? -Infinity, higherIsWinner: true, isGoodCard: false, format: v => (v * 100).toFixed(1) + '% queda', filterFn: s => s !== -Infinity && s > 0 },
-  dragao_adormecido:{ icon: '🐉', label: 'Dragão Adormecido', desc: 'Estava hibernando nos grupos e acordou furioso no mata-mata! Oposto do Pés de Barro — quem melhorou o aproveitamento percentual na passagem da fase de grupos para as eliminatórias. A maior diferença positiva (eliminatórias − grupos) vence. Mínimo 4 jogos eliminatórios.', getScore: (r,c) => c.dragaoScores[r.participante.id] ?? -Infinity, higherIsWinner: true, isGoodCard: true, format: v => '+' + (v * 100).toFixed(1) + '%', filterFn: s => s !== -Infinity && s > 0 },
+  pes_barro:     { icon: '🗿', label: 'Pés de Barro',         desc: 'Gigante com os pés de barro! Quem mandou muito bem na fase de grupos mas desmoronou no mata-mata. Calculado comparando o aproveitamento percentual (pontos obtidos ÷ pontos máximos possíveis) de cada fase. A maior diferença positiva (grupos − eliminatórias) vence. Mínimo 6 jogos eliminatórios para garantir significância.', getScore: (r,c) => c.pesBarroScores[r.participante.id] ?? -Infinity, higherIsWinner: true, isGoodCard: false, format: v => (v * 100).toFixed(1) + '% queda', filterFn: s => s !== -Infinity && s > 0 },
+  dragao_adormecido:{ icon: '🐉', label: 'Dragão Adormecido', desc: 'Estava hibernando nos grupos e acordou furioso no mata-mata! Oposto do Pés de Barro — quem melhorou o aproveitamento percentual na passagem da fase de grupos para as eliminatórias. A maior diferença positiva (eliminatórias − grupos) vence. Mínimo 6 jogos eliminatórios.', getScore: (r,c) => c.dragaoScores[r.participante.id] ?? -Infinity, higherIsWinner: true, isGoodCard: true, format: v => '+' + (v * 100).toFixed(1) + '%', filterFn: s => s !== -Infinity && s > 0 },
   bilhete_premiado:{ icon: '🍀', label: 'Bilhete Premiado',   desc: 'Loteria premiada! Cravou o placar exato de um jogo que o modelo Dixon-Coles considerava quase impossível. Calculado encontrando, dentre todos os acertos de placar exato do apostador, aquele cuja probabilidade estimada pelo modelo era a mais baixa. Quanto menor a probabilidade, mais impressionante o acerto.', getScore: (r,c) => c.loteriaScores[r.participante.id] || 0, higherIsWinner: true, isGoodCard: true, format: (v,r,c) => { const d = c.loteriaDetalhes[r.participante.id]; return d ? (d.prob * 100).toFixed(1) + '% (' + getSigla(d.hC) + ' ' + d.placar + ' ' + getSigla(d.aC) + ')' : '—'; }, filterFn: s => s > 0 },
   tecnico_selecao:{ icon: '🎙️', label: 'Técnico da Seleção',  desc: 'Escalou certo quando o Brasil entrou em campo! Soma dos pontos obtidos exclusivamente nos jogos em que a Seleção Brasileira participou. Quem mais acumulou pontos nas partidas do Brasil é o verdadeiro técnico de sofá deste bolão.', getScore: (r,c) => c.tecnicoScores[r.participante.id] || 0, higherIsWinner: true, isGoodCard: true, format: v => v.toFixed(1) + ' pts', filterFn: (s,r,c) => c.jogosBRA.length > 0 },
   matador_canarinho:{ icon: '🪓', label: 'Matador de Canarinho', desc: 'Carrasco verde e amarelo! Acumulou mais dano apostando contra o Brasil em todos os jogos do Brasil no cronograma. Cada palpite de derrota brasileira soma 3 pontos de dano, cada empate soma 2 pontos. Considera todos os jogos apostados, independente de já terem resultado oficial.', getScore: (r,c) => c.matadorScores[r.participante.id] || 0, higherIsWinner: true, isGoodCard: false, format: v => v + ' pts dano' },

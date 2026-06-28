@@ -830,6 +830,20 @@ function _graficoRodarMonteCarlo() {
   }
   const palSim = {};
 
+  // Fases cujo prazo de apostas já passou (liberado_* = false no configStatus).
+  // Para jogos pendentes dessas fases, apostadores sem palpite recebem 0 pts —
+  // não faz sentido simular uma aposta que eles não puderam mais fazer.
+  const _st = APP.configStatus || {};
+  const _faseParaKey = { grupos: 'grupos', '16avos': '16avos', oitavas: 'oitavas', quartas: 'quartas', semis: 'semis', terceiro: 'finais', final: 'finais' };
+  const fasesFechadas = new Set(
+    FASES.filter(fase => {
+      const key = _faseParaKey[fase] || fase;
+      // Uma fase com jogos pendentes está "fechada" quando sua flag liberado_* é false.
+      // Fases ainda não abertas (zeradas e não liberadas) também entram aqui.
+      return jogosPorFase[fase].length > 0 && !_st[`liberado_${key}`];
+    })
+  );
+
   // Resolver rápido O(1) sem slice/startsWith complexo
   function getTeamFast(pos, classificados) {
     if (classificados[pos]) return classificados[pos];
@@ -896,11 +910,13 @@ function _graficoRodarMonteCarlo() {
     }
 
     // Passo 4: palpite simulado compartilhado para jogos sem aposta (1 roll/jogo)
+    // Só simula palpites para fases ABERTAS. Fases fechadas sem palpite = 0 pts.
     if (temPendentes) {
       if (!cachedClassificados) {
         cachedClassificados = window.BRACKET.calcularTodosOsGrupos(resSim).classificados;
       }
       for (const fase of FASES) {
+        if (fasesFechadas.has(fase)) continue; // fase fechada: não gera palpite simulado
         const jogos = jogosPorFase[fase];
         for (const jogo of jogos) {
           const hC = getTeamFast(jogo.home, cachedClassificados);
@@ -928,6 +944,8 @@ function _graficoRodarMonteCarlo() {
             if (pal) {
               p_h = pal.h; p_a = pal.a;
             } else {
+              // Fase fechada e sem palpite → 0 pontos (apostador não pode mais apostar)
+              if (fasesFechadas.has(fase)) continue;
               const pS = palSim[jogo.id];
               if (!pS) continue;
               p_h = pS.homeGoals; p_a = pS.awayGoals;
