@@ -55,7 +55,7 @@ RAW_CONFRONTOS = [
     "Brazil, Norway",
     "Mexico, England",
     "Portugal, Spain",
-    "Uinited States, Belgium",
+    "United States, Belgium",
     "Argentina, Egypt",
     "Switzerland, Colombia",
 ]

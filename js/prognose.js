@@ -4,14 +4,14 @@
 
 // Fallback de ratings caso o modelo JSON não carregue
 window.ELO_RATINGS = {
-  ARG:2169, FRA:2120, ENG:2045, BRA:2061, ESP:2182, POR:2025,
-  BEL:1944, GER:1985, NED:2010, URU:1960, COL:2042, MEX:1927,
-  SUI:1944, USA:1810, CRO:1981, AUS:1886, MAR:1967, SCO:1791,
-  JPN:1983, SEN:1922, TUR:1928, SWE:1783, AUT:1888, NOR:1932,
-  CZE:1782, ECU:1999, CAN:1884, KOR:1862, ALG:1861, IRN:1880,
-  EGY:1791, PAR:1893, CIV:1798, GHA:1626, BIH:1651, TUN:1762,
-  KSA:1670, CPV:1662, COD:1750, RSA:1645, PAN:1825, IRQ:1724,
-  QAT:1554, UZB:1818, JOR:1763, NZL:1731, CUW:1586, HAI:1676
+  ARG: 2169, FRA: 2120, ENG: 2045, BRA: 2061, ESP: 2182, POR: 2025,
+  BEL: 1944, GER: 1985, NED: 2010, URU: 1960, COL: 2042, MEX: 1927,
+  SUI: 1944, USA: 1810, CRO: 1981, AUS: 1886, MAR: 1967, SCO: 1791,
+  JPN: 1983, SEN: 1922, TUR: 1928, SWE: 1783, AUT: 1888, NOR: 1932,
+  CZE: 1782, ECU: 1999, CAN: 1884, KOR: 1862, ALG: 1861, IRN: 1880,
+  EGY: 1791, PAR: 1893, CIV: 1798, GHA: 1626, BIH: 1651, TUN: 1762,
+  KSA: 1670, CPV: 1662, COD: 1750, RSA: 1645, PAN: 1825, IRQ: 1724,
+  QAT: 1554, UZB: 1818, JOR: 1763, NZL: 1731, CUW: 1586, HAI: 1676
 };
 
 // Configurações do motor Poisson (Fallback V1)
@@ -24,7 +24,7 @@ window.ELO_CONFIG = {
 // Flag: controla se K_att / K_def do k_factors_final.json são aplicados.
 // false (padrão) → K_att = K_def = 1.0 para todos os times (Dixon-Coles puro).
 // true           → usa os valores fitados do JSON (requer k_factors_final.json válido).
-window.MODELO_USE_K_FACTORS = false;
+window.MODELO_USE_K_FACTORS = true;
 
 window.PROGNOSE = {
 
@@ -221,7 +221,7 @@ window.PROGNOSE = {
   abrirModal: function (gameId) {
     let ov = document.getElementById("modal-prog");
     let box = document.getElementById("modal-prog-body");
-    
+
     if (!ov || !box) {
       // Fallback se o HTML não tiver os IDs (embora index.html tenha)
       ov = document.getElementById("prognose-overlay");
@@ -534,16 +534,16 @@ window.PROGNOSE = {
 
     if (jogoEhSimulado(gameId) && apostasAbertas) {
       return '<div style="text-align:center;padding:40px 20px;color:var(--texto2)">' +
-             '<div style="font-size:2rem;margin-bottom:10px">🎭</div>' +
-             '<div style="font-weight:700;color:var(--dourado)">Simulação Ativa</div>' +
-             '<div style="font-size:.75rem;margin-top:5px">Apostas dos outros participantes não são reveladas para jogos simulados com apostas ainda abertas.</div></div>';
+        '<div style="font-size:2rem;margin-bottom:10px">🎭</div>' +
+        '<div style="font-weight:700;color:var(--dourado)">Simulação Ativa</div>' +
+        '<div style="font-size:.75rem;margin-top:5px">Apostas dos outros participantes não são reveladas para jogos simulados com apostas ainda abertas.</div></div>';
     }
 
     if (!podeVer) {
       return '<div style="text-align:center;padding:40px 20px;color:var(--texto2)">' +
-             '<div style="font-size:2rem;margin-bottom:10px">🔒</div>' +
-             '<div style="font-weight:700;color:var(--texto)">Palpites Ocultos</div>' +
-             '<div style="font-size:.75rem;margin-top:5px">A tendência das apostas dos outros participantes só será revelada após o fechamento do mercado para este jogo.</div></div>';
+        '<div style="font-size:2rem;margin-bottom:10px">🔒</div>' +
+        '<div style="font-weight:700;color:var(--texto)">Palpites Ocultos</div>' +
+        '<div style="font-size:.75rem;margin-top:5px">A tendência das apostas dos outros participantes só será revelada após o fechamento do mercado para este jogo.</div></div>';
     }
 
     if (!s.total) return '<p style="text-align:center;color:var(--texto2);padding:30px">Nenhum palpite registrado.</p>';
@@ -558,7 +558,7 @@ window.PROGNOSE = {
       try {
         const isNeutral = jogoInfo ? (jogoInfo.pais !== hC && jogoInfo.pais !== aC) : true;
         modelo = this.calcular(hC, aC, isNeutral);
-      } catch(e) { modelo = null; }
+      } catch (e) { modelo = null; }
     }
 
     // Percentuais do grupo
@@ -609,7 +609,7 @@ window.PROGNOSE = {
       if (modelo) {
         for (let i = 0; i < modelo.N; i++) {
           for (let j = 0; j < modelo.N; j++) {
-            const key = (i === modelo.N-1 ? '6+' : i) + 'x' + (j === modelo.N-1 ? '6+' : j);
+            const key = (i === modelo.N - 1 ? '6+' : i) + 'x' + (j === modelo.N - 1 ? '6+' : j);
             probModelo[key] = modelo.matrix[i][j];
           }
         }
@@ -670,11 +670,11 @@ window.PROGNOSE = {
       const pctPlac5 = Math.round(s.placar5 / s.total * 100);
 
       const barras = [
-        { label: 'Erraram resultado',           count: s.errosResultado,  pct: pctErros, cor: 'rgba(239,68,68,.45)',   corTexto: '#fca5a5' },
-        { label: 'Acertaram resultado',        count: s.acertosResultado, pct: pctRes,   cor: 'rgba(21,128,61,.55)',   corTexto: '#22c55e' },
-        { label: 'Bônus+1 (gols/diferença)',    count: s.bonus1,          pct: pctBonus, cor: 'rgba(124,252,0,.45)',   corTexto: '#9bf73e' },
-        { label: 'Acertaram placar (+3)',        count: s.placar3,         pct: pctPlac3, cor: 'rgba(255,255,0,.45)',   corTexto: '#ffff66' },
-        { label: 'Acertaram placar (+5)',        count: s.placar5,         pct: pctPlac5, cor: 'rgba(249,115,22,.50)',  corTexto: '#fb923c' },
+        { label: 'Erraram resultado', count: s.errosResultado, pct: pctErros, cor: 'rgba(239,68,68,.45)', corTexto: '#fca5a5' },
+        { label: 'Acertaram resultado', count: s.acertosResultado, pct: pctRes, cor: 'rgba(21,128,61,.55)', corTexto: '#22c55e' },
+        { label: 'Bônus+1 (gols/diferença)', count: s.bonus1, pct: pctBonus, cor: 'rgba(124,252,0,.45)', corTexto: '#9bf73e' },
+        { label: 'Acertaram placar (+3)', count: s.placar3, pct: pctPlac3, cor: 'rgba(255,255,0,.45)', corTexto: '#ffff66' },
+        { label: 'Acertaram placar (+5)', count: s.placar5, pct: pctPlac5, cor: 'rgba(249,115,22,.50)', corTexto: '#fb923c' },
       ];
       barras.forEach(({ label, count, pct, cor, corTexto }) => {
         h += '<div style="margin-bottom:10px">';
@@ -743,16 +743,16 @@ window.PROGNOSE = {
 
     if (jogoEhSimulado(gameId) && apostasAbertas) {
       return '<div style="text-align:center;padding:40px 20px;color:var(--texto2)">' +
-             '<div style="font-size:2rem;margin-bottom:10px">🎭</div>' +
-             '<div style="font-weight:700;color:var(--dourado)">Simulação Ativa</div>' +
-             '<div style="font-size:.75rem;margin-top:5px">Os palpites dos outros participantes não são revelados para jogos simulados com apostas ainda abertas.</div></div>';
+        '<div style="font-size:2rem;margin-bottom:10px">🎭</div>' +
+        '<div style="font-weight:700;color:var(--dourado)">Simulação Ativa</div>' +
+        '<div style="font-size:.75rem;margin-top:5px">Os palpites dos outros participantes não são revelados para jogos simulados com apostas ainda abertas.</div></div>';
     }
 
     if (!podeVer) {
       return '<div style="text-align:center;padding:40px 20px;color:var(--texto2)">' +
-             '<div style="font-size:2rem;margin-bottom:10px">🔒</div>' +
-             '<div style="font-weight:700;color:var(--texto)">Palpites Ocultos</div>' +
-             '<div style="font-size:.75rem;margin-top:5px">Os palpites individuais só serão revelados após o fechamento das apostas para este jogo.</div></div>';
+        '<div style="font-size:2rem;margin-bottom:10px">🔒</div>' +
+        '<div style="font-weight:700;color:var(--texto)">Palpites Ocultos</div>' +
+        '<div style="font-size:.75rem;margin-top:5px">Os palpites individuais só serão revelados após o fechamento das apostas para este jogo.</div></div>';
     }
 
     const todos = APP.palpites || {};
@@ -778,7 +778,7 @@ window.PROGNOSE = {
       let ptsNum = 0;
       let resDir = "";
       let resAcertou = false;
-      
+
       if (hasPalpite) {
         const hg = parseInt(palpite.homeGoals), ag = parseInt(palpite.awayGoals);
         palpiteStr = `${palpite.homeGoals}x${palpite.awayGoals}`;
@@ -808,7 +808,7 @@ window.PROGNOSE = {
       }
 
       const rank = isModelo ? Infinity : (rankMap[a.id] || 1);
-      
+
       rowsData.push({
         apostadorId: a.id,
         nome: a.nome || '',
@@ -842,7 +842,7 @@ window.PROGNOSE = {
       if (b.hasPalpite !== a.hasPalpite) return b.hasPalpite ? 1 : -1;
       // MODELO forced last only when sorting by position
       if (sortCol === 'rank' && a.isModelo !== b.isModelo) return a.isModelo ? 1 : -1;
-      
+
       let cmp = 0;
       switch (sortCol) {
         case 'rank':
