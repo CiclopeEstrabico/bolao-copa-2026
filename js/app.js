@@ -227,6 +227,9 @@ async function listenCache() {
       }
 
       _expandirCacheParaAppState(gDoc, eDoc, rDoc);
+      // Invalida o cache do Monte Carlo para que a projeção seja recalculada
+      // com os novos resultados (evita manter percentuais desatualizados)
+      if (typeof _limparCachesGrafico === 'function') _limparCachesGrafico();
       carregouDoSession = true;
     } catch (e) {
       console.error("[cache] Erro ao ler cache do Firestore:", e);
