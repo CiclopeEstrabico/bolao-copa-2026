@@ -368,22 +368,18 @@ window.renderTabelaPodio = renderTabelaPodio;
  * @param {number}      delay       - milissegundos adicionais de espera antes de scrollar (default 80)
  * @param {function}    callback    - callback chamada se o scroll for de fato executado
  */
-window.scrollParaPrimeiroJogoVazio = function(containerId, predicado, delay, callback) {
-  // Aguarda o DOM estar pronto (próximo frame + pequeno delay opcional)
-  requestAnimationFrame(() => {
-    setTimeout(() => {
-      const root = containerId ? document.getElementById(containerId) : document;
-      if (!root) return;
-      const inputs = root.querySelectorAll('input[id^="sim-hg-"]');
-      for (const input of inputs) {
-        const id = input.id.replace('sim-hg-', '');
-        if (predicado(id, input)) {
-          const row = input.closest('.jogo-row') || input;
-          row.scrollIntoView({ behavior: 'auto', block: 'center' });
-          if (typeof callback === 'function') callback();
-          return;
-        }
-      }
-    }, delay != null ? delay : 80);
-  });
+window.scrollParaPrimeiroJogoVazio = function(containerId, predicado, callback) {
+  // Executa no mesmo frame, sem delay — o scroll � instantâneo e invisível ao usuário
+  const root = containerId ? document.getElementById(containerId) : document;
+  if (!root) return;
+  const inputs = root.querySelectorAll('input[id^="sim-hg-"]');
+  for (const input of inputs) {
+    const id = input.id.replace('sim-hg-', '');
+    if (predicado(id, input)) {
+      const row = input.closest('.jogo-row') || input;
+      row.scrollIntoView({ behavior: 'instant', block: 'center' });
+      if (typeof callback === 'function') callback();
+      return;
+    }
+  }
 };

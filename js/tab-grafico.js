@@ -1169,17 +1169,34 @@ function _renderChance(rankingCompleto, chances) {
 
   let h = '<div class="card" style="padding:20px 10px;">';
 
-  // Cabeçalho com dropdown integrado
+  // Cabeçalho com dropdown integrado — botão pill estilizado
+  const _labelAtual = subTipo === 'top5' ? 'Chance de ficar no top 5' : 'Chance de ganhar o bolão';
   h += `<div style="text-align:center;margin-bottom:14px;position:relative;display:flex;align-items:center;justify-content:center;gap:6px">
-    <select onchange="window._graficoChanceSubTipo=this.value;renderAbaAtiva()" style="width:auto !important;max-width:fit-content;background:transparent;border:none;border-bottom:1.5px dashed var(--dourado);color:var(--dourado);font-size:.85rem;font-weight:700;font-family:inherit;padding:2px 4px;cursor:pointer;outline:none;text-align-last:center;-webkit-appearance:none;-moz-appearance:none;appearance:none;">
-      <option value="vencedor" ${subTipo === 'vencedor' ? 'selected' : ''} style="background:#0f172a;color:#f1f5f9">Chance de ganhar o bolão</option>
-      <option value="top5" ${subTipo === 'top5' ? 'selected' : ''} style="background:#0f172a;color:#f1f5f9">Chance de ficar no top 5</option>
-    </select>
+    <div style="position:relative;display:inline-block">
+      <button onclick="document.getElementById('chance-tipo-dd').style.display=document.getElementById('chance-tipo-dd').style.display==='block'?'none':'block';event.stopPropagation()"
+        style="display:inline-flex;align-items:center;gap:5px;background:rgba(var(--dourado-rgb,212,175,55),.12);border:1.5px solid var(--dourado);border-radius:20px;padding:4px 12px 4px 10px;cursor:pointer;color:var(--dourado);font-size:.82rem;font-weight:700;font-family:inherit;outline:none;transition:background .2s"
+        onmouseover="this.style.background='rgba(212,175,55,.22)'" onmouseout="this.style.background='rgba(212,175,55,.12)'">
+        ⚙️ <span>${_labelAtual}</span> <span style="font-size:.65rem;opacity:.8">▾</span>
+      </button>
+      <div id="chance-tipo-dd" onclick="event.stopPropagation()" style="display:none;position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--card,#1e293b);border:1.5px solid var(--borda2,rgba(255,255,255,.15));border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:200;min-width:200px;overflow:hidden">
+        <div onclick="window._graficoChanceSubTipo='vencedor';document.getElementById('chance-tipo-dd').style.display='none';renderAbaAtiva()"
+          style="padding:10px 16px;cursor:pointer;font-size:.82rem;color:${subTipo==='vencedor'?'var(--dourado)':'var(--texto)'};font-weight:${subTipo==='vencedor'?'700':'400'};background:${subTipo==='vencedor'?'rgba(212,175,55,.1)':'transparent'};transition:background .15s"
+          onmouseover="this.style.background='rgba(212,175,55,.15)'" onmouseout="this.style.background='${subTipo==='vencedor'?'rgba(212,175,55,.1)':'transparent'}'">🏆 Chance de ganhar o bolão</div>
+        <div onclick="window._graficoChanceSubTipo='top5';document.getElementById('chance-tipo-dd').style.display='none';renderAbaAtiva()"
+          style="padding:10px 16px;cursor:pointer;font-size:.82rem;color:${subTipo==='top5'?'var(--dourado)':'var(--texto)'};font-weight:${subTipo==='top5'?'700':'400'};background:${subTipo==='top5'?'rgba(212,175,55,.1)':'transparent'};transition:background .15s"
+          onmouseover="this.style.background='rgba(212,175,55,.15)'" onmouseout="this.style.background='${subTipo==='top5'?'rgba(212,175,55,.1)':'transparent'}'">🎖️ Chance de ficar no top 5</div>
+      </div>
+    </div>
     <span onclick="_toggleProjecaoTooltip(event)" style="cursor:pointer;font-size:.8rem;opacity:.7" title="Informações e ajuda">ℹ️</span>
     <div id="proj-tooltip" style="display:none;position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1e293b;color:#e2e8f0;font-size:.72rem;line-height:1.5;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);max-width:280px;text-align:left;z-index:999;box-shadow:0 6px 20px rgba(0,0,0,0.5)">
       ${_tipText}
     </div>
   </div>`;
+  // Fechar dropdown ao clicar fora
+  if (!window._chanceDdListenerOk) {
+    window._chanceDdListenerOk = true;
+    document.addEventListener('click', () => { const d = document.getElementById('chance-tipo-dd'); if(d) d.style.display='none'; });
+  }
 
   let minWidthStyle = '';
   if (needsScroll) {

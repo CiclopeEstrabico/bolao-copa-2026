@@ -428,7 +428,7 @@ function renderAbaAtiva(resetScroll = false) {
   // Só dispara se o scroll inicial ainda não tiver sido feito, e desativa nas atualizações subsequentes.
   if (_abaAtiva === 'resultados' && typeof window.scrollParaPrimeiroJogoVazio === 'function') {
     if (resetScroll || !_autoScrollInicialJogosFeito) {
-      window.scrollParaPrimeiroJogoVazio(null, () => true, null, () => {
+      window.scrollParaPrimeiroJogoVazio(null, () => true, () => {
         _autoScrollInicialJogosFeito = true;
       });
     }
