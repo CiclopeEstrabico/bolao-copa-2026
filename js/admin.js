@@ -9,6 +9,7 @@
  */
 
 window._isAdminView = true;
+let _adminScrollFeito = false; // garante auto-scroll só na 1ª vez por sessão de aba
 
 // ─── UIDs autorizados ─────────────────────────────────────────────────────────
 const ADMIN_UIDS = [
@@ -45,6 +46,9 @@ function _montarRoteadorAdmin() {
 
 function _mudarAbaAdmin(aba) {
   if (!ADMIN_ABAS.includes(aba)) return;
+  // Reseta o flag de scroll ao trocar de aba, para que entrar em Resultados
+  // sempre acione o scroll novamente (mas re-renders do Firebase não acionam).
+  if (aba !== _adminAbaAtiva) _adminScrollFeito = false;
   _adminAbaAtiva = aba;
   location.hash = aba;
   document.querySelectorAll("[data-tab]").forEach(b =>
@@ -176,6 +180,12 @@ function renderAdmin() {
   }
 
   main.innerHTML = h;
+
+  // Auto-scroll para o 1º jogo sem resultado (só na 1ª renderização após entrar na aba).
+  if (!_adminScrollFeito && typeof window.scrollParaPrimeiroJogoVazio === 'function') {
+    _adminScrollFeito = true;
+    window.scrollParaPrimeiroJogoVazio('aba-resultados', (_id, input) => input.value === '');
+  }
 }
 
 function limparLog() {

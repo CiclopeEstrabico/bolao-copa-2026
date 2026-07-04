@@ -343,6 +343,7 @@ function atualizarBracket() {
 // ─── Roteador ─────────────────────────────────────────────────────────────────
 const ABAS = ["resultados", "tabela", "classificacao", "grafico", "estatisticas", "regras", "compilacao"];
 let _abaAtiva = "resultados";
+let _autoScrollInicialJogosFeito = false;
 
 function iniciarRoteador() {
   document.querySelectorAll("[data-tab]").forEach(btn =>
@@ -352,6 +353,9 @@ function iniciarRoteador() {
 }
 function mudarAba(aba) {
   if (!ABAS.includes(aba)) return;
+  if (aba !== _abaAtiva) {
+    _autoScrollInicialJogosFeito = false; // reseta ao mudar de aba
+  }
   _abaAtiva = aba; location.hash = aba;
   document.querySelectorAll("[data-tab]").forEach(b =>
     b.classList.toggle("ativa", b.dataset.tab === aba));
@@ -419,6 +423,16 @@ function renderAbaAtiva(resetScroll = false) {
   }
   window.scrollTo(0, sy);
   requestAnimationFrame(() => document.body.style.minHeight = oldHeight);
+
+  // Auto-scroll para o 1º jogo sem resultado ao carregar ou trocar para a aba Jogos.
+  // Só dispara se o scroll inicial ainda não tiver sido feito, e desativa nas atualizações subsequentes.
+  if (_abaAtiva === 'resultados' && typeof window.scrollParaPrimeiroJogoVazio === 'function') {
+    if (resetScroll || !_autoScrollInicialJogosFeito) {
+      window.scrollParaPrimeiroJogoVazio(null, () => true, null, () => {
+        _autoScrollInicialJogosFeito = true;
+      });
+    }
+  }
 }
 
 // ─── Utilitários ──────────────────────────────────────────────────────────────

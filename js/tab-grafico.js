@@ -340,7 +340,10 @@ window.renderGrafico = function () {
   } else if (metricaAtiva === "chance") {
     // Se já temos cache, exibir direto; senão mostrar spinner e calcular
     if (window._graficoChanceCache) {
-      h += _renderChance(rankingCompleto, window._graficoChanceCache);
+      const cache = window._graficoChanceCache;
+      const subTipo = window._graficoChanceSubTipo || 'vencedor';
+      const chances = subTipo === 'top5' ? (cache.top5 || {}) : (cache.vencedor || {});
+      h += _renderChance(rankingCompleto, chances);
     } else {
       h += _renderChanceLoading();
     }
@@ -640,8 +643,8 @@ function _fmtVal(metricaAtiva, val, shortFmt = false) {
 window._graficoIrProjecao = function () {
   window._graficoMetrica = 'chance';
   renderAbaAtiva();
-  // Só rodar Monte Carlo se ainda não temos cache
-  if (!window._graficoChanceCache) {
+  // Só rodar Monte Carlo se ainda não temos cache ou se o cache está no formato antigo plano
+  if (!window._graficoChanceCache || !window._graficoChanceCache.vencedor) {
     setTimeout(_graficoRodarMonteCarlo, 0);
   }
 };
@@ -810,7 +813,10 @@ function _graficoRodarMonteCarlo() {
 
   // ── Buffers reutilizáveis ──
   const vitorias = new Float64Array(nPart);
+  const vitoriasTop5 = new Float64Array(nPart);
   const ptIter = new Int32Array(nPart);
+  const nHumanos = partIds.filter(id => id && id.toUpperCase() !== 'MODELO').length;
+  const ptIterOrdenado = new Int32Array(nHumanos);
 
   // Verifica se todos os jogos de grupo já acabaram no mundo real
   const gruposFinished = (jogosPorFase['grupos'].length === 0);
@@ -994,17 +1000,49 @@ function _graficoRodarMonteCarlo() {
         vitorias[idxModelo] += 1;
       }
     }
+
+    // Registrar Top 5 humano com divisão de empate
+    let hCount = 0;
+    for (let pi = 0; pi < nPart; pi++) {
+      if (partIds[pi] && partIds[pi].toUpperCase() !== 'MODELO') {
+        ptIterOrdenado[hCount++] = ptIter[pi];
+      }
+    }
+    ptIterOrdenado.sort();
+    // O corte do 5º colocado é o 5º elemento de trás para frente no array ordenado de humanos
+    const corteTop5 = ptIterOrdenado[Math.max(0, hCount - 5)];
+
+    for (let pi = 0; pi < nPart; pi++) {
+      if (ptIter[pi] >= corteTop5) {
+        vitoriasTop5[pi] += 1;
+      }
+    }
   }
 
-  const chances = {};
-  for (let pi = 0; pi < nPart; pi++)
-    chances[partIds[pi]] = parseFloat((vitorias[pi] / N_ITER * 100).toFixed(1));
-  // Guardar cache para não recalcular ao voltar para a aba
-  window._graficoChanceCache = chances;
-  _graficoExibirChance(chances);
+  const chancesVencedor = {};
+  const chancesTop5 = {};
+  for (let pi = 0; pi < nPart; pi++) {
+    chancesVencedor[partIds[pi]] = parseFloat((vitorias[pi] / N_ITER * 100).toFixed(1));
+    chancesTop5[partIds[pi]] = parseFloat((vitoriasTop5[pi] / N_ITER * 100).toFixed(1));
+  }
+
+  // Guardar cache estruturado com ambos os cálculos realizados na mesma rodada
+  window._graficoChanceCache = {
+    vencedor: chancesVencedor,
+    top5: chancesTop5
+  };
+  _graficoExibirChance(window._graficoChanceCache);
 }
 
-function _graficoExibirChance(chances) {
+function _graficoExibirChance(cacheOrChances) {
+  // Trata compatibilidade se o cache for o novo formato estruturado ou antigo plano
+  let cache = cacheOrChances;
+  if (!cache || (!cache.vencedor && !cache.top5)) {
+    cache = { vencedor: cacheOrChances || {}, top5: {} };
+  }
+  const subTipo = window._graficoChanceSubTipo || 'vencedor';
+  const chances = subTipo === 'top5' ? (cache.top5 || {}) : (cache.vencedor || {});
+
   // Rebuild rankingCompleto igual ao renderGrafico para cores consistentes
   const res = getResultados();
   const apos = APP.apostadores || [];
@@ -1124,12 +1162,20 @@ function _renderChance(rankingCompleto, chances) {
   // Valor sempre vertical — evita sobreposição em todos os modos incluindo portrait mobile
   const valVertical = true;
 
+  const subTipo = window._graficoChanceSubTipo || 'vencedor';
+  const _tipText = subTipo === 'top5'
+    ? "Probabilidade de terminar entre os 5 primeiros colocados ao final da Copa, estimada via 20.000 simulações Monte Carlo. Resultados oficiais são fixos; jogos futuros são sorteados pelo modelo Poisson. Empates no 5.º lugar são todos considerados no Top 5."
+    : "Probabilidade de terminar em 1.º ao final da Copa, estimada via 20.000 simulações Monte Carlo. Resultados oficiais são fixos; jogos futuros são sorteados pelo modelo Poisson, resolvendo o bracket fase a fase. Palpites não registrados são amostrados com a mesma distribuição do modelo.";
+
   let h = '<div class="card" style="padding:20px 10px;">';
 
-  // Cabeçalho com tooltip ao clicar
-  const _tipText = "Probabilidade de terminar em 1.º ao final da Copa, estimada via 20.000 simulações Monte Carlo. Resultados oficiais são fixos; jogos futuros são sorteados pelo modelo Poisson, resolvendo o bracket fase a fase. Palpites não registrados são amostrados com a mesma distribuição do modelo.";
-  h += `<div style="text-align:center;margin-bottom:14px;position:relative">
-    <span id="proj-label" onclick="_toggleProjecaoTooltip(event)" style="cursor:pointer;font-size:.85rem;font-weight:700;color:var(--dourado);border-bottom:1px dashed var(--dourado);padding-bottom:1px">Chance de ganhar o bolão</span>
+  // Cabeçalho com dropdown integrado
+  h += `<div style="text-align:center;margin-bottom:14px;position:relative;display:flex;align-items:center;justify-content:center;gap:6px">
+    <select onchange="window._graficoChanceSubTipo=this.value;renderAbaAtiva()" style="width:auto !important;max-width:fit-content;background:transparent;border:none;border-bottom:1.5px dashed var(--dourado);color:var(--dourado);font-size:.85rem;font-weight:700;font-family:inherit;padding:2px 4px;cursor:pointer;outline:none;text-align-last:center;-webkit-appearance:none;-moz-appearance:none;appearance:none;">
+      <option value="vencedor" ${subTipo === 'vencedor' ? 'selected' : ''} style="background:#0f172a;color:#f1f5f9">Chance de ganhar o bolão</option>
+      <option value="top5" ${subTipo === 'top5' ? 'selected' : ''} style="background:#0f172a;color:#f1f5f9">Chance de ficar no top 5</option>
+    </select>
+    <span onclick="_toggleProjecaoTooltip(event)" style="cursor:pointer;font-size:.8rem;opacity:.7" title="Informações e ajuda">ℹ️</span>
     <div id="proj-tooltip" style="display:none;position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1e293b;color:#e2e8f0;font-size:.72rem;line-height:1.5;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);max-width:280px;text-align:left;z-index:999;box-shadow:0 6px 20px rgba(0,0,0,0.5)">
       ${_tipText}
     </div>
@@ -2048,7 +2094,9 @@ window._graficoExportarJPG = function () {
   }
 
   if (metricaAtiva === 'chance') {
-    const chances = window._graficoChanceCache || {};
+    const cache = window._graficoChanceCache || { vencedor: {}, top5: {} };
+    const subTipo = window._graficoChanceSubTipo || 'vencedor';
+    const chances = subTipo === 'top5' ? (cache.top5 || {}) : (cache.vencedor || {});
     rankingExp.forEach(a => { a.chance = chances[a.id] || 0; });
     rankingExp = rankingExp.sort((a, b) => b.chance - a.chance);
   } else if (metricaAtiva === 'pts' || metricaAtiva === 'pct' || metricaAtiva === 'macaco') {
@@ -2095,7 +2143,11 @@ window._graficoExportarJPG = function () {
   ctx.fillRect(0, 0, TOTAL_W, TOTAL_H);
 
   // Título
-  const metricaLabel = { pts: 'Pontos', pct: 'Pontos %', res: 'Resultados', bonus1: 'Bônus+1', placar: 'Placar+3', placar_alto: 'Placar+5', chance: 'Projeção (chance de ganhar)', macaco: 'Macaco Médio' }[metricaAtiva] || metricaAtiva;
+  let metricaLabel = { pts: 'Pontos', pct: 'Pontos %', res: 'Resultados', bonus1: 'Bônus+1', placar: 'Placar+3', placar_alto: 'Placar+5', macaco: 'Macaco Médio' }[metricaAtiva] || metricaAtiva;
+  if (metricaAtiva === 'chance') {
+    const subTipo = window._graficoChanceSubTipo || 'vencedor';
+    metricaLabel = subTipo === 'top5' ? 'Projeção (chance de ficar no top 5)' : 'Projeção (chance de ganhar)';
+  }
   ctx.fillStyle = '#f1f5f9';
   ctx.font = 'bold 16px system-ui, sans-serif';
   ctx.textAlign = 'center';
@@ -2238,7 +2290,10 @@ window._graficoExportarJPG = function () {
 
   // Download
   const link = document.createElement('a');
-  link.download = `bolao-copa-2026-${metricaAtiva}.jpg`;
+  const filename = metricaAtiva === 'chance'
+    ? `bolao-copa-2026-chance-${window._graficoChanceSubTipo || 'vencedor'}.jpg`
+    : `bolao-copa-2026-${metricaAtiva}.jpg`;
+  link.download = filename;
   link.href = canvas.toDataURL('image/jpeg', 0.95);
   link.click();
 };

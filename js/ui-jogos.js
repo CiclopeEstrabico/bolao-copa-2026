@@ -358,3 +358,32 @@ function renderTabelaPodio(res, bracket) {
     </div>`;
 }
 window.renderTabelaPodio = renderTabelaPodio;
+
+/**
+ * Rola instantaneamente até o primeiro .jogo-row cujo input de placar home está vazio
+ * segundo o predicado fornecido.
+ *
+ * @param {string|null} containerId - ID do container onde buscar, ou null para o documento inteiro
+ * @param {function}    predicado   - fn(jogoId, inputEl) => bool — true se o jogo está "vazio"
+ * @param {number}      delay       - milissegundos adicionais de espera antes de scrollar (default 80)
+ * @param {function}    callback    - callback chamada se o scroll for de fato executado
+ */
+window.scrollParaPrimeiroJogoVazio = function(containerId, predicado, delay, callback) {
+  // Aguarda o DOM estar pronto (próximo frame + pequeno delay opcional)
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      const root = containerId ? document.getElementById(containerId) : document;
+      if (!root) return;
+      const inputs = root.querySelectorAll('input[id^="sim-hg-"]');
+      for (const input of inputs) {
+        const id = input.id.replace('sim-hg-', '');
+        if (predicado(id, input)) {
+          const row = input.closest('.jogo-row') || input;
+          row.scrollIntoView({ behavior: 'auto', block: 'center' });
+          if (typeof callback === 'function') callback();
+          return;
+        }
+      }
+    }, delay != null ? delay : 80);
+  });
+};

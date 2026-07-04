@@ -7,8 +7,10 @@
 
 let _apostador = null;
 let _palpitesLocais = {};
+let _palpitesCarregados = {}; // snapshot do Firestore no carregamento — base de comparação para detectar mudanças
 let _modoVer = false;
 let _modoModelo = false;
+let _autoScrollApostaFeito = false; // garante scroll só na 1ª renderização
 
 // Sobrescrever a função do ui-jogos para a tela de apostas
 window._onInputPlacar = function (id, ehElim) {
@@ -163,8 +165,12 @@ async function iniciarAposta() {
 
   _palpitesLocais = await _carregarPalpitesPropriosDoFirestore(_apostador.id);
 
-  // Mantém APP.palpites sincronizado para que salvarTodosPalpites()
-  // consiga comparar com o estado anterior e detectar mudanças.
+  // Guarda snapshot do estado inicial (vindo do Firestore) para comparação em salvarTodosPalpites().
+  // Usar APP.palpites como referência causava bug: APP.palpites é atualizado após cada save,
+  // então edições em palpites já existentes não eram detectadas como mudança.
+  _palpitesCarregados = JSON.parse(JSON.stringify(_palpitesLocais));
+
+  // Mantém APP.palpites sincronizado (usado por outras partes do app).
   if (!APP.palpites[_apostador.id]) APP.palpites[_apostador.id] = {};
   Object.assign(APP.palpites[_apostador.id], _palpitesLocais);
 
@@ -439,6 +445,13 @@ function renderAposta() {
       try { _fgEl.setSelectionRange(_fgSel, _fgSel); } catch (_e) { }
     }
   }
+
+  // Auto-scroll para o 1º jogo de fase aberta sem palpite (só na 1ª renderização).
+  // Usa !input.disabled para ignorar jogos de fases bloqueadas.
+  if (!_modoVer && !_modoModelo && !_autoScrollApostaFeito && typeof window.scrollParaPrimeiroJogoVazio === 'function') {
+    _autoScrollApostaFeito = true;
+    window.scrollParaPrimeiroJogoVazio('aposta-main', (_id, input) => !input.disabled && input.value === '');
+  }
 }
 
 // Sobrescreve a função global para que os toggles de ui-jogos.js funcionem aqui
@@ -683,8 +696,11 @@ async function salvarTodosPalpites(silencioso = false) {
   if (_modoVer) return;
   if (!_apostador?.id) return;
 
-  // Detecta quais palpites mudaram
-  const anterior = APP.palpites[_apostador.id] || {};
+  // Compara com _palpitesCarregados (snapshot do Firestore ao carregar a página),
+  // NÃO com APP.palpites — que é atualizado após cada save e causava bug:
+  // quando o usuário editava palpites já existentes (ex: oitavas desbloqueadas),
+  // houveMudanca ficava false e o set() nunca era chamado, mas o toast aparecia.
+  const anterior = _palpitesCarregados;
   let houveMudanca = false;
   const mapaCompacto = {};
 
@@ -693,7 +709,7 @@ async function salvarTodosPalpites(silencioso = false) {
     if (!jogoAceita(gameId)) continue;
     // Inclui no mapa compacto independente de mudança — é o estado completo
     mapaCompacto[gameId] = p.homeGoals + "-" + p.awayGoals;
-    // Detecta mudança para saber se vale chamar o servidor
+    // Detecta mudança comparando com o snapshot inicial do Firestore
     const ant = anterior[gameId];
     if (!ant || ant.homeGoals !== p.homeGoals || ant.awayGoals !== p.awayGoals) {
       houveMudanca = true;
@@ -721,7 +737,11 @@ async function salvarTodosPalpites(silencioso = false) {
     try {
       await docRef.set(mapaCompacto, { merge: true });
 
-      // Atualiza estado local para comparação futura
+      // Após save bem-sucedido, atualiza o snapshot de referência para que
+      // a próxima edição na mesma sessão também seja detectada corretamente.
+      _palpitesCarregados = JSON.parse(JSON.stringify(_palpitesLocais));
+
+      // Mantém APP.palpites sincronizado (usado por outras partes do app).
       if (!APP.palpites[_apostador.id]) APP.palpites[_apostador.id] = {};
       Object.assign(APP.palpites[_apostador.id], _palpitesLocais);
     } catch (e) {
