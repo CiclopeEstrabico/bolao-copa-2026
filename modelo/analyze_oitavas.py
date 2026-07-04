@@ -51,7 +51,7 @@ HOSTS = {'United States', 'Mexico', 'Canada'}
 # ─────────────────────────────────────────────────────────────────────
 RAW_CONFRONTOS = [
     "Canada, Morocco",
-    "Parguay, France",
+    "Paraguay, France",
     "Brazil, Norway",
     "Mexico, England",
     "Portugal, Spain",
