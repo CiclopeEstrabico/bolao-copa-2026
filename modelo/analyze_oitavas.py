@@ -50,14 +50,14 @@ HOSTS = {'United States', 'Mexico', 'Canada'}
 # Use "TBD" para adversários ainda indefinidos.
 # ─────────────────────────────────────────────────────────────────────
 RAW_CONFRONTOS = [
-    "TBD, TBD",
-    "TBD, TBD",
-    "TBD, TBD",
-    "TBD, TBD",
-    "TBD, TBD",
-    "TBD, TBD",
-    "TBD, TBD",
-    "TBD, TBD",
+    "Canada, Morocco",
+    "Parguay, France",
+    "Brazil, Norway",
+    "Mexico, England",
+    "Portugal, Spain",
+    "Uinited States, Belgium",
+    "Argentina, Egypt",
+    "Switzerland, Colombia",
 ]
 
 # ─────────────────────────────────────────────────────────────────────
