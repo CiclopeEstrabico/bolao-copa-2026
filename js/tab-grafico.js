@@ -685,13 +685,21 @@ function _getCdf(homeCode, awayCode, jogoInfo) {
   return entry;
 }
 
-/** Amostra (homeGoals, awayGoals) de CDF pré-computada — O(49). */
+/**
+ * Amostra (homeGoals, awayGoals) de CDF pré-computada — busca binária O(log n).
+ * Trocado de busca linear pra binária porque a correção do Bug Crítico #4
+ * (sorteio independente por participante, em vez de 1 roll compartilhado por jogo)
+ * multiplica bastante o número de chamadas a esta função.
+ */
 function _amostrar(cdfEntry) {
   const { cdf, N } = cdfEntry;
   const r = Math.random();
-  for (let k = 0; k < cdf.length; k++)
-    if (r <= cdf[k]) return { homeGoals: (k / N) | 0, awayGoals: k % N };
-  return { homeGoals: N - 1, awayGoals: 0 };
+  let lo = 0, hi = cdf.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1;
+    if (r <= cdf[mid]) hi = mid; else lo = mid + 1;
+  }
+  return { homeGoals: (lo / N) | 0, awayGoals: lo % N };
 }
 
 // _pontosRapidoOt removida em favor de _pontosInteiros inline
@@ -728,12 +736,19 @@ function _graficoRodarMonteCarlo() {
     cfgOt.pts_base[f] = Math.round(base * ft * 10);
   }
 
-  // Função super rápida e inlineável (retorna inteiros)
-  function _pontosInteiros(palH, palA, resH, resA, c, f) {
+  // Função super rápida e inlineável (retorna inteiros).
+  // Além dos pontos, acumula em `exatosArr`/`resultadosArr` (se passados) o total de
+  // placares exatos e de resultados corretos do participante `pi` — usado depois como
+  // critério de desempate no Top 5, igual à regra oficial do bolão (ver tab-regras.js:
+  // 1º placares exatos, 2º resultados corretos). Isso é só incrementar um contador
+  // int num array já alocado, então não pesa no laço.
+  function _pontosInteiros(palH, palA, resH, resA, c, f, exatosArr, resultadosArr, pi) {
     const resEf = resH > resA ? 1 : resH < resA ? -1 : 0;
     const resPal = palH > palA ? 1 : palH < palA ? -1 : 0;
     if (resPal !== resEf) return 0;
+    if (resultadosArr) resultadosArr[pi]++;
     if (palH === resH && palA === resA) {
+      if (exatosArr) exatosArr[pi]++;
       return (resH + resA) >= c.limiar ? c.pts_exatoAlto[f] : c.pts_exatoBaixo[f];
     }
     const dPal = palH - palA, dRes = resH - resA;
@@ -780,6 +795,8 @@ function _graficoRodarMonteCarlo() {
   const espJaOficializados = !!(espOficiais.campeao && espOficiais.vice && espOficiais.terceiro);
 
   const ptBase = new Int32Array(nPart);
+  const exatosBase = new Int32Array(nPart);
+  const resultadosBase = new Int32Array(nPart);
   for (let pi = 0; pi < nPart; pi++) {
     const p = todoParticipantes[pi];
     const pid = partIds[pi];
@@ -793,7 +810,8 @@ function _graficoRodarMonteCarlo() {
       acc += _pontosInteiros(
         pal.h, pal.a,
         Number(r.homeGoals), Number(r.awayGoals),
-        cfgOt, j.fase
+        cfgOt, j.fase,
+        exatosBase, resultadosBase, pi
       );
     }
     if (espOficiais.campeao || espOficiais.vice || espOficiais.terceiro)
@@ -815,8 +833,24 @@ function _graficoRodarMonteCarlo() {
   const vitorias = new Float64Array(nPart);
   const vitoriasTop5 = new Float64Array(nPart);
   const ptIter = new Int32Array(nPart);
-  const nHumanos = partIds.filter(id => id && id.toUpperCase() !== 'MODELO').length;
-  const ptIterOrdenado = new Int32Array(nHumanos);
+  const exatosIter = new Int32Array(nPart);
+  const resultadosIter = new Int32Array(nPart);
+  // Índices dos participantes humanos (Modelo não concorre a posição/Top 5).
+  // A lista de índices é fixa entre iterações — só a ORDEM (obtida por sort a cada
+  // iteração, ver Passo 6) muda, pois os pontos/critérios de desempate mudam.
+  const humanIdx = [];
+  for (let pi = 0; pi < nPart; pi++) {
+    if (partIds[pi] && partIds[pi].toUpperCase() !== 'MODELO') humanIdx.push(pi);
+  }
+  const hCount = humanIdx.length;
+  // Buffer dos 5 melhores (por critério oficial: pts → exatos → resultados), mantido via
+  // inserção incremental a cada iteração — mais barato que ordenar a lista inteira de
+  // humanos toda vez (evita overhead do comparador genérico do Array.prototype.sort).
+  const K = Math.min(hCount, 5) || 1;
+  const bufPi = new Int32Array(K);
+  const bufPts = new Int32Array(K);
+  const bufEx = new Int32Array(K);
+  const bufRs = new Int32Array(K);
 
   // Verifica se todos os jogos de grupo já acabaram no mundo real
   const gruposFinished = (jogosPorFase['grupos'].length === 0);
@@ -825,20 +859,24 @@ function _graficoRodarMonteCarlo() {
     classificadosBase = window.BRACKET.calcularTodosOsGrupos(res).classificados;
   }
 
-  // Pré-resolve bracket oficial para ter times nos jogos reais no resSim
+  // Pré-resolve bracket oficial para ter times nos jogos reais no resSim.
+  // IMPORTANTE: `res` são os MESMOS objetos vivos em APP.resultados/APP.resultadosSim.
+  // Object.assign({}, res) é um clone RASO — res[id] continua sendo a mesma referência,
+  // então o código antigo mutava os resultados oficiais de verdade (acrescentando
+  // homeTeam/awayTeam neles) toda vez que o gráfico rodava. Aqui clonamos cada jogo.
   const bracketOficial = window.BRACKET.preencherBracket(res);
-  const resSim = Object.assign({}, res);
-  for (const j of schedule) {
-    if (resSim[j.id] && bracketOficial[j.id]) {
-      resSim[j.id].homeTeam = bracketOficial[j.id].home;
-      resSim[j.id].awayTeam = bracketOficial[j.id].away;
-    }
+  const resSim = {};
+  for (const key of Object.keys(res)) {
+    const r = res[key];
+    const b = bracketOficial[key];
+    resSim[key] = b ? { ...r, homeTeam: b.home, awayTeam: b.away } : { ...r };
   }
-  const palSim = {};
+
+  // Times resolvidos por jogo pendente em cada iteração (o palpite em si é sorteado
+  // INDEPENDENTEMENTE por participante no Passo 5 — ver nota no Passo 4 abaixo).
+  const palSimTeams = {};
 
   // Fases cujo prazo de apostas já passou (liberado_* = false no configStatus).
-  // Para jogos pendentes dessas fases, apostadores sem palpite recebem 0 pts —
-  // não faz sentido simular uma aposta que eles não puderam mais fazer.
   const _st = APP.configStatus || {};
   const _faseParaKey = { grupos: 'grupos', '16avos': '16avos', oitavas: 'oitavas', quartas: 'quartas', semis: 'semis', terceiro: 'finais', final: 'finais' };
   const fasesFechadas = new Set(
@@ -849,6 +887,15 @@ function _graficoRodarMonteCarlo() {
       return jogosPorFase[fase].length > 0 && !_st[`liberado_${key}`];
     })
   );
+
+  // Fases ainda fechadas (ex.: quartas/semis/final antes de abrirem) não têm palpite real
+  // de ninguém — mas isso não significa que elas vão valer ZERO ponto pra todo mundo até
+  // o fim da Copa: quando a fase abrir, cada apostador vai enviar o SEU próprio palpite.
+  // Setar como `true` faz o Monte Carlo projetar o campeonato inteiro até a final (recomendado
+  // para a pergunta "quem vai ganhar o bolão"). Setar como `false` restaura o comportamento
+  // antigo (fases futuras fechadas somam 0 pts para todos, útil para "ranking se a Copa
+  // acabasse agora").
+  const SIMULAR_PALPITE_FASES_FECHADAS = true;
 
   // Resolver rápido O(1) sem slice/startsWith complexo
   function getTeamFast(pos, classificados) {
@@ -915,19 +962,24 @@ function _graficoRodarMonteCarlo() {
       espSim = { campeao, vice, terceiro };
     }
 
-    // Passo 4: palpite simulado compartilhado para jogos sem aposta (1 roll/jogo)
-    // Só simula palpites para fases ABERTAS. Fases fechadas sem palpite = 0 pts.
+    // Passo 4: resolve os TIMES de cada jogo pendente. O palpite de quem não apostou é
+    // sorteado INDIVIDUALMENTE por participante no Passo 5 — antes era UM único sorteio
+    // compartilhado por jogo (palSim[jogo.id] = _amostrar(...)), usado como "palpite" de
+    // TODOS os apostadores sem aposta própria. Isso colava o destino de vários apostadores
+    // entre si (todo mundo sem aposta acertava/errava exatamente igual, iteração após
+    // iteração), criando correlação artificial que inflava as chances de Top 5 e de
+    // vitória para quem já estava na frente. Ver relatório de bugs.
     if (temPendentes) {
       if (!cachedClassificados) {
         cachedClassificados = window.BRACKET.calcularTodosOsGrupos(resSim).classificados;
       }
       for (const fase of FASES) {
-        if (fasesFechadas.has(fase)) continue; // fase fechada: não gera palpite simulado
+        if (!SIMULAR_PALPITE_FASES_FECHADAS && fasesFechadas.has(fase)) continue;
         const jogos = jogosPorFase[fase];
         for (const jogo of jogos) {
           const hC = getTeamFast(jogo.home, cachedClassificados);
           const aC = getTeamFast(jogo.away, cachedClassificados);
-          if (hC && aC) palSim[jogo.id] = _amostrar(_getCdf(hC, aC, sById[jogo.id]));
+          if (hC && aC) palSimTeams[jogo.id] = { hC, aC };
         }
       }
     }
@@ -938,6 +990,8 @@ function _graficoRodarMonteCarlo() {
       const pid = partIds[pi];
       const palP = parsedPals[pid];
       let acc = ptBase[pi];
+      exatosIter[pi] = exatosBase[pi];
+      resultadosIter[pi] = resultadosBase[pi];
 
       if (temPendentes) {
         for (const fase of FASES) {
@@ -950,16 +1004,19 @@ function _graficoRodarMonteCarlo() {
             if (pal) {
               p_h = pal.h; p_a = pal.a;
             } else {
-              // Fase fechada e sem palpite → 0 pontos (apostador não pode mais apostar)
-              if (fasesFechadas.has(fase)) continue;
-              const pS = palSim[jogo.id];
-              if (!pS) continue;
-              p_h = pS.homeGoals; p_a = pS.awayGoals;
+              if (!SIMULAR_PALPITE_FASES_FECHADAS && fasesFechadas.has(fase)) continue;
+              const teams = palSimTeams[jogo.id];
+              if (!teams) continue;
+              // Sorteio independente para ESTE participante (não compartilhado com os
+              // demais que também não apostaram nesse jogo).
+              const pInd = _amostrar(_getCdf(teams.hC, teams.aC, sById[jogo.id]));
+              p_h = pInd.homeGoals; p_a = pInd.awayGoals;
             }
             acc += _pontosInteiros(
               p_h, p_a,
               rSim.homeGoals, rSim.awayGoals,
-              cfgOt, jogo.fase
+              cfgOt, jogo.fase,
+              exatosIter, resultadosIter, pi
             );
           }
         }
@@ -975,47 +1032,75 @@ function _graficoRodarMonteCarlo() {
       ptIter[pi] = acc;
     }
 
-    // Registrar vencedor entre HUMANOS com divisão de empate
-    let melhorPtsHumano = -Infinity;
-    let vencedoresHumanos = [];
+    // Registrar vencedor: TODOS os participantes (humanos + Modelo, se presente) disputam
+    // o MESMO empate, usando o critério de desempate OFICIAL do bolão (tab-regras.js):
+    // 1º pontos, 2º placares exatos, 3º resultados corretos. Só se persistir empate nos
+    // três critérios é que a posição é dividida — igual à regra real de premiação.
+    let melhorPts = -Infinity, melhorExatos = -Infinity, melhorResultados = -Infinity;
+    let vencedores = [];
     for (let pi = 0; pi < nPart; pi++) {
-      if (partIds[pi] === "MODELO") continue;
-      if (ptIter[pi] > melhorPtsHumano) {
-        melhorPtsHumano = ptIter[pi];
-        vencedoresHumanos = [pi];
-      } else if (ptIter[pi] === melhorPtsHumano) {
-        vencedoresHumanos.push(pi);
+      const melhor =
+        ptIter[pi] > melhorPts ||
+        (ptIter[pi] === melhorPts && exatosIter[pi] > melhorExatos) ||
+        (ptIter[pi] === melhorPts && exatosIter[pi] === melhorExatos && resultadosIter[pi] > melhorResultados);
+      const empatouTudo =
+        ptIter[pi] === melhorPts && exatosIter[pi] === melhorExatos && resultadosIter[pi] === melhorResultados;
+      if (melhor) {
+        melhorPts = ptIter[pi]; melhorExatos = exatosIter[pi]; melhorResultados = resultadosIter[pi];
+        vencedores = [pi];
+      } else if (empatouTudo) {
+        vencedores.push(pi);
       }
     }
-    if (vencedoresHumanos.length > 0) {
-      const frac = 1.0 / vencedoresHumanos.length;
-      for (const idx of vencedoresHumanos) vitorias[idx] += frac;
+    if (vencedores.length > 0) {
+      const frac = 1.0 / vencedores.length;
+      for (const idx of vencedores) vitorias[idx] += frac;
     }
 
-    // Calcular se o Modelo "venceria" o melhor humano
-    const idxModelo = partIds.indexOf("MODELO");
-    if (idxModelo !== -1) {
-      const ptsModelo = ptIter[idxModelo];
-      if (ptsModelo >= melhorPtsHumano) {
-        vitorias[idxModelo] += 1;
+    // Registrar Top 5 — cálculo e contagem restritos a HUMANOS (o Modelo não concorre a
+    // posição/prêmio). Antes, "todo mundo empatado em pontos no 5º lugar" contava como
+    // Top 5 — mas empate em PONTOS não é empate de verdade na classificação oficial do
+    // bolão: os critérios de desempate (placares exatos → resultados corretos) quase
+    // sempre decidem quem fica realmente à frente. Ordenar por esses 3 critérios (em vez
+    // de só pontos) resolve isso sem nenhum sorteio/simulação extra — é só um sort sobre
+    // arrays que já temos, O(hCount log hCount), irrelevante perto do custo do Passo 5.
+    for (let hi = 0; hi < hCount; hi++) {
+      const pi = humanIdx[hi];
+      const pts = ptIter[pi], ex = exatosIter[pi], rs = resultadosIter[pi];
+      if (hi < K) {
+        let ins = hi;
+        while (ins > 0) {
+          const j = ins - 1;
+          const melhor = pts > bufPts[j] || (pts === bufPts[j] && ex > bufEx[j]) || (pts === bufPts[j] && ex === bufEx[j] && rs > bufRs[j]);
+          if (!melhor) break;
+          bufPi[ins] = bufPi[j]; bufPts[ins] = bufPts[j]; bufEx[ins] = bufEx[j]; bufRs[ins] = bufRs[j];
+          ins--;
+        }
+        bufPi[ins] = pi; bufPts[ins] = pts; bufEx[ins] = ex; bufRs[ins] = rs;
+      } else {
+        const last = K - 1;
+        const melhorQueUltimo = pts > bufPts[last] || (pts === bufPts[last] && ex > bufEx[last]) || (pts === bufPts[last] && ex === bufEx[last] && rs > bufRs[last]);
+        if (melhorQueUltimo) {
+          let ins = last;
+          while (ins > 0) {
+            const j = ins - 1;
+            const melhor = pts > bufPts[j] || (pts === bufPts[j] && ex > bufEx[j]) || (pts === bufPts[j] && ex === bufEx[j] && rs > bufRs[j]);
+            if (!melhor) break;
+            bufPi[ins] = bufPi[j]; bufPts[ins] = bufPts[j]; bufEx[ins] = bufEx[j]; bufRs[ins] = bufRs[j];
+            ins--;
+          }
+          bufPi[ins] = pi; bufPts[ins] = pts; bufEx[ins] = ex; bufRs[ins] = rs;
+        }
       }
     }
+    const cutPts = bufPts[K - 1], cutExatos = bufEx[K - 1], cutResultados = bufRs[K - 1];
 
-    // Registrar Top 5 humano com divisão de empate
-    let hCount = 0;
-    for (let pi = 0; pi < nPart; pi++) {
-      if (partIds[pi] && partIds[pi].toUpperCase() !== 'MODELO') {
-        ptIterOrdenado[hCount++] = ptIter[pi];
-      }
-    }
-    ptIterOrdenado.sort();
-    // O corte do 5º colocado é o 5º elemento de trás para frente no array ordenado de humanos
-    const corteTop5 = ptIterOrdenado[Math.max(0, hCount - 5)];
-
-    for (let pi = 0; pi < nPart; pi++) {
-      if (ptIter[pi] >= corteTop5) {
-        vitoriasTop5[pi] += 1;
-      }
+    for (const pi of humanIdx) {
+      const melhorOuEmpatado =
+        ptIter[pi] > cutPts ||
+        (ptIter[pi] === cutPts && exatosIter[pi] > cutExatos) ||
+        (ptIter[pi] === cutPts && exatosIter[pi] === cutExatos && resultadosIter[pi] >= cutResultados);
+      if (melhorOuEmpatado) vitoriasTop5[pi] += 1;
     }
   }
 
@@ -1164,7 +1249,7 @@ function _renderChance(rankingCompleto, chances) {
 
   const subTipo = window._graficoChanceSubTipo || 'vencedor';
   const _tipText = subTipo === 'top5'
-    ? "Probabilidade de terminar entre os 5 primeiros colocados ao final da Copa, estimada via 20.000 simulações Monte Carlo. Resultados oficiais são fixos; jogos futuros são sorteados pelo modelo Poisson. Empates no 5.º lugar são todos considerados no Top 5."
+    ? "Probabilidade de terminar entre os 5 primeiros colocados ao final da Copa, estimada via 20.000 simulações Monte Carlo. Resultados oficiais são fixos; jogos futuros são sorteados pelo modelo Poisson. Empates são resolvidos pelos critérios oficiais de desempate (placares exatos → resultados corretos); só entram juntos no Top 5 quando o empate persiste nesses critérios também."
     : "Probabilidade de terminar em 1.º ao final da Copa, estimada via 20.000 simulações Monte Carlo. Resultados oficiais são fixos; jogos futuros são sorteados pelo modelo Poisson, resolvendo o bracket fase a fase. Palpites não registrados são amostrados com a mesma distribuição do modelo.";
 
   let h = '<div class="card" style="padding:20px 10px;">';
