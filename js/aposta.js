@@ -696,6 +696,28 @@ async function salvarTodosPalpites(silencioso = false) {
   if (_modoVer) return;
   if (!_apostador?.id) return;
 
+  // Proteção contra erro de digitação: placar com mais de 9 gols pra um time quase
+  // sempre é dedo escorregado (ex: "23" em vez de "2"). Confirma antes de salvar.
+  if (!silencioso) {
+    const suspeitos = [];
+    for (const [gameId, p] of Object.entries(_palpitesLocais)) {
+      if (p?.homeGoals === undefined || p?.awayGoals === undefined) continue;
+      if (Number(p.homeGoals) > 9 || Number(p.awayGoals) > 9) {
+        const jogoRef = (window.SCHEDULE || []).find(j => j.id === gameId);
+        const nomeJogo = jogoRef ? (getSigla(jogoRef.home) + ' x ' + getSigla(jogoRef.away)) : gameId;
+        suspeitos.push(nomeJogo + ': ' + p.homeGoals + ' x ' + p.awayGoals);
+      }
+    }
+    if (suspeitos.length) {
+      const ok = confirm(
+        '⚠️ Placar com mais de 9 gols pra um time — confere se não foi engano de digitação:\n\n' +
+        suspeitos.join('\n') +
+        '\n\nSalvar assim mesmo?'
+      );
+      if (!ok) return;
+    }
+  }
+
   // Compara com _palpitesCarregados (snapshot do Firestore ao carregar a página),
   // NÃO com APP.palpites — que é atualizado após cada save e causava bug:
   // quando o usuário editava palpites já existentes (ex: oitavas desbloqueadas),
