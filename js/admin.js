@@ -201,7 +201,7 @@ async function limparTudoAdmin() {
   // Bug 3: aguarda a deleção no servidor ANTES de alterar estado local.
   try {
     // Apaga de uma vez só a fonte de verdade consolidada
-    await APP.db.collection("resultados_oficiais").doc("dados").delete().catch(() => {});
+    await APP.db.collection("resultados_oficiais").doc("dados").delete().catch(() => { });
   } catch (e) {
     alert("Erro ao limpar no servidor: " + e.message + "\nNenhum dado foi alterado.");
     return;
@@ -260,9 +260,9 @@ async function gravarTudoAdmin() {
     for (const p of pendentes) {
       payload[p.id] = p.data;
     }
-    
+
     await APP.db.collection("resultados_oficiais").doc("dados").set(payload, { merge: true });
-    
+
     // Invalida cache local das sessões abertas
     const ts = new Date().toISOString();
     await APP.db.collection("config").doc("status").set({ cache_res_ts: ts }, { merge: true });
@@ -381,7 +381,7 @@ function _limparFaseModelo() {
 
 function _htmlLinhaModelo(numCols) {
   const m = APP.modelo;
-  const baseUrl = "https://ciclopeestrabico.github.io/bolao-copa-2026/aposta.html?token=modelo";
+  const baseUrl = "https://gitzambrano.github.io/bolao-copa-2026/aposta.html?token=modelo";
   let h = '';
 
   h += '<tr style="background:rgba(180,210,240,0.05);border-top:1px solid rgba(180,210,240,0.18)" id="row-MODELO">';
@@ -481,7 +481,7 @@ function renderApostadores() {
     h += '</td>';
 
     // Token (com link para aposta.html)
-    const baseUrl = "https://ciclopeestrabico.github.io/bolao-copa-2026/aposta.html?token=";
+    const baseUrl = "https://gitzambrano.github.io/bolao-copa-2026/aposta.html?token=";
     const link = baseUrl + (a.token || "");
     h += '<td style="' + _tdS() + '">';
     h += '<a href="' + link + '" target="_blank" style="color:var(--dourado);text-decoration:underline;font-size:.66rem;font-family:monospace">';
@@ -743,7 +743,7 @@ async function renderTokens() {
   // Converte dicionário em array pra desenhar a UI igualzinho antes e ORDENA por número
   // docId mapeia a chave do documento real (o token secreto para novos, ou tok_X para legados)
   let tokens = Object.keys(tokensObj).map(key => ({ docId: key, ...tokensObj[key] }))
-                 .sort((a, b) => (a.numero || 0) - (b.numero || 0));
+    .sort((a, b) => (a.numero || 0) - (b.numero || 0));
 
   const tokensUsados = new Set(APP.apostadores.map(a => a.token).filter(Boolean));
   const usados = tokens.filter(t => tokensUsados.has(t.token));
@@ -801,7 +801,7 @@ async function renderTokens() {
 function _tokenCard(t, apt, tipo) {
   const corBorda = tipo === "usado" ? "var(--verde-ok)" : tipo === "enviado" ? "var(--dourado)" : tipo === "livre" ? "var(--verde-light)" : "var(--borda)";
   const tokenVal = t.token || t.id;
-  const baseUrl = "https://ciclopeestrabico.github.io/bolao-copa-2026/aposta.html?token=";
+  const baseUrl = "https://gitzambrano.github.io/bolao-copa-2026/aposta.html?token=";
   const link = baseUrl + tokenVal;
 
   let h = '<div style="background:var(--fundo2);border-radius:var(--radius-sm);padding:10px 12px;border-left:3px solid ' + corBorda + '">';
@@ -1197,7 +1197,7 @@ async function exportarPalpitesCSV() {
     // 6. Monta o arquivo CSV
     const jogos = window.SCHEDULE || [];
     const headers = ["Nome", "Apelido", "ID", "Token", "Status Pagamento"];
-    
+
     // Adiciona o cabeçalho dos 104 jogos usando seus IDs
     jogos.forEach(j => {
       headers.push(j.id);
@@ -1239,7 +1239,7 @@ async function exportarPalpitesCSV() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `backup_apostas_copa_2026_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute("download", `backup_apostas_copa_2026_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

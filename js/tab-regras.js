@@ -129,7 +129,7 @@ window.renderRegras = function () {
     // --- PONTUAÇÃO ---
     ["Como faço para entrar no bolão e apostar?",
       "Entre em contato com um admin ou tesoureiro. Após pagar, você receberá um <strong>token personalizado</strong> enviado pelo administrador do bolão. Basta abrir o link de apostas, colocar seu token e preencher seus palpites. Não é necessário criar conta ou senha.<br><br>" +
-      "🔗 <a href=\"https://ciclopeestrabico.github.io/bolao-copa-2026/aposta.html\" target=\"_blank\" style=\"color:var(--verde-light)\">ciclopeestrabico.github.io/bolao-copa-2026/aposta.html</a>"],
+      "🔗 <a href=\"https://gitzambrano.github.io/bolao-copa-2026/aposta.html\" target=\"_blank\" style=\"color:var(--verde-light)\">gitzambrano.github.io/bolao-copa-2026/aposta.html</a>"],
     ["O que é acertar o RESULTADO?",
       "Acertar o resultado significa adivinhar quem venceu — ou que empatou.<br><br>Ex: apostou Brasil 2×0 e saiu Brasil 3×1. Ambos são vitória do Brasil → <strong>resultado correto = " + base + " pts</strong>."],
     ["O que é acertar o PLACAR EXATO?",
