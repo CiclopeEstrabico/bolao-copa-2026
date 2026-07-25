@@ -12,9 +12,9 @@ Plataforma profissional para gerenciamento de bolão da Copa do Mundo 2026, com 
 
 | Página                    | Descrição                                                     | Link                                                                       |
 | :------------------------- | :-------------------------------------------------------------- | :------------------------------------------------------------------------- |
-| **Dashboard**        | Painel público com resultados, classificação e compilação. | [index.html](https://ciclopeestrabico.github.io/bolao-copa-2026/)             |
-| **Área de Apostas** | Espaço personalizado para o apostador preencher palpites.      | [aposta.html](https://ciclopeestrabico.github.io/bolao-copa-2026/aposta.html) |
-| **Painel Admin**     | Controle de resultados, tokens e liberação de fases.          | [admin.html](https://ciclopeestrabico.github.io/bolao-copa-2026/admin.html)   |
+| **Dashboard**        | Painel público com resultados, classificação e compilação. | [index.html](https://gitzambrano.github.io/bolao-copa-2026/)             |
+| **Área de Apostas** | Espaço personalizado para o apostador preencher palpites.      | [aposta.html](https://gitzambrano.github.io/bolao-copa-2026/aposta.html) |
+| **Painel Admin**     | Controle de resultados, tokens e liberação de fases.          | [admin.html](https://gitzambrano.github.io/bolao-copa-2026/admin.html)   |
 
 ---
 
