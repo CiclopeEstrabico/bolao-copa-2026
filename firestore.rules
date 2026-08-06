@@ -1,0 +1,170 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Lista de UIDs autorizados como admin ───────────────────────────────
+    // Para adicionar um novo admin: peça pra ele tentar logar uma vez em admin.html,
+    // copie o UID em Firebase Console > Authentication > Users,
+    // cole aqui e faça: firebase deploy --only firestore:rules
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.uid == "cole_sua_UID_aqui_1" ||   // Admin 1 — cole o UID aqui
+        request.auth.uid == "cole_sua_UID_aqui_2" ||   // Admin 2 — cole o UID aqui
+        request.auth.uid == "cole_sua_UID_aqui_3" ||   // Admin 3 — cole o UID aqui
+        request.auth.uid == "cole_sua_UID_aqui_4"      // Admin 4 — cole o UID aqui
+      );
+    }
+
+    // Verifica se uma fase específica está liberada
+    function faseLiberada(fase) {
+      let doc = get(/databases/$(database)/documents/config/status);
+      let key = "liberado_" + fase;
+      return doc != null && doc.data[key] == true;
+    }
+
+    function getKeys32avos() {
+      return ["R32_1", "R32_2", "R32_3", "R32_4", "R32_5", "R32_6", "R32_7", "R32_8", "R32_9", "R32_10", "R32_11", "R32_12", "R32_13", "R32_14", "R32_15", "R32_16"];
+    }
+    function getKeysOitavas() {
+      return ["R16_1", "R16_2", "R16_3", "R16_4", "R16_5", "R16_6", "R16_7", "R16_8"];
+    }
+    function getKeysQuartas() {
+      return ["QF_1", "QF_2", "QF_3", "QF_4"];
+    }
+    function getKeysSemis() {
+      return ["SF_1", "SF_2"];
+    }
+    function getKeysFinais() {
+      return ["TPL", "FNL"];
+    }
+
+    function isAllowedCreate() {
+      let keys = request.resource.data.keys();
+      let allowed32 = faseLiberada("16avos") ? getKeys32avos() : [];
+      let allowedOit = faseLiberada("oitavas") ? getKeysOitavas() : [];
+      let allowedQua = faseLiberada("quartas") ? getKeysQuartas() : [];
+      let allowedSem = faseLiberada("semis") ? getKeysSemis() : [];
+      let allowedFin = faseLiberada("finais") ? getKeysFinais() : [];
+      let allowedSet = allowed32.toSet()
+        .union(allowedOit.toSet())
+        .union(allowedQua.toSet())
+        .union(allowedSem.toSet())
+        .union(allowedFin.toSet())
+        .union(["token"].toSet());
+      return faseLiberada("grupos") || keys.toSet().hasOnly(allowedSet);
+    }
+
+    function isAllowedUpdate() {
+      let affected = request.resource.data.diff(resource.data).affectedKeys();
+      let allowed32 = faseLiberada("16avos") ? getKeys32avos() : [];
+      let allowedOit = faseLiberada("oitavas") ? getKeysOitavas() : [];
+      let allowedQua = faseLiberada("quartas") ? getKeysQuartas() : [];
+      let allowedSem = faseLiberada("semis") ? getKeysSemis() : [];
+      let allowedFin = faseLiberada("finais") ? getKeysFinais() : [];
+      let allowedSet = allowed32.toSet()
+        .union(allowedOit.toSet())
+        .union(allowedQua.toSet())
+        .union(allowedSem.toSet())
+        .union(allowedFin.toSet());
+      return faseLiberada("grupos") || affected.hasOnly(allowedSet);
+    }
+
+    // Config: leitura pública, escrita só admin
+    match /config/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Apostadores: leitura pública, criação/atualização com token válido ou admin
+    // Create e Update têm validações distintas para evitar adulteração.
+    match /apostadores/{apostadorId} {
+      allow read: if true;
+
+      // Deleção permitida apenas para administradores
+      allow delete: if isAdmin();
+
+      // Criação: valida todos os campos do novo documento
+      allow create: if isAdmin() ||
+        (faseLiberada("grupos") &&
+         request.resource.data.keys().hasOnly([
+           "id", "nome", "apelido", "token", "especiais",
+           "ativo", "novo", "ordem", "criado_em"
+         ]));
+
+      // Atualização: valida apenas os campos que MUDARAM (affectedKeys),
+      // evitando rejeitar documentos que têm campos extras de versões anteriores.
+      // Apostadores só podem mudar nome, apelido e especiais.
+      allow update: if isAdmin() ||
+        (faseLiberada("grupos") &&
+         resource != null &&
+         request.resource.data.token == resource.data.token &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(["nome", "apelido", "especiais", "novo"]));
+    }
+
+    // Palpites: leitura pública, escrita pelo dono do token ou admin
+    match /apostadores/{apostadorId}/palpites_jogos/{gameId} {
+      allow read: if true;
+      allow write: if isAdmin() ||
+        (faseLiberada(request.resource.data.fase) && 
+         request.resource.data.apostadorId == apostadorId &&
+         request.resource.data.token == get(/databases/$(database)/documents/apostadores/$(apostadorId)).data.token);
+    }
+
+    // Documento compacto de palpites (novo formato — 1 doc por apostador)
+    // { G001: "2-1", G002: "0-0", ... }
+    // Mesma política de palpites_jogos: leitura pública, escrita pública
+    // (segurança garantida pelo token na URL, não por Firebase Auth).
+    match /apostadores/{apostadorId}/dados/{doc} {
+      allow read: if true;
+      allow create: if isAdmin() ||
+        (request.resource.data.token == get(/databases/$(database)/documents/apostadores/$(apostadorId)).data.token &&
+         isAllowedCreate());
+      allow update: if isAdmin() ||
+        (request.resource.data.token == get(/databases/$(database)/documents/apostadores/$(apostadorId)).data.token &&
+         isAllowedUpdate());
+    }
+
+    // collectionGroup de palpites
+    match /{path=**}/palpites_jogos/{gameId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Resultados oficiais: leitura pública, escrita só admin
+    match /resultados_oficiais/{gameId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Modelo Estatístico: leitura pública, escrita só admin
+    match /modelo/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ─── Tokens ──────────────────────────────────────────────────────────────
+    // get (por ID) liberado para todos — necessário internamente.
+    // list (query) restrito ao admin ou a queries por valor exato de token (limit 1).
+    // Escrita apenas pelo admin.
+    match /tokens/{tokenId} {
+      allow get: if true;
+      allow list: if isAdmin() || request.query.limit <= 1;
+      allow write: if isAdmin();
+    }
+
+    // Estatísticas externas: somente leitura
+    match /estatisticas_externas/{gameId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Cache de palpites e resultados: leitura pública, escrita só admin
+    // Documentos: palpites_grupos, palpites_eliminatorias, resultados
+    // O cache de tokens é acessível apenas pelo administrador.
+    match /cache/{doc} {
+      allow read: if doc != "tokens" || isAdmin();
+      allow write: if isAdmin();
+    }
+  }
+}

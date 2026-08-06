@@ -1,4 +1,7 @@
-firestore.rules
+# firestore.rules — NÃO está ignorado intencionalmente: as UIDs de admin foram removidas do arquivo.
+# Se você clonar este repo e adicionar UIDs reais à função isAdmin(),
+# COLOQUE firestore.rules de volta no .gitignore antes de commitar para não vazar credenciais.
+# firestore.rules
 modelo/results/training_sequences.pkl
 modelo/results/copa2026_state.pkl
 modelo/results/heatmaps*
